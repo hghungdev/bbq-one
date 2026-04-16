@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "RetroNote",
+  "version": "1.0.0",
+  "description": "Secure note app — Vintage 1989",
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "permissions": ["storage", "identity", "alarms", "clipboardWrite"],
+  "host_permissions": ["https://*.supabase.co/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com"
+  }
+}
