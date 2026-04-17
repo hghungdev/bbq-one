@@ -7,6 +7,7 @@ import SearchBar from '@/components/layout/SearchBar.vue'
 import SettingsModal from '@/components/layout/SettingsModal.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
@@ -23,6 +24,7 @@ const secure = useSecureFolderStore()
 const sync = useSyncStore()
 const dataReady = ref(false)
 const showSettings = ref(false)
+const activeTab = ref<'notes' | 'bookmarks'>('notes')
 const renamingFolderId = ref<string | null>(null)
 const renamingNoteId = ref<string | null>(null)
 
@@ -179,6 +181,24 @@ const noteListColumnStyle = computed(() =>
       </div>
       <div class="shell__header-row shell__header-row--actions">
         <div class="shell__actions">
+          <!-- Tab switcher -->
+          <RetroButton
+            variant="sm"
+            type="button"
+            :class="activeTab === 'notes' ? 'shell__tab-btn--active' : ''"
+            @click="activeTab = 'notes'"
+          >
+            [ NOTES ]
+          </RetroButton>
+          <RetroButton
+            variant="sm"
+            type="button"
+            :class="activeTab === 'bookmarks' ? 'shell__tab-btn--active' : ''"
+            @click="activeTab = 'bookmarks'"
+          >
+            [ BOOKMARK ]
+          </RetroButton>
+          <span class="shell__sep-v" aria-hidden="true">|</span>
           <RetroButton
             variant="sm"
             type="button"
@@ -217,7 +237,7 @@ const noteListColumnStyle = computed(() =>
           </RetroButton>
         </div>
       </div>
-      <SearchBar ref="searchBarRef" />
+      <SearchBar ref="searchBarRef" :search-mode="activeTab" />
     </header>
 
     <p
@@ -228,35 +248,43 @@ const noteListColumnStyle = computed(() =>
       {{ loadErrorLine }}
     </p>
 
-    <div v-if="dataReady" class="shell__grid">
-      <Sidebar
-        v-model:renaming-folder-id="renamingFolderId"
-        class="shell__col shell__col--folders"
-        :style="{ width: `${colW1}px` }"
-      />
-      <div
-        class="shell__resize"
-        title="Drag to resize"
-        aria-hidden="true"
-        @mousedown="onResizeStart(1, $event)"
-      />
-      <NoteList
-        v-model:renaming-note-id="renamingNoteId"
-        class="shell__col shell__col--notes"
-        :class="{ 'shell__col--notes--search': isSearchActive }"
-        :style="noteListColumnStyle"
-      />
-      <div
-        v-show="!isSearchActive"
-        class="shell__resize"
-        title="Drag to resize"
-        aria-hidden="true"
-        @mousedown="onResizeStart(2, $event)"
-      />
-      <div v-show="!isSearchActive" class="shell__col shell__col--editor">
-        <NoteEditor ref="noteEditorRef" />
+    <template v-if="dataReady">
+      <!-- Tab: Notes (layout 3 cột hiện tại) -->
+      <div v-show="activeTab === 'notes'" class="shell__grid">
+        <Sidebar
+          v-model:renaming-folder-id="renamingFolderId"
+          class="shell__col shell__col--folders"
+          :style="{ width: `${colW1}px` }"
+        />
+        <div
+          class="shell__resize"
+          title="Drag to resize"
+          aria-hidden="true"
+          @mousedown="onResizeStart(1, $event)"
+        />
+        <NoteList
+          v-model:renaming-note-id="renamingNoteId"
+          class="shell__col shell__col--notes"
+          :class="{ 'shell__col--notes--search': isSearchActive }"
+          :style="noteListColumnStyle"
+        />
+        <div
+          v-show="!isSearchActive"
+          class="shell__resize"
+          title="Drag to resize"
+          aria-hidden="true"
+          @mousedown="onResizeStart(2, $event)"
+        />
+        <div v-show="!isSearchActive" class="shell__col shell__col--editor">
+          <NoteEditor ref="noteEditorRef" />
+        </div>
       </div>
-    </div>
+
+      <!-- Tab: Bookmark -->
+      <div v-show="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
+        <BookmarkTab class="shell__col--full" />
+      </div>
+    </template>
     <p
       v-else
       class="shell__loading retro-empty"
@@ -491,5 +519,25 @@ const noteListColumnStyle = computed(() =>
   flex: 1 1 auto;
   margin: 0;
   padding: 16px 12px;
+}
+
+.shell__grid--full {
+  flex-direction: column;
+}
+
+.shell__col--full {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shell__tab-btn--active {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+.shell__sep-v {
+  color: var(--border);
+  padding: 0 2px;
 }
 </style>

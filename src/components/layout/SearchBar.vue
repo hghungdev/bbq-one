@@ -2,25 +2,49 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
+import { useBookmarksStore } from '@/stores/bookmarks'
 import { useNotesStore } from '@/stores/notes'
 
+const props = defineProps<{
+  /** Tab đang mở — quyết định ô search áp dụng cho notes hay bookmark. */
+  searchMode: 'notes' | 'bookmarks'
+}>()
+
 const notes = useNotesStore()
+const bookmarks = useBookmarksStore()
 
 const localQuery = ref('')
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-/* clearSearch() từ store (folder / tạo folder) phải xóa cả ô input */
 watch(
   () => notes.searchQuery,
   (q) => {
-    if (localQuery.value !== q) localQuery.value = q
+    if (props.searchMode === 'notes' && localQuery.value !== q) localQuery.value = q
+  },
+)
+
+watch(
+  () => bookmarks.searchQuery,
+  (q) => {
+    if (props.searchMode === 'bookmarks' && localQuery.value !== q) localQuery.value = q
+  },
+)
+
+watch(
+  () => props.searchMode,
+  (mode) => {
+    localQuery.value = mode === 'notes' ? notes.searchQuery : bookmarks.searchQuery
   },
 )
 
 watch(localQuery, (v) => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    void notes.runSearch(v)
+    if (props.searchMode === 'notes') {
+      void notes.runSearch(v)
+    } else {
+      bookmarks.setSearchQuery(v)
+    }
   }, 300)
 })
 
@@ -30,7 +54,11 @@ onBeforeUnmount(() => {
 
 function onClear(): void {
   localQuery.value = ''
-  notes.clearSearch()
+  if (props.searchMode === 'notes') {
+    notes.clearSearch()
+  } else {
+    bookmarks.clearBookmarkSearch()
+  }
 }
 
 function focusInput(): void {
@@ -40,7 +68,7 @@ function focusInput(): void {
 defineExpose({ focusInput })
 
 onMounted(() => {
-  localQuery.value = notes.searchQuery
+  localQuery.value = props.searchMode === 'notes' ? notes.searchQuery : bookmarks.searchQuery
 })
 </script>
 
@@ -52,12 +80,12 @@ onMounted(() => {
       v-model="localQuery"
       placeholder="> query_"
       autocomplete="off"
-      aria-label="Search notes"
+      :aria-label="searchMode === 'notes' ? 'Search notes' : 'Search bookmarks'"
     />
     <RetroButton variant="sm" type="button" @click="onClear">
       [ X ]
     </RetroButton>
-    <span v-if="notes.searchLoading" class="search-bar__state">…</span>
+    <span v-if="searchMode === 'notes' && notes.searchLoading" class="search-bar__state">…</span>
   </div>
 </template>
 
