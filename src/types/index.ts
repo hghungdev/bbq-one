@@ -3,8 +3,21 @@ export interface Note {
   user_id: string
   folder_id: string | null
   title: string
-  content: string
   tags: string[]
+  synced_at: string | null
+  updated_at: string
+  created_at: string
+}
+
+/** Một khối nội dung (body) thuộc một note; note có thể có nhiều body. */
+export interface NoteBody {
+  id: string
+  user_id: string
+  note_id: string
+  /** Nhãn hiển thị trong list (vd. “Query A”, “Draft”). */
+  label: string
+  content: string
+  position: number
   synced_at: string | null
   updated_at: string
   created_at: string

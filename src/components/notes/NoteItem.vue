@@ -7,8 +7,10 @@ import {
   firstLinePreview,
   highlightQueryHtml,
   noteListLabel,
+  noteSearchPathLine,
   plainTextFromHtml,
 } from '@/utils/text'
+import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import type { Note } from '@/types'
 
@@ -19,24 +21,43 @@ const props = defineProps<{
   note: Note
   selected: boolean
   renaming: boolean
+  /** Search global: hiện `Folder > note` thay vì chỉ tên note. */
+  showFolderPath?: boolean
   highlightQuery?: string
 }>()
 
 const emit = defineEmits<{
-  select: [id: string]
   delete: [id: string]
   'request-rename': [id: string]
   'rename-done': []
 }>()
 
 const notes = useNotesStore()
+const folders = useFoldersStore()
+
 const draft = ref('')
 const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
 
-const label = computed(() => noteListLabel(props.note))
+const bodies = computed(() => notes.bodiesForNote(props.note.id))
+
+const label = computed(() => noteListLabel(props.note, bodies.value))
 
 const titleHtml = computed(() =>
   highlightQueryHtml(label.value, props.highlightQuery ?? ''),
+)
+
+const folderNameForNote = computed((): string | null => {
+  const id = props.note.folder_id
+  if (!id) return null
+  return folders.folders.find((f) => f.id === id)?.name ?? null
+})
+
+const searchPathPlain = computed(() =>
+  noteSearchPathLine(folderNameForNote.value, label.value),
+)
+
+const searchPathHtml = computed(() =>
+  highlightQueryHtml(searchPathPlain.value, props.highlightQuery ?? ''),
 )
 
 watch(
@@ -44,16 +65,19 @@ watch(
   async (v) => {
     if (v) {
       const t = props.note.title.trim()
-      draft.value = t || firstLinePreview(plainTextFromHtml(props.note.content), 80)
+      const firstPlain = plainTextFromHtml(
+        bodies.value[0]?.content ?? '',
+      )
+      draft.value = t || firstLinePreview(firstPlain, 80)
       await nextTick()
       inputRef.value?.focus()
     }
   },
 )
 
-function onClick(): void {
+function onMainClick(): void {
   if (props.renaming) return
-  emit('select', props.note.id)
+  notes.selectNote(props.note.id)
 }
 
 function onDblClick(e: MouseEvent): void {
@@ -112,11 +136,22 @@ function onRenameKeydown(e: KeyboardEvent): void {
         <button
           type="button"
           class="note-item__main"
-          @click="onClick"
+          :class="{ 'note-item__main--search-path': showFolderPath }"
+          :title="showFolderPath ? searchPathPlain : label"
+          @click="onMainClick"
           @dblclick="onDblClick"
         >
           <template v-if="highlightQuery?.trim()">
-            <span class="note-item__title" v-html="titleHtml" />
+            <span
+              v-if="showFolderPath"
+              class="note-item__title"
+              v-html="searchPathHtml"
+            />
+            <span
+              v-else
+              class="note-item__title"
+              v-html="titleHtml"
+            />
           </template>
           <template v-else>
             &gt; {{ label }}
@@ -158,7 +193,6 @@ function onRenameKeydown(e: KeyboardEvent): void {
   border-color: var(--accent);
 }
 
-/* Đồng bộ với .folder-item: hover = viền nhạt + chữ đậm hơn */
 .note-item:hover:not(.note-item--active) {
   border-color: var(--border);
 }
@@ -176,6 +210,11 @@ function onRenameKeydown(e: KeyboardEvent): void {
   font-size: var(--font-size-sm);
   text-align: left;
   cursor: pointer;
+}
+
+.note-item__main--search-path {
+  white-space: normal;
+  word-break: break-word;
 }
 
 .note-item:hover .note-item__main {

@@ -134,7 +134,7 @@ async function onSync(): Promise<void> {
 function onExport(): void {
   const n = notes.activeNote
   if (!n) return
-  downloadNoteAsTxt(n)
+  downloadNoteAsTxt(n, notes.bodiesForNote(n.id))
 }
 
 const syncBadgeTitle = computed(() => {

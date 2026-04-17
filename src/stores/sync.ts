@@ -19,6 +19,7 @@ export const useSyncStore = defineStore('sync', () => {
     try {
       await syncService.syncDirtyNotesFromList(
         notes.notes,
+        notes.bodies,
         folders.folders,
         (id) => secure.getKey(id),
       )

@@ -31,12 +31,26 @@ CREATE TABLE IF NOT EXISTS notes (
   user_id     UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   folder_id   UUID REFERENCES folders (id) ON DELETE SET NULL,
   title       TEXT DEFAULT '',
-  content     TEXT DEFAULT '',
   tags        TEXT[] DEFAULT '{}',
   synced_at   TIMESTAMPTZ,
   updated_at  TIMESTAMPTZ DEFAULT now(),
   created_at  TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS note_bodies (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  note_id     UUID NOT NULL REFERENCES notes (id) ON DELETE CASCADE,
+  label       TEXT NOT NULL DEFAULT '',
+  content     TEXT NOT NULL DEFAULT '',
+  position    INT NOT NULL DEFAULT 0,
+  synced_at   TIMESTAMPTZ,
+  updated_at  TIMESTAMPTZ DEFAULT now(),
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS note_bodies_note_id_idx ON note_bodies (note_id);
+CREATE INDEX IF NOT EXISTS note_bodies_note_id_position_idx ON note_bodies (note_id, position);
 
 -- -----------------------------------------------------------------------------
 -- 2. Trigger: tự cập nhật notes.updated_at khi UPDATE
@@ -66,20 +80,88 @@ CREATE TRIGGER folders_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.retronote_update_updated_at();
 
+DROP TRIGGER IF EXISTS note_bodies_updated_at ON note_bodies;
+
+CREATE TRIGGER note_bodies_updated_at
+  BEFORE UPDATE ON note_bodies
+  FOR EACH ROW
+  EXECUTE FUNCTION public.retronote_update_updated_at();
+
+CREATE OR REPLACE FUNCTION public.note_bodies_touch_parent_note()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE notes SET updated_at = now()
+  WHERE id = COALESCE(NEW.note_id, OLD.note_id);
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+-- touch_parent gắn sau khi có notes.fts (mục 3) — tránh edge case migration từ DB cũ.
+
 -- -----------------------------------------------------------------------------
--- 3. Full-text search: cột tsvector sinh tự động (dùng với .textSearch('fts', ...))
+-- 3. Full-text search: notes (title + tags), note_bodies (label + content)
+-- fts: cột thường + trigger — không dùng GENERATED (42P17 trên Supabase với tags::text).
 -- -----------------------------------------------------------------------------
 
-ALTER TABLE notes
-  ADD COLUMN IF NOT EXISTS fts tsvector
-  GENERATED ALWAYS AS (
-    to_tsvector(
-      'english',
-      coalesce(title, '') || ' ' || coalesce(content, '')
-    )
-  ) STORED;
+ALTER TABLE notes DROP COLUMN IF EXISTS fts CASCADE;
+
+ALTER TABLE notes ADD COLUMN IF NOT EXISTS fts tsvector;
+
+CREATE OR REPLACE FUNCTION public.notes_set_fts()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.fts := to_tsvector(
+    'english'::regconfig,
+    coalesce(NEW.title, '') || ' ' || coalesce(NEW.tags::text, '')
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS notes_set_fts ON notes;
+
+CREATE TRIGGER notes_set_fts
+  BEFORE INSERT OR UPDATE OF title, tags ON notes
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notes_set_fts();
 
 CREATE INDEX IF NOT EXISTS notes_fts_col_idx ON notes USING gin (fts);
+
+ALTER TABLE note_bodies
+  ADD COLUMN IF NOT EXISTS fts tsvector;
+
+CREATE OR REPLACE FUNCTION public.note_bodies_set_fts()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.fts := to_tsvector(
+    'english'::regconfig,
+    coalesce(NEW.label, '') || ' ' || coalesce(NEW.content, '')
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS note_bodies_set_fts ON note_bodies;
+
+CREATE TRIGGER note_bodies_set_fts
+  BEFORE INSERT OR UPDATE OF label, content ON note_bodies
+  FOR EACH ROW
+  EXECUTE FUNCTION public.note_bodies_set_fts();
+
+CREATE INDEX IF NOT EXISTS note_bodies_fts_idx ON note_bodies USING gin (fts);
+
+DROP TRIGGER IF EXISTS note_bodies_touch_note ON note_bodies;
+
+CREATE TRIGGER note_bodies_touch_note
+  AFTER INSERT OR UPDATE OR DELETE ON note_bodies
+  FOR EACH ROW
+  EXECUTE FUNCTION public.note_bodies_touch_parent_note();
 
 -- -----------------------------------------------------------------------------
 -- 4. Row Level Security
@@ -87,9 +169,11 @@ CREATE INDEX IF NOT EXISTS notes_fts_col_idx ON notes USING gin (fts);
 
 ALTER TABLE folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE note_bodies ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "folders_owner" ON folders;
 DROP POLICY IF EXISTS "notes_owner" ON notes;
+DROP POLICY IF EXISTS "note_bodies_owner" ON note_bodies;
 
 CREATE POLICY "folders_owner" ON folders
   FOR ALL
@@ -97,6 +181,11 @@ CREATE POLICY "folders_owner" ON folders
   WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "notes_owner" ON notes
+  FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "note_bodies_owner" ON note_bodies
   FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);

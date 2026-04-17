@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { shallowRef } from 'vue'
 import { foldersService } from '@/services/folders.service'
+import { noteBodiesService } from '@/services/noteBodies.service'
 import { notesService } from '@/services/notes.service'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
@@ -76,7 +77,12 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
         return
       } else {
         await decryptField(list[0].title, key)
-        await decryptField(list[0].content, key)
+        const firstBodies = notes.bodiesForNote(list[0].id)
+        const firstBody = firstBodies[0]
+        if (firstBody) {
+          await decryptField(firstBody.label, key)
+          await decryptField(firstBody.content, key)
+        }
       }
     } catch {
       throw new Error('Wrong passphrase')
@@ -94,12 +100,25 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
       for (let i = 0; i < notes.notes.length; i++) {
         const n = notes.notes[i]
         if (n.folder_id !== folderId) continue
-        if (!isEncryptedEnvelope(n.title) || !isEncryptedEnvelope(n.content)) {
+        if (!isEncryptedEnvelope(n.title)) {
           continue
         }
         const title = await decryptField(n.title, key)
-        const content = await decryptField(n.content, key)
-        notes.notes[i] = { ...n, title, content }
+        notes.notes[i] = { ...n, title }
+      }
+      for (let j = 0; j < notes.bodies.length; j++) {
+        const b = notes.bodies[j]
+        const note = notes.notes.find((x) => x.id === b.note_id)
+        if (note?.folder_id !== folderId) continue
+        if (
+          !isEncryptedEnvelope(b.label) ||
+          !isEncryptedEnvelope(b.content)
+        ) {
+          continue
+        }
+        const label = await decryptField(b.label, key)
+        const content = await decryptField(b.content, key)
+        notes.bodies[j] = { ...b, label, content }
       }
     }
     await notes.persistCache()
@@ -146,16 +165,20 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     const list = notes.notes.filter((n) => n.folder_id === folderId)
     for (const n of list) {
       let title = n.title
-      let content = n.content
       if (isEncryptedEnvelope(title)) {
         throw new Error('Note already encrypted')
       }
-      if (isEncryptedEnvelope(content)) {
-        throw new Error('Note already encrypted')
-      }
       title = await encryptField(title, key)
-      content = await encryptField(content, key)
-      await notesService.update(n.id, { title, content })
+      await notesService.update(n.id, { title })
+      const bs = notes.bodiesForNote(n.id)
+      for (const b of bs) {
+        if (isEncryptedEnvelope(b.label) || isEncryptedEnvelope(b.content)) {
+          throw new Error('Note already encrypted')
+        }
+        const label = await encryptField(b.label, key)
+        const content = await encryptField(b.content, key)
+        await noteBodiesService.update(b.id, { label, content })
+      }
     }
 
     const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, key)
@@ -233,9 +256,14 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     }
 
     const first = list[0]
+    const firstBodies = notes.bodiesForNote(first.id)
     try {
       await decryptField(first.title, oldKey)
-      await decryptField(first.content, oldKey)
+      const fb = firstBodies[0]
+      if (fb) {
+        await decryptField(fb.label, oldKey)
+        await decryptField(fb.content, oldKey)
+      }
     } catch {
       throw new Error('Current passphrase is wrong')
     }
@@ -250,10 +278,16 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
 
     for (const n of list) {
       const titlePlain = await decryptField(n.title, oldKey)
-      const contentPlain = await decryptField(n.content, oldKey)
       const title = await encryptField(titlePlain, newKey)
-      const content = await encryptField(contentPlain, newKey)
-      await notesService.update(n.id, { title, content })
+      await notesService.update(n.id, { title })
+      const bs = notes.bodiesForNote(n.id)
+      for (const b of bs) {
+        const labelPlain = await decryptField(b.label, oldKey)
+        const contentPlain = await decryptField(b.content, oldKey)
+        const label = await encryptField(labelPlain, newKey)
+        const content = await encryptField(contentPlain, newKey)
+        await noteBodiesService.update(b.id, { label, content })
+      }
     }
 
     const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, newKey)

@@ -1,4 +1,4 @@
-import type { Note } from '@/types'
+import type { Note, NoteBody } from '@/types'
 
 /** Plain text từ HTML (dùng trong extension, có document). */
 export function plainTextFromHtml(html: string): string {
@@ -24,13 +24,25 @@ export function firstLinePreview(text: string, maxLen = 80): string {
   return line.slice(0, maxLen)
 }
 
-/** Nhãn trong list: title nếu có, không thì preview từ body. */
-export function noteListLabel(note: Note): string {
+/** Nhãn trong list: title nếu có, không thì preview từ body đầu tiên. */
+export function noteListLabel(note: Note, bodies?: NoteBody[]): string {
   const t = note.title.trim()
   if (t) return t
-  const plain = plainTextFromHtml(note.content)
+  const firstBody = bodies
+    ?.slice()
+    .sort((a, b) => a.position - b.position)[0]
+  const plain = plainTextFromHtml(firstBody?.content ?? '')
   const first = firstLinePreview(plain, 80)
   return first || 'UNTITLED_'
+}
+
+/** Kết quả search global: `Folder > tên note` (không folder → `—`). */
+export function noteSearchPathLine(
+  folderName: string | null,
+  noteLabel: string,
+): string {
+  const folder = folderName?.trim() ? folderName.trim() : '—'
+  return `${folder} > ${noteLabel}`
 }
 
 /** Escape text for safe insertion into HTML (except we wrap in mark). */

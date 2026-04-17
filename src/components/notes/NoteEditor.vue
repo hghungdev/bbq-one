@@ -2,12 +2,14 @@
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import type { Editor } from '@tiptap/core'
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
+import RetroButton from '@/components/ui/RetroButton.vue'
 import { useNotesStore } from '@/stores/notes'
-import type { Note } from '@/types'
+import type { NoteBody } from '@/types'
 import { extractCodeBlocksFromDocJSON } from '@/utils/tiptapJson'
 import { copyTextToClipboard } from '@/utils/clipboard'
+import { firstLinePreview, plainTextFromHtml } from '@/utils/text'
 
 const notesStore = useNotesStore()
 const codeBlocks = ref<{ lang: string; code: string }[]>([])
@@ -16,6 +18,18 @@ let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 let codeTimer: ReturnType<typeof setTimeout> | null = null
+
+const bodiesForEditor = computed(() => {
+  const nid = notesStore.activeNoteId
+  if (!nid) return []
+  return notesStore.bodiesForNote(nid)
+})
+
+function bodyListLabel(b: NoteBody, index: number): string {
+  const plain = plainTextFromHtml(b.content).replace(/\s+/g, ' ').trim()
+  const line = firstLinePreview(plain, 44)
+  return line || `[${index + 1}]`
+}
 
 function cancelScheduledSave(): void {
   if (saveTimer !== null) {
@@ -35,26 +49,26 @@ function scheduleCodeExtract(): void {
 
 function scheduleSave(): void {
   cancelScheduledSave()
-  const runId = notesStore.activeNoteId
+  const runBodyId = notesStore.activeBodyId
   saveTimer = setTimeout(async () => {
     saveTimer = null
-    if (!runId || notesStore.activeNoteId !== runId) return
+    if (!runBodyId || notesStore.activeBodyId !== runBodyId) return
     const ed = editor.value
     if (!ed) return
-    await notesStore.updateNote(runId, {
+    await notesStore.updateBody(runBodyId, {
       content: ed.getHTML(),
     })
   }, 2000)
 }
 
-function applyNote(ed: Editor, note: Note | null): void {
-  if (!note) {
+function applyBody(ed: Editor, body: NoteBody | null): void {
+  if (!body) {
     ed.commands.setContent('<p></p>', false)
     codeBlocks.value = []
     notesStore.setDirty(false)
     return
   }
-  ed.commands.setContent(note.content || '<p></p>', false)
+  ed.commands.setContent(body.content || '<p></p>', false)
   notesStore.setDirty(false)
   scheduleCodeExtract()
 }
@@ -81,35 +95,35 @@ const editor = useEditor({
     scheduleCodeExtract()
   },
   onCreate: ({ editor: ed }) => {
-    const note = notesStore.activeNote
-    applyNote(ed, note)
+    const body = notesStore.activeBody
+    applyBody(ed, body)
   },
 })
 
 watch(
-  () => notesStore.activeNoteId,
+  () => notesStore.activeBodyId,
   async (newId, oldId) => {
     await nextTick()
     const ed = editor.value
     if (oldId && ed && notesStore.isDirty) {
-      await notesStore.updateNote(oldId, {
+      await notesStore.updateBody(oldId, {
         content: ed.getHTML(),
       })
     }
     if (!ed) return
-    const note = newId
-      ? notesStore.notes.find((n) => n.id === newId) ?? null
+    const body = newId
+      ? notesStore.bodies.find((b) => b.id === newId) ?? null
       : null
-    applyNote(ed, note)
+    applyBody(ed, body)
   },
 )
 
 async function flushSave(): Promise<void> {
   cancelScheduledSave()
-  const id = notesStore.activeNoteId
+  const id = notesStore.activeBodyId
   const ed = editor.value
   if (!id || !ed || !notesStore.isDirty) return
-  await notesStore.updateNote(id, {
+  await notesStore.updateBody(id, {
     content: ed.getHTML(),
   })
 }
@@ -117,7 +131,6 @@ async function flushSave(): Promise<void> {
 async function copyBodyToClipboard(): Promise<void> {
   const ed = editor.value
   if (!ed) return
-  /** getText từ document — giữ newline trong code block; getHTML+innerText hay gộp dòng. */
   const plain = ed.getText({ blockSeparator: '\n' })
   const ok = await copyTextToClipboard(plain)
   if (!ok) {
@@ -132,6 +145,31 @@ async function copyBodyToClipboard(): Promise<void> {
   }, 1600)
 }
 
+function onSelectBodyTab(bodyId: string): void {
+  const nid = notesStore.activeNoteId
+  if (!nid) return
+  notesStore.selectNote(nid, bodyId)
+}
+
+async function onAddBody(): Promise<void> {
+  const nid = notesStore.activeNoteId
+  if (!nid) return
+  try {
+    await notesStore.createBodyForNote(nid)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+async function onDeleteBody(bodyId: string, e: MouseEvent): Promise<void> {
+  e.stopPropagation()
+  try {
+    await notesStore.deleteBody(bodyId)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
 defineExpose({ flushSave })
 
 onBeforeUnmount(() => {
@@ -140,9 +178,9 @@ onBeforeUnmount(() => {
     clearTimeout(codeTimer)
     codeTimer = null
   }
-  const id = notesStore.activeNoteId
+  const id = notesStore.activeBodyId
   if (id && editor.value && notesStore.isDirty) {
-    void notesStore.updateNote(id, {
+    void notesStore.updateBody(id, {
       content: editor.value.getHTML(),
     })
   }
@@ -160,10 +198,31 @@ onBeforeUnmount(() => {
         &gt; NO NOTE SELECTED_<span class="cursor-blink" aria-hidden="true"></span>
       </p>
     </template>
+    <template v-else-if="bodiesForEditor.length === 0">
+      <p class="note-editor__empty retro-empty">
+        &gt; NO BODY_<span class="cursor-blink" aria-hidden="true"></span>
+      </p>
+      <RetroButton
+        variant="sm"
+        type="button"
+        class="note-editor__add-first"
+        @click="onAddBody"
+      >
+        + BODY
+      </RetroButton>
+    </template>
     <template v-else>
       <div class="note-editor__head">
-        <label class="note-editor__label">BODY:</label>
+        <span class="note-editor__label">BODY</span>
         <div class="note-editor__head-actions">
+          <RetroButton
+            variant="sm"
+            type="button"
+            :disabled="!notesStore.activeNoteId"
+            @click="onAddBody"
+          >
+            +
+          </RetroButton>
           <span
             v-if="copyFeedback"
             class="note-editor__copied"
@@ -173,7 +232,7 @@ onBeforeUnmount(() => {
             type="button"
             class="note-editor__copy"
             title="Copy nội dung (plain text) vào clipboard"
-            aria-label="Copy nội dung note vào clipboard"
+            aria-label="Copy nội dung body vào clipboard"
             @click="copyBodyToClipboard"
           >
             <svg
@@ -191,21 +250,58 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </div>
-      <div class="note-editor__body">
-        <EditorContent v-if="editor" :editor="editor" />
+
+      <div
+        class="note-editor__tabs"
+        role="tablist"
+        :aria-label="'Bodies for note'"
+      >
+        <div
+          v-for="(b, i) in bodiesForEditor"
+          :key="b.id"
+          class="note-editor__tab"
+          :class="{
+            'note-editor__tab--active': notesStore.activeBodyId === b.id,
+          }"
+        >
+          <button
+            type="button"
+            class="note-editor__tab-main"
+            role="tab"
+            :aria-selected="notesStore.activeBodyId === b.id"
+            @click="onSelectBodyTab(b.id)"
+          >
+            &gt; {{ bodyListLabel(b, i) }}
+          </button>
+          <RetroButton
+            variant="sm"
+            type="button"
+            class="note-editor__tab-del"
+            aria-label="Xóa body"
+            @click="onDeleteBody(b.id, $event)"
+          >
+            [×]
+          </RetroButton>
+        </div>
       </div>
 
-      <div v-if="codeBlocks.length" class="note-editor__code">
-        <div class="note-editor__code-head">
-          CODE BLOCKS ({{ codeBlocks.length }})
+      <template v-if="notesStore.activeBody">
+        <div class="note-editor__body">
+          <EditorContent v-if="editor" :editor="editor" />
         </div>
-        <CodeBlock
-          v-for="(b, i) in codeBlocks"
-          :key="`${b.lang}-${i}`"
-          :code="b.code"
-          :language="b.lang"
-        />
-      </div>
+
+        <div v-if="codeBlocks.length" class="note-editor__code">
+          <div class="note-editor__code-head">
+            CODE BLOCKS ({{ codeBlocks.length }})
+          </div>
+          <CodeBlock
+            v-for="(b, i) in codeBlocks"
+            :key="`${b.lang}-${i}`"
+            :code="b.code"
+            :language="b.lang"
+          />
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -225,6 +321,10 @@ onBeforeUnmount(() => {
   padding-top: 12px;
 }
 
+.note-editor__add-first {
+  align-self: flex-start;
+}
+
 .note-editor__head {
   display: flex;
   flex-wrap: wrap;
@@ -238,6 +338,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
   margin-left: auto;
 }
 
@@ -245,6 +346,63 @@ onBeforeUnmount(() => {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   letter-spacing: 0.08em;
+}
+
+.note-editor__tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-height: min(40vh, 200px);
+  overflow-y: auto;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.note-editor__tab {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.note-editor__tab--active {
+  border-color: var(--accent);
+}
+
+.note-editor__tab-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-editor__tab-main:hover {
+  color: var(--text-secondary);
+}
+
+.note-editor__tab--active .note-editor__tab-main {
+  color: var(--accent);
+}
+
+.note-editor__tab-main:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.note-editor__tab-del {
+  flex: 0 0 auto;
 }
 
 .note-editor__copied {

@@ -1,4 +1,4 @@
-import type { Note } from '@/types'
+import type { Note, NoteBody } from '@/types'
 import { noteListLabel } from '@/utils/text'
 
 function stripHtml(html: string): string {
@@ -12,11 +12,27 @@ function sanitizeFilename(s: string): string {
   return t.replace(/[^a-z0-9_\-\.]/gi, '_').slice(0, 80)
 }
 
-/** Download active note as .txt (user gesture in popup). */
-export function downloadNoteAsTxt(note: Note): void {
-  const title = noteListLabel(note).replace(/_+$/, '') || 'UNTITLED'
-  const body = stripHtml(note.content)
-  const text = `${title}\n\n${body}`
+function bodyLabelForExport(b: NoteBody): string {
+  const t = b.label.trim()
+  if (t) return t
+  const plain = stripHtml(b.content).replace(/\s+/g, ' ').trim()
+  const line = plain.split('\n')[0]?.trim() ?? ''
+  return line.slice(0, 60) || 'BODY'
+}
+
+/** Download note (mọi body) dưới dạng .txt (user gesture trong popup). */
+export function downloadNoteAsTxt(note: Note, bodies: NoteBody[]): void {
+  const title =
+    noteListLabel(note, bodies).replace(/_+$/, '') || 'UNTITLED'
+  const sorted = bodies
+    .slice()
+    .sort((a, b) => a.position - b.position)
+  const parts: string[] = [`${title}`, '']
+  for (const b of sorted) {
+    const head = `--- ${bodyLabelForExport(b)} ---`
+    parts.push(head, '', stripHtml(b.content), '')
+  }
+  const text = parts.join('\n')
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
