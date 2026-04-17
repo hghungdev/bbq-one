@@ -57,7 +57,7 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       v-if="open"
-      class="retro-confirm__backdrop"
+      class="retro-confirm__backdrop bbqnote-overlay"
       role="presentation"
       @click.self="dismiss"
     >
@@ -144,5 +144,10 @@ onUnmounted(() => {
 .retro-confirm__btn:hover {
   border-color: var(--accent);
   color: var(--text-primary);
+}
+
+.retro-confirm__btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 </style>

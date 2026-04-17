@@ -1,4 +1,4 @@
-# 🗒️ RetroNote — Chrome Extension Sprint Plan
+# 🗒️ BBQNote — Chrome Extension Sprint Plan
 > Vintage 1989 UI · Vue 3 + TypeScript · Supabase · PKCE Auth
 
 ---
@@ -167,7 +167,7 @@ npm install shiki
 ```json
 {
   "manifest_version": 3,
-  "name": "RetroNote",
+  "name": "BBQNote",
   "version": "1.0.0",
   "description": "Secure note app — Vintage 1989",
   "action": {
@@ -287,7 +287,7 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 ```
 ┌─────────────────────────────┐
 │                             │
-│  RETRONOTE v1.0             │
+│  BBQNote v1.0               │
 │  ─────────────────────────  │
 │                             │
 │  EMAIL:                     │
@@ -326,7 +326,7 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 ### Layout chính
 ```
 ┌──────────────────────────────────────────────────┐
-│ RETRONOTE ──────────────────── [SYNC] [LOGOUT]   │  ← Header
+│ BBQNote ──────────────────── [SYNC] [LOGOUT]   │  ← Header
 ├──────────┬───────────────┬────────────────────────┤
 │ FOLDERS  │ NOTES         │                        │
 │          │               │  NOTE TITLE_           │
@@ -599,7 +599,7 @@ export const syncService = {
 
 ### Prompt khởi tạo project
 ```
-Tôi đang build Chrome Extension tên RetroNote với stack:
+Tôi đang build Chrome Extension tên BBQNote với stack:
 - Vue 3 + TypeScript + Vite + CRXJS plugin
 - Supabase (Auth PKCE + PostgreSQL + RLS)
 - Pinia state management
@@ -615,7 +615,7 @@ Tuân thủ đúng folder structure và code patterns trong plan.
 
 ### Prompt mỗi sprint
 ```
-Tiếp tục RetroNote. Đã hoàn thành Sprint [N].
+Tiếp tục BBQNote. Đã hoàn thành Sprint [N].
 Context hiện tại:
 - [list những gì đã làm]
 - [vấn đề nếu có]
@@ -628,7 +628,7 @@ Giữ nguyên design system vintage và code patterns đã có.
 
 ### Prompt fix bug
 ```
-RetroNote Chrome Extension, Vue 3 + TypeScript + Supabase.
+BBQNote Chrome Extension, Vue 3 + TypeScript + Supabase.
 Bug: [mô tả bug]
 File liên quan: [tên file]
 Code hiện tại: [paste code]
@@ -664,4 +664,4 @@ npm run type-check  # TypeScript check
 
 ---
 
-*RetroNote — Because the best tools feel timeless.*
+*BBQNote — Because the best tools feel timeless.*

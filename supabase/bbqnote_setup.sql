@@ -1,5 +1,5 @@
 -- =============================================================================
--- RetroNote — Supabase: schema + FTS + RLS + (tùy chọn) user dev
+-- BBQNote — Supabase: schema + FTS + RLS + (tùy chọn) user dev
 -- =============================================================================
 -- Chạy toàn bộ file này trong Supabase → SQL Editor (một lần trên project mới).
 --
@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS folders (
   user_id     UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
   position    INT DEFAULT 0,
+  updated_at  TIMESTAMPTZ DEFAULT now(),
   created_at  TIMESTAMPTZ DEFAULT now()
 );
 
@@ -55,6 +56,13 @@ DROP TRIGGER IF EXISTS notes_updated_at ON notes;
 
 CREATE TRIGGER notes_updated_at
   BEFORE UPDATE ON notes
+  FOR EACH ROW
+  EXECUTE FUNCTION public.retronote_update_updated_at();
+
+DROP TRIGGER IF EXISTS folders_updated_at ON folders;
+
+CREATE TRIGGER folders_updated_at
+  BEFORE UPDATE ON folders
   FOR EACH ROW
   EXECUTE FUNCTION public.retronote_update_updated_at();
 
@@ -94,7 +102,7 @@ CREATE POLICY "notes_owner" ON notes
   WITH CHECK (auth.uid() = user_id);
 
 -- =============================================================================
--- 5. Tạo user để đăng nhập RetroNote
+-- 5. Tạo user để đăng nhập BBQNote
 -- =============================================================================
 --
 -- CÁCH A — Khuyên dùng (production / ít rủi ro)
@@ -113,7 +121,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 DO $$
 DECLARE
   v_user_id   UUID := gen_random_uuid();
-  v_email     TEXT := 'dev@retronote.local';
+  v_email     TEXT := 'dev@bbqnote.local';
   v_password  TEXT := 'ChangeMe123!';
   v_instance  UUID := '00000000-0000-0000-0000-000000000000';
 BEGIN

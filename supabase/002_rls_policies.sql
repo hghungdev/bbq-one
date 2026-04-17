@@ -1,4 +1,4 @@
--- RLS for RetroNote (run after folders/notes tables exist — see SPRINT-PLAN.md schema)
+-- RLS for BBQNote (run after folders/notes tables exist — see SPRINT-PLAN.md schema)
 -- Safe to re-run: drops policies by name then recreates.
 
 ALTER TABLE folders ENABLE ROW LEVEL SECURITY;

@@ -11,6 +11,7 @@ import { useColumnResize } from '@/composables/useColumnResize'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
+import { useSecureFolderStore } from '@/stores/secureFolder'
 import { useSyncStore } from '@/stores/sync'
 import { downloadNoteAsTxt } from '@/utils/exportNote'
 
@@ -18,6 +19,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const folders = useFoldersStore()
 const notes = useNotesStore()
+const secure = useSecureFolderStore()
 const sync = useSyncStore()
 const dataReady = ref(false)
 const showSettings = ref(false)
@@ -68,6 +70,8 @@ function onGlobalKeydown(e: KeyboardEvent): void {
   }
   if (e.ctrlKey && e.key.toLowerCase() === 'n') {
     e.preventDefault()
+    const fid = folders.activeFolderId
+    if (fid && secure.isFolderLocked(fid)) return
     void notes.createNote(folders.activeFolderId)
   }
   if (e.ctrlKey && e.key.toLowerCase() === 's') {
@@ -88,6 +92,7 @@ onUnmounted(() => {
 })
 
 async function onLogout(): Promise<void> {
+  secure.lockAll()
   await auth.logout()
   await router.replace({ name: 'login' })
 }
@@ -145,13 +150,22 @@ const syncButtonTitle = computed(() => {
   if (sync.status === 'synced' && !notes.isDirty) return 'Đồng bộ lại (đã sẵn sàng)'
   return 'Đồng bộ thủ công'
 })
+
+/** Khi đang gõ SEARCH: chỉ hiện FOLDERS + NOTES, ẩn BODY để không lệch với note đang mở trước đó. */
+const isSearchActive = computed(() => notes.searchQuery.trim().length > 0)
+
+const noteListColumnStyle = computed(() =>
+  isSearchActive.value
+    ? { flex: '1 1 auto', minWidth: `${colW2.value}px` }
+    : { width: `${colW2.value}px` },
+)
 </script>
 
 <template>
   <div class="shell shell--dashboard crt-scanlines">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
-        <span class="shell__brand">RETRONOTE</span>
+        <span class="shell__brand">BBQNote</span>
         <span class="shell__sep" aria-hidden="true">───────────────────────</span>
         <div class="shell__header-right">
           <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>
@@ -229,15 +243,17 @@ const syncButtonTitle = computed(() => {
       <NoteList
         v-model:renaming-note-id="renamingNoteId"
         class="shell__col shell__col--notes"
-        :style="{ width: `${colW2}px` }"
+        :class="{ 'shell__col--notes--search': isSearchActive }"
+        :style="noteListColumnStyle"
       />
       <div
+        v-show="!isSearchActive"
         class="shell__resize"
         title="Drag to resize"
         aria-hidden="true"
         @mousedown="onResizeStart(2, $event)"
       />
-      <div class="shell__col shell__col--editor">
+      <div v-show="!isSearchActive" class="shell__col shell__col--editor">
         <NoteEditor ref="noteEditorRef" />
       </div>
     </div>
@@ -315,7 +331,7 @@ const syncButtonTitle = computed(() => {
   justify-content: flex-end;
 }
 
-/* Email + badge bên phải (đối diện RETRONOTE) */
+/* Email + badge bên phải (đối diện BBQNote) */
 .shell__header-right {
   display: flex;
   flex-wrap: nowrap;
@@ -441,6 +457,10 @@ const syncButtonTitle = computed(() => {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+.shell__col--notes--search {
+  flex-shrink: 1;
 }
 
 .shell__resize {

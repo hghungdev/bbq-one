@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
+import { formatListUpdatedAt } from '@/utils/date'
 import {
   firstLinePreview,
   highlightQueryHtml,
@@ -107,27 +108,32 @@ function onRenameKeydown(e: KeyboardEvent): void {
       @keydown="onRenameKeydown"
     />
     <template v-else>
-      <button
-        type="button"
-        class="note-item__main"
-        @click="onClick"
-        @dblclick="onDblClick"
-      >
-        <template v-if="highlightQuery?.trim()">
-          <span class="note-item__title" v-html="titleHtml" />
-        </template>
-        <template v-else>
-          &gt; {{ label }}
-        </template>
-      </button>
-      <RetroButton
-        variant="sm"
-        type="button"
-        class="note-item__del"
-        @click.stop="emit('delete', note.id)"
-      >
-        [DEL]
-      </RetroButton>
+      <div class="note-item__top">
+        <button
+          type="button"
+          class="note-item__main"
+          @click="onClick"
+          @dblclick="onDblClick"
+        >
+          <template v-if="highlightQuery?.trim()">
+            <span class="note-item__title" v-html="titleHtml" />
+          </template>
+          <template v-else>
+            &gt; {{ label }}
+          </template>
+        </button>
+        <RetroButton
+          variant="sm"
+          type="button"
+          class="note-item__del"
+          @click.stop="emit('delete', note.id)"
+        >
+          [DEL]
+        </RetroButton>
+      </div>
+      <div class="note-item__foot">
+        {{ formatListUpdatedAt(note.updated_at) }}
+      </div>
     </template>
   </div>
 </template>
@@ -135,14 +141,26 @@ function onRenameKeydown(e: KeyboardEvent): void {
 <style scoped>
 .note-item {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
-  gap: 4px;
+  gap: 2px;
   border: 1px solid transparent;
   margin-bottom: 4px;
 }
 
+.note-item__top {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
 .note-item--active {
   border-color: var(--accent);
+}
+
+/* Đồng bộ với .folder-item: hover = viền nhạt + chữ đậm hơn */
+.note-item:hover:not(.note-item--active) {
+  border-color: var(--border);
 }
 
 .note-item__main {
@@ -168,6 +186,11 @@ function onRenameKeydown(e: KeyboardEvent): void {
   color: var(--accent);
 }
 
+.note-item__main:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .note-item__title :deep(.search-hit) {
   background: var(--search-hit-bg);
   color: var(--text-primary);
@@ -175,5 +198,17 @@ function onRenameKeydown(e: KeyboardEvent): void {
 
 .note-item__del {
   flex: 0 0 auto;
+}
+
+.note-item__del:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.note-item__foot {
+  align-self: flex-end;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--text-muted);
 }
 </style>

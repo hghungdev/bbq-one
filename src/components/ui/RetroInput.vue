@@ -56,7 +56,8 @@ defineExpose({
 
 .retro-input:focus,
 .retro-input:focus-visible {
-  outline: none;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
   border-color: var(--border);
   animation: retro-input-caret-line 1s step-end infinite;
 }

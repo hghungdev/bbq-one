@@ -1,4 +1,4 @@
-# RetroNote — Security (Sprint 4)
+# BBQNote — Security (Sprint 4)
 
 ## Secrets & environment
 

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-const FONT_KEY = 'retronote_font_size'
+const FONT_KEY = 'bbqnote_font_size'
 
 export type FontSizePx = 11 | 13 | 15
 

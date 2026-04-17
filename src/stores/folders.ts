@@ -1,10 +1,17 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
+import { FOLDERS_CACHE_KEY } from '@/constants/storage'
 import { foldersService } from '@/services/folders.service'
 import { useNotesStore } from '@/stores/notes'
 import type { Folder } from '@/types'
 
-const FOLDERS_CACHE_KEY = 'folders_cache'
+function sortFoldersByUpdatedDesc(list: Folder[]): Folder[] {
+  return list.slice().sort((a, b) => {
+    const tb = new Date(b.updated_at ?? b.created_at).getTime()
+    const ta = new Date(a.updated_at ?? a.created_at).getTime()
+    return tb - ta
+  })
+}
 
 export const useFoldersStore = defineStore('folders', () => {
   const folders = ref<Folder[]>([])
@@ -28,7 +35,7 @@ export const useFoldersStore = defineStore('folders', () => {
         folders.value = raw
       }
       const fresh = await foldersService.getAll()
-      folders.value = fresh
+      folders.value = sortFoldersByUpdatedDesc(fresh)
       await persistCache()
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load folders failed'
@@ -41,12 +48,28 @@ export const useFoldersStore = defineStore('folders', () => {
   }
 
   function selectFolder(id: string | null): void {
+    const notesStore = useNotesStore()
+    notesStore.clearSearch()
     if (activeFolderId.value === id) return
     activeFolderId.value = id
-    useNotesStore().selectNote(null)
+    notesStore.selectNote(null)
+  }
+
+  /** Đổi folder đang chọn mà không xóa note (vd. chọn note từ kết quả search global). */
+  function alignActiveFolderToNoteFolder(folderId: string | null): void {
+    if (folderId && activeFolderId.value !== folderId) {
+      activeFolderId.value = folderId
+    }
+  }
+
+  /** Note không có folder_id → không coi là secure. */
+  function isSecureFolder(folderId: string | null): boolean {
+    if (!folderId) return false
+    return folders.value.find((f) => f.id === folderId)?.is_secure ?? false
   }
 
   async function createFolder(name: string): Promise<Folder> {
+    useNotesStore().clearSearch()
     const trimmed = name.trim()
     if (!trimmed) {
       throw new Error('Folder name required')
@@ -56,7 +79,7 @@ export const useFoldersStore = defineStore('folders', () => {
         ? 0
         : Math.max(...folders.value.map((f) => f.position)) + 1
     const folder = await foldersService.create(trimmed, position)
-    folders.value = [...folders.value, folder].sort((a, b) => a.position - b.position)
+    folders.value = sortFoldersByUpdatedDesc([...folders.value, folder])
     activeFolderId.value = folder.id
     useNotesStore().selectNote(null)
     await persistCache()
@@ -71,6 +94,7 @@ export const useFoldersStore = defineStore('folders', () => {
     const data = await foldersService.update(id, { name: trimmed })
     const idx = folders.value.findIndex((f) => f.id === id)
     if (idx !== -1) folders.value[idx] = data
+    folders.value = sortFoldersByUpdatedDesc(folders.value)
     await persistCache()
   }
 
@@ -102,8 +126,13 @@ export const useFoldersStore = defineStore('folders', () => {
     loadError,
     loadAll,
     selectFolder,
+    alignActiveFolderToNoteFolder,
+    isSecureFolder,
     createFolder,
     renameFolder,
     persistCache,
+    reorderFoldersByUpdated: (): void => {
+      folders.value = sortFoldersByUpdatedDesc(folders.value)
+    },
   }
 })

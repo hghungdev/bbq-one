@@ -5,6 +5,7 @@ import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
+import { useSecureFolderStore } from '@/stores/secureFolder'
 
 defineProps<{
   renamingNoteId: string | null
@@ -16,10 +17,24 @@ const emit = defineEmits<{
 
 const folders = useFoldersStore()
 const notes = useNotesStore()
+const secure = useSecureFolderStore()
 
 const busy = ref(false)
 const confirmOpen = ref(false)
 const pendingDeleteId = ref<string | null>(null)
+
+const folderLocked = computed(() => {
+  const id = folders.activeFolderId
+  if (!id) return false
+  return secure.isFolderLocked(id)
+})
+
+function sortNotesByUpdatedDesc<T extends { updated_at: string }>(list: T[]): T[] {
+  return list.slice().sort(
+    (a, b) =>
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+  )
+}
 
 const displayedNotes = computed(() => {
   const folderId = folders.activeFolderId
@@ -27,12 +42,19 @@ const displayedNotes = computed(() => {
   const q = notes.searchQuery.trim()
   if (q) {
     let list = notes.searchResults.slice()
-    list = list.filter((n) => n.folder_id === folderId)
+    /* Global: mọi folder thường; secure đã lọc trong runSearch — giữ lọc phòng stale. */
+    list = list.filter((n) => !folders.isSecureFolder(n.folder_id))
     if (tag) list = list.filter((n) => n.tags.includes(tag))
-    return list
+    return sortNotesByUpdatedDesc(list)
+  }
+  if (folderId && secure.isFolderLocked(folderId)) {
+    return []
   }
   let list = notes.notesForFolder(folderId)
-  if (tag) list = list.filter((n) => n.tags.includes(tag))
+  if (tag) {
+    list = list.filter((n) => n.tags.includes(tag))
+    return sortNotesByUpdatedDesc(list)
+  }
   return list
 })
 
@@ -92,14 +114,25 @@ function onCancelDelete(): void {
         @rename-done="emit('update:renamingNoteId', null)"
       />
       <p
-        v-if="displayedNotes.length === 0"
+        v-if="displayedNotes.length === 0 && folderLocked && !notes.searchQuery.trim()"
+        class="note-list__empty retro-empty"
+      >
+        &gt; FOLDER LOCKED — UNLOCK VIA CONTEXT MENU_
+      </p>
+      <p
+        v-else-if="displayedNotes.length === 0"
         class="note-list__empty retro-empty"
       >
         NO NOTES FOUND_
       </p>
     </div>
     <div class="note-list__foot">
-      <RetroButton variant="sm" type="button" :disabled="busy" @click="onCreateNote">
+      <RetroButton
+        variant="sm"
+        type="button"
+        :disabled="busy || folderLocked"
+        @click="onCreateNote"
+      >
         + NOTE
       </RetroButton>
     </div>

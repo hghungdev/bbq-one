@@ -1,11 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "RetroNote",
+  "name": "BBQNote",
   "version": "1.0.0",
   "description": "Secure note app — Vintage 1989",
+  "icons": {
+    "16": "bbq_note-final.png",
+    "32": "bbq_note-final.png",
+    "48": "bbq_note-final.png",
+    "128": "bbq_note-final.png"
+  },
   "action": {
     "default_popup": "index.html",
-    "default_icon": "icon.png"
+    "default_icon": {
+      "16": "bbq_note-final.png",
+      "32": "bbq_note-final.png",
+      "48": "bbq_note-final.png",
+      "128": "bbq_note-final.png"
+    }
   },
   "background": {
     "service_worker": "src/background.ts",

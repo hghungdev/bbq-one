@@ -35,7 +35,8 @@ const emit = defineEmits<{
   cursor: pointer;
 }
 
-.tag-badge:hover {
+/* Chỉ đổi tông khi chưa chọn — tránh .hover ghi đè .tag-badge--active */
+.tag-badge:hover:not(.tag-badge--active) {
   border-color: var(--accent);
   color: var(--text-primary);
 }
@@ -43,5 +44,16 @@ const emit = defineEmits<{
 .tag-badge--active {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.tag-badge--active:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
+}
+
+.tag-badge:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 </style>

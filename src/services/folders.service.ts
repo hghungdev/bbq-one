@@ -1,5 +1,17 @@
 import { supabase } from './supabase'
 import type { Folder } from '@/types'
+import { DEFAULT_PBKDF2_ITERATIONS } from '@/utils/secureCrypto'
+
+function normalizeFolder(row: Folder): Folder {
+  return {
+    ...row,
+    updated_at: row.updated_at ?? row.created_at,
+    is_secure: row.is_secure ?? false,
+    secure_salt: row.secure_salt ?? null,
+    pbkdf2_iterations: row.pbkdf2_iterations ?? DEFAULT_PBKDF2_ITERATIONS,
+    secure_verifier_enc: row.secure_verifier_enc ?? null,
+  }
+}
 
 async function requireUserId(): Promise<string> {
   const {
@@ -16,9 +28,9 @@ export const foldersService = {
     const { data, error } = await supabase
       .from('folders')
       .select('*')
-      .order('position', { ascending: true })
+      .order('updated_at', { ascending: false })
     if (error) throw error
-    return data ?? []
+    return (data ?? []).map(normalizeFolder)
   },
 
   async create(name: string, position: number): Promise<Folder> {
@@ -29,12 +41,22 @@ export const foldersService = {
       .select()
       .single()
     if (error) throw error
-    return data
+    return normalizeFolder(data)
   },
 
   async update(
     id: string,
-    updates: Partial<Pick<Folder, 'name' | 'position'>>,
+    updates: Partial<
+      Pick<
+        Folder,
+        | 'name'
+        | 'position'
+        | 'is_secure'
+        | 'secure_salt'
+        | 'pbkdf2_iterations'
+        | 'secure_verifier_enc'
+      >
+    >,
   ): Promise<Folder> {
     const { data, error } = await supabase
       .from('folders')
@@ -43,6 +65,6 @@ export const foldersService = {
       .select()
       .single()
     if (error) throw error
-    return data
+    return normalizeFolder(data)
   },
 }

@@ -8,7 +8,6 @@ import { useNotesStore } from '@/stores/notes'
 import type { Note } from '@/types'
 import { extractCodeBlocksFromDocJSON } from '@/utils/tiptapJson'
 import { copyTextToClipboard } from '@/utils/clipboard'
-import { htmlToClipboardPlain } from '@/utils/text'
 
 const notesStore = useNotesStore()
 const codeBlocks = ref<{ lang: string; code: string }[]>([])
@@ -118,10 +117,11 @@ async function flushSave(): Promise<void> {
 async function copyBodyToClipboard(): Promise<void> {
   const ed = editor.value
   if (!ed) return
-  const plain = htmlToClipboardPlain(ed.getHTML())
+  /** getText từ document — giữ newline trong code block; getHTML+innerText hay gộp dòng. */
+  const plain = ed.getText({ blockSeparator: '\n' })
   const ok = await copyTextToClipboard(plain)
   if (!ok) {
-    console.warn('[RetroNote] Không ghi được clipboard (kiểm tra quyền clipboardWrite + Reload extension).')
+    console.warn('[BBQNote] Không ghi được clipboard (kiểm tra quyền clipboardWrite + Reload extension).')
     return
   }
   copyFeedback.value = true
@@ -273,7 +273,7 @@ onBeforeUnmount(() => {
 }
 
 .note-editor__copy:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

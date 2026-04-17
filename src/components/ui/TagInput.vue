@@ -95,11 +95,21 @@ function onKeydown(e: KeyboardEvent): void {
   margin: 0;
   padding: 0 2px;
   border: none;
+  border-radius: 0;
   background: transparent;
   color: var(--accent);
   cursor: pointer;
   font-family: inherit;
   font-size: var(--font-size-sm);
   line-height: 1;
+}
+
+.tag-input__x:hover {
+  color: var(--text-primary);
+}
+
+.tag-input__x:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 </style>

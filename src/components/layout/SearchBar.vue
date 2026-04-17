@@ -9,6 +9,14 @@ const notes = useNotesStore()
 const localQuery = ref('')
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+/* clearSearch() từ store (folder / tạo folder) phải xóa cả ô input */
+watch(
+  () => notes.searchQuery,
+  (q) => {
+    if (localQuery.value !== q) localQuery.value = q
+  },
+)
+
 watch(localQuery, (v) => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
@@ -26,7 +34,7 @@ function onClear(): void {
 }
 
 function focusInput(): void {
-  document.getElementById('retronote-search')?.focus()
+  document.getElementById('bbqnote-search')?.focus()
 }
 
 defineExpose({ focusInput })
@@ -40,7 +48,7 @@ onMounted(() => {
   <div class="search-bar">
     <span class="search-bar__label" aria-hidden="true">SEARCH</span>
     <RetroInput
-      id="retronote-search"
+      id="bbqnote-search"
       v-model="localQuery"
       placeholder="> query_"
       autocomplete="off"

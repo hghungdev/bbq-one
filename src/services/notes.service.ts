@@ -63,7 +63,9 @@ export const notesService = {
 
   /**
    * Full-text search on generated `fts` column (see supabase/001_notes_fts_column.sql).
-   * Falls back to client-side title/content match if FTS is unavailable.
+   * Dùng `plain` (plainto_tsquery) — ổn định hơn `websearch` cho từ khóa đơn / brand.
+   * Nếu API lỗi hoặc FTS trả về 0 hàng (vẫn có thể khớp substring trong title/content),
+   * fallback lọc phía client trên toàn bộ note.
    */
   async searchFullText(query: string): Promise<Note[]> {
     const q = query.trim()
@@ -72,22 +74,29 @@ export const notesService = {
     const { data, error } = await supabase
       .from('notes')
       .select('*')
-      .textSearch('fts', q, { type: 'websearch', config: 'english' })
+      .textSearch('fts', q, { type: 'plain', config: 'english' })
       .order('updated_at', { ascending: false })
 
     if (error) {
       const all = await notesService.getAll()
-      return filterNotesClient(all, q)
+      return filterNotesBySubstring(all, q)
     }
-    return data ?? []
+    const rows = data ?? []
+    if (rows.length === 0) {
+      const all = await notesService.getAll()
+      return filterNotesBySubstring(all, q)
+    }
+    return rows
   },
 }
 
-function filterNotesClient(notes: Note[], query: string): Note[] {
-  const lower = query.toLowerCase()
-  return notes.filter(
-    (n) =>
-      n.title.toLowerCase().includes(lower) ||
-      n.content.toLowerCase().includes(lower),
-  )
+/** Lọc title/content/tags (substring, không phân biệt hoa thường). Dùng chung API + store. */
+export function filterNotesBySubstring(notes: Note[], query: string): Note[] {
+  const lower = query.trim().toLowerCase()
+  if (!lower) return []
+  return notes.filter((n) => {
+    if (n.title.toLowerCase().includes(lower)) return true
+    if (n.content.toLowerCase().includes(lower)) return true
+    return n.tags.some((t) => t.toLowerCase().includes(lower))
+  })
 }

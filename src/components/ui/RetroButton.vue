@@ -38,6 +38,11 @@ defineProps<{
   color: var(--text-primary);
 }
 
+.retro-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .retro-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

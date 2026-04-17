@@ -1,6 +1,6 @@
 import { syncService } from '@/services/sync.service'
 
-const ALARM_NAME = 'retronote-daily-sync'
+const ALARM_NAME = 'bbqnote-daily-sync'
 
 function ensureDailyAlarm(): void {
   void chrome.alarms.get(ALARM_NAME, (a) => {

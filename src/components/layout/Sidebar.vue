@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import FolderItem from '@/components/folders/FolderItem.vue'
+import SecureFolderModal from '@/components/folders/SecureFolderModal.vue'
 import TagBadge from '@/components/ui/TagBadge.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
+import { useSecureFolderStore } from '@/stores/secureFolder'
 
 defineProps<{
   renamingFolderId: string | null
@@ -17,6 +19,7 @@ const emit = defineEmits<{
 
 const folders = useFoldersStore()
 const notes = useNotesStore()
+const secure = useSecureFolderStore()
 
 const uniqueTags = computed(() => {
   const set = new Set<string>()
@@ -29,6 +32,32 @@ const uniqueTags = computed(() => {
 const creating = ref(false)
 const newName = ref('')
 const busy = ref(false)
+
+const secureModal = ref<{
+  open: boolean
+  mode: 'enable' | 'unlock' | 'change'
+  folderId: string
+}>({ open: false, mode: 'enable', folderId: '' })
+
+function onSelectFolder(id: string): void {
+  if (folders.folders.find((f) => f.id === id)?.is_secure) {
+    if (secure.isFolderLocked(id)) {
+      notes.selectNote(null)
+    }
+  }
+  folders.selectFolder(id)
+}
+
+function openSecureModal(
+  mode: 'enable' | 'unlock' | 'change',
+  folderId: string,
+): void {
+  secureModal.value = { open: true, mode, folderId }
+}
+
+function closeSecureModal(): void {
+  secureModal.value = { ...secureModal.value, open: false }
+}
 
 async function onCreateFolder(): Promise<void> {
   if (busy.value) return
@@ -45,6 +74,7 @@ async function onCreateFolder(): Promise<void> {
 }
 
 function startCreate(): void {
+  notes.clearSearch()
   creating.value = true
   newName.value = ''
 }
@@ -62,9 +92,10 @@ function startCreate(): void {
         :folder="f"
         :selected="folders.activeFolderId === f.id"
         :renaming="renamingFolderId === f.id"
-        @select="folders.selectFolder"
+        @select="onSelectFolder"
         @request-rename="emit('update:renamingFolderId', $event)"
         @rename-done="emit('update:renamingFolderId', null)"
+        @open-secure-modal="openSecureModal"
       />
       <p
         v-if="folders.folders.length === 0"
@@ -112,6 +143,15 @@ function startCreate(): void {
         + FOLDER
       </RetroButton>
     </div>
+
+    <SecureFolderModal
+      v-if="secureModal.open"
+      :open="secureModal.open"
+      :mode="secureModal.mode"
+      :folder-id="secureModal.folderId"
+      @close="closeSecureModal"
+      @done="closeSecureModal"
+    />
   </aside>
 </template>
 
