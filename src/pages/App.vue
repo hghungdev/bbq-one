@@ -148,7 +148,7 @@ const syncButtonTitle = computed(() => {
 </script>
 
 <template>
-  <div class="shell crt-scanlines">
+  <div class="shell shell--dashboard crt-scanlines">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
         <span class="shell__brand">RETRONOTE</span>
@@ -267,6 +267,18 @@ const syncButtonTitle = computed(() => {
   background: var(--bg-primary);
 }
 
+/* Sau login: pha xanh cobalt (accent) + highlight tìm kiếm; badge SYNCED vẫn tông vàng */
+.shell--dashboard {
+  --accent: var(--accent-dashboard);
+  --search-hit-bg: var(--search-hit-dashboard);
+  background-color: var(--bg-primary);
+  background-image: radial-gradient(
+    ellipse 130% 100% at 50% 0%,
+    var(--bg-dashboard-radial) 0%,
+    transparent 58%
+  );
+}
+
 .shell__header {
   display: flex;
   flex-direction: column;
@@ -275,6 +287,14 @@ const syncButtonTitle = computed(() => {
   border-bottom: 1px solid var(--border);
   font-size: var(--font-size-sm);
   flex: 0 0 auto;
+}
+
+.shell--dashboard .shell__header {
+  background: linear-gradient(
+    180deg,
+    var(--bg-dashboard-header-wash) 0%,
+    transparent 72%
+  );
 }
 
 .shell__header-row {

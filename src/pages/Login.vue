@@ -34,7 +34,7 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="login crt-scanlines">
+  <div class="login login--centered crt-scanlines">
     <p
       v-if="!isSupabaseConfigured"
       class="login__config-warn"
@@ -118,8 +118,16 @@ async function onSubmit(): Promise<void> {
   );
 }
 
+/* Căn form theo trục dọc + ngang — hết cảm giác khoảng trống phía dưới panel */
+.login--centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .login__config-warn {
-  max-width: 360px;
+  max-width: min(440px, calc(100% - 8px));
   margin: 0 auto 14px;
   padding: 10px 12px;
   font-size: var(--font-size-sm);
@@ -130,7 +138,8 @@ async function onSubmit(): Promise<void> {
 }
 
 .login__panel {
-  max-width: 360px;
+  width: 100%;
+  max-width: min(440px, calc(100% - 8px));
   margin: 0 auto;
   border: 1px solid var(--border);
   padding: 20px 18px 16px;

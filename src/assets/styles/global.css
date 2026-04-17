@@ -13,13 +13,22 @@
   --text-primary: #2c2520;
   --text-secondary: #5c534a;
   --text-muted: #8a8075;
+  /* Accent mặc định (login / ngoài shell): vàng retro */
   --accent: #b8731a;
+  /*
+   * Dashboard: cobalt — ít dùng nền lớn, chủ yếu CTA / focus / selection (keyboard ref).
+   * Gán lại trong .shell--dashboard, không ảnh hưởng trang login.
+   */
+  --accent-dashboard: #1e58b8;
+  --bg-dashboard-radial: rgba(32, 92, 176, 0.07);
+  --bg-dashboard-header-wash: rgba(30, 88, 184, 0.05);
   --danger: #b8453a;
   --success: #3d7a5a;
   /* Đồng bộ thành công: cùng họ vàng/amber */
   --sync-done: #9a6a1e;
   --sync-done-muted: #c9a063;
   --search-hit-bg: rgba(200, 155, 75, 0.32);
+  --search-hit-dashboard: rgba(30, 88, 184, 0.26);
   --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
   --font-size-base: 13px;
   --font-size-sm: 11px;
