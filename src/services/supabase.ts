@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { chromeStorageAdapter } from '@/utils/storage'
+import { chromeSessionStorageAdapter } from '@/utils/storage'
 
 const SUPABASE_URL = (
   import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -20,7 +20,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     flowType: 'pkce',
-    storage: chromeStorageAdapter,
+    storage: chromeSessionStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,
   },
