@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BBQ One",
   "version": "1.0.0",
-  "description": "Secure note app — Vintage 1989",
+  "description": "BBQ One — Vintage 1989",
   "icons": {
     "16": "bbq_one-final.png",
     "32": "bbq_one-final.png",
