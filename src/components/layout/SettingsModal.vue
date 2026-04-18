@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
+import TranslationSettingsPanel from '@/components/dictionary/TranslationSettingsPanel.vue'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useSettingsStore, type FontSizePx } from '@/stores/settings'
 import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
@@ -169,6 +170,11 @@ onUnmounted(() => {
           </RetroButton>
         </div>
       </template>
+
+      <p class="settings-label">
+        TRANSLATION
+      </p>
+      <TranslationSettingsPanel />
 
       <RetroButton type="button" class="settings-close" @click="emit('close')">
         [ CLOSE ]

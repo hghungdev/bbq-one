@@ -3,8 +3,39 @@ import {
   scheduleBookmarkAutoBackup,
 } from '@/services/bookmarkAutoBackup.service'
 import { syncService } from '@/services/sync.service'
+import { dictionaryEntriesService } from '@/services/dictionary/entries.service'
+import { translationSettingsService } from '@/services/dictionary/settings.service'
+import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
+import type { DictMessage } from '@/types/dictionary'
 
 const ALARM_NAME = 'bbqone-daily-sync'
+const OPEN_APP_MENU_ID = 'bbq-open-app'
+
+function refreshOpenAppMenuTitle(): void {
+  void chrome.storage.local.get(BBQ_AUTH_LOGGED_IN_KEY, (data) => {
+    const loggedIn = !!data[BBQ_AUTH_LOGGED_IN_KEY]
+    const title = loggedIn ? 'Open Dashboard' : 'Login'
+    chrome.contextMenus.update(OPEN_APP_MENU_ID, { title }, () => {
+      void chrome.runtime.lastError
+    })
+  })
+}
+
+function installOpenAppContextMenu(): void {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create(
+      {
+        id: OPEN_APP_MENU_ID,
+        title: 'Login',
+        contexts: ['action'],
+      },
+      () => {
+        void chrome.runtime.lastError
+        refreshOpenAppMenuTitle()
+      },
+    )
+  })
+}
 
 function ensureDailyAlarm(): void {
   void chrome.alarms.get(ALARM_NAME, (a) => {
@@ -27,11 +58,31 @@ function wireBookmarkAutoBackup(): void {
 chrome.runtime.onInstalled.addListener(() => {
   ensureDailyAlarm()
   void bootstrapBookmarkBaseline()
+  installOpenAppContextMenu()
 })
 
 chrome.runtime.onStartup.addListener(() => {
   ensureDailyAlarm()
   void bootstrapBookmarkBaseline()
+  installOpenAppContextMenu()
+})
+
+installOpenAppContextMenu()
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes[BBQ_AUTH_LOGGED_IN_KEY]) return
+  refreshOpenAppMenuTitle()
+})
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId !== OPEN_APP_MENU_ID) return
+  void chrome.storage.local.get(BBQ_AUTH_LOGGED_IN_KEY, (data) => {
+    const loggedIn = !!data[BBQ_AUTH_LOGGED_IN_KEY]
+    const path = loggedIn ? '/dashboard' : '/login'
+    void chrome.storage.local.set({ [BBQ_PENDING_ROUTE_KEY]: path }, () => {
+      void chrome.action.openPopup?.().catch?.(() => {})
+    })
+  })
 })
 
 wireBookmarkAutoBackup()
@@ -39,4 +90,43 @@ wireBookmarkAutoBackup()
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== ALARM_NAME) return
   void syncService.syncFromCache()
+})
+
+// ── Dictionary message handlers (content script ↔ background ↔ Supabase) ──
+chrome.runtime.onMessage.addListener((msg: DictMessage, _sender, sendResponse) => {
+  void (async () => {
+    try {
+      switch (msg.type) {
+        case 'get-settings': {
+          const s = await translationSettingsService.getOrCreate()
+          sendResponse(s)
+          break
+        }
+        case 'save-entry': {
+          const entry = await dictionaryEntriesService.upsert(msg.payload)
+          sendResponse({ ok: true, entry })
+          break
+        }
+        case 'entry-exists': {
+          const r = await dictionaryEntriesService.exists(
+            msg.payload.source_text,
+            msg.payload.source_lang,
+            msg.payload.target_lang,
+          )
+          sendResponse(r)
+          break
+        }
+        case 'translate':
+          // translate messages are handled directly in content script (no background needed)
+          sendResponse({ ok: false, error: 'translate handled by content script directly' })
+          break
+        default:
+          sendResponse({ ok: false, error: 'Unknown message type' })
+      }
+    } catch (e) {
+      sendResponse({ ok: false, error: e instanceof Error ? e.message : String(e) })
+    }
+  })()
+  // Return true to keep the message channel open for async sendResponse
+  return true
 })

@@ -52,6 +52,34 @@ html {
   width: 100%;
 }
 
+/*
+ * Trang quick translate — popup hẹp, cao theo nội dung (Chrome không “auto-resize”
+ * động sau khi mở; chiều cao cửa sổ = layout document lúc vẽ — bỏ height:600px cố định).
+ */
+html.html--translate-shell {
+  min-width: 380px;
+  max-width: 480px;
+  height: auto;
+  min-height: 0;
+  max-height: min(600px, 100vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+html.html--translate-shell body {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+html.html--translate-shell #app {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
 html,
 body {
   margin: 0;

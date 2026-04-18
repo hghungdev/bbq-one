@@ -5,14 +5,24 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
+      path: '/',
+      redirect: '/translate',
+    },
+    {
+      path: '/translate',
+      name: 'translate',
+      component: () => import('@/pages/QuickTranslate.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/pages/Login.vue'),
       meta: { public: true },
     },
     {
-      path: '/',
-      name: 'home',
+      path: '/dashboard',
+      name: 'dashboard',
       component: () => import('@/pages/App.vue'),
       meta: { requiresAuth: true },
     },
@@ -29,10 +39,15 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
   if (to.name === 'login' && auth.isAuthenticated) {
-    next({ name: 'home' })
+    next({ name: 'dashboard' })
     return
   }
   next()
+})
+
+router.afterEach((to) => {
+  if (typeof document === 'undefined') return
+  document.documentElement.classList.toggle('html--translate-shell', to.name === 'translate')
 })
 
 export default router

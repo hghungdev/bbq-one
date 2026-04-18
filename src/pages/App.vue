@@ -8,6 +8,7 @@ import SettingsModal from '@/components/layout/SettingsModal.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
+import DictionaryTab from '@/components/dictionary/DictionaryTab.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
@@ -24,7 +25,7 @@ const secure = useSecureFolderStore()
 const sync = useSyncStore()
 const dataReady = ref(false)
 const showSettings = ref(false)
-const activeTab = ref<'notes' | 'bookmarks'>('notes')
+const activeTab = ref<'notes' | 'bookmarks' | 'dictionary'>('notes')
 const renamingFolderId = ref<string | null>(null)
 const renamingNoteId = ref<string | null>(null)
 
@@ -198,6 +199,14 @@ const noteListColumnStyle = computed(() =>
           >
             [ BOOKMARK ]
           </RetroButton>
+          <RetroButton
+            variant="sm"
+            type="button"
+            :class="activeTab === 'dictionary' ? 'shell__tab-btn--active' : ''"
+            @click="activeTab = 'dictionary'"
+          >
+            [ DICT ]
+          </RetroButton>
           <span class="shell__sep-v" aria-hidden="true">|</span>
           <RetroButton
             variant="sm"
@@ -237,7 +246,10 @@ const noteListColumnStyle = computed(() =>
           </RetroButton>
         </div>
       </div>
-      <SearchBar ref="searchBarRef" :search-mode="activeTab" />
+      <SearchBar
+      ref="searchBarRef"
+      :search-mode="activeTab === 'dictionary' ? 'notes' : activeTab"
+    />
     </header>
 
     <p
@@ -283,6 +295,11 @@ const noteListColumnStyle = computed(() =>
       <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
       <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
         <BookmarkTab class="shell__col--full" />
+      </div>
+
+      <!-- Tab: Dictionary — mount khi active; cache-first load trong store -->
+      <div v-if="activeTab === 'dictionary'" class="shell__grid shell__grid--full">
+        <DictionaryTab class="shell__col--full" />
       </div>
     </template>
     <p

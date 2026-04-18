@@ -10,6 +10,7 @@ import {
   getLoginDeadline,
   setLoginDeadline,
 } from '@/services/auth.service'
+import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
 
 /** Kiểm tra hết hạn 10 phút (và đồng bộ state) mỗi 30 giây khi đã đăng nhập. */
 const SESSION_CHECK_INTERVAL_MS = 30 * 1000
@@ -24,6 +25,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!session.value)
 
+  async function persistLoggedInForContextMenu(loggedIn: boolean): Promise<void> {
+    try {
+      await chrome.storage.local.set({ [BBQ_AUTH_LOGGED_IN_KEY]: loggedIn })
+    } catch {
+      /* extension storage optional */
+    }
+  }
+
   async function enforceLoginDeadline(): Promise<boolean> {
     const deadline = await getLoginDeadline()
     if (!deadline || Date.now() > deadline) {
@@ -33,6 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
       void useBookmarkPinStore().lock()
       session.value = null
       user.value = null
+      void persistLoggedInForContextMenu(false)
       stopSessionExpiryWatcher()
       return false
     }
@@ -90,11 +100,13 @@ export const useAuthStore = defineStore('auth', () => {
       if (nextSession) {
         startSessionExpiryWatcher()
       }
+      void persistLoggedInForContextMenu(!!nextSession)
 
       if (!authSubscription) {
         const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
           session.value = newSession
           user.value = newSession?.user ?? null
+          void persistLoggedInForContextMenu(!!newSession)
           /* Chỉ SIGNED_IN mới reset mốc 10 phút — không reset khi TOKEN_REFRESHED. */
           if (event === 'SIGNED_IN' && newSession) {
             void setLoginDeadline()
@@ -126,6 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
     session.value = data.session
     user.value = data.session.user
     startSessionExpiryWatcher()
+    void persistLoggedInForContextMenu(true)
   }
 
   async function logout(): Promise<void> {
@@ -133,6 +146,7 @@ export const useAuthStore = defineStore('auth', () => {
     await authService.logout()
     session.value = null
     user.value = null
+    void persistLoggedInForContextMenu(false)
     await clearPersistedBookmarkTreeHash()
     await useBookmarkPinStore().lock()
   }

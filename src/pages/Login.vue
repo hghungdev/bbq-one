@@ -24,7 +24,7 @@ async function onSubmit(): Promise<void> {
   loading.value = true
   try {
     await auth.login(email.value.trim(), password.value)
-    await router.replace({ name: 'home' })
+    await router.replace({ name: 'dashboard' })
   } catch (e) {
     errorMessage.value = formatAuthErrorMessage(e)
   } finally {

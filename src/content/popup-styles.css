@@ -1,0 +1,320 @@
+/* Shadow DOM isolated styles — auto dark/light via prefers-color-scheme */
+:host {
+  all: initial;
+}
+
+/* ── CSS Variables (dark default — matches extension theme) ── */
+.bbq-popup {
+  --bbq-bg: #1a1a0e;
+  --bbq-text: #e8d5a3;
+  --bbq-border: #3a3020;
+  --bbq-accent: #f0c040;
+  --bbq-muted: #8a7a5a;
+  --bbq-danger: #c0392b;
+  --bbq-success: #27ae60;
+  /* Bản dịch: xanh nổi bật trên nền tối */
+  --bbq-translated: #7ec8ff;
+  --bbq-font: 'IBM Plex Mono', 'Courier New', monospace;
+  /* Nội dung dịch: sans-system — đọc rõ hơn monospace nhỏ */
+  --bbq-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  .bbq-popup {
+    --bbq-bg: #fdf6e3;
+    --bbq-text: #1a1a0e;
+    --bbq-border: #a89060;
+    --bbq-accent: #b8860b;
+    --bbq-muted: #8a7a5a;
+    /* Bản dịch: xanh đậm trên nền giấy */
+    --bbq-translated: #1565c0;
+  }
+
+  .bbq-popup__save-icon {
+    color: var(--bbq-translated);
+    border-color: rgba(21, 101, 192, 0.4);
+    background: rgba(21, 101, 192, 0.08);
+  }
+
+  .bbq-popup__save-icon:hover:not(:disabled) {
+    border-color: #1565c0;
+    background: rgba(21, 101, 192, 0.14);
+  }
+}
+
+/* ── Container ── */
+.bbq-popup {
+  position: fixed;
+  width: 348px;
+  font-family: var(--bbq-font-ui);
+  font-size: 14px;
+  line-height: 1.45;
+  background: var(--bbq-bg);
+  color: var(--bbq-text);
+  border: 1px solid var(--bbq-border);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+  z-index: 2147483647;
+  /* Prevent layout issues on host page */
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.bbq-popup__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--bbq-border);
+  background: var(--bbq-bg);
+}
+
+.bbq-popup__brand {
+  font-family: var(--bbq-font);
+  color: var(--bbq-accent);
+  font-weight: bold;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.bbq-popup__close {
+  background: transparent;
+  border: none;
+  color: var(--bbq-text);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.7;
+  font-family: var(--bbq-font);
+}
+
+.bbq-popup__close:hover {
+  opacity: 1;
+  color: var(--bbq-accent);
+}
+
+/* ── Body ── */
+.bbq-popup__body {
+  padding: 10px;
+}
+
+.bbq-popup__loading,
+.bbq-popup__error {
+  font-size: 14px;
+  opacity: 0.9;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.bbq-popup__error {
+  color: var(--bbq-danger);
+}
+
+/* ── Language tag (EN / VI) ── */
+.bbq-popup__lang {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--bbq-accent);
+  border: 1px solid var(--bbq-border);
+  background: rgba(128, 128, 128, 0.12);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+.bbq-popup__pane--target .bbq-popup__lang {
+  margin-top: 0;
+}
+
+/* ── Result: nguồn (tag + lemma + IPA) · divider · đích (tag+save + dịch + meta) ── */
+.bbq-popup__result {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bbq-popup__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.bbq-popup__pane--target {
+  gap: 4px;
+}
+
+.bbq-popup__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.bbq-popup__pane-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.bbq-popup__lemma {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--bbq-text);
+  opacity: 0.95;
+  word-break: break-word;
+}
+
+.bbq-popup__lemma--target {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--bbq-translated);
+  opacity: 1;
+  margin-top: 2px;
+}
+
+.bbq-popup__split {
+  height: 1px;
+  background: var(--bbq-border);
+  margin: 8px 0;
+  opacity: 0.85;
+}
+
+.bbq-popup__target-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bbq-popup__target-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.bbq-popup__save-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--bbq-border);
+  border-radius: 2px;
+  background: rgba(128, 128, 128, 0.1);
+  color: var(--bbq-accent);
+  cursor: pointer;
+}
+
+.bbq-popup__save-icon:hover:not(:disabled) {
+  border-color: var(--bbq-accent);
+  background: rgba(240, 192, 64, 0.15);
+}
+
+.bbq-popup__save-icon:disabled,
+.bbq-popup__save-icon--busy {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.bbq-popup__save-icon--locked {
+  cursor: default;
+  border-color: var(--bbq-border);
+  background: rgba(128, 128, 128, 0.08);
+  color: var(--bbq-muted);
+}
+
+.bbq-popup__login-hint {
+  font-size: 10px;
+  color: var(--bbq-muted);
+  margin: 6px 0 0;
+  line-height: 1.35;
+  opacity: 0.92;
+}
+
+.bbq-popup__save-icon-svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.bbq-popup__saved-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--bbq-success);
+}
+
+/* IPA dưới từ nguồn (tiếng Anh) */
+.bbq-popup__ipa {
+  font-size: 12px;
+  color: var(--bbq-muted);
+  margin: 4px 0 0;
+  padding: 0;
+  font-weight: 500;
+}
+
+/* Meta: từ loại + confidence cùng hàng */
+.bbq-popup__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(58, 48, 32, 0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  .bbq-popup__meta {
+    border-top-color: rgba(168, 144, 96, 0.45);
+  }
+}
+
+.bbq-popup__dict-line {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--bbq-muted);
+  line-height: 1.45;
+  margin: 0;
+  padding: 0;
+}
+
+.bbq-popup__pos {
+  font-style: italic;
+  margin-right: 4px;
+}
+
+.bbq-popup__synonyms {
+  font-style: normal;
+  opacity: 0.95;
+}
+
+.bbq-popup__confidence {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--bbq-muted);
+  text-align: right;
+}
+
+/* ── Provider info ── */
+.bbq-popup__provider {
+  font-size: 9px;
+  color: var(--bbq-muted);
+  opacity: 0.6;
+  margin-top: 4px;
+}
