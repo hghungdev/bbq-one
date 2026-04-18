@@ -102,6 +102,10 @@ async function onSubmit(): Promise<void> {
 
 <style scoped>
 .login {
+  /* Đồng bộ cobalt với dashboard — viền / CTA / focus không bị chìm trên nền kem */
+  --accent: var(--accent-dashboard);
+  --focus-ring: var(--accent-dashboard);
+  --border: #8ca3cc;
   box-sizing: border-box;
   min-width: 320px;
   min-height: 0;

@@ -1,5 +1,22 @@
 import { supabase } from './supabase'
+import { fetchBookmarkCryptoRow } from '@/services/bookmarkCryptoKeys.service'
+import { hashBookmarkTree, setPersistedBookmarkTreeHash } from '@/utils/bookmarkFingerprint'
+import { decryptBookmarkTree, encryptBookmarkTree } from '@/utils/bookmarkCrypto'
+import { getBookmarkCryptoKeyFromSession } from '@/utils/bookmarkSessionKey'
 import type { BookmarkBackup, BookmarkGlobalHit, BookmarkNode } from '@/types/bookmark'
+
+/** Hàng raw từ Supabase (sau migration PIN). */
+interface BookmarkBackupRow {
+  id: string
+  user_id: string
+  label: string
+  tree_json: BookmarkNode[] | null
+  encrypted: boolean
+  payload_iv: string | null
+  payload_ciphertext: string | null
+  browser_hint: string
+  created_at: string
+}
 
 export const bookmarksService = {
   /** Đọc toàn bộ bookmark từ Chrome API */
@@ -9,13 +26,49 @@ export const bookmarksService = {
 
   /** Lấy danh sách backup từ Supabase (20 gần nhất) */
   async listBackups(): Promise<BookmarkBackup[]> {
-    const { data, error } = await supabase
+    const { data: rows, error } = await supabase
       .from('bookmark_backups')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20)
     if (error) throw new Error(error.message)
-    return data as BookmarkBackup[]
+    if (!rows?.length) return []
+
+    const cryptoRow = await fetchBookmarkCryptoRow()
+    const sessionKey = await getBookmarkCryptoKeyFromSession()
+    if (cryptoRow && !sessionKey) {
+      throw new Error('PIN bookmark chưa được mở khóa. Nhập PIN để xem backup.')
+    }
+
+    const out: BookmarkBackup[] = []
+    for (const raw of rows as BookmarkBackupRow[]) {
+      if (!raw.encrypted) {
+        out.push({
+          id: raw.id,
+          user_id: raw.user_id,
+          label: raw.label,
+          tree_json: (raw.tree_json ?? []) as BookmarkNode[],
+          browser_hint: raw.browser_hint,
+          created_at: raw.created_at,
+          encrypted: false,
+        })
+        continue
+      }
+      if (!sessionKey || !raw.payload_iv || !raw.payload_ciphertext) {
+        throw new Error('Backup mã hóa cần PIN đã mở khóa.')
+      }
+      const tree = await decryptBookmarkTree(raw.payload_iv, raw.payload_ciphertext, sessionKey)
+      out.push({
+        id: raw.id,
+        user_id: raw.user_id,
+        label: raw.label,
+        tree_json: tree,
+        browser_hint: raw.browser_hint,
+        created_at: raw.created_at,
+        encrypted: true,
+      })
+    }
+    return out
   },
 
   /** Lưu snapshot mới lên Supabase */
@@ -26,18 +79,86 @@ export const bookmarksService = {
     const browserHint = navigator.userAgent.includes('Edg') ? 'edge'
       : navigator.userAgent.includes('Chrome') ? 'chrome' : 'other'
 
+    const cryptoRow = await fetchBookmarkCryptoRow()
+    const sessionKey = await getBookmarkCryptoKeyFromSession()
+
+    if (cryptoRow) {
+      if (!sessionKey) {
+        throw new Error('Mở khóa PIN bookmark để tạo backup.')
+      }
+      const { ivB64, ctB64 } = await encryptBookmarkTree(tree, sessionKey)
+      const { data, error } = await supabase
+        .from('bookmark_backups')
+        .insert({
+          user_id: user.id,
+          label: label ?? new Date().toLocaleString('sv'),
+          tree_json: null,
+          encrypted: true,
+          payload_iv: ivB64,
+          payload_ciphertext: ctB64,
+          browser_hint: browserHint,
+        })
+        .select()
+        .single()
+      if (error) throw new Error(error.message)
+      await setPersistedBookmarkTreeHash(await hashBookmarkTree(tree))
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        label: data.label,
+        tree_json: tree,
+        browser_hint: data.browser_hint,
+        created_at: data.created_at,
+        encrypted: true,
+      }
+    }
+
     const { data, error } = await supabase
       .from('bookmark_backups')
       .insert({
         user_id: user.id,
-        label: label ?? new Date().toLocaleString('sv'), // "2026-04-17 14:30:00"
+        label: label ?? new Date().toLocaleString('sv'),
         tree_json: tree,
+        encrypted: false,
         browser_hint: browserHint,
       })
       .select()
       .single()
     if (error) throw new Error(error.message)
-    return data as BookmarkBackup
+    await setPersistedBookmarkTreeHash(await hashBookmarkTree(tree))
+    return {
+      ...(data as BookmarkBackup),
+      tree_json: tree,
+      encrypted: false,
+    }
+  },
+
+  /**
+   * Đổi PIN: mã hóa lại mọi backup encrypted bằng khóa mới (legacy plaintext giữ nguyên).
+   */
+  async reencryptAllEncryptedBackups(oldKey: CryptoKey, newKey: CryptoKey): Promise<void> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+    const { data: rows, error } = await supabase
+      .from('bookmark_backups')
+      .select('id, payload_iv, payload_ciphertext')
+      .eq('user_id', user.id)
+      .eq('encrypted', true)
+    if (error) throw new Error(error.message)
+    if (!rows?.length) return
+    for (const raw of rows) {
+      const row = raw as { id: string; payload_iv: string | null; payload_ciphertext: string | null }
+      if (!row.payload_iv || !row.payload_ciphertext) continue
+      const tree = await decryptBookmarkTree(row.payload_iv, row.payload_ciphertext, oldKey)
+      const { ivB64, ctB64 } = await encryptBookmarkTree(tree, newKey)
+      const { error: upErr } = await supabase
+        .from('bookmark_backups')
+        .update({ payload_iv: ivB64, payload_ciphertext: ctB64 })
+        .eq('id', row.id)
+      if (upErr) throw new Error(upErr.message)
+    }
   },
 
   /** Xóa 1 backup */

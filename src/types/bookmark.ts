@@ -18,6 +18,8 @@ export interface BookmarkBackup {
   tree_json: BookmarkNode[]
   browser_hint: string
   created_at: string
+  /** true khi payload lưu dạng mã hóa (tree_json có thể rỗng trên DB). */
+  encrypted?: boolean
 }
 
 /** Node đã flatten để render danh sách phẳng (tùy chọn dùng trong search) */

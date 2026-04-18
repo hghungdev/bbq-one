@@ -36,13 +36,25 @@ export function noteListLabel(note: Note, bodies?: NoteBody[]): string {
   return first || 'UNTITLED_'
 }
 
-/** Kết quả search global: `Folder > tên note` (không folder → `—`). */
+/** Kết quả search global (một dòng cũ): `Folder > tên note`. */
 export function noteSearchPathLine(
   folderName: string | null,
   noteLabel: string,
 ): string {
   const folder = folderName?.trim() ? folderName.trim() : '—'
   return `${folder} > ${noteLabel}`
+}
+
+/**
+ * Breadcrumb cho kết quả search note — cùng phong cách bookmark: `NOTES > folder > tên hiển thị`.
+ * Không có folder → segment `—`.
+ */
+export function noteSearchBreadcrumbPath(
+  folderName: string | null,
+  noteLabel: string,
+): string {
+  const folder = folderName?.trim() ? folderName.trim() : '—'
+  return `NOTES > ${folder} > ${noteLabel}`
 }
 
 /** Escape text for safe insertion into HTML (except we wrap in mark). */
@@ -66,4 +78,45 @@ export function highlightQueryHtml(text: string, query: string): string {
   const escaped = escapeHtml(text)
   const re = new RegExp(`(${escapeRegExp(q)})`, 'gi')
   return escaped.replace(re, '<mark class="search-hit">$1</mark>')
+}
+
+/**
+ * Đoạn preview nội dung note (plain) quanh chỗ khớp query — dùng list kết quả search.
+ * Không khớp trong body (vd. chỉ trùng title) → dòng đầu của body.
+ */
+export function searchBodySnippetPlain(
+  bodies: NoteBody[],
+  query: string,
+  maxLen = 160,
+): string {
+  const q = query.trim()
+  const ordered = bodies.slice().sort((a, b) => a.position - b.position)
+  const collapsed = ordered
+    .map((b) => plainTextFromHtml(b.content))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!collapsed) return ''
+
+  if (!q) {
+    return firstLinePreview(collapsed, maxLen)
+  }
+
+  const lower = collapsed.toLowerCase()
+  const idx = lower.indexOf(q.toLowerCase())
+  if (idx === -1) {
+    return firstLinePreview(collapsed, maxLen)
+  }
+
+  const padBefore = 42
+  const padAfter = Math.max(48, maxLen - padBefore)
+  let start = Math.max(0, idx - padBefore)
+  let end = Math.min(collapsed.length, idx + q.length + padAfter)
+  if (end - start > maxLen + 24) {
+    end = start + maxLen
+  }
+  let s = collapsed.slice(start, end).trim()
+  if (start > 0) s = '…' + s
+  if (end < collapsed.length) s = s + '…'
+  return s
 }

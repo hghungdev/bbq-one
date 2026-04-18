@@ -280,8 +280,8 @@ const noteListColumnStyle = computed(() =>
         </div>
       </div>
 
-      <!-- Tab: Bookmark -->
-      <div v-show="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
+      <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
+      <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
         <BookmarkTab class="shell__col--full" />
       </div>
     </template>

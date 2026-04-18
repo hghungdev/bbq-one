@@ -98,7 +98,12 @@ function onCancelDelete(): void {
 <template>
   <div class="note-list">
     <div class="note-list__head">
-      NOTES
+      <template v-if="notes.searchQuery.trim()">
+        SEARCH NOTES · {{ displayedNotes.length }} hit(s)
+      </template>
+      <template v-else>
+        NOTES
+      </template>
     </div>
     <div class="note-list__body">
       <NoteItem
@@ -108,6 +113,7 @@ function onCancelDelete(): void {
         :selected="notes.activeNoteId === n.id"
         :renaming="renamingNoteId === n.id"
         :show-folder-path="!!notes.searchQuery.trim()"
+        :hide-delete="!!notes.searchQuery.trim()"
         :highlight-query="highlightQuery"
         @delete="requestDelete"
         @request-rename="emit('update:renamingNoteId', $event)"

@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabase'
+import { bootstrapBookmarkBaseline } from '@/services/bookmarkAutoBackup.service'
+import { useBookmarkPinStore } from '@/stores/bookmarkPin'
+import { clearPersistedBookmarkTreeHash } from '@/utils/bookmarkFingerprint'
 import {
   authService,
   getLoginDeadline,
@@ -26,6 +29,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (!deadline || Date.now() > deadline) {
       await supabase.auth.signOut()
       await chrome.storage.session.clear()
+      await clearPersistedBookmarkTreeHash()
+      void useBookmarkPinStore().lock()
       session.value = null
       user.value = null
       stopSessionExpiryWatcher()
@@ -73,6 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
         if (!deadline || Date.now() > deadline) {
           await supabase.auth.signOut()
           await chrome.storage.session.clear()
+          await clearPersistedBookmarkTreeHash()
+          void useBookmarkPinStore().lock()
           nextSession = null
         }
       }
@@ -91,11 +98,14 @@ export const useAuthStore = defineStore('auth', () => {
           /* Chỉ SIGNED_IN mới reset mốc 10 phút — không reset khi TOKEN_REFRESHED. */
           if (event === 'SIGNED_IN' && newSession) {
             void setLoginDeadline()
+            void bootstrapBookmarkBaseline()
           }
           if (newSession) {
             startSessionExpiryWatcher()
           } else {
             stopSessionExpiryWatcher()
+            void clearPersistedBookmarkTreeHash()
+            void useBookmarkPinStore().lock()
           }
         })
         authSubscription = data.subscription
@@ -123,6 +133,8 @@ export const useAuthStore = defineStore('auth', () => {
     await authService.logout()
     session.value = null
     user.value = null
+    await clearPersistedBookmarkTreeHash()
+    await useBookmarkPinStore().lock()
   }
 
   return {

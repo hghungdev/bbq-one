@@ -7,8 +7,9 @@ import {
   firstLinePreview,
   highlightQueryHtml,
   noteListLabel,
-  noteSearchPathLine,
+  noteSearchBreadcrumbPath,
   plainTextFromHtml,
+  searchBodySnippetPlain,
 } from '@/utils/text'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
@@ -24,6 +25,8 @@ const props = defineProps<{
   /** Search global: hiện `Folder > note` thay vì chỉ tên note. */
   showFolderPath?: boolean
   highlightQuery?: string
+  /** Ẩn nút xóa trên list kết quả search (giống bookmark global search). */
+  hideDelete?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -52,13 +55,20 @@ const folderNameForNote = computed((): string | null => {
   return folders.folders.find((f) => f.id === id)?.name ?? null
 })
 
-const searchPathPlain = computed(() =>
-  noteSearchPathLine(folderNameForNote.value, label.value),
+const searchBreadcrumbPlain = computed(() =>
+  noteSearchBreadcrumbPath(folderNameForNote.value, label.value),
 )
 
-const searchPathHtml = computed(() =>
-  highlightQueryHtml(searchPathPlain.value, props.highlightQuery ?? ''),
+const searchBreadcrumbHtml = computed(() =>
+  highlightQueryHtml(searchBreadcrumbPlain.value, props.highlightQuery ?? ''),
 )
+
+const searchSnippetHtml = computed((): string => {
+  if (!props.showFolderPath || !props.highlightQuery?.trim()) return ''
+  const plain = searchBodySnippetPlain(bodies.value, props.highlightQuery)
+  if (!plain) return ''
+  return highlightQueryHtml(plain, props.highlightQuery)
+})
 
 watch(
   () => props.renaming,
@@ -118,7 +128,10 @@ function onRenameKeydown(e: KeyboardEvent): void {
 <template>
   <div
     class="note-item"
-    :class="{ 'note-item--active': selected }"
+    :class="{
+      'note-item--active': selected,
+      'note-item--search-hit': showFolderPath && hideDelete,
+    }"
     :title="RENAME_HINT"
   >
     <RetroInput
@@ -137,27 +150,28 @@ function onRenameKeydown(e: KeyboardEvent): void {
           type="button"
           class="note-item__main"
           :class="{ 'note-item__main--search-path': showFolderPath }"
-          :title="showFolderPath ? searchPathPlain : label"
+          :title="showFolderPath ? searchBreadcrumbPlain : label"
           @click="onMainClick"
           @dblclick="onDblClick"
         >
           <template v-if="highlightQuery?.trim()">
-            <span
-              v-if="showFolderPath"
-              class="note-item__title"
-              v-html="searchPathHtml"
-            />
-            <span
-              v-else
-              class="note-item__title"
-              v-html="titleHtml"
-            />
+            <template v-if="showFolderPath">
+              <span class="note-item__search-title" v-html="titleHtml" />
+              <span class="note-item__search-path" v-html="searchBreadcrumbHtml" />
+              <span
+                v-if="searchSnippetHtml"
+                class="note-item__search-snippet"
+                v-html="searchSnippetHtml"
+              />
+            </template>
+            <span v-else class="note-item__title" v-html="titleHtml" />
           </template>
           <template v-else>
             &gt; {{ label }}
           </template>
         </button>
         <RetroButton
+          v-if="!hideDelete"
           variant="sm"
           type="button"
           class="note-item__del"
@@ -193,8 +207,9 @@ function onRenameKeydown(e: KeyboardEvent): void {
   border-color: var(--accent);
 }
 
-.note-item:hover:not(.note-item--active) {
-  border-color: var(--border);
+.note-item:hover:not(.note-item--active),
+.note-item:focus-within:not(.note-item--active) {
+  border-color: var(--accent);
 }
 
 .note-item__main {
@@ -213,8 +228,53 @@ function onRenameKeydown(e: KeyboardEvent): void {
 }
 
 .note-item__main--search-path {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   white-space: normal;
   word-break: break-word;
+}
+
+.note-item--search-hit {
+  padding-bottom: 6px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.note-item__search-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  width: 100%;
+  text-align: left;
+}
+
+.note-item__search-path {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  width: 100%;
+  text-align: left;
+  word-break: break-word;
+}
+
+.note-item__search-snippet {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  width: 100%;
+  text-align: left;
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+.note-item__search-title :deep(.search-hit),
+.note-item__search-path :deep(.search-hit),
+.note-item__search-snippet :deep(.search-hit) {
+  background: var(--search-hit-bg);
+  color: var(--text-primary);
 }
 
 .note-item:hover .note-item__main {
@@ -223,6 +283,18 @@ function onRenameKeydown(e: KeyboardEvent): void {
 
 .note-item--active .note-item__main {
   color: var(--accent);
+}
+
+.note-item--active .note-item__main--search-path {
+  color: var(--text-secondary);
+}
+
+.note-item--active .note-item__search-title {
+  color: var(--accent);
+}
+
+.note-item--active .note-item__search-path {
+  color: var(--text-muted);
 }
 
 .note-item__main:focus-visible {

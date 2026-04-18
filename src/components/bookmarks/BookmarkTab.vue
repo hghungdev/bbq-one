@@ -4,19 +4,46 @@ import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
 import { useBookmarksStore } from '@/stores/bookmarks'
+import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
+import BookmarkPinModal from './BookmarkPinModal.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
 const bm = useBookmarksStore()
+const pin = useBookmarkPinStore()
 const confirmRestore = ref(false)
 const pendingRestoreId = ref<string | null>(null)
 const confirmDeleteAll = ref(false)
 const viewMode = ref<'live' | 'backups'>('live')
 
-onMounted(async () => {
+/** Chỉ hiện nội dung tab sau khi đặt PIN (lần đầu) hoặc mở khóa. */
+const pinReady = ref(false)
+const pinModalMode = ref<'setup' | 'unlock'>('setup')
+
+async function loadBookmarkTabData(): Promise<void> {
   await bm.loadLive()
   await bm.loadBackups()
+}
+
+onMounted(async () => {
+  await pin.loadCryptoState()
+  await pin.hydrateFromSession()
+  if (!pin.hasCryptoSetup) {
+    pinModalMode.value = 'setup'
+    return
+  }
+  if (!pin.unlocked) {
+    pinModalMode.value = 'unlock'
+    return
+  }
+  pinReady.value = true
+  await loadBookmarkTabData()
 })
+
+function onPinDone(): void {
+  pinReady.value = true
+  void loadBookmarkTabData()
+}
 
 const treeToShow = computed(() => {
   if (viewMode.value === 'backups' && bm.selectedBackup) {
@@ -62,9 +89,22 @@ function focusSourceInTree(sourceKey: string): void {
   bm.clearBookmarkSearch()
 }
 
+/** Chọn backup ở cột trái: thoát GLOBAL SEARCH để xem cây backup (session search không còn chặn UI). */
+function onBackupRowClick(id: string): void {
+  bm.selectedBackupId = id
+  viewMode.value = 'backups'
+  bm.clearBookmarkSearch()
+}
+
 function onRestoreClick(id: string): void {
+  bm.clearBookmarkSearch()
   pendingRestoreId.value = id
   confirmRestore.value = true
+}
+
+async function onDeleteBackupClick(id: string): Promise<void> {
+  bm.clearBookmarkSearch()
+  await bm.deleteBackup(id)
 }
 
 async function onRestoreConfirm(): Promise<void> {
@@ -83,19 +123,28 @@ const backupLabel = computed(() => {
   const d = new Date()
   return `${d.toLocaleDateString('sv')} ${d.toLocaleTimeString('sv', { hour: '2-digit', minute: '2-digit' })}`
 })
+
+/** REFRESH = đọc lại cây bookmark từ trình duyệt (chrome.bookmarks) và hiển thị LIVE — không tải lại danh sách backup từ server. */
+async function onRefreshLive(): Promise<void> {
+  await bm.loadLive()
+  viewMode.value = 'live'
+  bm.selectedBackupId = null
+  bm.clearBookmarkSearch()
+}
 </script>
 
 <template>
-  <div class="bm-tab">
+  <BookmarkPinModal v-if="!pinReady" :mode="pinModalMode" @done="onPinDone" />
+  <div v-else class="bm-tab">
     <!-- Toolbar -->
-    <div class="bm-tab__toolbar">
+    <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
       <RetroButton variant="sm" :disabled="bm.loading" @click="bm.backup(backupLabel)">
         [ BACKUP NOW ]
       </RetroButton>
       <RetroButton variant="sm" :disabled="bm.loading || bm.liveTree.length === 0" @click="bm.exportHTML()">
         [ EXPORT HTML ]
       </RetroButton>
-      <RetroButton variant="sm" :disabled="bm.loading" @click="bm.loadLive()">
+      <RetroButton variant="sm" :disabled="bm.loading" @click="onRefreshLive()">
         [ REFRESH ]
       </RetroButton>
       <RetroButton
@@ -115,7 +164,7 @@ const backupLabel = computed(() => {
 
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
-      <div class="bm-tab__backups">
+      <div class="bm-tab__backups" @click.self="bm.clearBookmarkSearch()">
         <p class="bm-tab__col-title">BACKUPS</p>
         <p v-if="bm.backups.length === 0" class="bm-tab__empty">&gt; none yet_</p>
         <div
@@ -123,13 +172,13 @@ const backupLabel = computed(() => {
           :key="bk.id"
           class="bm-tab__backup-item"
           :class="{ 'bm-tab__backup-item--active': bm.selectedBackupId === bk.id }"
-          @click="bm.selectedBackupId = bk.id; viewMode = 'backups'"
+          @click="onBackupRowClick(bk.id)"
         >
           <span class="bm-tab__backup-label">{{ bk.label }}</span>
           <span class="bm-tab__backup-hint">{{ bk.browser_hint }}</span>
           <div class="bm-tab__backup-actions">
             <button class="bm-tab__act-btn" title="Restore" @click.stop="onRestoreClick(bk.id)">[RST]</button>
-            <button class="bm-tab__act-btn bm-tab__act-btn--del" title="Delete" @click.stop="bm.deleteBackup(bk.id)">[DEL]</button>
+            <button class="bm-tab__act-btn bm-tab__act-btn--del" title="Delete" @click.stop="onDeleteBackupClick(bk.id)">[DEL]</button>
           </div>
         </div>
       </div>
