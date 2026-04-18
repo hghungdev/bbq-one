@@ -105,7 +105,7 @@ a:hover {
  * Teleport ra body (modal / menu): không nằm trong .shell--dashboard,
  * nên gắn class này lên backdrop để cùng ring xanh với header.
  */
-.bbqnote-overlay {
+.bbqone-overlay {
   --accent: var(--accent-dashboard);
   --focus-ring: var(--accent-dashboard);
 }

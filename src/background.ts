@@ -4,7 +4,7 @@ import {
 } from '@/services/bookmarkAutoBackup.service'
 import { syncService } from '@/services/sync.service'
 
-const ALARM_NAME = 'bbqnote-daily-sync'
+const ALARM_NAME = 'bbqone-daily-sync'
 
 function ensureDailyAlarm(): void {
   void chrome.alarms.get(ALARM_NAME, (a) => {

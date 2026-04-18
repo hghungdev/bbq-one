@@ -57,7 +57,7 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       v-if="open"
-      class="retro-confirm__backdrop bbqnote-overlay"
+      class="retro-confirm__backdrop bbqone-overlay"
       role="presentation"
       @click.self="dismiss"
     >

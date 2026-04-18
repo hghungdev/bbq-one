@@ -1,6 +1,6 @@
-# CURSOR PROMPT — Tích hợp Bookmark Backup vào BBQNote Extension
+# CURSOR PROMPT — Tích hợp Bookmark Backup vào BBQOne Extension
 
-> **Mục tiêu**: Thêm tab "BOOKMARK" vào BBQNote extension hiện có.  
+> **Mục tiêu**: Thêm tab "BOOKMARK" vào BBQOne extension hiện có.  
 > Cho phép user đọc bookmark từ Chrome API, hiển thị dạng tree, backup lên Supabase (bảng riêng),  
 > và restore lại trình duyệt bất cứ lúc nào. Data đồng bộ theo `user_id` — đăng nhập trên máy/trình duyệt nào cũng lấy được.
 
@@ -55,7 +55,7 @@ src/constants/storage.ts      ← Thêm BOOKMARKS_CACHE_KEY
 Tạo file `supabase/005_bookmarks.sql` với nội dung sau:
 
 ```sql
--- BBQNote: Bookmark Backup
+-- BBQOne: Bookmark Backup
 -- Chạy trong Supabase SQL Editor
 
 CREATE TABLE IF NOT EXISTS bookmark_backups (
@@ -779,8 +779,8 @@ Chrome máy A  ──backup──►  Supabase (bookmark_backups)  ◄──list
 ```
 
 **Flow cụ thể:**
-1. User mở BBQNote trên Chrome → click `[BACKUP NOW]` → snapshot lên Supabase
-2. Cài BBQNote trên Edge/Brave → đăng nhập cùng Gmail/email
+1. User mở BBQOne trên Chrome → click `[BACKUP NOW]` → snapshot lên Supabase
+2. Cài BBQOne trên Edge/Brave → đăng nhập cùng Gmail/email
 3. Tab BOOKMARK → Load backups → thấy ngay snapshot từ Chrome
 4. Click `[RST]` → restore vào Edge
 

@@ -167,7 +167,7 @@ function pickAction(
     <Teleport to="body">
       <ul
         v-if="menuOpen"
-        class="folder-ctx bbqnote-overlay"
+        class="folder-ctx bbqone-overlay"
         :style="{ left: `${menuX}px`, top: `${menuY}px` }"
         role="menu"
         @click.stop

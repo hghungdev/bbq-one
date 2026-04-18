@@ -62,7 +62,7 @@ function onClear(): void {
 }
 
 function focusInput(): void {
-  document.getElementById('bbqnote-search')?.focus()
+  document.getElementById('bbqone-search')?.focus()
 }
 
 defineExpose({ focusInput })
@@ -76,7 +76,7 @@ onMounted(() => {
   <div class="search-bar">
     <span class="search-bar__label" aria-hidden="true">SEARCH</span>
     <RetroInput
-      id="bbqnote-search"
+      id="bbqone-search"
       v-model="localQuery"
       placeholder="> query_"
       autocomplete="off"

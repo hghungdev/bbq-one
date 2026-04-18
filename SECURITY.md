@@ -1,4 +1,4 @@
-# BBQNote — Security (Sprint 4)
+# BBQOne — Security (Sprint 4)
 
 ## Secrets & environment
 

@@ -1,7 +1,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 
-const STORAGE_W1 = 'bbqnote_col_w1'
-const STORAGE_W2 = 'bbqnote_col_w2'
+const STORAGE_W1 = 'bbqone_col_w1'
+const STORAGE_W2 = 'bbqone_col_w2'
 const DEFAULT_W1 = 120
 const DEFAULT_W2 = 200
 const MIN_W1 = 80

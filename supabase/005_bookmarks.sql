@@ -1,4 +1,4 @@
--- BBQNote: Bookmark Backup
+-- BBQOne: Bookmark Backup
 -- Chạy trong Supabase SQL Editor
 
 CREATE TABLE IF NOT EXISTS bookmark_backups (

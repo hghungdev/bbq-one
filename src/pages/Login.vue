@@ -45,15 +45,15 @@ async function onSubmit(): Promise<void> {
     <div class="login__panel">
       <header class="login__header">
         <h1 class="login__title">
-          BBQNote v1.0<span class="cursor-blink" aria-hidden="true"></span>
+          BBQOne v1.0<span class="cursor-blink" aria-hidden="true"></span>
         </h1>
         <div class="login__rule" />
       </header>
 
       <form class="login__form" @submit.prevent="onSubmit">
-        <label class="login__label" for="bbqnote-email">EMAIL:</label>
+        <label class="login__label" for="bbqone-email">EMAIL:</label>
         <RetroInput
-          id="bbqnote-email"
+          id="bbqone-email"
           v-model="email"
           type="email"
           autocomplete="email"
@@ -61,9 +61,9 @@ async function onSubmit(): Promise<void> {
           :disabled="loading"
         />
 
-        <label class="login__label" for="bbqnote-password">PASSWORD:</label>
+        <label class="login__label" for="bbqone-password">PASSWORD:</label>
         <RetroInput
-          id="bbqnote-password"
+          id="bbqone-password"
           v-model="password"
           type="password"
           autocomplete="current-password"

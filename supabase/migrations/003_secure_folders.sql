@@ -1,5 +1,5 @@
--- BBQNote: Secure folder (PBKDF2 salt + AES-GCM for note title/content at rest)
--- Chạy sau khi đã có bảng folders từ bbqnote_setup.sql
+-- BBQOne: Secure folder (PBKDF2 salt + AES-GCM for note title/content at rest)
+-- Chạy sau khi đã có bảng folders từ bbqone_setup.sql
 
 ALTER TABLE folders
   ADD COLUMN IF NOT EXISTS is_secure BOOLEAN NOT NULL DEFAULT false;

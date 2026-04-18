@@ -1,4 +1,4 @@
-# BBQNote
+# BBQOne
 
 Extension Chrome (Manifest V3) ghi chú kiểu retro/terminal: thư mục, note rich-text (TipTap), đồng bộ Supabase, folder **secure** mã hóa AES-GCM (passphrase), tìm kiếm full-text.
 
@@ -32,7 +32,7 @@ Extension Chrome (Manifest V3) ghi chú kiểu retro/terminal: thư mục, note 
 ## Cấu trúc mã nguồn
 
 ```
-bbq-note/
+bbq-one/
 ├── public/
 │   ├── manifest.json          # MV3: popup, permissions, CSP, background SW
 │   └── …                      # icon, assets tĩnh
@@ -70,7 +70,7 @@ bbq-note/
 │   ├── constants/storage.ts   # keys cache notes/folders
 │   └── assets/styles/         # global.css, retro.css
 ├── supabase/
-│   ├── bbqnote_setup.sql      # schema gộp: bảng, FTS, RLS (project mới)
+│   ├── bbqone_setup.sql      # schema gộp: bảng, FTS, RLS (project mới)
 │   └── migrations/            # 001 FTS, 002 RLS, 003 secure folders, 004 …
 ├── .env.example
 ├── vite.config.ts             # vue + crx plugin
@@ -116,7 +116,7 @@ File **`.env`** (không commit):
 
 ## Database Supabase
 
-1. **Project mới:** mở SQL Editor, chạy **`supabase/bbqnote_setup.sql`** (bảng `folders` / `notes`, trigger `updated_at`, cột `fts`, RLS theo `user_id`).
+1. **Project mới:** mở SQL Editor, chạy **`supabase/bbqone_setup.sql`** (bảng `folders` / `notes`, trigger `updated_at`, cột `fts`, RLS theo `user_id`).
 2. **Bổ sung secure folder:** chạy các file trong **`supabase/migrations/`** theo thứ tự số (003 secure columns, 004 folders `updated_at`, …) nếu project đã có schema cũ — hoặc đảm bảo migration đã áp dụng trên DB thật.
 
 **RLS:** mỗi user chỉ đọc/ghi dòng của mình (policy trong setup).

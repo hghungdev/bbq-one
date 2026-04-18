@@ -134,7 +134,7 @@ async function copyBodyToClipboard(): Promise<void> {
   const plain = ed.getText({ blockSeparator: '\n' })
   const ok = await copyTextToClipboard(plain)
   if (!ok) {
-    console.warn('[BBQNote] Không ghi được clipboard (kiểm tra quyền clipboardWrite + Reload extension).')
+    console.warn('[BBQOne] Không ghi được clipboard (kiểm tra quyền clipboardWrite + Reload extension).')
     return
   }
   copyFeedback.value = true

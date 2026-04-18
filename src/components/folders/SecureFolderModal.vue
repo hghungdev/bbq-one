@@ -87,7 +87,7 @@ const titleText = (): string => {
   <Teleport to="body">
     <div
       v-if="open"
-      class="secure-modal__backdrop bbqnote-overlay"
+      class="secure-modal__backdrop bbqone-overlay"
       role="presentation"
       @click.self="emit('close')"
     >

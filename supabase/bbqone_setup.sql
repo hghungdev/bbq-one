@@ -1,5 +1,5 @@
 -- =============================================================================
--- BBQNote — Supabase: schema + FTS + RLS + (tùy chọn) user dev
+-- BBQOne — Supabase: schema + FTS + RLS + (tùy chọn) user dev
 -- =============================================================================
 -- Chạy toàn bộ file này trong Supabase → SQL Editor (một lần trên project mới).
 --
@@ -191,7 +191,7 @@ CREATE POLICY "note_bodies_owner" ON note_bodies
   WITH CHECK (auth.uid() = user_id);
 
 -- =============================================================================
--- 5. Tạo user để đăng nhập BBQNote
+-- 5. Tạo user để đăng nhập BBQOne
 -- =============================================================================
 --
 -- CÁCH A — Khuyên dùng (production / ít rủi ro)
@@ -210,7 +210,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 DO $$
 DECLARE
   v_user_id   UUID := gen_random_uuid();
-  v_email     TEXT := 'dev@bbqnote.local';
+  v_email     TEXT := 'dev@bbqone.local';
   v_password  TEXT := 'ChangeMe123!';
   v_instance  UUID := '00000000-0000-0000-0000-000000000000';
 BEGIN

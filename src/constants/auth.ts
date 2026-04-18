@@ -2,4 +2,4 @@
 export const SESSION_LOGIN_TIMEOUT_MS = 10 * 60 * 1000
 
 /** Lưu trong chrome.storage.session — mất khi đóng trình duyệt. */
-export const AUTH_SESSION_DEADLINE_KEY = 'bbqnote_auth_deadline'
+export const AUTH_SESSION_DEADLINE_KEY = 'bbqone_auth_deadline'

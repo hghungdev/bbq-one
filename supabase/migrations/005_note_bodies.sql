@@ -1,5 +1,5 @@
--- BBQNote: 1 note → nhiều body (note_bodies). Migrate content từ notes.content.
--- Chạy sau bbqnote_setup + các migration folder secure trước đó.
+-- BBQOne: 1 note → nhiều body (note_bodies). Migrate content từ notes.content.
+-- Chạy sau bbqone_setup + các migration folder secure trước đó.
 --
 -- Dữ liệu: INSERT (bước 2) nên chạy TRƯỚC khi DROP notes.content.
 -- Nếu bạn đã DROP content trước khi INSERT: bước 2 chỉ tạo body rỗng — nội dung cũ không còn trong DB (cần backup).
