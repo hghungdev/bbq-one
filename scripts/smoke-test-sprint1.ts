@@ -1,12 +1,12 @@
 /**
  * Sprint 1 Smoke Tests — section 15 "Sprint 1 Tests"
- * Run: npx tsx smoke-test-sprint1.ts
+ * Run (from repo root): npx tsx scripts/smoke-test-sprint1.ts
  *
  * Tests segmenter and classifyEntryType (pure functions, no Chrome API required).
  * TranslatorService tests require Chrome 138+ runtime — documented separately.
  */
 
-import { segmentSentences, classifyEntryType } from './src/services/dictionary/segmenter'
+import { segmentSentences, classifyEntryType } from '../src/services/dictionary/segmenter'
 
 let passed = 0
 let failed = 0
@@ -61,7 +61,7 @@ assert("CJK > 15 chars → 'sentence'", classifyEntryType('今日はとても良
 // ── TranslatorService structure ───────────────────────────────────────────────
 console.log('\nTranslatorService:')
 // Import directly using ESM — tsx supports this
-import('./src/services/translator/translator.service')
+  import('../src/services/translator/translator.service')
   .then(async ({ translatorService }) => {
     assert('translatorService exists', typeof translatorService, 'object')
     assert('translatorService.translate is a function', typeof translatorService.translate, 'function')

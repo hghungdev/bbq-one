@@ -127,7 +127,7 @@ const saveIconAriaLabel = computed(() => {
 <template>
   <div class="qt">
     <header class="qt__header">
-      <span class="qt__brand">BBQ One</span>
+      <span class="qt__brand">BBQ-One</span>
     </header>
 
     <div class="qt__input-row">

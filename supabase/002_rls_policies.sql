@@ -1,4 +1,4 @@
--- RLS for BBQOne (run after folders/notes tables exist — see SPRINT-PLAN.md schema)
+-- RLS for BBQOne (run after folders/notes tables exist — see docs/archive/SPRINT-PLAN-LEGACY.md schema)
 -- Safe to re-run: drops policies by name then recreates.
 
 ALTER TABLE folders ENABLE ROW LEVEL SECURITY;

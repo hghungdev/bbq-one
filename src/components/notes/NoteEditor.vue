@@ -8,7 +8,8 @@ import RetroButton from '@/components/ui/RetroButton.vue'
 import { useNotesStore } from '@/stores/notes'
 import type { NoteBody } from '@/types'
 import { extractCodeBlocksFromDocJSON } from '@/utils/tiptapJson'
-import { copyTextToClipboard } from '@/utils/clipboard'
+import { copyTextToClipboard, writeToClipboardEvent } from '@/utils/clipboard'
+import type { EditorView } from 'prosemirror-view'
 import { firstLinePreview, plainTextFromHtml } from '@/utils/text'
 
 const notesStore = useNotesStore()
@@ -88,6 +89,19 @@ const editor = useEditor({
     attributes: {
       class: 'note-editor__prose',
     },
+    /**
+     * ProseMirror mặc định dùng clipboardData; trong extension popup đôi khi cần fallback sync.
+     * Luôn ghi text/plain để Ctrl+C / Win+V nhận nội dung.
+     */
+    handleDOMEvents: {
+      copy(view: EditorView, event: Event): boolean {
+        if (!(event instanceof ClipboardEvent)) return false
+        const sel = view.state.selection
+        if (sel.empty) return false
+        const plain = view.state.doc.textBetween(sel.from, sel.to, '\n')
+        return writeToClipboardEvent(event, plain)
+      },
+    },
   },
   onUpdate: () => {
     notesStore.setDirty(true)
@@ -134,7 +148,7 @@ async function copyBodyToClipboard(): Promise<void> {
   const plain = ed.getText({ blockSeparator: '\n' })
   const ok = await copyTextToClipboard(plain)
   if (!ok) {
-    console.warn('[BBQOne] Không ghi được clipboard (kiểm tra quyền clipboardWrite + Reload extension).')
+    console.warn('[BBQOne] Không ghi được clipboard — kiểm tra tab đang active có cho phép script không.')
     return
   }
   copyFeedback.value = true

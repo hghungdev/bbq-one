@@ -6,7 +6,14 @@ import manifest from './public/manifest.json'
 
 export default defineConfig({
   plugins: [vue(), crx({ manifest })],
-  build: { target: 'esnext' },
+  build: {
+    target: 'esnext',
+    rollupOptions: {
+      input: {
+        offscreen: fileURLToPath(new URL('./offscreen.html', import.meta.url)),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

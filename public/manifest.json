@@ -36,9 +36,12 @@
     "identity",
     "alarms",
     "clipboardWrite",
+    "scripting",
+    "offscreen",
     "bookmarks",
     "downloads",
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "optional_permissions": [],
   "host_permissions": [

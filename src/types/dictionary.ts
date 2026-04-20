@@ -77,14 +77,14 @@ export interface TranslationSettings {
 
 /** Message types giữa content script ↔ background ↔ popup */
 export type DictMessage =
-  | { type: 'translate'; payload: TranslationRequest }
   | { type: 'save-entry'; payload: Omit<DictionaryEntry, 'id' | 'user_id' | 'created_at' | 'updated_at'> }
   | { type: 'get-settings' }
   | { type: 'entry-exists'; payload: { source_text: string; source_lang: LangCode; target_lang: LangCode } }
+  | { type: 'copy-to-os-clipboard'; payload: { text: string } }
 
 export type DictMessageResponse<M extends DictMessage> =
-  M extends { type: 'translate' } ? TranslationResult :
   M extends { type: 'save-entry' } ? { ok: true; entry: DictionaryEntry } | { ok: false; error: string } :
   M extends { type: 'get-settings' } ? TranslationSettings :
   M extends { type: 'entry-exists' } ? { exists: boolean; entryId?: string } :
+  M extends { type: 'copy-to-os-clipboard' } ? { ok: boolean; error?: string } :
   never

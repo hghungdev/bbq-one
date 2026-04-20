@@ -116,10 +116,35 @@ chrome.runtime.onMessage.addListener((msg: DictMessage, _sender, sendResponse) =
           sendResponse(r)
           break
         }
-        case 'translate':
-          // translate messages are handled directly in content script (no background needed)
-          sendResponse({ ok: false, error: 'translate handled by content script directly' })
+        case 'copy-to-os-clipboard': {
+          const { text } = msg.payload
+          const offscreenUrl = chrome.runtime.getURL('offscreen.html')
+
+          // Đảm bảo offscreen document tồn tại
+          const existingContexts = await chrome.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
+            documentUrls: [offscreenUrl],
+          })
+          if (existingContexts.length === 0) {
+            await chrome.offscreen.createDocument({
+              url: offscreenUrl,
+              reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
+              justification: 'Write text to OS clipboard from extension popup.',
+            })
+          }
+
+          // Gửi text sang offscreen và chờ kết quả trả về
+          const result = await chrome.runtime.sendMessage({
+            type: 'offscreen-copy',
+            text,
+          }) as { ok: boolean; error?: string }
+
+          // Đóng offscreen sau khi xong
+          void chrome.offscreen.closeDocument().catch(() => {})
+
+          sendResponse(result)
           break
+        }
         default:
           sendResponse({ ok: false, error: 'Unknown message type' })
       }
