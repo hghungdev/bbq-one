@@ -48,9 +48,6 @@
     "https://*.supabase.co/*",
     "https://api.dictionaryapi.dev/*"
   ],
-  "optional_host_permissions": [
-    "<all_urls>"
-  ],
   "web_accessible_resources": [
     {
       "resources": ["assets/*", "src/content/*", "bbq_one-final.png"],
