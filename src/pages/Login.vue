@@ -45,7 +45,7 @@ async function onSubmit(): Promise<void> {
     <div class="login__panel">
       <header class="login__header">
         <h1 class="login__title">
-          BBQOne v1.0<span class="cursor-blink" aria-hidden="true"></span>
+          BBQ-One v1.1<span class="cursor-blink" aria-hidden="true"></span>
         </h1>
         <div class="login__rule" />
       </header>

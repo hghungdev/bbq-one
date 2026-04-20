@@ -168,7 +168,7 @@ const noteListColumnStyle = computed(() =>
   <div class="shell shell--dashboard crt-scanlines">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
-        <span class="shell__brand">BBQOne</span>
+        <span class="shell__brand">BBQ-One</span>
         <span class="shell__sep" aria-hidden="true">───────────────────────</span>
         <div class="shell__header-right">
           <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>

@@ -1,49 +1,38 @@
-/* Shadow DOM isolated styles — auto dark/light via prefers-color-scheme */
+/* Shadow DOM — luôn theme sáng (OS dark mode không được phép đổi màu popup) */
 :host {
   all: initial;
+  color-scheme: light;
 }
 
-/* ── CSS Variables (dark default — matches extension theme) ── */
+/* ── CSS Variables: mặc định nền sáng (hòa trang web thông thường) ── */
 .bbq-popup {
-  --bbq-bg: #1a1a0e;
-  --bbq-text: #e8d5a3;
-  --bbq-border: #3a3020;
-  --bbq-accent: #f0c040;
-  --bbq-muted: #8a7a5a;
-  --bbq-danger: #c0392b;
-  --bbq-success: #27ae60;
-  /* Bản dịch: xanh nổi bật trên nền tối */
-  --bbq-translated: #7ec8ff;
+  --bbq-bg: #ffffff;
+  --bbq-text: #1f2937;
+  --bbq-border: #e5e7eb;
+  --bbq-accent: #a16207;
+  --bbq-muted: #6b7280;
+  --bbq-danger: #b91c1c;
+  --bbq-success: #15803d;
+  --bbq-translated: #1d4ed8;
+  --bbq-meta-divider: rgba(15, 23, 42, 0.1);
   --bbq-font: 'IBM Plex Mono', 'Courier New', monospace;
-  /* Nội dung dịch: sans-system — đọc rõ hơn monospace nhỏ */
   --bbq-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: light) {
-  .bbq-popup {
-    --bbq-bg: #fdf6e3;
-    --bbq-text: #1a1a0e;
-    --bbq-border: #a89060;
-    --bbq-accent: #b8860b;
-    --bbq-muted: #8a7a5a;
-    /* Bản dịch: xanh đậm trên nền giấy */
-    --bbq-translated: #1565c0;
-  }
+.bbq-popup__save-icon {
+  color: var(--bbq-translated);
+  border-color: rgba(29, 78, 216, 0.35);
+  background: rgba(29, 78, 216, 0.06);
+}
 
-  .bbq-popup__save-icon {
-    color: var(--bbq-translated);
-    border-color: rgba(21, 101, 192, 0.4);
-    background: rgba(21, 101, 192, 0.08);
-  }
-
-  .bbq-popup__save-icon:hover:not(:disabled) {
-    border-color: #1565c0;
-    background: rgba(21, 101, 192, 0.14);
-  }
+.bbq-popup__save-icon:hover:not(:disabled) {
+  border-color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.12);
 }
 
 /* ── Container ── */
 .bbq-popup {
+  color-scheme: light;
   position: fixed;
   width: 348px;
   font-family: var(--bbq-font-ui);
@@ -52,8 +41,10 @@
   background: var(--bbq-bg);
   color: var(--bbq-text);
   border: 1px solid var(--bbq-border);
-  border-radius: 0;
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
   z-index: 2147483647;
   /* Prevent layout issues on host page */
   box-sizing: border-box;
@@ -95,9 +86,14 @@
   color: var(--bbq-accent);
 }
 
-/* ── Body ── */
+/* ── Body: giới hạn chiều cao + cuộn để đoạn dài không bị cắt ── */
 .bbq-popup__body {
-  padding: 10px;
+  padding: 10px 10px 16px;
+  max-height: min(65vh, calc(100vh - 56px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .bbq-popup__loading,
@@ -127,8 +123,23 @@
   margin-top: 3px;
 }
 
+/* Flex column mặc định align-items: stretch → tag EN bị kéo full width; chỉ tag co theo chữ như VI */
+.bbq-popup__pane--source .bbq-popup__lang {
+  margin-top: 0;
+  align-self: flex-start;
+}
+
 .bbq-popup__pane--target .bbq-popup__lang {
   margin-top: 0;
+}
+
+/* Cùng nhịp khoảng cách với khối VI (tag một hàng, nội dung bên dưới) */
+.bbq-popup__pane--source {
+  gap: 4px;
+}
+
+.bbq-popup__pane--source .bbq-popup__lemma {
+  margin-top: 2px;
 }
 
 /* ── Result: nguồn (tag + lemma + IPA) · divider · đích (tag+save + dịch + meta) ── */
@@ -147,13 +158,6 @@
 
 .bbq-popup__pane--target {
   gap: 4px;
-}
-
-.bbq-popup__row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
 }
 
 .bbq-popup__pane-body {
@@ -274,13 +278,7 @@
   width: 100%;
   margin-top: 6px;
   padding-top: 8px;
-  border-top: 1px solid rgba(58, 48, 32, 0.35);
-}
-
-@media (prefers-color-scheme: light) {
-  .bbq-popup__meta {
-    border-top-color: rgba(168, 144, 96, 0.45);
-  }
+  border-top: 1px solid var(--bbq-meta-divider);
 }
 
 .bbq-popup__dict-line {

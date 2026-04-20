@@ -91,6 +91,7 @@ export class PopupHost {
       height: '0',
       zIndex: '2147483647',
       pointerEvents: 'none',
+      overflow: 'visible',
     } satisfies Partial<CSSStyleDeclaration>)
 
     const shadow = host.attachShadow({ mode: 'open' })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
   import type { LangCode, TranslationResult } from '@/types/dictionary'
 
@@ -65,6 +65,12 @@
 
   const popupStyle = ref({ top: '0px', left: '0px' })
 
+  const popupEl = ref<HTMLElement | null>(null)
+
+  const POPUP_WIDTH = 348
+
+  const VIEW_MARGIN = 8
+
   async function refreshAuth(): Promise<void> {
     const data = await chrome.storage.local.get(BBQ_AUTH_LOGGED_IN_KEY)
 
@@ -81,26 +87,29 @@
     isAuthenticated.value = !!changes[BBQ_AUTH_LOGGED_IN_KEY].newValue
   }
 
-  function calcPosition(): void {
-    const POPUP_WIDTH = 348
+  /** Đo chiều cao thật sau khi dịch xong; tránh giả định 240px làm cắt nội dung / tràn viewport. */
+  function adjustPosition(): void {
+    const el = popupEl.value
 
-    const POPUP_HEIGHT = 240
+    const h = el?.getBoundingClientRect().height ?? 200
 
-    const MARGIN = 8
+    let top = props.rect.bottom + VIEW_MARGIN
 
-    let top = props.rect.bottom + MARGIN
+    if (top + h > window.innerHeight - VIEW_MARGIN) {
+      top = props.rect.top - h - VIEW_MARGIN
+    }
 
-    if (top + POPUP_HEIGHT > window.innerHeight - MARGIN) {
-      top = Math.max(MARGIN, props.rect.top - POPUP_HEIGHT - MARGIN)
+    if (top < VIEW_MARGIN) {
+      top = VIEW_MARGIN
     }
 
     let left = props.rect.left
 
-    if (left + POPUP_WIDTH > window.innerWidth - MARGIN) {
-      left = window.innerWidth - POPUP_WIDTH - MARGIN
+    if (left + POPUP_WIDTH > window.innerWidth - VIEW_MARGIN) {
+      left = window.innerWidth - POPUP_WIDTH - VIEW_MARGIN
     }
 
-    if (left < MARGIN) left = MARGIN
+    if (left < VIEW_MARGIN) left = VIEW_MARGIN
 
     popupStyle.value = { top: `${top}px`, left: `${left}px` }
   }
@@ -211,8 +220,32 @@
     if (e.key === 'Escape') props.onClose()
   }
 
+  let popupResizeObserver: ResizeObserver | null = null
+
+  function onResize(): void {
+    adjustPosition()
+  }
+
+  watch([loading, result, error], async () => {
+    await nextTick()
+
+    adjustPosition()
+  })
+
   onMounted(() => {
-    calcPosition()
+    void nextTick(() => {
+      const el = popupEl.value
+
+      if (el && typeof ResizeObserver !== 'undefined') {
+        popupResizeObserver = new ResizeObserver(() => {
+          adjustPosition()
+        })
+
+        popupResizeObserver.observe(el)
+      }
+
+      adjustPosition()
+    })
 
     void refreshAuth()
 
@@ -220,20 +253,28 @@
 
     document.addEventListener('keydown', onKeyDown)
 
+    window.addEventListener('resize', onResize)
+
     chrome.storage.onChanged.addListener(onAuthStorageChanged)
   })
 
   onUnmounted(() => {
+    popupResizeObserver?.disconnect()
+
+    popupResizeObserver = null
+
     document.removeEventListener('keydown', onKeyDown)
+
+    window.removeEventListener('resize', onResize)
 
     chrome.storage.onChanged.removeListener(onAuthStorageChanged)
   })
 </script>
 
 <template>
-  <div class="bbq-popup" :style="popupStyle">
+  <div ref="popupEl" class="bbq-popup" :style="popupStyle">
     <div class="bbq-popup__header">
-      <span class="bbq-popup__brand">ONE &gt; TRANSLATE</span>
+      <span class="bbq-popup__brand">BBQ-ONE &gt; TRANSLATE</span>
 
       <button class="bbq-popup__close" type="button" @click="props.onClose" aria-label="Close">
         ×
@@ -248,17 +289,15 @@
       <div v-else-if="result" class="bbq-popup__result">
         <!-- Nguồn: tag + từ + IPA (IPA thuộc từ gốc) -->
 
-        <section class="bbq-popup__pane" aria-label="Source">
-          <div class="bbq-popup__row">
-            <span class="bbq-popup__lang">{{ result.sourceLang }}</span>
+        <section class="bbq-popup__pane bbq-popup__pane--source" aria-label="Source">
+          <span class="bbq-popup__lang">{{ result.sourceLang }}</span>
 
-            <div class="bbq-popup__pane-body">
-              <p class="bbq-popup__lemma">{{ result.sourceText }}</p>
+          <div class="bbq-popup__pane-body">
+            <p class="bbq-popup__lemma">{{ result.sourceText }}</p>
 
-              <p v-if="result.enrichment?.phonetic" class="bbq-popup__ipa">
-                {{ result.enrichment.phonetic }}
-              </p>
-            </div>
+            <p v-if="result.enrichment?.phonetic" class="bbq-popup__ipa">
+              {{ result.enrichment.phonetic }}
+            </p>
           </div>
         </section>
 
