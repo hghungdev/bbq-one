@@ -7,6 +7,8 @@
 
   import { isKeywordEntry } from '@/services/dictionary/segmenter'
 
+  import { getLangName } from '@/utils/langNames'
+
   import { BBQ_AUTH_LOGGED_IN_KEY, UI_LANG_KEY } from '@/constants/storage'
 
   import { en } from '@/i18n/en'
@@ -312,7 +314,7 @@
         <!-- Nguồn: tag + từ + IPA (IPA thuộc từ gốc) -->
 
         <section class="bbq-popup__pane bbq-popup__pane--source" aria-label="Source">
-          <span class="bbq-popup__lang">{{ result.sourceLang }}</span>
+          <span class="bbq-popup__lang">{{ getLangName(result.sourceLang) }}</span>
 
           <div class="bbq-popup__pane-body">
             <p class="bbq-popup__lemma">{{ result.sourceText }}</p>
@@ -329,7 +331,7 @@
 
         <section class="bbq-popup__pane bbq-popup__pane--target" aria-label="Translation">
           <div class="bbq-popup__target-head">
-            <span class="bbq-popup__lang">{{ result.targetLang }}</span>
+            <span class="bbq-popup__lang">{{ getLangName(result.targetLang) }}</span>
 
             <div v-if="canSaveKeyword" class="bbq-popup__target-actions">
               <template v-if="isAuthenticated">

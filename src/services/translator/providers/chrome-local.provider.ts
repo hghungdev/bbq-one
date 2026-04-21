@@ -11,6 +11,7 @@ import {
   vietnameseKeepsIntactInTranslation,
   type MixedRun,
 } from '@/services/translator/mixedViEnSegments'
+import { resolveSourceLangForResult } from '@/utils/sourceLangResolve'
 
 export class ChromeLocalProvider implements ITranslationProvider {
   readonly name = 'chrome-local'
@@ -45,7 +46,7 @@ export class ChromeLocalProvider implements ITranslationProvider {
     let confidence: number | undefined
     if (req.sourceLang === 'auto') {
       const detected = await this.detectLanguage(text)
-      sourceLang = detected.lang as LangCode
+      sourceLang = resolveSourceLangForResult(text, req.targetLang, detected.lang, null)
       confidence = detected.confidence
     } else {
       sourceLang = req.sourceLang
@@ -87,20 +88,20 @@ export class ChromeLocalProvider implements ITranslationProvider {
    */
   private async translateMixedViEn(text: string, targetLang: LangCode): Promise<TranslationResult> {
     let confidence: number | undefined
-    let sourceLangMeta: LangCode
+    let detectedRaw: string
     try {
       const detected = await this.detectLanguage(text)
-      sourceLangMeta = detected.lang as LangCode
+      detectedRaw = detected.lang
       confidence = detected.confidence
     } catch {
-      sourceLangMeta = targetLang === 'vi' ? 'vi' : 'en'
+      detectedRaw = targetLang === 'vi' ? 'vi' : 'en'
     }
 
     const runs = buildMixedRuns(text, targetLang)
     if (!mixedRunsNeedTranslation(runs)) {
       return {
         sourceText: text,
-        sourceLang: sourceLangMeta,
+        sourceLang: resolveSourceLangForResult(text, targetLang, detectedRaw, runs),
         targetLang,
         translatedText: text,
         provider: this.name,
@@ -115,7 +116,7 @@ export class ChromeLocalProvider implements ITranslationProvider {
     /* Đích tiếng Việt: ưu tiên một lần dịch cả đoạn (en→vi) để model thấy ngữ cảnh tiếng Việt xung quanh.
      * Nếu lỗi hoặc phần VN bị biến dạng → fallback tách cụm như trước. */
     if (targetLang === 'vi') {
-      const contextual = await this.tryFullSentenceEnToVi(text, runs, sourceLangMeta, confidence)
+      const contextual = await this.tryFullSentenceEnToVi(text, runs, detectedRaw, confidence)
       if (contextual !== null) return contextual
     }
 
@@ -180,7 +181,7 @@ export class ChromeLocalProvider implements ITranslationProvider {
 
     return {
       sourceText: text,
-      sourceLang: sourceLangMeta,
+      sourceLang: resolveSourceLangForResult(text, targetLang, detectedRaw, runs),
       targetLang,
       translatedText: out.join(''),
       provider: this.name,
@@ -194,7 +195,7 @@ export class ChromeLocalProvider implements ITranslationProvider {
   private async tryFullSentenceEnToVi(
     text: string,
     runs: MixedRun[],
-    sourceLangMeta: LangCode,
+    detectedRaw: string,
     confidence: number | undefined,
   ): Promise<TranslationResult | null> {
     try {
@@ -214,7 +215,7 @@ export class ChromeLocalProvider implements ITranslationProvider {
         if (!vietnameseKeepsIntactInTranslation(runs, translatedText)) return null
         return {
           sourceText: text,
-          sourceLang: sourceLangMeta,
+          sourceLang: resolveSourceLangForResult(text, 'vi', detectedRaw, runs),
           targetLang: 'vi',
           translatedText,
           provider: this.name,
