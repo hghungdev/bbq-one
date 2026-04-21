@@ -1,6 +1,6 @@
-# CURSOR PROMPT — Tích hợp Dictionary (Translate + Vocabulary) vào BBQ-One Extension
+# CURSOR PROMPT — Tích hợp Dictionary (Translate + Vocabulary) vào BBQOne Extension
 
-> **Mục tiêu Phase 1**: Thêm tab "DICTIONARY" vào BBQ-One extension.
+> **Mục tiêu Phase 1**: Thêm tab "DICTIONARY" vào BBQOne extension.
 > User quét text trên bất kỳ trang web nào → floating popup dịch instant (Chrome built-in API, free, local).
 > Click Save → lưu vào Supabase per-user dictionary.
 > Dictionary tab trong popup cho xem/search/delete entries.
@@ -60,7 +60,7 @@ supabase/migrations/           ← 001-005, pattern trigger + RLS + FTS
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                        BBQ-ONE EXTENSION                           │
+│                        BBQOne EXTENSION                           │
 │                                                                    │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐ │
 │  │   POPUP      │  │   CONTENT    │  │      BACKGROUND          │ │
@@ -223,7 +223,7 @@ src/background.ts                                  ← Add message handlers cho 
 ### 3.1. `supabase/migrations/006_user_translation_settings.sql`
 
 ```sql
--- BBQ-One: User translation preferences
+-- BBQOne: User translation preferences
 -- Run in Supabase SQL Editor sau khi migrate 005.
 
 CREATE TABLE IF NOT EXISTS user_translation_settings (
@@ -258,7 +258,7 @@ CREATE POLICY "user_translation_settings_owner" ON user_translation_settings
 ### 3.2. `supabase/migrations/007_user_dictionary_entries.sql`
 
 ```sql
--- BBQ-One: Personal dictionary entries
+-- BBQOne: Personal dictionary entries
 -- Phase 1 columns. Phase 2 sẽ add: starred, tags, mastery_level, review_count, last_reviewed_at
 
 CREATE TABLE IF NOT EXISTS user_dictionary_entries (
@@ -358,7 +358,7 @@ CREATE POLICY "user_dictionary_entries_owner" ON user_dictionary_entries
 ```json
 {
   "manifest_version": 3,
-  "name": "BBQ-One",
+  "name": "BBQOne",
   "version": "1.1.0",
   "description": "All-in-one: notes, bookmarks, dictionary. Vintage 1989.",
   "icons": {
@@ -1192,7 +1192,7 @@ export class TriggerIcon {
     const el = document.createElement('div')
     el.id = ICON_ID
     el.setAttribute('role', 'button')
-    el.setAttribute('aria-label', 'Translate with BBQ-One')
+    el.setAttribute('aria-label', 'Translate with BBQOne')
     Object.assign(el.style, {
       position: 'absolute',
       zIndex: '2147483647',
@@ -2062,7 +2062,7 @@ Test on: Wikipedia, GitHub, Gmail, Google Docs, YouTube, Twitter, Reddit, Figma,
 ### Prompt cho Sprint 1
 
 ```
-Implement Sprint 1 of BBQ-One Phase 1 Dictionary feature.
+Implement Sprint 1 of BBQOne Phase 1 Dictionary feature.
 
 Read the full spec in CURSOR-PROMPT-DICTIONARY-PHASE-1.md (attached).
 
@@ -2083,7 +2083,7 @@ Verification: after build, run the smoke tests listed in section 15 "Sprint 1 Te
 ### Prompt cho Sprint 2
 
 ```
-Implement Sprint 2 of BBQ-One Phase 1 Dictionary.
+Implement Sprint 2 of BBQOne Phase 1 Dictionary.
 
 Prerequisites: Sprint 1 merged and smoke tests pass.
 
@@ -2105,7 +2105,7 @@ Verification: run manual tests from section 15 "Sprint 2 Tests" on at least Wiki
 ### Prompt cho Sprint 3
 
 ```
-Implement Sprint 3 of BBQ-One Phase 1 Dictionary — final sprint.
+Implement Sprint 3 of BBQOne Phase 1 Dictionary — final sprint.
 
 Prerequisites: Sprint 1 + 2 merged.
 

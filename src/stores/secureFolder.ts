@@ -306,9 +306,15 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     await notes.loadAll()
   }
 
+  /** Sau khi xóa folder trên server: bỏ key khỏi phiên. */
+  function forgetFolderKey(folderId: string): void {
+    deleteKey(folderId)
+  }
+
   return {
     sessionKeys,
     getKey,
+    forgetFolderKey,
     isFolderLocked,
     unlockFolder,
     lockFolder,

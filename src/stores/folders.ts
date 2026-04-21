@@ -98,6 +98,23 @@ export const useFoldersStore = defineStore('folders', () => {
     await persistCache()
   }
 
+  /**
+   * Xóa folder + toàn bộ notes trong folder + bodies (notesService.delete → CASCADE note_bodies trên DB).
+   */
+  async function deleteFolder(id: string): Promise<void> {
+    const notesStore = useNotesStore()
+    const noteIds = notesStore.notes
+      .filter((n) => n.folder_id === id)
+      .map((n) => n.id)
+    for (const noteId of noteIds) {
+      await notesStore.deleteNote(noteId)
+    }
+    await foldersService.delete(id)
+    folders.value = folders.value.filter((f) => f.id !== id)
+    notesStore.clearSearch()
+    await persistCache()
+  }
+
   watch(
     () => folders.value.map((f) => f.id).join(','),
     () => {
@@ -130,6 +147,7 @@ export const useFoldersStore = defineStore('folders', () => {
     isSecureFolder,
     createFolder,
     renameFolder,
+    deleteFolder,
     persistCache,
     reorderFoldersByUpdated: (): void => {
       folders.value = sortFoldersByUpdatedDesc(folders.value)

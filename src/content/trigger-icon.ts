@@ -60,7 +60,7 @@ export class TriggerIcon {
     const el = document.createElement('div')
     el.id = ICON_ID
     el.setAttribute('role', 'button')
-    el.setAttribute('aria-label', 'Translate with BBQ-One')
+    el.setAttribute('aria-label', 'Translate with BBQOne')
     Object.assign(el.style, {
       position: 'fixed',
       zIndex: '2147483647',

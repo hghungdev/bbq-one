@@ -15,6 +15,7 @@ import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
 import { useSyncStore } from '@/stores/sync'
+import { useLangStore } from '@/stores/uiLang'
 import { downloadNoteAsTxt } from '@/utils/exportNote'
 
 const router = useRouter()
@@ -23,6 +24,8 @@ const folders = useFoldersStore()
 const notes = useNotesStore()
 const secure = useSecureFolderStore()
 const sync = useSyncStore()
+const langStore = useLangStore()
+const { t } = langStore
 const dataReady = ref(false)
 const showSettings = ref(false)
 const activeTab = ref<'notes' | 'bookmarks' | 'dictionary'>('notes')
@@ -38,9 +41,9 @@ const loadErrorLine = computed(() => {
   const raw = (notes.loadError || folders.loadError)?.trim()
   if (!raw) return ''
   if (/failed to fetch|networkerror|network request failed/i.test(raw)) {
-    return '[ERROR] Cannot connect to server'
+    return t('app.errorConnect')
   }
-  return `[ERROR] ${raw}`
+  return `${t('common.error')} ${raw}`
 })
 
 function isTypingInEditorOrInput(t: EventTarget | null): boolean {
@@ -85,6 +88,7 @@ function onGlobalKeydown(e: KeyboardEvent): void {
 
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown, true)
+  await langStore.loadLang()
   await folders.loadAll()
   await notes.loadAll()
   dataReady.value = true
@@ -102,13 +106,13 @@ async function onLogout(): Promise<void> {
 
 const syncBusy = computed(() => sync.status === 'syncing')
 
-const headerEmail = computed(() => auth.user?.email ?? 'OFFLINE_')
+const headerEmail = computed(() => auth.user?.email ?? t('app.offline'))
 
 const syncBadgeText = computed(() => {
-  if (sync.status === 'syncing') return 'SYNCING...'
-  if (notes.isDirty) return 'UNSAVED'
-  if (sync.status === 'error') return 'SYNC FAILED'
-  return 'SYNCED'
+  if (sync.status === 'syncing') return t('app.sync.syncing')
+  if (notes.isDirty) return t('app.sync.unsaved')
+  if (sync.status === 'error') return t('app.sync.failed')
+  return t('app.sync.synced')
 })
 
 /** Xanh khi vừa đồng bộ thành công (store = synced); mặc định khi idle. */
@@ -142,16 +146,14 @@ function onExport(): void {
 
 const syncBadgeTitle = computed(() => {
   if (sync.status === 'error' && sync.lastError) return sync.lastError
-  if (sync.status === 'synced') return 'Đã đồng bộ với cloud lần gần nhất'
-  if (sync.status === 'idle') return 'Chưa chạy đồng bộ trong phiên này (bấm [ SYNC ])'
-  return 'Trạng thái ghi / đồng bộ'
+  return t('app.sync.synced')
 })
 
 const syncButtonTitle = computed(() => {
   const err = sync.lastError?.trim()
   if (sync.status === 'error' && err) return err
-  if (sync.status === 'synced' && !notes.isDirty) return 'Đồng bộ lại (đã sẵn sàng)'
-  return 'Đồng bộ thủ công'
+  if (sync.status === 'synced' && !notes.isDirty) return t('app.sync.titleReady')
+  return t('app.sync.titleSyncing')
 })
 
 /** Khi đang gõ SEARCH: chỉ hiện FOLDERS + NOTES, ẩn BODY để không lệch với note đang mở trước đó. */
@@ -168,7 +170,7 @@ const noteListColumnStyle = computed(() =>
   <div class="shell shell--dashboard crt-scanlines">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
-        <span class="shell__brand">BBQ-One</span>
+        <span class="shell__brand">BBQOne</span>
         <span class="shell__sep" aria-hidden="true">───────────────────────</span>
         <div class="shell__header-right">
           <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>
@@ -189,7 +191,7 @@ const noteListColumnStyle = computed(() =>
             :class="activeTab === 'notes' ? 'shell__tab-btn--active' : ''"
             @click="activeTab = 'notes'"
           >
-            [ NOTES ]
+            {{ t('app.tabs.notes') }}
           </RetroButton>
           <RetroButton
             variant="sm"
@@ -197,7 +199,7 @@ const noteListColumnStyle = computed(() =>
             :class="activeTab === 'bookmarks' ? 'shell__tab-btn--active' : ''"
             @click="activeTab = 'bookmarks'"
           >
-            [ BOOKMARK ]
+            {{ t('app.tabs.bookmark') }}
           </RetroButton>
           <RetroButton
             variant="sm"
@@ -205,7 +207,7 @@ const noteListColumnStyle = computed(() =>
             :class="activeTab === 'dictionary' ? 'shell__tab-btn--active' : ''"
             @click="activeTab = 'dictionary'"
           >
-            [ DICT ]
+            {{ t('app.tabs.dict') }}
           </RetroButton>
           <span class="shell__sep-v" aria-hidden="true">|</span>
           <RetroButton
@@ -217,7 +219,7 @@ const noteListColumnStyle = computed(() =>
             :title="syncButtonTitle"
             @click="onSync"
           >
-            [ SYNC ]
+            {{ t('app.sync') }}
           </RetroButton>
           <RetroButton
             variant="sm"
@@ -225,24 +227,24 @@ const noteListColumnStyle = computed(() =>
             :disabled="!notes.activeNote"
             @click="onExport"
           >
-            [ EXPORT ]
+            {{ t('app.export') }}
           </RetroButton>
           <RetroButton
             variant="sm"
             type="button"
             @click="showSettings = true"
           >
-            [ SETTINGS ]
+            {{ t('app.settings') }}
           </RetroButton>
           <RetroButton
             variant="sm"
             type="button"
             @click="searchBarRef?.focusInput()"
           >
-            [ FIND ]
+            {{ t('app.find') }}
           </RetroButton>
           <RetroButton type="button" @click="onLogout">
-            [ LOGOUT ]
+            {{ t('app.logout') }}
           </RetroButton>
         </div>
       </div>
@@ -270,7 +272,7 @@ const noteListColumnStyle = computed(() =>
         />
         <div
           class="shell__resize"
-          title="Drag to resize"
+          :title="t('app.dragResize')"
           aria-hidden="true"
           @mousedown="onResizeStart(1, $event)"
         />
@@ -283,7 +285,7 @@ const noteListColumnStyle = computed(() =>
         <div
           v-show="!isSearchActive"
           class="shell__resize"
-          title="Drag to resize"
+          :title="t('app.dragResize')"
           aria-hidden="true"
           @mousedown="onResizeStart(2, $event)"
         />
@@ -306,7 +308,7 @@ const noteListColumnStyle = computed(() =>
       v-else
       class="shell__loading retro-empty"
     >
-      LOADING<span class="retro-loading__dots"><span>.</span><span>.</span><span>.</span></span>
+      {{ t('app.loading') }}<span class="retro-loading__dots"><span>.</span><span>.</span><span>.</span></span>
     </p>
 
     <SettingsModal v-if="showSettings" @close="showSettings = false" />

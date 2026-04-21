@@ -6,13 +6,15 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import { useNotesStore } from '@/stores/notes'
+import { useLangStore } from '@/stores/uiLang'
 import type { NoteBody } from '@/types'
 import { extractCodeBlocksFromDocJSON } from '@/utils/tiptapJson'
-import { copyTextToClipboard, writeToClipboardEvent } from '@/utils/clipboard'
+import { copyTextToClipboard } from '@/utils/clipboard'
 import type { EditorView } from 'prosemirror-view'
 import { firstLinePreview, plainTextFromHtml } from '@/utils/text'
 
 const notesStore = useNotesStore()
+const { t } = useLangStore()
 const codeBlocks = ref<{ lang: string; code: string }[]>([])
 const copyFeedback = ref(false)
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null
@@ -90,16 +92,24 @@ const editor = useEditor({
       class: 'note-editor__prose',
     },
     /**
-     * ProseMirror mặc định dùng clipboardData; trong extension popup đôi khi cần fallback sync.
-     * Luôn ghi text/plain để Ctrl+C / Win+V nhận nội dung.
+     * Ctrl+C: dùng đúng serializer của ProseMirror (giống hành vi copy nội bộ),
+     * không dùng doc.textBetween + writeToClipboardEvent — vì textBetween khác chuẩn PM
+     * (block separator, code block, v.v.) và writeToClipboardEvent còn gọi writeText async
+     * có thể ghi đè clipboard / mất format.
      */
     handleDOMEvents: {
       copy(view: EditorView, event: Event): boolean {
         if (!(event instanceof ClipboardEvent)) return false
         const sel = view.state.selection
         if (sel.empty) return false
-        const plain = view.state.doc.textBetween(sel.from, sel.to, '\n')
-        return writeToClipboardEvent(event, plain)
+        const cd = event.clipboardData
+        if (!cd) return false
+        const { dom, text } = view.serializeForClipboard(sel.content())
+        event.preventDefault()
+        cd.clearData()
+        cd.setData('text/plain', text)
+        cd.setData('text/html', dom.innerHTML)
+        return true
       },
     },
   },
@@ -209,12 +219,12 @@ onBeforeUnmount(() => {
   <div class="note-editor">
     <template v-if="!notesStore.activeNote">
       <p class="note-editor__empty retro-empty">
-        &gt; NO NOTE SELECTED_<span class="cursor-blink" aria-hidden="true"></span>
+        &gt; {{ t('editor.noNoteSelected') }}<span class="cursor-blink" aria-hidden="true"></span>
       </p>
     </template>
     <template v-else-if="bodiesForEditor.length === 0">
       <p class="note-editor__empty retro-empty">
-        &gt; NO BODY_<span class="cursor-blink" aria-hidden="true"></span>
+        &gt; {{ t('editor.noBody') }}<span class="cursor-blink" aria-hidden="true"></span>
       </p>
       <RetroButton
         variant="sm"
@@ -222,12 +232,12 @@ onBeforeUnmount(() => {
         class="note-editor__add-first"
         @click="onAddBody"
       >
-        + BODY
+        {{ t('editor.addFirstBody') }}
       </RetroButton>
     </template>
     <template v-else>
       <div class="note-editor__head">
-        <span class="note-editor__label">BODY</span>
+        <span class="note-editor__label">{{ t('editor.bodyLabel') }}</span>
         <div class="note-editor__head-actions">
           <RetroButton
             variant="sm"
@@ -241,12 +251,12 @@ onBeforeUnmount(() => {
             v-if="copyFeedback"
             class="note-editor__copied"
             role="status"
-          >COPIED</span>
+          >{{ t('editor.copied') }}</span>
           <button
             type="button"
             class="note-editor__copy"
-            title="Copy nội dung (plain text) vào clipboard"
-            aria-label="Copy nội dung body vào clipboard"
+            :title="t('editor.copyTitle')"
+            :aria-label="t('editor.copyAriaLabel')"
             @click="copyBodyToClipboard"
           >
             <svg
@@ -268,7 +278,7 @@ onBeforeUnmount(() => {
       <div
         class="note-editor__tabs"
         role="tablist"
-        :aria-label="'Bodies for note'"
+        :aria-label="t('editor.bodiesTablist')"
       >
         <div
           v-for="(b, i) in bodiesForEditor"

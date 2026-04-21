@@ -4,6 +4,7 @@ import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useBookmarksStore } from '@/stores/bookmarks'
 import { useNotesStore } from '@/stores/notes'
+import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
   /** Tab đang mở — quyết định ô search áp dụng cho notes hay bookmark. */
@@ -12,6 +13,7 @@ const props = defineProps<{
 
 const notes = useNotesStore()
 const bookmarks = useBookmarksStore()
+const { t } = useLangStore()
 
 const localQuery = ref('')
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -74,13 +76,13 @@ onMounted(() => {
 
 <template>
   <div class="search-bar">
-    <span class="search-bar__label" aria-hidden="true">SEARCH</span>
+    <span class="search-bar__label" aria-hidden="true">{{ t('search.label') }}</span>
     <RetroInput
       id="bbqone-search"
       v-model="localQuery"
       placeholder="> query_"
       autocomplete="off"
-      :aria-label="searchMode === 'notes' ? 'Search notes' : 'Search bookmarks'"
+      :aria-label="searchMode === 'notes' ? t('search.ariaNotes') : t('search.ariaBookmarks')"
     />
     <RetroButton variant="sm" type="button" @click="onClear">
       [ X ]

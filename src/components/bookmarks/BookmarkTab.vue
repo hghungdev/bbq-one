@@ -5,12 +5,14 @@ import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
 import { useBookmarksStore } from '@/stores/bookmarks'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
+import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
 import BookmarkPinModal from './BookmarkPinModal.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
 const bm = useBookmarksStore()
 const pin = useBookmarkPinStore()
+const { t } = useLangStore()
 const confirmRestore = ref(false)
 const pendingRestoreId = ref<string | null>(null)
 const confirmDeleteAll = ref(false)
@@ -65,12 +67,12 @@ const globalHitSections = computed(() => {
   const sections: { sourceKey: string; label: string; hits: BookmarkGlobalHit[] }[] = []
   const liveHits = all.filter(h => h.sourceKey === 'live')
   if (liveHits.length > 0) {
-    sections.push({ sourceKey: 'live', label: 'LIVE BROWSER', hits: liveHits })
+    sections.push({ sourceKey: 'live', label: t('bookmark.live'), hits: liveHits })
   }
   for (const bk of bm.backups) {
     const hits = all.filter(h => h.sourceKey === bk.id)
     if (hits.length > 0) {
-      sections.push({ sourceKey: bk.id, label: `BACKUP · ${bk.label}`, hits })
+      sections.push({ sourceKey: bk.id, label: `${t('bookmark.backups')} · ${bk.label}`, hits })
     }
   }
   return sections
@@ -139,13 +141,13 @@ async function onRefreshLive(): Promise<void> {
     <!-- Toolbar -->
     <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
       <RetroButton variant="sm" :disabled="bm.loading" @click="bm.backup(backupLabel)">
-        [ BACKUP NOW ]
+        {{ t('bookmark.backupNow') }}
       </RetroButton>
       <RetroButton variant="sm" :disabled="bm.loading || bm.liveTree.length === 0" @click="bm.exportHTML()">
-        [ EXPORT HTML ]
+        {{ t('bookmark.exportHtml') }}
       </RetroButton>
       <RetroButton variant="sm" :disabled="bm.loading" @click="onRefreshLive()">
-        [ REFRESH ]
+        {{ t('bookmark.refresh') }}
       </RetroButton>
       <RetroButton
         variant="sm"
@@ -153,20 +155,20 @@ async function onRefreshLive(): Promise<void> {
         class="bm-tab__btn--danger"
         @click="confirmDeleteAll = true"
       >
-        [ DELETE ALL ]
+        {{ t('bookmark.deleteAll') }}
       </RetroButton>
       <span v-if="bm.lastBackupAt" class="bm-tab__hint">
-        Last backup: {{ new Date(bm.lastBackupAt).toLocaleString('sv') }}
+        {{ t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') }) }}
       </span>
     </div>
 
-    <p v-if="bm.error" class="bm-tab__error">&gt; [ERROR] {{ bm.error }}</p>
+    <p v-if="bm.error" class="bm-tab__error">&gt; {{ t('common.error') }} {{ bm.error }}</p>
 
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
       <div class="bm-tab__backups" @click.self="bm.clearBookmarkSearch()">
-        <p class="bm-tab__col-title">BACKUPS</p>
-        <p v-if="bm.backups.length === 0" class="bm-tab__empty">&gt; none yet_</p>
+        <p class="bm-tab__col-title">{{ t('bookmark.backups') }}</p>
+        <p v-if="bm.backups.length === 0" class="bm-tab__empty">{{ t('bookmark.noneYet') }}</p>
         <div
           v-for="bk in bm.backups"
           :key="bk.id"
@@ -177,8 +179,8 @@ async function onRefreshLive(): Promise<void> {
           <span class="bm-tab__backup-label">{{ bk.label }}</span>
           <span class="bm-tab__backup-hint">{{ bk.browser_hint }}</span>
           <div class="bm-tab__backup-actions">
-            <button class="bm-tab__act-btn" title="Restore" @click.stop="onRestoreClick(bk.id)">[RST]</button>
-            <button class="bm-tab__act-btn bm-tab__act-btn--del" title="Delete" @click.stop="onDeleteBackupClick(bk.id)">[DEL]</button>
+            <button class="bm-tab__act-btn" :title="t('bookmark.rstTitle')" @click.stop="onRestoreClick(bk.id)">{{ t('bookmark.rst') }}</button>
+            <button class="bm-tab__act-btn bm-tab__act-btn--del" :title="t('bookmark.delTitle')" @click.stop="onDeleteBackupClick(bk.id)">{{ t('bookmark.del') }}</button>
           </div>
         </div>
       </div>
@@ -186,32 +188,32 @@ async function onRefreshLive(): Promise<void> {
       <!-- Cột phải: tree viewer -->
       <div class="bm-tab__tree-col">
         <p v-if="isBookmarkSearchActive" class="bm-tab__col-title">
-          GLOBAL SEARCH · {{ globalHits.length }} hit(s)
+          {{ t('bookmark.globalSearch', { n: globalHits.length }) }}
           <button
             type="button"
             class="bm-tab__act-btn"
             style="margin-left:8px"
-            title="Clear search"
+            :title="t('bookmark.clearTitle')"
             @click="bm.clearBookmarkSearch()"
           >
-            [ CLEAR ]
+            {{ t('bookmark.clearSearch') }}
           </button>
         </p>
         <p v-else class="bm-tab__col-title">
-          {{ viewMode === 'live' ? 'LIVE BROWSER' : `BACKUP: ${bm.selectedBackup?.label ?? ''}` }}
+          {{ viewMode === 'live' ? t('bookmark.live') : t('bookmark.backupTitle', { label: bm.selectedBackup?.label ?? '' }) }}
           <button
             v-if="viewMode === 'backups'"
             class="bm-tab__act-btn"
             style="margin-left:8px"
             @click="viewMode = 'live'; bm.selectedBackupId = null"
           >
-            [LIVE]
+            {{ t('bookmark.liveSwitchBtn') }}
           </button>
         </p>
-        <p v-if="bm.loading" class="bm-tab__empty">&gt; LOADING...</p>
+        <p v-if="bm.loading" class="bm-tab__empty">{{ t('bookmark.loading') }}</p>
         <!-- Có ô SEARCH: quét LIVE + mọi backup -->
         <div v-else-if="isBookmarkSearchActive" class="bm-tab__global">
-          <p v-if="globalHits.length === 0" class="bm-tab__empty">&gt; NO MATCHES in any snapshot_</p>
+          <p v-if="globalHits.length === 0" class="bm-tab__empty">{{ t('bookmark.noMatchesAny') }}</p>
           <div v-else class="bm-tab__global-scroll">
             <section
               v-for="sec in globalHitSections"
@@ -223,10 +225,10 @@ async function onRefreshLive(): Promise<void> {
                 <button
                   type="button"
                   class="bm-tab__act-btn"
-                  title="Open this source in tree view"
+                  :title="t('bookmark.treeTitle')"
                   @click="focusSourceInTree(sec.sourceKey)"
                 >
-                  [ TREE ]
+                  {{ t('bookmark.tree') }}
                 </button>
               </div>
               <ul class="bm-tab__global-list">
@@ -248,18 +250,18 @@ async function onRefreshLive(): Promise<void> {
           </div>
         </div>
         <BookmarkTree v-else-if="displayTree.length" :nodes="displayTree" />
-        <p v-else class="bm-tab__empty">&gt; NO BOOKMARKS_</p>
+        <p v-else class="bm-tab__empty">{{ t('bookmark.noBookmarks') }}</p>
       </div>
     </div>
 
     <RetroConfirm
       v-model:open="confirmRestore"
-      message="Restore sẽ GHI ĐÈ toàn bộ bookmark hiện tại. Tiếp tục?"
+      :message="t('bookmark.confirmRestore')"
       @confirm="onRestoreConfirm"
     />
     <RetroConfirm
       v-model:open="confirmDeleteAll"
-      message="Xóa toàn bộ bookmark trên trình duyệt (thanh yêu thích, khác…)? Không thể hoàn tác."
+      :message="t('bookmark.confirmDeleteAll')"
       @confirm="onDeleteAllConfirm"
     />
   </div>

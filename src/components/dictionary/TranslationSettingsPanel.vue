@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useTranslationSettingsStore } from '@/stores/translationSettings'
+import { useLangStore } from '@/stores/uiLang'
 import type { LangCode } from '@/types/dictionary'
 
 const settingsStore = useTranslationSettingsStore()
+const { t } = useLangStore()
 
 const LANGS: Array<{ code: LangCode; label: string }> = [
   { code: 'vi', label: 'Tiếng Việt' },
@@ -70,12 +72,12 @@ function learningLangs(): Array<{ code: LangCode; label: string }> {
 <template>
   <div class="tsp">
     <p class="tsp__desc">
-      Translate controls: detected language → target depends on these settings.
+      {{ t('translation.desc') }}
     </p>
 
     <!-- Native language -->
     <div class="tsp__section">
-      <div class="tsp__label">NATIVE LANGUAGE</div>
+      <div class="tsp__label">{{ t('translation.nativeLang') }}</div>
       <select v-model="native" class="tsp__select">
         <option v-for="l in LANGS" :key="l.code" :value="l.code">
           {{ l.label }} ({{ l.code.toUpperCase() }})
@@ -85,7 +87,7 @@ function learningLangs(): Array<{ code: LangCode; label: string }> {
 
     <!-- Learning languages -->
     <div class="tsp__section">
-      <div class="tsp__label">LEARNING LANGUAGES</div>
+      <div class="tsp__label">{{ t('translation.learningLangs') }}</div>
       <div class="tsp__checks">
         <label
           v-for="l in learningLangs()"
@@ -101,7 +103,7 @@ function learningLangs(): Array<{ code: LangCode; label: string }> {
         </label>
       </div>
       <p v-if="!learning.length" class="tsp__warn">
-        ⚠ At least one learning language required.
+        {{ t('translation.warnLang') }}
       </p>
     </div>
 
@@ -110,7 +112,7 @@ function learningLangs(): Array<{ code: LangCode; label: string }> {
 
     <!-- Loading state -->
     <p v-if="settingsStore.loading" class="tsp__loading">
-      Saving...
+      {{ t('translation.saving') }}
     </p>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import DeleteFolderModal from '@/components/folders/DeleteFolderModal.vue'
 import FolderItem from '@/components/folders/FolderItem.vue'
 import SecureFolderModal from '@/components/folders/SecureFolderModal.vue'
 import TagBadge from '@/components/ui/TagBadge.vue'
@@ -8,6 +9,7 @@ import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
+import { useLangStore } from '@/stores/uiLang'
 
 defineProps<{
   renamingFolderId: string | null
@@ -20,6 +22,7 @@ const emit = defineEmits<{
 const folders = useFoldersStore()
 const notes = useNotesStore()
 const secure = useSecureFolderStore()
+const { t } = useLangStore()
 
 const uniqueTags = computed(() => {
   const set = new Set<string>()
@@ -39,6 +42,22 @@ const secureModal = ref<{
   folderId: string
 }>({ open: false, mode: 'enable', folderId: '' })
 
+const deleteFolderModal = ref<{
+  open: boolean
+  folderId: string
+  folderName: string
+  noteCount: number
+  submitting: boolean
+  error: string
+}>({
+  open: false,
+  folderId: '',
+  folderName: '',
+  noteCount: 0,
+  submitting: false,
+  error: '',
+})
+
 function onSelectFolder(id: string): void {
   if (folders.folders.find((f) => f.id === id)?.is_secure) {
     if (secure.isFolderLocked(id)) {
@@ -57,6 +76,55 @@ function openSecureModal(
 
 function closeSecureModal(): void {
   secureModal.value = { ...secureModal.value, open: false }
+}
+
+function openDeleteFolder(folderId: string): void {
+  const f = folders.folders.find((x) => x.id === folderId)
+  if (!f) return
+  const noteCount = notes.notes.filter((n) => n.folder_id === folderId).length
+  deleteFolderModal.value = {
+    open: true,
+    folderId,
+    folderName: f.name,
+    noteCount,
+    submitting: false,
+    error: '',
+  }
+}
+
+function closeDeleteFolder(): void {
+  if (deleteFolderModal.value.submitting) return
+  deleteFolderModal.value = {
+    open: false,
+    folderId: '',
+    folderName: '',
+    noteCount: 0,
+    submitting: false,
+    error: '',
+  }
+}
+
+async function confirmDeleteFolder(): Promise<void> {
+  const id = deleteFolderModal.value.folderId
+  if (!id) return
+  deleteFolderModal.value.error = ''
+  deleteFolderModal.value.submitting = true
+  try {
+    await folders.deleteFolder(id)
+    secure.forgetFolderKey(id)
+    deleteFolderModal.value = {
+      open: false,
+      folderId: '',
+      folderName: '',
+      noteCount: 0,
+      submitting: false,
+      error: '',
+    }
+  } catch (e) {
+    deleteFolderModal.value.error =
+      e instanceof Error ? e.message : 'Delete failed'
+    deleteFolderModal.value.submitting = false
+  }
 }
 
 async function onCreateFolder(): Promise<void> {
@@ -83,7 +151,7 @@ function startCreate(): void {
 <template>
   <aside class="sidebar">
     <div class="sidebar__head">
-      FOLDERS
+      {{ t('sidebar.folders') }}
     </div>
     <div class="sidebar__list">
       <FolderItem
@@ -95,19 +163,20 @@ function startCreate(): void {
         @select="onSelectFolder"
         @request-rename="emit('update:renamingFolderId', $event)"
         @rename-done="emit('update:renamingFolderId', null)"
+        @request-delete="openDeleteFolder"
         @open-secure-modal="openSecureModal"
       />
       <p
         v-if="folders.folders.length === 0"
         class="sidebar__empty retro-empty"
       >
-        NO FOLDERS FOUND_
+        {{ t('sidebar.noFolders') }}
       </p>
     </div>
 
     <div v-if="uniqueTags.length" class="sidebar__tags">
       <div class="sidebar__tag-head">
-        TAGS
+        {{ t('sidebar.tags') }}
       </div>
       <div class="sidebar__tag-list">
         <TagBadge
@@ -124,7 +193,7 @@ function startCreate(): void {
       <RetroInput
         id="new-folder-name"
         v-model="newName"
-        placeholder="folder_name"
+        :placeholder="t('sidebar.folderPlaceholder')"
         :disabled="busy"
         @keydown.enter.prevent="onCreateFolder"
       />
@@ -140,7 +209,7 @@ function startCreate(): void {
 
     <div class="sidebar__foot">
       <RetroButton variant="sm" type="button" :disabled="busy" @click="startCreate">
-        + FOLDER
+        {{ t('sidebar.addFolder') }}
       </RetroButton>
     </div>
 
@@ -151,6 +220,16 @@ function startCreate(): void {
       :folder-id="secureModal.folderId"
       @close="closeSecureModal"
       @done="closeSecureModal"
+    />
+
+    <DeleteFolderModal
+      :open="deleteFolderModal.open"
+      :folder-name="deleteFolderModal.folderName"
+      :note-count="deleteFolderModal.noteCount"
+      :submitting="deleteFolderModal.submitting"
+      :server-error="deleteFolderModal.error"
+      @close="closeDeleteFolder"
+      @confirm="confirmDeleteFolder"
     />
   </aside>
 </template>

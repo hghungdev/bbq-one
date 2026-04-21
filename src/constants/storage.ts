@@ -15,3 +15,6 @@ export const TRANSLATION_SETTINGS_CACHE_KEY = 'translation_settings_cache'
 export const BBQ_PENDING_ROUTE_KEY = 'bbq_pending_route'
 /** Đồng bộ với background để đổi nhãn context menu (Login vs Dashboard). */
 export const BBQ_AUTH_LOGGED_IN_KEY = 'bbq_auth_logged_in'
+
+/** Ngôn ngữ giao diện người dùng đã chọn ('en' | 'vi'). */
+export const UI_LANG_KEY = 'ui_lang'

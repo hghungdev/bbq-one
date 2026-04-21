@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
+import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { formatListUpdatedAt } from '@/utils/date'
 import {
@@ -13,10 +13,8 @@ import {
 } from '@/utils/text'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
+import { useLangStore } from '@/stores/uiLang'
 import type { Note } from '@/types'
-
-const RENAME_HINT =
-  'Double-click hoặc F2 để đổi tên hiển thị trong list (không đổi nội dung note)'
 
 const props = defineProps<{
   note: Note
@@ -37,6 +35,7 @@ const emit = defineEmits<{
 
 const notes = useNotesStore()
 const folders = useFoldersStore()
+const { t } = useLangStore()
 
 const draft = ref('')
 const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
@@ -132,14 +131,14 @@ function onRenameKeydown(e: KeyboardEvent): void {
       'note-item--active': selected,
       'note-item--search-hit': showFolderPath && hideDelete,
     }"
-    :title="RENAME_HINT"
+    :title="t('note.renameHint')"
   >
     <RetroInput
       v-if="renaming"
       :id="`note-rename-${note.id}`"
       ref="inputRef"
       v-model="draft"
-      placeholder="tên hiển thị_"
+      placeholder="label_"
       autocomplete="off"
       @blur="commitRename"
       @keydown="onRenameKeydown"
@@ -170,15 +169,11 @@ function onRenameKeydown(e: KeyboardEvent): void {
             &gt; {{ label }}
           </template>
         </button>
-        <RetroButton
+        <IconDeleteButton
           v-if="!hideDelete"
-          variant="sm"
-          type="button"
-          class="note-item__del"
+          :title="t('note.deleteTitle')"
           @click.stop="emit('delete', note.id)"
-        >
-          [DEL]
-        </RetroButton>
+        />
       </div>
       <div class="note-item__foot">
         {{ formatListUpdatedAt(note.updated_at) }}
@@ -199,7 +194,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
 
 .note-item__top {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 4px;
 }
 
@@ -305,15 +300,6 @@ function onRenameKeydown(e: KeyboardEvent): void {
 .note-item__title :deep(.search-hit) {
   background: var(--search-hit-bg);
   color: var(--text-primary);
-}
-
-.note-item__del {
-  flex: 0 0 auto;
-}
-
-.note-item__del:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
 }
 
 .note-item__foot {

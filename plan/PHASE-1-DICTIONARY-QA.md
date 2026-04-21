@@ -1,6 +1,6 @@
 # Phase 1 Dictionary — QA Checklist
 
-> **Extension**: BBQ-One v1.1.0
+> **Extension**: BBQOne v1.1.0
 > **Chrome requirement**: 138+ (Translation API stable)
 > **Tester**: ___________  **Date**: ___________
 
@@ -12,7 +12,7 @@
 - [ ] Translation API enabled: `'Translator' in self === true` in DevTools console (any tab)
 - [ ] Language Detector API: `'LanguageDetector' in self === true` in DevTools console
 - [ ] Extension loaded from `dist/` via `chrome://extensions` (Developer mode, Load unpacked)
-- [ ] Logged in to BBQ-One (Supabase auth session active)
+- [ ] Logged in to BBQOne (Supabase auth session active)
 - [ ] Supabase tables `user_dictionary_entries` + `user_translation_settings` exist (migrations 006, 007 run)
 
 ---
@@ -100,7 +100,7 @@ Test on each site — check popup renders without CSS bleed:
 
 | # | Test | Expected | Result |
 |---|------|----------|--------|
-| 3.1 | Open BBQ-One popup → click `[ DICT ]` tab | Dictionary tab loads within 500ms | ☐ |
+| 3.1 | Open BBQOne popup → click `[ DICT ]` tab | Dictionary tab loads within 500ms | ☐ |
 | 3.2 | Tab shows entry count | `DICTIONARY (N)` in header | ☐ |
 | 3.3 | Cache hit: close popup → reopen → click `[ DICT ]` | Entries show instantly (< 50ms) from `chrome.storage.local` | ☐ |
 | 3.4 | Type in search bar | Entries filter real-time (client-side) | ☐ |

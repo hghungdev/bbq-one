@@ -1,19 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useLangStore } from '@/stores/uiLang'
 import { isSupabaseConfigured, missingEnvHint } from '@/env'
 import { formatAuthErrorMessage } from '@/utils/authErrors'
 
 const router = useRouter()
 const auth = useAuthStore()
+const langStore = useLangStore()
+const { t } = langStore
 
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
+
+onMounted(async () => {
+  await langStore.loadLang()
+})
 
 async function onSubmit(): Promise<void> {
   errorMessage.value = null
@@ -45,13 +52,13 @@ async function onSubmit(): Promise<void> {
     <div class="login__panel">
       <header class="login__header">
         <h1 class="login__title">
-          BBQ-One v1.1<span class="cursor-blink" aria-hidden="true"></span>
+          BBQOne v1.1<span class="cursor-blink" aria-hidden="true"></span>
         </h1>
         <div class="login__rule" />
       </header>
 
       <form class="login__form" @submit.prevent="onSubmit">
-        <label class="login__label" for="bbqone-email">EMAIL:</label>
+        <label class="login__label" for="bbqone-email">{{ t('login.email') }}</label>
         <RetroInput
           id="bbqone-email"
           v-model="email"
@@ -61,7 +68,7 @@ async function onSubmit(): Promise<void> {
           :disabled="loading"
         />
 
-        <label class="login__label" for="bbqone-password">PASSWORD:</label>
+        <label class="login__label" for="bbqone-password">{{ t('login.password') }}</label>
         <RetroInput
           id="bbqone-password"
           v-model="password"
@@ -88,13 +95,13 @@ async function onSubmit(): Promise<void> {
 
         <div class="login__actions">
           <RetroButton type="submit" :disabled="loading">
-            {{ loading ? '...' : '[ LOGIN ]' }}
+            {{ loading ? t('login.loading') : t('login.btn') }}
           </RetroButton>
         </div>
       </form>
 
       <footer class="login__footer">
-        &gt; SECURE · ENCRYPTED
+        {{ t('login.footer') }}
       </footer>
     </div>
   </div>

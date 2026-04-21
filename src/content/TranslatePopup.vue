@@ -7,7 +7,27 @@
 
   import { isKeywordEntry } from '@/services/dictionary/segmenter'
 
-  import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
+  import { BBQ_AUTH_LOGGED_IN_KEY, UI_LANG_KEY } from '@/constants/storage'
+
+  import { en } from '@/i18n/en'
+  import { vi } from '@/i18n/vi'
+  import type { I18nKey } from '@/i18n/en'
+
+  const uiLang = ref<'en' | 'vi'>('en')
+  const LOCALES: Record<string, Record<string, string>> = {
+    en: en as Record<string, string>,
+    vi: vi as Record<string, string>,
+  }
+  function t(key: I18nKey, params?: Record<string, string | number>): string {
+    const locale = LOCALES[uiLang.value]
+    let str = locale?.[key] ?? (en as Record<string, string>)[key] ?? key
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        str = str.replace(`{${k}}`, String(v))
+      }
+    }
+    return str
+  }
 
   const props = defineProps<{
     text: string
@@ -48,11 +68,11 @@
   })
 
   const savedHint = computed(() => {
-    if (saveState.value === 'saved') return 'Saved to dictionary'
+    if (saveState.value === 'saved') return t('popup.savedHint')
 
-    if (alreadySaved.value && saveState.value === 'idle') return 'Already in dictionary'
+    if (alreadySaved.value && saveState.value === 'idle') return t('popup.alreadySaved')
 
-    return 'Saved to dictionary'
+    return t('popup.savedHint')
   })
 
   const showMetaRow = computed(() => {
@@ -72,9 +92,11 @@
   const VIEW_MARGIN = 8
 
   async function refreshAuth(): Promise<void> {
-    const data = await chrome.storage.local.get(BBQ_AUTH_LOGGED_IN_KEY)
+    const data = await chrome.storage.local.get([BBQ_AUTH_LOGGED_IN_KEY, UI_LANG_KEY])
 
     isAuthenticated.value = !!data[BBQ_AUTH_LOGGED_IN_KEY]
+    const lang = data[UI_LANG_KEY]
+    if (lang === 'vi' || lang === 'en') uiLang.value = lang
   }
 
   function onAuthStorageChanged(
@@ -274,17 +296,17 @@
 <template>
   <div ref="popupEl" class="bbq-popup" :style="popupStyle">
     <div class="bbq-popup__header">
-      <span class="bbq-popup__brand">BBQ-ONE &gt; TRANSLATE</span>
+      <span class="bbq-popup__brand">{{ t('popup.brand') }}</span>
 
-      <button class="bbq-popup__close" type="button" @click="props.onClose" aria-label="Close">
-        ×
+      <button class="bbq-popup__close" type="button" :aria-label="t('popup.close')" @click="props.onClose">
+        {{ t('popup.close') }}
       </button>
     </div>
 
     <div class="bbq-popup__body">
-      <div v-if="loading" class="bbq-popup__loading">Translating…</div>
+      <div v-if="loading" class="bbq-popup__loading">{{ t('popup.translating') }}</div>
 
-      <div v-else-if="error" class="bbq-popup__error">[ERROR] {{ error }}</div>
+      <div v-else-if="error" class="bbq-popup__error">{{ t('common.error') }} {{ error }}</div>
 
       <div v-else-if="result" class="bbq-popup__result">
         <!-- Nguồn: tag + từ + IPA (IPA thuộc từ gốc) -->
@@ -315,7 +337,7 @@
                   v-if="saveState === 'error'"
                   type="button"
                   class="bbq-popup__save-icon"
-                  title="Retry save"
+                  :title="t('popup.retryTitle')"
                   :aria-label="saveIconAriaLabel"
                   @click="doSave"
                 >
@@ -338,7 +360,7 @@
                   class="bbq-popup__save-icon"
                   :class="{ 'bbq-popup__save-icon--busy': saveState === 'saving' }"
                   :disabled="saveState === 'saving'"
-                  title="Save to dictionary"
+                  :title="t('popup.saveTitle')"
                   :aria-label="saveIconAriaLabel"
                   @click="doSave"
                 >
@@ -378,9 +400,9 @@
               <span
                 v-else
                 class="bbq-popup__save-icon bbq-popup__save-icon--locked"
-                title="Right-click toolbar icon → Login to save"
+                :title="t('popup.lockTitle')"
                 role="img"
-                aria-label="Sign in required to save to dictionary"
+                :aria-label="t('popup.lockAriaLabel')"
               >
                 <svg
                   class="bbq-popup__save-icon-svg"
@@ -407,12 +429,12 @@
             </div>
 
             <div v-if="result.confidence !== undefined" class="bbq-popup__confidence">
-              {{ Math.round(result.confidence * 100) }}% confidence
+              {{ Math.round(result.confidence * 100) }}{{ t('popup.confidence') }}
             </div>
           </div>
 
           <p v-if="canSaveKeyword && !isAuthenticated" class="bbq-popup__login-hint">
-            Tap the lock — right-click toolbar icon → Login to save.
+            {{ t('popup.loginHint') }}
           </p>
         </section>
       </div>

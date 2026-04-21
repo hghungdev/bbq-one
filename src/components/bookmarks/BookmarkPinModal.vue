@@ -4,6 +4,7 @@ import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import PinKeypad from '@/components/bookmarks/PinKeypad.vue'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
+import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
   mode: 'setup' | 'unlock'
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const pin = useBookmarkPinStore()
+const { t } = useLangStore()
 
 const pinLen = ref<6 | 9>(6)
 const pinSetup = ref('')
@@ -131,11 +133,11 @@ watch(
 async function onSubmitSetup(): Promise<void> {
   formError.value = null
   if (!patternOkSetup(pinSetup.value) || !patternOkSetup(pinConfirm.value)) {
-    formError.value = `PIN phải đúng ${pinLen.value} chữ số.`
+    formError.value = t('pin.errLengthN', { n: pinLen.value })
     return
   }
   if (pinSetup.value !== pinConfirm.value) {
-    formError.value = 'Hai lần nhập PIN không khớp.'
+    formError.value = t('pin.errMismatch')
     return
   }
   busy.value = true
@@ -153,7 +155,7 @@ async function onSubmitUnlock(): Promise<void> {
   formError.value = null
   if (isLockedOut.value) return
   if (!patternOkUnlock(pinUnlock.value)) {
-    formError.value = 'PIN phải đúng 6 hoặc 9 chữ số.'
+    formError.value = t('pin.errLengthAny')
     return
   }
   busy.value = true
@@ -161,11 +163,11 @@ async function onSubmitUnlock(): Promise<void> {
     const ok = await pin.tryUnlock(pinUnlock.value)
     if (!ok) {
       if (pin.lockoutUntil > Date.now()) {
-        formError.value = 'Sai PIN quá nhiều lần. Chờ hết thời gian khóa rồi thử lại.'
+        formError.value = t('pin.errTooMany')
       } else {
         const left = 3 - pin.failedAttempts
         formError.value =
-          left > 0 ? `Sai PIN. Còn ${left} lần thử.` : 'Sai PIN.'
+          left > 0 ? t('pin.errWrongN', { n: left }) : t('pin.errWrong')
       }
       pinUnlock.value = ''
       return
@@ -196,42 +198,40 @@ const attemptsLeft = computed(() => {
         tabindex="-1"
       >
         <template v-if="props.mode === 'setup'">
-          <p class="bm-pin__title">&gt; ĐẶT PIN BOOKMARK</p>
-          <p class="bm-pin__hint">
-            PIN dùng để mã hóa backup trên server. Chọn độ dài và nhập hai lần giống nhau.
-          </p>
+          <p class="bm-pin__title">{{ t('pin.setup.title') }}</p>
+          <p class="bm-pin__hint">{{ t('pin.setup.hint') }}</p>
           <div class="bm-pin__row">
-            <label class="bm-pin__label">Độ dài</label>
+            <label class="bm-pin__label">{{ t('pin.setup.length') }}</label>
             <label class="bm-pin__radio">
               <input v-model.number="pinLen" type="radio" :value="6" :disabled="busy">
-              6 số
+              {{ t('pin.setup.digits6') }}
             </label>
             <label class="bm-pin__radio">
               <input v-model.number="pinLen" type="radio" :value="9" :disabled="busy">
-              9 số
+              {{ t('pin.setup.digits9') }}
             </label>
           </div>
-          <label class="bm-pin__label" for="bm-pin-a">PIN</label>
+          <label class="bm-pin__label" for="bm-pin-a">{{ t('pin.label') }}</label>
           <RetroInput
             id="bm-pin-a"
             :model-value="pinSetup"
             type="password"
             digit-only
             autocomplete="new-password"
-            :placeholder="`${pinLen} chữ số`"
+            :placeholder="t('pin.digitsPlaceholder', { n: pinLen })"
             :disabled="busy"
             :maxlength="pinLen"
             @focus="setupActiveField = 'pin'"
             @update:model-value="onSetupPinInput"
           />
-          <label class="bm-pin__label" for="bm-pin-b">Nhập lại PIN</label>
+          <label class="bm-pin__label" for="bm-pin-b">{{ t('pin.confirmLabel') }}</label>
           <RetroInput
             id="bm-pin-b"
             :model-value="pinConfirm"
             type="password"
             digit-only
             autocomplete="new-password"
-            :placeholder="`${pinLen} chữ số`"
+            :placeholder="t('pin.digitsPlaceholder', { n: pinLen })"
             :disabled="busy"
             :maxlength="pinLen"
             @focus="setupActiveField = 'confirm'"
@@ -244,7 +244,7 @@ const attemptsLeft = computed(() => {
               :disabled="busy"
               @click="showKeypad = !showKeypad"
             >
-              {{ showKeypad ? '▲ Ẩn bàn phím số' : '▼ Bàn phím số (touch / tùy chọn)' }}
+              {{ showKeypad ? t('pin.hideKeypad') : t('pin.showKeypad') }}
             </button>
             <button
               v-if="showKeypad"
@@ -253,7 +253,7 @@ const attemptsLeft = computed(() => {
               :disabled="busy"
               @click="shuffleKeypadLayout"
             >
-              Đổi vị trí số
+              {{ t('pin.shuffleKeypad') }}
             </button>
           </div>
           <PinKeypad
@@ -266,28 +266,28 @@ const attemptsLeft = computed(() => {
           <p v-if="formError" class="bm-pin__err">{{ formError }}</p>
           <div class="bm-pin__actions">
             <RetroButton variant="sm" :disabled="busy" @click="onSubmitSetup">
-              [ XÁC NHẬN ]
+              {{ t('pin.confirmBtn') }}
             </RetroButton>
           </div>
         </template>
 
         <template v-else>
-          <p class="bm-pin__title">&gt; MỞ KHÓA BOOKMARK</p>
-          <p class="bm-pin__hint">Nhập PIN để giải mã backup. Sai 3 lần sẽ phải chờ 60 giây.</p>
+          <p class="bm-pin__title">{{ t('pin.unlock.title') }}</p>
+          <p class="bm-pin__hint">{{ t('pin.unlock.hint') }}</p>
           <p v-if="isLockedOut" class="bm-pin__lock">
-            Đang khóa: còn {{ lockoutSecondsLeft }}s mới nhập lại được.
+            {{ t('pin.lockoutMsg', { s: lockoutSecondsLeft }) }}
           </p>
           <p v-else-if="attemptsLeft < 3 && attemptsLeft > 0" class="bm-pin__warn">
-            Còn {{ attemptsLeft }} lần thử trước khi khóa 60s.
+            {{ t('pin.attemptsLeft', { n: attemptsLeft }) }}
           </p>
-          <label class="bm-pin__label" for="bm-pin-u">PIN</label>
+          <label class="bm-pin__label" for="bm-pin-u">{{ t('pin.label') }}</label>
           <RetroInput
             id="bm-pin-u"
             :model-value="pinUnlock"
             type="password"
             digit-only
             autocomplete="current-password"
-            placeholder="6 hoặc 9 chữ số"
+            :placeholder="t('pin.digits69Placeholder')"
             :disabled="busy || isLockedOut"
             :maxlength="9"
             @update:model-value="onUnlockPinInput"
@@ -299,7 +299,7 @@ const attemptsLeft = computed(() => {
               :disabled="busy || isLockedOut"
               @click="showKeypad = !showKeypad"
             >
-              {{ showKeypad ? '▲ Ẩn bàn phím số' : '▼ Bàn phím số (touch / tùy chọn)' }}
+              {{ showKeypad ? t('pin.hideKeypad') : t('pin.showKeypad') }}
             </button>
             <button
               v-if="showKeypad"
@@ -308,7 +308,7 @@ const attemptsLeft = computed(() => {
               :disabled="busy || isLockedOut"
               @click="shuffleKeypadLayout"
             >
-              Đổi vị trí số
+              {{ t('pin.shuffleKeypad') }}
             </button>
           </div>
           <PinKeypad
@@ -321,7 +321,7 @@ const attemptsLeft = computed(() => {
           <p v-if="formError" class="bm-pin__err">{{ formError }}</p>
           <div class="bm-pin__actions">
             <RetroButton variant="sm" :disabled="busy || isLockedOut" @click="onSubmitUnlock">
-              [ MỞ KHÓA ]
+              {{ t('pin.unlockBtn') }}
             </RetroButton>
           </div>
         </template>

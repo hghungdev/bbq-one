@@ -6,6 +6,7 @@ import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
+import { useLangStore } from '@/stores/uiLang'
 
 defineProps<{
   renamingNoteId: string | null
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 const folders = useFoldersStore()
 const notes = useNotesStore()
 const secure = useSecureFolderStore()
+const { t } = useLangStore()
 
 const busy = ref(false)
 const confirmOpen = ref(false)
@@ -99,10 +101,10 @@ function onCancelDelete(): void {
   <div class="note-list">
     <div class="note-list__head">
       <template v-if="notes.searchQuery.trim()">
-        SEARCH NOTES · {{ displayedNotes.length }} hit(s)
+        {{ t('notes.searchHits', { n: displayedNotes.length }) }}
       </template>
       <template v-else>
-        NOTES
+        {{ t('notes.header') }}
       </template>
     </div>
     <div class="note-list__body">
@@ -123,13 +125,13 @@ function onCancelDelete(): void {
         v-if="displayedNotes.length === 0 && folderLocked && !notes.searchQuery.trim()"
         class="note-list__empty retro-empty"
       >
-        &gt; FOLDER LOCKED — UNLOCK VIA CONTEXT MENU_
+        &gt; {{ t('notes.folderLocked') }}
       </p>
       <p
         v-else-if="displayedNotes.length === 0"
         class="note-list__empty retro-empty"
       >
-        NO NOTES FOUND_
+        {{ t('notes.noNotes') }}
       </p>
     </div>
     <div class="note-list__foot">
@@ -139,13 +141,13 @@ function onCancelDelete(): void {
         :disabled="busy || folderLocked"
         @click="onCreateNote"
       >
-        + NOTE
+        {{ t('notes.addNote') }}
       </RetroButton>
     </div>
 
     <RetroConfirm
       v-model:open="confirmOpen"
-      message="DELETE NOTE?"
+      :message="t('notes.deleteConfirm')"
       @confirm="confirmDelete"
       @cancel="onCancelDelete"
     />

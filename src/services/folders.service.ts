@@ -67,4 +67,10 @@ export const foldersService = {
     if (error) throw error
     return normalizeFolder(data)
   },
+
+  async delete(id: string): Promise<void> {
+    await requireUserId()
+    const { error } = await supabase.from('folders').delete().eq('id', id)
+    if (error) throw error
+  },
 }

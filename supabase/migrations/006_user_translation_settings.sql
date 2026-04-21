@@ -1,4 +1,4 @@
--- BBQ-One: User translation preferences
+-- BBQOne: User translation preferences
 -- Run in Supabase SQL Editor sau khi migrate 005.
 
 CREATE TABLE IF NOT EXISTS user_translation_settings (

@@ -1,7 +1,9 @@
 /**
  * Kiểm tra PIN bookmark yếu / quá phổ biến (đặt PIN & đổi PIN).
  * Không dùng khi mở khóa — user có thể đã đặt trước khi có rule.
+ * Trả về locale key — component tự dịch qua t().
  */
+import type { I18nKey } from '@/i18n/en'
 
 const WEAK_6 = new Set<string>([
   '000000',
@@ -82,28 +84,28 @@ function isObviousRepeatPattern(pin: string): boolean {
 }
 
 /**
- * @returns Thông báo lỗi tiếng Việt nếu PIN yếu; `null` nếu chấp nhận được.
+ * @returns Locale key nếu PIN yếu; `null` nếu chấp nhận được.
  * Chỉ gọi khi `pin` đã đúng 6 hoặc 9 chữ số.
  */
-export function bookmarkPinWeakReason(pin: string): string | null {
+export function bookmarkPinWeakReason(pin: string): I18nKey | null {
   if (!/^\d{6}$/.test(pin) && !/^\d{9}$/.test(pin)) {
     return null
   }
 
   if (WEAK_6.has(pin) || WEAK_9.has(pin)) {
-    return 'PIN này quá phổ biến (vd. 123456, 123123). Vui lòng chọn mã khác.'
+    return 'pinWeak.common'
   }
 
   if (isAllSameDigit(pin)) {
-    return 'PIN không nên là một chữ số lặp lại (vd. 111111).'
+    return 'pinWeak.sameDigit'
   }
 
   if (isSequentialOrReverse(pin)) {
-    return 'PIN không nên là dãy số liên tiếp (vd. 123456, 987654).'
+    return 'pinWeak.sequential'
   }
 
   if (isObviousRepeatPattern(pin)) {
-    return 'PIN không nên là mẫu lặp dễ đoán (vd. 123123, 121212).'
+    return 'pinWeak.pattern'
   }
 
   return null

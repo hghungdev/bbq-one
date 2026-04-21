@@ -151,6 +151,21 @@ export const useAuthStore = defineStore('auth', () => {
     await useBookmarkPinStore().lock()
   }
 
+  async function changeAccountPassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const email = user.value?.email?.trim()
+    if (!email) {
+      throw new Error('Chưa đăng nhập hoặc thiếu email tài khoản.')
+    }
+    await authService.changePassword({
+      email,
+      currentPassword,
+      newPassword,
+    })
+  }
+
   return {
     session,
     user,
@@ -160,5 +175,6 @@ export const useAuthStore = defineStore('auth', () => {
     init,
     login,
     logout,
+    changeAccountPassword,
   }
 })

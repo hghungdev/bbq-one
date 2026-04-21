@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useSecureFolderStore } from '@/stores/secureFolder'
+import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
   open: boolean
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const secure = useSecureFolderStore()
+const { t } = useLangStore()
 const busy = ref(false)
 const error = ref('')
 const password = ref('')
@@ -77,9 +79,9 @@ function onPanelKeydown(e: KeyboardEvent): void {
 }
 
 const titleText = (): string => {
-  if (props.mode === 'enable') return 'SECURE FOLDER'
-  if (props.mode === 'unlock') return 'UNLOCK FOLDER'
-  return 'CHANGE PASSPHRASE'
+  if (props.mode === 'enable') return t('secureFolder.titleEnable')
+  if (props.mode === 'unlock') return t('secureFolder.titleUnlock')
+  return t('secureFolder.titleChange')
 }
 </script>
 
@@ -107,20 +109,24 @@ const titleText = (): string => {
         </p>
 
         <template v-if="mode === 'change'">
-          <label class="secure-modal__label" for="secure-old">CURRENT</label>
+          <label class="secure-modal__label" for="secure-old">{{ t('secureFolder.current') }}</label>
           <RetroInput
             id="secure-old"
             ref="firstInputRef"
             v-model="oldPassword"
             type="password"
-            placeholder="••••••••"
+            :placeholder="t('secureFolder.placeholder')"
             autocomplete="off"
             :disabled="busy"
           />
         </template>
 
         <label class="secure-modal__label" for="secure-pw">{{
-          mode === 'unlock' ? 'PASSPHRASE' : mode === 'change' ? 'NEW' : 'PASSPHRASE'
+          mode === 'unlock'
+            ? t('secureFolder.passphrase')
+            : mode === 'change'
+              ? t('secureFolder.new')
+              : t('secureFolder.passphrase')
         }}</label>
         <RetroInput
           v-if="mode !== 'change'"
@@ -128,7 +134,7 @@ const titleText = (): string => {
           ref="firstInputRef"
           v-model="password"
           type="password"
-          placeholder="••••••••"
+          :placeholder="t('secureFolder.placeholder')"
           autocomplete="off"
           :disabled="busy"
           @keydown.enter.prevent="submit"
@@ -138,18 +144,18 @@ const titleText = (): string => {
           id="secure-pw"
           v-model="password"
           type="password"
-          placeholder="••••••••"
+          :placeholder="t('secureFolder.placeholder')"
           autocomplete="off"
           :disabled="busy"
         />
 
         <template v-if="mode === 'enable' || mode === 'change'">
-          <label class="secure-modal__label" for="secure-confirm">CONFIRM</label>
+          <label class="secure-modal__label" for="secure-confirm">{{ t('secureFolder.confirm') }}</label>
           <RetroInput
             id="secure-confirm"
             v-model="confirmPassword"
             type="password"
-            placeholder="••••••••"
+            :placeholder="t('secureFolder.placeholder')"
             autocomplete="off"
             :disabled="busy"
             @keydown.enter.prevent="submit"
@@ -163,7 +169,7 @@ const titleText = (): string => {
             :disabled="busy"
             @click="submit"
           >
-            [ OK ]
+            {{ t('common.ok') }}
           </RetroButton>
           <RetroButton
             variant="sm"

@@ -46,4 +46,32 @@ export const authService = {
     const { data } = await supabase.auth.getSession()
     return data.session
   },
+
+  /**
+   * Đổi mật khẩu: xác minh mật khẩu hiện tại bằng signInWithPassword, rồi updateUser.
+   */
+  async changePassword(params: {
+    email: string
+    currentPassword: string
+    newPassword: string
+  }): Promise<void> {
+    const { error: signErr } = await supabase.auth.signInWithPassword({
+      email: params.email,
+      password: params.currentPassword,
+    })
+    if (signErr) {
+      const msg = signErr.message ?? ''
+      if (/invalid login|invalid credentials|invalid email or password/i.test(msg)) {
+        throw new Error('Mật khẩu hiện tại không đúng.')
+      }
+      throw new Error(signErr.message || 'Không xác minh được mật khẩu hiện tại.')
+    }
+    const { error: upErr } = await supabase.auth.updateUser({
+      password: params.newPassword,
+    })
+    if (upErr) {
+      throw new Error(upErr.message || 'Không cập nhật được mật khẩu mới.')
+    }
+    await setLoginDeadline()
+  },
 }

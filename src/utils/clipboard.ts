@@ -42,21 +42,3 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
   }
 }
 
-/**
- * Dùng trong copy event handler (Ctrl+C).
- * Ghi clipboardData cho ProseMirror + đồng thời ghi OS clipboard.
- */
-export function writeToClipboardEvent(event: ClipboardEvent, text: string): boolean {
-  try {
-    const cd = event.clipboardData
-    if (cd) {
-      event.preventDefault()
-      cd.clearData()
-      cd.setData('text/plain', text)
-    }
-    void copyTextToClipboard(text)
-    return true
-  } catch {
-    return false
-  }
-}

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useDictionaryStore } from '@/stores/dictionary'
+import { useLangStore } from '@/stores/uiLang'
 import DictionarySearchBar from './DictionarySearchBar.vue'
 import DictionaryEntryItem from './DictionaryEntryItem.vue'
 
 const store = useDictionaryStore()
+const { t } = useLangStore()
 
 onMounted(() => {
   void store.loadAll()
@@ -15,7 +17,7 @@ onMounted(() => {
   <div class="dict-tab">
     <!-- Header bar with count -->
     <div class="dict-tab__header">
-      <span class="dict-tab__title">DICTIONARY</span>
+      <span class="dict-tab__title">{{ t('dict.title') }}</span>
       <span class="dict-tab__count">({{ store.totalCount }})</span>
     </div>
 
@@ -24,7 +26,7 @@ onMounted(() => {
 
     <!-- States -->
     <div v-if="store.loading" class="dict-tab__state">
-      LOADING<span class="retro-loading__dots"><span>.</span><span>.</span><span>.</span></span>
+      {{ t('app.loading') }}<span class="retro-loading__dots"><span>.</span><span>.</span><span>.</span></span>
     </div>
 
     <div v-else-if="store.loadError" class="dict-tab__state dict-tab__state--error">
@@ -36,10 +38,10 @@ onMounted(() => {
       class="dict-tab__state dict-tab__state--empty"
     >
       <template v-if="store.searchQuery">
-        No matches for "{{ store.searchQuery }}"
+        {{ t('dict.noMatches', { q: store.searchQuery }) }}
       </template>
       <template v-else>
-        Dictionary empty. Translate something!
+        {{ t('dict.empty') }}
       </template>
     </div>
 

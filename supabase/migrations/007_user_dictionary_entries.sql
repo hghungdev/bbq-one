@@ -1,4 +1,4 @@
--- BBQ-One: Personal dictionary entries
+-- BBQOne: Personal dictionary entries
 -- Phase 1 columns. Phase 2 sẽ add: starred, tags, mastery_level, review_count, last_reviewed_at
 
 CREATE TABLE IF NOT EXISTS user_dictionary_entries (

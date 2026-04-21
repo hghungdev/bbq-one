@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import type { LangCode, TranslationResult } from '@/types/dictionary'
 import { translatorService } from '@/services/translator/translator.service'
 import { classifyEntryType, isKeywordEntry } from '@/services/dictionary/segmenter'
 import { useAuthStore } from '@/stores/auth'
+import { useLangStore } from '@/stores/uiLang'
 import { getLangName } from '@/utils/langNames'
 
 const auth = useAuthStore()
+const langStore = useLangStore()
+const { t } = langStore
+
+const inputRef = ref<HTMLTextAreaElement | null>(null)
 
 const inputText = ref('')
 const loading = ref(false)
@@ -33,7 +38,7 @@ const synonymsText = computed(() => {
 async function runTranslate(): Promise<void> {
   const text = inputText.value.trim()
   if (!text) {
-    error.value = 'Enter text to translate.'
+    error.value = t('qt.errorEmpty')
     return
   }
   loading.value = true
@@ -111,11 +116,28 @@ async function doSave(): Promise<void> {
 }
 
 function onInputKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault()
-    void runTranslate()
-  }
+  if (e.key !== 'Enter') return
+  // Shift+Enter: xuống dòng; Enter (hoặc Ctrl+Enter): dịch ngay.
+  if (e.shiftKey) return
+  e.preventDefault()
+  void runTranslate()
 }
+
+function focusInput(): void {
+  void nextTick(() => {
+    const el = inputRef.value
+    if (!el) return
+    el.focus()
+    requestAnimationFrame(() => {
+      inputRef.value?.focus()
+    })
+  })
+}
+
+onMounted(async () => {
+  await langStore.loadLang()
+  focusInput()
+})
 
 const saveIconAriaLabel = computed(() => {
   if (saveState.value === 'saving') return 'Saving to dictionary'
@@ -127,16 +149,18 @@ const saveIconAriaLabel = computed(() => {
 <template>
   <div class="qt">
     <header class="qt__header">
-      <span class="qt__brand">BBQ-One</span>
+      <span class="qt__brand">BBQOne</span>
     </header>
 
     <div class="qt__input-row">
       <textarea
+        ref="inputRef"
         v-model="inputText"
         class="qt__input"
         rows="3"
-        placeholder="Type or paste text…"
+        :placeholder="t('qt.placeholder')"
         :disabled="loading"
+        autocomplete="off"
         @keydown="onInputKeydown"
       />
       <button
@@ -145,12 +169,11 @@ const saveIconAriaLabel = computed(() => {
         :disabled="loading"
         @click="runTranslate"
       >
-        {{ loading ? '…' : 'Translate' }}
+        {{ loading ? t('qt.loading') : t('qt.btn') }}
       </button>
     </div>
     <p class="qt__hint">
-      Ctrl+Enter to translate · Phrases &amp; sentences are not saved · Part-of-speech (adj./verb/…) for
-      <strong>English</strong> single words.
+      {{ t('qt.hintMain') }} <strong>{{ t('qt.hintLang') }}</strong> {{ t('qt.hintTail') }}
     </p>
 
     <div v-if="error" class="qt__error" role="alert">

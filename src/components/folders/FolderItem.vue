@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useSecureFolderStore } from '@/stores/secureFolder'
+import { useLangStore } from '@/stores/uiLang'
 import { formatListUpdatedAt } from '@/utils/date'
 import type { Folder } from '@/types'
-
-const RENAME_HINT =
-  'Double-click hoặc F2 để đổi tên thư mục — chuột phải: Secure folder'
 
 const props = defineProps<{
   folder: Folder
@@ -19,11 +18,13 @@ const emit = defineEmits<{
   select: [id: string]
   'request-rename': [id: string]
   'rename-done': []
+  'request-delete': [id: string]
   'open-secure-modal': [mode: 'enable' | 'unlock' | 'change', folderId: string]
 }>()
 
 const folders = useFoldersStore()
 const secure = useSecureFolderStore()
+const { t } = useLangStore()
 const draft = ref('')
 const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
 
@@ -114,55 +115,68 @@ function pickAction(
 </script>
 
 <template>
-  <div class="folder-item-wrap" :title="RENAME_HINT">
+  <div class="folder-item-wrap" :title="t('folder.renameHint')">
     <RetroInput
       v-if="renaming"
       :id="`folder-rename-${folder.id}`"
       ref="inputRef"
       v-model="draft"
-      placeholder="folder_name"
+      :placeholder="t('sidebar.folderPlaceholder')"
       autocomplete="off"
       @blur="commitRename"
       @keydown="onRenameKeydown"
     />
-    <button
-      v-else
-      type="button"
-      class="folder-item"
-      :class="{ 'folder-item--active': selected }"
-      @click="onClick"
-      @dblclick="onDblClick"
-      @contextmenu="onContextMenu"
-    >
-      <div class="folder-item__row">
-        <span class="folder-item__label">&gt; {{ folder.name }}</span>
+    <div v-else class="folder-item__top">
+      <button
+        type="button"
+        class="folder-item"
+        :class="{ 'folder-item--active': selected }"
+        @click="onClick"
+        @dblclick="onDblClick"
+        @contextmenu="onContextMenu"
+      >
+        <div class="folder-item__row">
+          <span class="folder-item__label">&gt; {{ folder.name }}</span>
 
-        <span
-          v-if="folder.is_secure"
-          class="folder-item__icon-secure"
-          title="Secure folder"
-          aria-label="Secure folder"
-        >
-        [
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="folder-item__shield"
-            aria-hidden="true"
-            focusable="false"
+          <span
+            v-if="folder.is_secure"
+            class="folder-item__icon-secure"
+            :title="t('folder.secureLabel')"
+            :aria-label="t('folder.secureLabel')"
           >
-            <path
-              fill="currentColor"
-              d="M12 2 4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"
-            />
-          </svg>
-        ]
-        </span>
-      </div>
-      <div class="folder-item__foot">
-        {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at) }}
-      </div>
-    </button>
+            <svg
+              class="folder-item__lock"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <rect
+                class="folder-item__lock-stroke"
+                x="3"
+                y="11"
+                width="18"
+                height="11"
+                rx="2"
+                ry="2"
+              />
+              <path
+                class="folder-item__lock-stroke"
+                d="M7 11V7a5 5 0 0 1 10 0v4"
+              />
+            </svg>
+          </span>
+        </div>
+        <div class="folder-item__foot">
+          {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at) }}
+        </div>
+      </button>
+      <IconDeleteButton
+        :title="t('folder.deleteTitle')"
+        @click.stop="emit('request-delete', folder.id)"
+      />
+    </div>
 
     <Teleport to="body">
       <ul
@@ -174,13 +188,13 @@ function pickAction(
       >
         <li v-if="!folder.is_secure" role="none">
           <button type="button" role="menuitem" @click="pickAction('enable')">
-            Secure folder…
+            {{ t('folder.ctx.secure') }}
           </button>
         </li>
         <template v-else>
           <li v-if="secure.isFolderLocked(folder.id)" role="none">
             <button type="button" role="menuitem" @click="pickAction('unlock')">
-              Unlock…
+              {{ t('folder.ctx.unlock') }}
             </button>
           </li>
           <li v-else role="none">
@@ -189,12 +203,12 @@ function pickAction(
               role="menuitem"
               @click="secure.lockFolder(folder.id)"
             >
-              Lock
+              {{ t('folder.ctx.lock') }}
             </button>
           </li>
           <li role="none">
             <button type="button" role="menuitem" @click="pickAction('change')">
-              Change passphrase…
+              {{ t('folder.ctx.changePassphrase') }}
             </button>
           </li>
         </template>
@@ -207,6 +221,12 @@ function pickAction(
 .folder-item-wrap {
   margin-bottom: 4px;
   position: relative;
+}
+
+.folder-item__top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .folder-item {
@@ -225,6 +245,8 @@ function pickAction(
   font-size: var(--font-size-sm);
   text-align: left;
   cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .folder-item__row {
@@ -267,14 +289,21 @@ function pickAction(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
-  opacity: 0.92;
+  color: var(--accent-dashboard);
 }
 
-.folder-item__shield {
-  width: 13px;
-  height: 13px;
+.folder-item__lock {
+  width: 14px;
+  height: 14px;
   display: block;
+}
+
+.folder-item__lock-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .folder-ctx {
