@@ -21,7 +21,9 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
   if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text)
-      console.log('[BBQOne][clipboard] popup writeText OK, hasFocus=', document.hasFocus())
+      if (import.meta.env.DEV) {
+        console.log('[BBQOne][clipboard] popup writeText OK, hasFocus=', document.hasFocus())
+      }
       return true
     } catch (e) {
       console.warn('[BBQOne][clipboard] popup writeText failed:', e)
@@ -34,7 +36,9 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
       type: 'copy-to-os-clipboard',
       payload: { text },
     }) as { ok: boolean; error?: string } | undefined
-    console.log('[BBQOne][clipboard] offscreen result:', response)
+    if (import.meta.env.DEV) {
+      console.log('[BBQOne][clipboard] offscreen result:', response)
+    }
     return response?.ok ?? false
   } catch (e) {
     console.warn('[BBQOne][clipboard] offscreen fallback failed:', e)
