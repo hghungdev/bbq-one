@@ -70,7 +70,8 @@ export interface TranslationSettings {
   default_provider: string
   auto_detect: boolean
   auto_save: boolean
-  domain_overrides: Record<string, { target?: LangCode }>  // Phase 2
+  domain_overrides: Record<string, { target?: LangCode }> // Phase 2
+  use_mymemory: boolean // Sprint 2.5: toggle MyMemory provider (default true)
   created_at: string
   updated_at: string
 }

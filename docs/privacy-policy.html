@@ -66,7 +66,30 @@
     <h2>Third-Party Services</h2>
     <p>
       BBQOne connects to <strong>Supabase</strong> (supabase.co) for authentication and data sync.
-      No other third-party services receive your data.
+    </p>
+
+    <h2>Translation Service Disclosure</h2>
+    <p>When you use the translation feature, BBQOne uses two providers:</p>
+    <ol>
+      <li>
+        <strong>Chrome Built-in Translator API</strong> (local, offline).
+        Translation is performed entirely on your device. No data leaves your browser.
+      </li>
+      <li>
+        <strong>MyMemory Translation API</strong> (higher quality, network-dependent).
+        When available, BBQOne sends the selected text via HTTPS to
+        <a href="https://mymemory.translated.net" target="_blank" rel="noopener">MyMemory</a>
+        for translation. We do <strong>NOT</strong> send any personal information, user IDs,
+        IP tracking codes, or browsing context — only the selected text.
+        MyMemory's privacy policy:
+        <a href="https://mymemory.translated.net/doc/privacy.php" target="_blank" rel="noopener">
+          https://mymemory.translated.net/doc/privacy.php
+        </a>
+      </li>
+    </ol>
+    <p>
+      You can disable MyMemory in <strong>Settings → Translation Quality</strong> to use only
+      the Chrome built-in translator (100% local, no network required).
     </p>
 
     <h2>Contact</h2>

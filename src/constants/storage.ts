@@ -18,3 +18,10 @@ export const BBQ_AUTH_LOGGED_IN_KEY = 'bbq_auth_logged_in'
 
 /** Ngôn ngữ giao diện người dùng đã chọn ('en' | 'vi'). */
 export const UI_LANG_KEY = 'ui_lang'
+
+/**
+ * Bật/tắt MyMemory provider (true = dùng MyMemory, false = Chrome built-in only).
+ * Lưu ở chrome.storage.local để truy cập được từ mọi context (background + popup).
+ * Default: true khi key không tồn tại.
+ */
+export const USE_MYMEMORY_KEY = 'bbqone_use_mymemory'

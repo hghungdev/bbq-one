@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import NoteEditor from '@/components/notes/NoteEditor.vue'
 import NoteList from '@/components/layout/NoteList.vue'
 import SearchBar from '@/components/layout/SearchBar.vue'
@@ -9,6 +8,7 @@ import Sidebar from '@/components/layout/Sidebar.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
 import DictionaryTab from '@/components/dictionary/DictionaryTab.vue'
+import LoginModal from '@/components/auth/LoginModal.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
@@ -17,8 +17,8 @@ import { useSecureFolderStore } from '@/stores/secureFolder'
 import { useSyncStore } from '@/stores/sync'
 import { useLangStore } from '@/stores/uiLang'
 import { downloadNoteAsTxt } from '@/utils/exportNote'
+import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
 
-const router = useRouter()
 const auth = useAuthStore()
 const folders = useFoldersStore()
 const notes = useNotesStore()
@@ -33,6 +33,8 @@ const renamingFolderId = ref<string | null>(null)
 const renamingNoteId = ref<string | null>(null)
 
 const { colW1, colW2, onResizeStart } = useColumnResize()
+
+const showLoginModal = ref(false)
 
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null)
 const noteEditorRef = ref<InstanceType<typeof NoteEditor> | null>(null)
@@ -98,15 +100,31 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeydown, true)
 })
 
+/** Anonymous: chưa đăng nhập */
+const isAnonymous = computed(() => !auth.isAuthenticated)
+
 async function onLogout(): Promise<void> {
   secure.lockAll()
   await auth.logout()
-  await router.replace({ name: 'login' })
+  // Sau khi logout: ở lại dashboard ở local mode, reload data từ local storage
+  await Promise.all([folders.loadAll(), notes.loadAll()])
+}
+
+function onGoLogin(): void {
+  showLoginModal.value = true
+}
+
+async function onLoginSuccess(): Promise<void> {
+  showLoginModal.value = false
+  // Reload data từ cloud sau khi đăng nhập thành công
+  await Promise.all([folders.loadAll(), notes.loadAll()])
 }
 
 const syncBusy = computed(() => sync.status === 'syncing')
 
-const headerEmail = computed(() => auth.user?.email ?? t('app.offline'))
+const headerEmail = computed(() =>
+  auth.user?.email ?? (isAnonymous.value ? t('app.anonymous') : t('app.offline')),
+)
 
 const syncBadgeText = computed(() => {
   if (sync.status === 'syncing') return t('app.sync.syncing')
@@ -174,12 +192,16 @@ const noteListColumnStyle = computed(() =>
         <span class="shell__sep" aria-hidden="true">───────────────────────</span>
         <div class="shell__header-right">
           <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>
+          <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
           <span
+            v-if="!isAnonymous"
             class="shell__sync-badge"
             :class="syncBadgeClass"
             role="status"
             :title="syncBadgeTitle"
           >{{ syncBadgeText }}</span>
+          <!-- Local pending badge: chỉ hiện khi anonymous -->
+          <SyncStatusBadge v-if="isAnonymous" />
         </div>
       </div>
       <div class="shell__header-row shell__header-row--actions">
@@ -210,7 +232,9 @@ const noteListColumnStyle = computed(() =>
             {{ t('app.tabs.dict') }}
           </RetroButton>
           <span class="shell__sep-v" aria-hidden="true">|</span>
+          <!-- Sync button: chỉ hiện khi đã đăng nhập -->
           <RetroButton
+            v-if="!isAnonymous"
             variant="sm"
             type="button"
             class="shell__sync-btn"
@@ -236,14 +260,11 @@ const noteListColumnStyle = computed(() =>
           >
             {{ t('app.settings') }}
           </RetroButton>
-          <RetroButton
-            variant="sm"
-            type="button"
-            @click="searchBarRef?.focusInput()"
-          >
-            {{ t('app.find') }}
+          <!-- Anonymous: hiện nút Sign In; Logged in: hiện nút Logout -->
+          <RetroButton v-if="isAnonymous" type="button" @click="onGoLogin">
+            {{ t('app.login') }}
           </RetroButton>
-          <RetroButton type="button" @click="onLogout">
+          <RetroButton v-else type="button" @click="onLogout">
             {{ t('app.logout') }}
           </RetroButton>
         </div>
@@ -312,6 +333,13 @@ const noteListColumnStyle = computed(() =>
     </p>
 
     <SettingsModal v-if="showSettings" @close="showSettings = false" />
+
+    <!-- Login popup: hiện ngay trên dashboard thay vì navigate sang trang riêng -->
+    <LoginModal
+      v-if="showLoginModal"
+      @close="showLoginModal = false"
+      @success="onLoginSuccess"
+    />
   </div>
 </template>
 

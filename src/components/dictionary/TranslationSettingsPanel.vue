@@ -67,6 +67,15 @@ function toggleLearning(code: LangCode): void {
 function learningLangs(): Array<{ code: LangCode; label: string }> {
   return LANGS.filter((l) => l.code !== native.value)
 }
+
+async function updateUseMyMemory(value: boolean): Promise<void> {
+  saveError.value = null
+  try {
+    await settingsStore.updateUseMyMemory(value)
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : String(e)
+  }
+}
 </script>
 
 <template>
@@ -105,6 +114,21 @@ function learningLangs(): Array<{ code: LangCode; label: string }> {
       <p v-if="!learning.length" class="tsp__warn">
         {{ t('translation.warnLang') }}
       </p>
+    </div>
+
+    <!-- Translation quality toggle -->
+    <div class="tsp__section">
+      <div class="tsp__label">{{ t('translation.qualityLabel') }}</div>
+      <label class="tsp__check">
+        <input
+          type="checkbox"
+          :checked="settingsStore.settings?.use_mymemory ?? true"
+          :disabled="!settingsStore.settings"
+          @change="updateUseMyMemory(($event.target as HTMLInputElement).checked)"
+        />
+        <span>{{ t('translation.useMyMemory') }}</span>
+      </label>
+      <div class="tsp__hint">{{ t('translation.useMyMemoryHint') }}</div>
     </div>
 
     <!-- Save error feedback -->
@@ -176,6 +200,13 @@ function learningLangs(): Array<{ code: LangCode; label: string }> {
 .tsp__check input[type='checkbox'] {
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+.tsp__hint {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .tsp__warn {

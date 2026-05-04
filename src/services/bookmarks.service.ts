@@ -4,6 +4,8 @@ import { hashBookmarkTree, setPersistedBookmarkTreeHash } from '@/utils/bookmark
 import { decryptBookmarkTree, encryptBookmarkTree } from '@/utils/bookmarkCrypto'
 import { getBookmarkCryptoKeyFromSession } from '@/utils/bookmarkSessionKey'
 import type { BookmarkBackup, BookmarkGlobalHit, BookmarkNode } from '@/types/bookmark'
+import { isAuthenticated } from '@/services/localFirst/authMode'
+import { localBookmarksService } from '@/services/localFirst/localBookmarks.service'
 
 /** Hàng raw từ Supabase (sau migration PIN). */
 interface BookmarkBackupRow {
@@ -24,8 +26,13 @@ export const bookmarksService = {
     return chrome.bookmarks.getTree() as unknown as BookmarkNode[]
   },
 
-  /** Lấy danh sách backup từ Supabase (20 gần nhất) */
+  /** Lấy danh sách backup từ Supabase (20 gần nhất) hoặc local storage khi chưa đăng nhập */
   async listBackups(): Promise<BookmarkBackup[]> {
+    if (!(await isAuthenticated())) {
+      const localBackups = await localBookmarksService.listBackups()
+      return localBackups.map((b) => ({ ...b, user_id: '' }) as BookmarkBackup)
+    }
+
     const { data: rows, error } = await supabase
       .from('bookmark_backups')
       .select('*')
@@ -71,8 +78,13 @@ export const bookmarksService = {
     return out
   },
 
-  /** Lưu snapshot mới lên Supabase */
+  /** Lưu snapshot lên Supabase (logged in) hoặc local storage (anonymous) */
   async saveBackup(tree: BookmarkNode[], label?: string): Promise<BookmarkBackup> {
+    if (!(await isAuthenticated())) {
+      const local = await localBookmarksService.saveBackup(tree, label)
+      return { ...local, user_id: '' } as BookmarkBackup
+    }
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
@@ -134,6 +146,34 @@ export const bookmarksService = {
   },
 
   /**
+   * Xóa PIN: giải mã toàn bộ backup encrypted → lưu lại dạng plaintext.
+   * Gọi trước khi xóa bookmark_crypto row.
+   */
+  async decryptAllEncryptedToPlaintext(oldKey: CryptoKey): Promise<void> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+    const { data: rows, error } = await supabase
+      .from('bookmark_backups')
+      .select('id, payload_iv, payload_ciphertext')
+      .eq('user_id', user.id)
+      .eq('encrypted', true)
+    if (error) throw new Error(error.message)
+    if (!rows?.length) return
+    for (const raw of rows) {
+      const row = raw as { id: string; payload_iv: string | null; payload_ciphertext: string | null }
+      if (!row.payload_iv || !row.payload_ciphertext) continue
+      const tree = await decryptBookmarkTree(row.payload_iv, row.payload_ciphertext, oldKey)
+      const { error: upErr } = await supabase
+        .from('bookmark_backups')
+        .update({ tree_json: tree, encrypted: false, payload_iv: null, payload_ciphertext: null })
+        .eq('id', row.id)
+      if (upErr) throw new Error(upErr.message)
+    }
+  },
+
+  /**
    * Đổi PIN: mã hóa lại mọi backup encrypted bằng khóa mới (legacy plaintext giữ nguyên).
    */
   async reencryptAllEncryptedBackups(oldKey: CryptoKey, newKey: CryptoKey): Promise<void> {
@@ -161,8 +201,12 @@ export const bookmarksService = {
     }
   },
 
-  /** Xóa 1 backup */
+  /** Xóa 1 backup (cloud hoặc local tùy mode) */
   async deleteBackup(id: string): Promise<void> {
+    if (!(await isAuthenticated())) {
+      await localBookmarksService.deleteBackup(id)
+      return
+    }
     const { error } = await supabase
       .from('bookmark_backups')
       .delete()

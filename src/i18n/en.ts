@@ -16,6 +16,8 @@ export const en = {
   'app.settings': '[ SETTINGS ]',
   'app.find': '[ FIND ]',
   'app.logout': '[ LOGOUT ]',
+  'app.login': '[ SIGN IN ]',
+  'app.anonymous': 'ANONYMOUS_',
   'app.loading': 'LOADING',
   'app.offline': 'OFFLINE_',
   'app.sync.syncing': 'SYNCING...',
@@ -123,6 +125,17 @@ export const en = {
   'settings.pinConfirm': 'Re-enter new PIN',
   'settings.pinSubmit': '[ CHANGE PIN ]',
   'settings.pinOk': '> PIN changed successfully.',
+  'settings.pinRemoveTitle': 'REMOVE PIN',
+  'settings.pinRemoveHint': 'Remove PIN protection. All encrypted backups will be decrypted to plaintext.',
+  'settings.pinRemoveCurrent': 'Enter current PIN to confirm',
+  'settings.pinRemoveBtn': '[ REMOVE PIN ]',
+  'settings.pinRemoveOk': '> PIN removed. Bookmarks accessible without PIN.',
+  'settings.pinSetupTitle': 'BOOKMARK PIN (optional)',
+  'settings.pinSetupHint': 'Encrypt bookmark backups with a PIN. Optional — you can skip this.',
+  'settings.pinSetupNew': 'PIN',
+  'settings.pinSetupConfirm': 'Re-enter PIN',
+  'settings.pinSetupBtn': '[ SET UP PIN ]',
+  'settings.pinSetupOk': '> PIN set up successfully.',
   'settings.closeBtn': '[ CLOSE ]',
 
   // ── Translation settings panel ──
@@ -131,6 +144,9 @@ export const en = {
   'translation.learningLangs': 'LEARNING LANGUAGES',
   'translation.warnLang': '⚠ At least one learning language required.',
   'translation.saving': 'Saving...',
+  'translation.qualityLabel': 'TRANSLATION QUALITY',
+  'translation.useMyMemory': 'Use MyMemory API (better quality, sends text via HTTPS)',
+  'translation.useMyMemoryHint': 'Disable to use Chrome built-in translation only (100% local, no network).',
 
   // ── Dictionary ──
   'dict.title': 'DICTIONARY',
@@ -205,6 +221,15 @@ export const en = {
   'pwWeak.common': 'This password is too common. Choose a different one.',
   'pwWeak.keyboard': 'Avoid keyboard sequences or number runs (e.g. 1234, qwer).',
   'pwWeak.email': 'Do not use your email address in the password.',
+
+  // ── Sync badge (local-first anonymous mode) ──
+  'sync.pending': '{n} entries — sign in to sync',
+  'sync.complete': '✓ Sync complete',
+  'sync.export': '[ EXPORT LOCAL ]',
+  'sync.notes': '{n} notes',
+  'sync.bookmarks': '{n} bookmarks',
+  'sync.dictionary': '{n} dictionary entries',
+  'sync.errors': '⚠ {n} errors',
 
   // ── Login ──
   'login.email': 'EMAIL:',

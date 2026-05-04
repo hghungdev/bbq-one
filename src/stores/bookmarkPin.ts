@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { bookmarksService } from '@/services/bookmarks.service'
 import {
+  deleteBookmarkCryptoSetup,
   fetchBookmarkCryptoRow,
   upsertBookmarkCryptoSetup,
   type BookmarkCryptoRow,
@@ -102,6 +103,32 @@ export const useBookmarkPinStore = defineStore('bookmarkPin', () => {
     await clearBookmarkCryptoKeyFromSession()
   }
 
+  /**
+   * Xóa PIN (Settings): xác thực PIN cũ, giải mã toàn bộ backup encrypted → plaintext, xóa crypto row.
+   * Sau khi gọi: user vào bookmark không cần PIN nữa.
+   */
+  async function removePin(oldPin: string): Promise<void> {
+    const row = cryptoRowData.value ?? (await fetchBookmarkCryptoRow())
+    if (!row) throw new Error('Chưa đặt PIN bookmark.')
+    if (!/^\d{6}$/.test(oldPin) && !/^\d{9}$/.test(oldPin)) {
+      throw new Error('PIN phải đúng 6 hoặc 9 chữ số.')
+    }
+    const oldKey = await deriveBookmarkKeyFromPin(oldPin, row.salt)
+    const ok = await verifyPinAgainstStored(oldKey, row.verifier_iv, row.verifier_ct)
+    if (!ok) throw new Error('PIN không đúng. Không thể xóa bảo vệ.')
+    // Giải mã toàn bộ backup encrypted → lưu lại dạng plaintext
+    await bookmarksService.decryptAllEncryptedToPlaintext(oldKey)
+    // Xóa crypto row trên DB
+    await deleteBookmarkCryptoSetup()
+    // Reset state
+    await clearBookmarkCryptoKeyFromSession()
+    cryptoKey.value = null
+    cryptoRowData.value = null
+    hasCryptoSetup.value = false
+    failedAttempts.value = 0
+    lockoutUntil.value = 0
+  }
+
   /** Đổi PIN (Settings): xác thực PIN cũ, salt mới, re-encrypt backup encrypted, cập nhật verifier. */
   async function changePin(oldPin: string, newPin: string): Promise<void> {
     const row = cryptoRowData.value ?? (await fetchBookmarkCryptoRow())
@@ -153,5 +180,6 @@ export const useBookmarkPinStore = defineStore('bookmarkPin', () => {
     tryUnlock,
     lock,
     changePin,
+    removePin,
   }
 })

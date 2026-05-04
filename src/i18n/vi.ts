@@ -18,6 +18,8 @@ export const vi: Record<I18nKey, string> = {
   'app.settings': '[ CÀI ĐẶT ]',
   'app.find': '[ TÌM ]',
   'app.logout': '[ ĐĂNG XUẤT ]',
+  'app.login': '[ ĐĂNG NHẬP ]',
+  'app.anonymous': 'ẨN DANH_',
   'app.loading': 'ĐANG TẢI',
   'app.offline': 'NGOẠI TUYẾN_',
   'app.sync.syncing': 'ĐỒNG BỘ...',
@@ -125,6 +127,17 @@ export const vi: Record<I18nKey, string> = {
   'settings.pinConfirm': 'Nhập lại PIN mới',
   'settings.pinSubmit': '[ ĐỔI PIN ]',
   'settings.pinOk': '> Đã đổi PIN bookmark thành công.',
+  'settings.pinRemoveTitle': 'XÓA PIN',
+  'settings.pinRemoveHint': 'Xóa bảo vệ PIN. Toàn bộ backup đã mã hóa sẽ được giải mã về plaintext.',
+  'settings.pinRemoveCurrent': 'Nhập PIN hiện tại để xác nhận',
+  'settings.pinRemoveBtn': '[ XÓA PIN ]',
+  'settings.pinRemoveOk': '> Đã xóa PIN. Bookmark không còn cần PIN.',
+  'settings.pinSetupTitle': 'MÃ PIN BOOKMARK (tùy chọn)',
+  'settings.pinSetupHint': 'Mã hóa backup bookmark bằng PIN. Tùy chọn — có thể bỏ qua.',
+  'settings.pinSetupNew': 'PIN',
+  'settings.pinSetupConfirm': 'Nhập lại PIN',
+  'settings.pinSetupBtn': '[ ĐẶT PIN ]',
+  'settings.pinSetupOk': '> Đặt PIN thành công.',
   'settings.closeBtn': '[ ĐÓNG ]',
 
   // ── Translation settings panel ──
@@ -133,6 +146,9 @@ export const vi: Record<I18nKey, string> = {
   'translation.learningLangs': 'NGÔN NGỮ ĐANG HỌC',
   'translation.warnLang': '⚠ Cần chọn ít nhất một ngôn ngữ đang học.',
   'translation.saving': 'Đang lưu...',
+  'translation.qualityLabel': 'CHẤT LƯỢNG DỊCH',
+  'translation.useMyMemory': 'Dùng MyMemory API (chất lượng cao hơn, gửi text qua HTTPS)',
+  'translation.useMyMemoryHint': 'Tắt để chỉ dùng Chrome built-in (100% local, không cần mạng).',
 
   // ── Dictionary ──
   'dict.title': 'TỪ ĐIỂN',
@@ -207,6 +223,15 @@ export const vi: Record<I18nKey, string> = {
   'pwWeak.common': 'Mật khẩu này quá phổ biến. Chọn mật khẩu khác.',
   'pwWeak.keyboard': 'Tránh dãy phím hoặc số liên tiếp dễ đoán (vd. 1234, qwer).',
   'pwWeak.email': 'Không đặt mật khẩu chứa phần địa chỉ email.',
+
+  // ── Sync badge (local-first anonymous mode) ──
+  'sync.pending': '{n} mục — đăng nhập để đồng bộ',
+  'sync.complete': '✓ Đồng bộ hoàn tất',
+  'sync.export': '[ XUẤT DỮ LIỆU LOCAL ]',
+  'sync.notes': '{n} ghi chú',
+  'sync.bookmarks': '{n} bookmark',
+  'sync.dictionary': '{n} từ điển',
+  'sync.errors': '⚠ {n} lỗi',
 
   // ── Login ──
   'login.email': 'EMAIL:',

@@ -5,15 +5,8 @@ import { supabase } from '@/services/supabase'
 import { bootstrapBookmarkBaseline } from '@/services/bookmarkAutoBackup.service'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { clearPersistedBookmarkTreeHash } from '@/utils/bookmarkFingerprint'
-import {
-  authService,
-  getLoginDeadline,
-  setLoginDeadline,
-} from '@/services/auth.service'
+import { authService } from '@/services/auth.service'
 import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
-
-/** Kiểm tra hết hạn 10 phút (và đồng bộ state) mỗi 30 giây khi đã đăng nhập. */
-const SESSION_CHECK_INTERVAL_MS = 30 * 1000
 
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session | null>(null)
@@ -21,7 +14,6 @@ export const useAuthStore = defineStore('auth', () => {
   const initialized = ref(false)
   const initError = ref<string | null>(null)
   let authSubscription: { unsubscribe: () => void } | null = null
-  let sessionExpiryTimer: ReturnType<typeof setInterval> | null = null
 
   const isAuthenticated = computed(() => !!session.value)
 
@@ -31,45 +23,6 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       /* extension storage optional */
     }
-  }
-
-  async function enforceLoginDeadline(): Promise<boolean> {
-    const deadline = await getLoginDeadline()
-    if (!deadline || Date.now() > deadline) {
-      await supabase.auth.signOut()
-      await chrome.storage.session.clear()
-      await clearPersistedBookmarkTreeHash()
-      void useBookmarkPinStore().lock()
-      session.value = null
-      user.value = null
-      void persistLoggedInForContextMenu(false)
-      stopSessionExpiryWatcher()
-      return false
-    }
-    return true
-  }
-
-  function stopSessionExpiryWatcher(): void {
-    if (sessionExpiryTimer !== null) {
-      clearInterval(sessionExpiryTimer)
-      sessionExpiryTimer = null
-    }
-  }
-
-  function startSessionExpiryWatcher(): void {
-    stopSessionExpiryWatcher()
-    sessionExpiryTimer = setInterval(() => {
-      void (async () => {
-        if (!session.value) return
-        const ok = await enforceLoginDeadline()
-        if (!ok && typeof window !== 'undefined') {
-          const path = window.location.hash.replace(/^#/, '') || '/'
-          if (!path.includes('/login')) {
-            window.location.hash = '#/login'
-          }
-        }
-      })()
-    }, SESSION_CHECK_INTERVAL_MS)
   }
 
   async function init(): Promise<void> {
@@ -82,40 +35,21 @@ export const useAuthStore = defineStore('auth', () => {
       } = await supabase.auth.getSession()
       if (error) throw error
 
-      let nextSession = current
-      if (current) {
-        const deadline = await getLoginDeadline()
-        if (!deadline || Date.now() > deadline) {
-          await supabase.auth.signOut()
-          await chrome.storage.session.clear()
-          await clearPersistedBookmarkTreeHash()
-          void useBookmarkPinStore().lock()
-          nextSession = null
-        }
-      }
-
-      session.value = nextSession
-      user.value = nextSession?.user ?? null
-
-      if (nextSession) {
-        startSessionExpiryWatcher()
-      }
-      void persistLoggedInForContextMenu(!!nextSession)
+      // Supabase tự quản lý token refresh — không force logout theo custom deadline nữa.
+      // Session persist cho đến khi user tự logout hoặc xóa extension.
+      session.value = current
+      user.value = current?.user ?? null
+      void persistLoggedInForContextMenu(!!current)
 
       if (!authSubscription) {
         const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
           session.value = newSession
           user.value = newSession?.user ?? null
           void persistLoggedInForContextMenu(!!newSession)
-          /* Chỉ SIGNED_IN mới reset mốc 10 phút — không reset khi TOKEN_REFRESHED. */
           if (event === 'SIGNED_IN' && newSession) {
-            void setLoginDeadline()
             void bootstrapBookmarkBaseline()
           }
-          if (newSession) {
-            startSessionExpiryWatcher()
-          } else {
-            stopSessionExpiryWatcher()
+          if (!newSession) {
             void clearPersistedBookmarkTreeHash()
             void useBookmarkPinStore().lock()
           }
@@ -137,12 +71,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
     session.value = data.session
     user.value = data.session.user
-    startSessionExpiryWatcher()
     void persistLoggedInForContextMenu(true)
   }
 
   async function logout(): Promise<void> {
-    stopSessionExpiryWatcher()
     await authService.logout()
     session.value = null
     user.value = null

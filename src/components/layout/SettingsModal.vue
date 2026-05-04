@@ -28,6 +28,19 @@ const bmPinBusy = ref(false)
 const bmPinError = ref<string | null>(null)
 const bmPinOk = ref(false)
 
+// Remove PIN form
+const bmPinRemoveCurrent = ref('')
+const bmPinRemoveBusy = ref(false)
+const bmPinRemoveError = ref<string | null>(null)
+const bmPinRemoveOk = ref(false)
+
+// Setup PIN form (optional, for users without PIN)
+const bmPinSetupNew = ref('')
+const bmPinSetupConfirm = ref('')
+const bmPinSetupBusy = ref(false)
+const bmPinSetupError = ref<string | null>(null)
+const bmPinSetupOk = ref(false)
+
 const acctPwCurrent = ref('')
 const acctPwNew = ref('')
 const acctPwConfirm = ref('')
@@ -59,6 +72,57 @@ function bmDigits(s: string, max: number): string {
   const n = Math.floor(Number(max))
   const limit = Number.isFinite(n) && n >= 1 ? n : 9
   return d.slice(0, limit)
+}
+
+async function onRemoveBookmarkPin(): Promise<void> {
+  bmPinRemoveError.value = null
+  bmPinRemoveOk.value = false
+  const pin = bmPinRemoveCurrent.value
+  if (!/^\d{6}$/.test(pin) && !/^\d{9}$/.test(pin)) {
+    bmPinRemoveError.value = t('settings.pinErrOldLen')
+    return
+  }
+  bmPinRemoveBusy.value = true
+  try {
+    await bookmarkPin.removePin(pin)
+    bmPinRemoveCurrent.value = ''
+    bmPinRemoveOk.value = true
+  } catch (e) {
+    bmPinRemoveError.value = (e as Error).message
+  } finally {
+    bmPinRemoveBusy.value = false
+  }
+}
+
+async function onSetupBookmarkPin(): Promise<void> {
+  bmPinSetupError.value = null
+  bmPinSetupOk.value = false
+  const newP = bmPinSetupNew.value
+  const c = bmPinSetupConfirm.value
+  if (!/^\d{6}$/.test(newP) && !/^\d{9}$/.test(newP)) {
+    bmPinSetupError.value = t('settings.pinErrNewLen')
+    return
+  }
+  if (newP !== c) {
+    bmPinSetupError.value = t('settings.pinErrMismatch')
+    return
+  }
+  const weakKey = bookmarkPinWeakReason(newP)
+  if (weakKey) {
+    bmPinSetupError.value = t(weakKey)
+    return
+  }
+  bmPinSetupBusy.value = true
+  try {
+    await bookmarkPin.setupPin(newP)
+    bmPinSetupNew.value = ''
+    bmPinSetupConfirm.value = ''
+    bmPinSetupOk.value = true
+  } catch (e) {
+    bmPinSetupError.value = (e as Error).message
+  } finally {
+    bmPinSetupBusy.value = false
+  }
 }
 
 async function onChangeBookmarkPin(): Promise<void> {
@@ -147,6 +211,15 @@ watch([acctPwCurrent, acctPwNew, acctPwConfirm], () => {
 
 watch([bmPinOld, bmPinNew, bmPinConfirm], () => {
   bmPinOk.value = false
+})
+
+watch(bmPinRemoveCurrent, () => {
+  bmPinRemoveOk.value = false
+  bmPinRemoveError.value = null
+})
+
+watch([bmPinSetupNew, bmPinSetupConfirm], () => {
+  bmPinSetupOk.value = false
 })
 
 onMounted(() => {
@@ -283,11 +356,64 @@ onUnmounted(() => {
           </div>
         </SettingsAccordionSection>
 
+        <!-- Chưa đặt PIN: Setup tùy chọn -->
         <SettingsAccordionSection
-          v-if="bookmarkPin.hasCryptoSetup"
+          v-if="auth.isAuthenticated && !bookmarkPin.hasCryptoSetup"
+          :title="t('settings.pinSetupTitle')"
+          :default-open="false"
+        >
+          <p class="settings-hint settings-hint--sub">
+            {{ t('settings.pinSetupHint') }}
+          </p>
+          <label class="settings-field-label" for="set-bm-setup-new">
+            {{ t('settings.pinSetupNew') }}
+          </label>
+          <RetroInput
+            id="set-bm-setup-new"
+            :model-value="bmPinSetupNew"
+            type="password"
+            digit-only
+            autocomplete="new-password"
+            :placeholder="t('pin.digits69Placeholder')"
+            :disabled="bmPinSetupBusy"
+            :maxlength="9"
+            @update:model-value="bmPinSetupNew = bmDigits($event, 9)"
+          />
+          <label class="settings-field-label" for="set-bm-setup-confirm">
+            {{ t('settings.pinSetupConfirm') }}
+          </label>
+          <RetroInput
+            id="set-bm-setup-confirm"
+            :model-value="bmPinSetupConfirm"
+            type="password"
+            digit-only
+            autocomplete="new-password"
+            :placeholder="t('pin.digits69Placeholder')"
+            :disabled="bmPinSetupBusy"
+            :maxlength="9"
+            @update:model-value="bmPinSetupConfirm = bmDigits($event, 9)"
+          />
+          <p v-if="bmPinSetupError" class="settings-pin-err">{{ bmPinSetupError }}</p>
+          <p v-else-if="bmPinSetupOk" class="settings-pin-ok">{{ t('settings.pinSetupOk') }}</p>
+          <div class="settings-row settings-row--pin">
+            <RetroButton
+              variant="sm"
+              type="button"
+              :disabled="bmPinSetupBusy"
+              @click="onSetupBookmarkPin"
+            >
+              {{ t('settings.pinSetupBtn') }}
+            </RetroButton>
+          </div>
+        </SettingsAccordionSection>
+
+        <!-- Đã đặt PIN: Change PIN + Remove PIN -->
+        <SettingsAccordionSection
+          v-if="auth.isAuthenticated && bookmarkPin.hasCryptoSetup"
           :title="t('settings.bookmarkPin')"
           :default-open="false"
         >
+          <!-- Change PIN -->
           <p class="settings-hint settings-hint--sub">
             {{ t('settings.pinHint') }}
           </p>
@@ -343,6 +469,44 @@ onUnmounted(() => {
               @click="onChangeBookmarkPin"
             >
               {{ t('settings.pinSubmit') }}
+            </RetroButton>
+          </div>
+
+          <!-- Divider -->
+          <div class="settings-divider" />
+
+          <!-- Remove PIN section -->
+          <p class="settings-field-label settings-field-label--section">
+            {{ t('settings.pinRemoveTitle') }}
+          </p>
+          <p class="settings-hint settings-hint--sub settings-hint--danger">
+            {{ t('settings.pinRemoveHint') }}
+          </p>
+          <label class="settings-field-label" for="set-bm-pin-remove-cur">
+            {{ t('settings.pinRemoveCurrent') }}
+          </label>
+          <RetroInput
+            id="set-bm-pin-remove-cur"
+            :model-value="bmPinRemoveCurrent"
+            type="password"
+            digit-only
+            autocomplete="current-password"
+            :placeholder="t('pin.digits69Placeholder')"
+            :disabled="bmPinRemoveBusy"
+            :maxlength="9"
+            @update:model-value="bmPinRemoveCurrent = bmDigits($event, 9)"
+          />
+          <p v-if="bmPinRemoveError" class="settings-pin-err">{{ bmPinRemoveError }}</p>
+          <p v-else-if="bmPinRemoveOk" class="settings-pin-ok">{{ t('settings.pinRemoveOk') }}</p>
+          <div class="settings-row settings-row--pin">
+            <RetroButton
+              variant="sm"
+              type="button"
+              class="settings-btn--danger"
+              :disabled="bmPinRemoveBusy"
+              @click="onRemoveBookmarkPin"
+            >
+              {{ t('settings.pinRemoveBtn') }}
             </RetroButton>
           </div>
         </SettingsAccordionSection>
@@ -482,6 +646,34 @@ onUnmounted(() => {
   flex-shrink: 0;
   width: 100%;
   margin-top: 10px;
+}
+
+.settings-divider {
+  margin: 14px 0 10px;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.settings-field-label--section {
+  margin-top: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-hint--danger {
+  color: var(--danger);
+  opacity: 0.8;
+}
+
+.settings-btn--danger {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+}
+
+.settings-btn--danger:hover:not(:disabled) {
+  background: rgba(184, 69, 58, 0.08) !important;
 }
 
 .settings-lang-row {

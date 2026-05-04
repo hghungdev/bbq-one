@@ -1,5 +1,6 @@
 import { supabase } from '@/services/supabase'
 import type { TranslationSettings } from '@/types/dictionary'
+import { USE_MYMEMORY_KEY } from '@/constants/storage'
 
 const DEFAULT_SETTINGS: Omit<TranslationSettings, 'user_id' | 'created_at' | 'updated_at'> = {
   native_language: 'vi',
@@ -8,6 +9,7 @@ const DEFAULT_SETTINGS: Omit<TranslationSettings, 'user_id' | 'created_at' | 'up
   auto_detect: true,
   auto_save: false,
   domain_overrides: {},
+  use_mymemory: true,
 }
 
 async function requireUserId(): Promise<string> {
@@ -15,6 +17,11 @@ async function requireUserId(): Promise<string> {
   if (error) throw error
   if (!user) throw new Error('Not authenticated')
   return user.id
+}
+
+/** Sync use_mymemory preference sang chrome.storage.local để accessible ở mọi context */
+async function syncUseMyMemoryToLocal(value: boolean): Promise<void> {
+  await chrome.storage.local.set({ [USE_MYMEMORY_KEY]: value })
 }
 
 export const translationSettingsService = {
@@ -26,7 +33,12 @@ export const translationSettingsService = {
       .eq('user_id', userId)
       .maybeSingle()
     if (error) throw error
-    if (data) return data as TranslationSettings
+    if (data) {
+      const settings = data as TranslationSettings
+      // Sync use_mymemory preference sang chrome.storage.local
+      await syncUseMyMemoryToLocal(settings.use_mymemory ?? true)
+      return settings
+    }
 
     const { data: created, error: errCreate } = await supabase
       .from('user_translation_settings')
@@ -48,6 +60,11 @@ export const translationSettingsService = {
       .select()
       .single()
     if (error) throw error
-    return data as TranslationSettings
+    const settings = data as TranslationSettings
+    // Nếu use_mymemory thay đổi, sync sang local
+    if ('use_mymemory' in updates) {
+      await syncUseMyMemoryToLocal(settings.use_mymemory ?? true)
+    }
+    return settings
   },
 }

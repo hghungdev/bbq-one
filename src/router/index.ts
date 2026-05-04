@@ -5,6 +5,7 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
+      // Click icon → QuickTranslate popup; dashboard chỉ mở qua context menu
       path: '/',
       redirect: '/translate',
     },
@@ -21,10 +22,10 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      // Không còn requiresAuth — anonymous users có thể dùng dashboard
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/pages/App.vue'),
-      meta: { requiresAuth: true },
     },
   ],
 })
@@ -34,10 +35,7 @@ router.beforeEach(async (to, _from, next) => {
   if (!auth.initialized) {
     await auth.init()
   }
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-    return
-  }
+  // Nếu đang ở login page và đã đăng nhập → redirect về dashboard
   if (to.name === 'login' && auth.isAuthenticated) {
     next({ name: 'dashboard' })
     return

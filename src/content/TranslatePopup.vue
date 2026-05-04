@@ -49,6 +49,7 @@
 
   const alreadySaved = ref(false)
 
+  /** Anonymous mode: lưu vào local storage thay vì Supabase — luôn cho phép save */
   const isAuthenticated = ref(false)
 
   const canSaveKeyword = computed(() => !!result.value && isKeywordEntry(result.value.sourceText))
@@ -188,8 +189,7 @@
 
   async function doSave(): Promise<void> {
     if (!canSaveKeyword.value || !result.value || saveState.value === 'saving') return
-
-    if (!isAuthenticated.value) return
+    // Local-first: anonymous users có thể lưu vào local storage — không block ở đây
 
     saveState.value = 'saving'
 
@@ -333,78 +333,15 @@
           <div class="bbq-popup__target-head">
             <span class="bbq-popup__lang">{{ getLangName(result.targetLang) }}</span>
 
+            <!-- Local-first: save button luôn hiển thị (anonymous → local, logged in → cloud) -->
             <div v-if="canSaveKeyword" class="bbq-popup__target-actions">
-              <template v-if="isAuthenticated">
-                <button
-                  v-if="saveState === 'error'"
-                  type="button"
-                  class="bbq-popup__save-icon"
-                  :title="t('popup.retryTitle')"
-                  :aria-label="saveIconAriaLabel"
-                  @click="doSave"
-                >
-                  <svg
-                    class="bbq-popup__save-icon-svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM5 5h10v4H5V5z"
-                    />
-                  </svg>
-                </button>
-
-                <button
-                  v-else-if="!alreadySaved && saveState !== 'saved'"
-                  type="button"
-                  class="bbq-popup__save-icon"
-                  :class="{ 'bbq-popup__save-icon--busy': saveState === 'saving' }"
-                  :disabled="saveState === 'saving'"
-                  :title="t('popup.saveTitle')"
-                  :aria-label="saveIconAriaLabel"
-                  @click="doSave"
-                >
-                  <svg
-                    class="bbq-popup__save-icon-svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM5 5h10v4H5V5z"
-                    />
-                  </svg>
-                </button>
-
-                <span
-                  v-else
-                  class="bbq-popup__saved-icon"
-                  :title="savedHint"
-                  :aria-label="savedHint"
-                >
-                  <svg
-                    class="bbq-popup__save-icon-svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-                    />
-                  </svg>
-                </span>
-              </template>
-
-              <span
-                v-else
-                class="bbq-popup__save-icon bbq-popup__save-icon--locked"
-                :title="t('popup.lockTitle')"
-                role="img"
-                :aria-label="t('popup.lockAriaLabel')"
+              <button
+                v-if="saveState === 'error'"
+                type="button"
+                class="bbq-popup__save-icon"
+                :title="t('popup.retryTitle')"
+                :aria-label="saveIconAriaLabel"
+                @click="doSave"
               >
                 <svg
                   class="bbq-popup__save-icon-svg"
@@ -414,7 +351,49 @@
                 >
                   <path
                     fill="currentColor"
-                    d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
+                    d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM5 5h10v4H5V5z"
+                  />
+                </svg>
+              </button>
+
+              <button
+                v-else-if="!alreadySaved && saveState !== 'saved'"
+                type="button"
+                class="bbq-popup__save-icon"
+                :class="{ 'bbq-popup__save-icon--busy': saveState === 'saving' }"
+                :disabled="saveState === 'saving'"
+                :title="t('popup.saveTitle')"
+                :aria-label="saveIconAriaLabel"
+                @click="doSave"
+              >
+                <svg
+                  class="bbq-popup__save-icon-svg"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM5 5h10v4H5V5z"
+                  />
+                </svg>
+              </button>
+
+              <span
+                v-else
+                class="bbq-popup__saved-icon"
+                :title="savedHint"
+                :aria-label="savedHint"
+              >
+                <svg
+                  class="bbq-popup__save-icon-svg"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
                   />
                 </svg>
               </span>
@@ -435,9 +414,7 @@
             </div>
           </div>
 
-          <p v-if="canSaveKeyword && !isAuthenticated" class="bbq-popup__login-hint">
-            {{ t('popup.loginHint') }}
-          </p>
+          <!-- Login hint bị xóa: local-first mode cho phép save khi chưa đăng nhập -->
         </section>
       </div>
     </div>

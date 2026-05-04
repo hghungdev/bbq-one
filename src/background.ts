@@ -12,12 +12,9 @@ const ALARM_NAME = 'bbqone-daily-sync'
 const OPEN_APP_MENU_ID = 'bbq-open-app'
 
 function refreshOpenAppMenuTitle(): void {
-  void chrome.storage.local.get(BBQ_AUTH_LOGGED_IN_KEY, (data) => {
-    const loggedIn = !!data[BBQ_AUTH_LOGGED_IN_KEY]
-    const title = loggedIn ? 'Open Dashboard' : 'Login'
-    chrome.contextMenus.update(OPEN_APP_MENU_ID, { title }, () => {
-      void chrome.runtime.lastError
-    })
+  // Dashboard accessible cho cả anonymous lẫn logged-in → title cố định
+  chrome.contextMenus.update(OPEN_APP_MENU_ID, { title: 'Open Dashboard' }, () => {
+    void chrome.runtime.lastError
   })
 }
 
@@ -26,12 +23,11 @@ function installOpenAppContextMenu(): void {
     chrome.contextMenus.create(
       {
         id: OPEN_APP_MENU_ID,
-        title: 'Login',
+        title: 'Open Dashboard',
         contexts: ['action'],
       },
       () => {
         void chrome.runtime.lastError
-        refreshOpenAppMenuTitle()
       },
     )
   })
@@ -76,12 +72,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.contextMenus.onClicked.addListener((info) => {
   if (info.menuItemId !== OPEN_APP_MENU_ID) return
-  void chrome.storage.local.get(BBQ_AUTH_LOGGED_IN_KEY, (data) => {
-    const loggedIn = !!data[BBQ_AUTH_LOGGED_IN_KEY]
-    const path = loggedIn ? '/dashboard' : '/login'
-    void chrome.storage.local.set({ [BBQ_PENDING_ROUTE_KEY]: path }, () => {
-      void chrome.action.openPopup?.().catch?.(() => {})
-    })
+  // Dashboard hoạt động với cả anonymous → không cần check auth nữa
+  void chrome.storage.local.set({ [BBQ_PENDING_ROUTE_KEY]: '/dashboard' }, () => {
+    void chrome.action.openPopup?.().catch?.(() => {})
   })
 })
 

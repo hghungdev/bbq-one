@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
+import { isAuthenticated } from '@/services/localFirst/authMode'
 import { useBookmarksStore } from '@/stores/bookmarks'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
@@ -28,16 +29,29 @@ async function loadBookmarkTabData(): Promise<void> {
 }
 
 onMounted(async () => {
-  await pin.loadCryptoState()
-  await pin.hydrateFromSession()
-  if (!pin.hasCryptoSetup) {
-    pinModalMode.value = 'setup'
+  // Anonymous mode: không cần PIN, vào bookmark thẳng
+  if (!(await isAuthenticated())) {
+    pinReady.value = true
+    await loadBookmarkTabData()
     return
   }
+
+  await pin.loadCryptoState()
+  await pin.hydrateFromSession()
+
+  // Chưa đặt PIN: vào thẳng — PIN là tùy chọn, thiết lập qua Settings
+  if (!pin.hasCryptoSetup) {
+    pinReady.value = true
+    await loadBookmarkTabData()
+    return
+  }
+
+  // Đã đặt PIN nhưng chưa unlock trong phiên này
   if (!pin.unlocked) {
     pinModalMode.value = 'unlock'
     return
   }
+
   pinReady.value = true
   await loadBookmarkTabData()
 })

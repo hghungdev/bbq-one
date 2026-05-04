@@ -24,6 +24,10 @@ export const useTranslationSettingsStore = defineStore('translationSettings', ()
     settings.value = await translationSettingsService.update({ learning_languages: langs })
   }
 
+  async function updateUseMyMemory(value: boolean): Promise<void> {
+    settings.value = await translationSettingsService.update({ use_mymemory: value })
+  }
+
   /**
    * Decide target language based on native + learning settings.
    * - Detected lang ∈ learning_languages → target = native
@@ -38,5 +42,5 @@ export const useTranslationSettingsStore = defineStore('translationSettings', ()
     return s.native_language
   }
 
-  return { settings, loading, load, updateNativeLanguage, updateLearningLanguages, decideTargetLang }
+  return { settings, loading, load, updateNativeLanguage, updateLearningLanguages, updateUseMyMemory, decideTargetLang }
 })
