@@ -32,11 +32,15 @@ async function runBookmarkAutoBackup(): Promise<void> {
     } = await supabase.auth.getSession()
     if (!session) return
 
-    /* Chỉ auto-backup sau khi user đã đặt PIN (có bookmark_crypto) và đã mở khóa trong phiên. */
     const cryptoRow = await fetchBookmarkCryptoRow()
-    if (!cryptoRow) return
-    const key = await getBookmarkCryptoKeyFromSession()
-    if (!key) return
+
+    if (cryptoRow) {
+      // PIN đang được bật → cần session key để encrypt backup.
+      // Nếu chưa unlock (user chưa nhập PIN trong phiên này) → bỏ qua, không thể encrypt.
+      const key = await getBookmarkCryptoKeyFromSession()
+      if (!key) return
+    }
+    // Không có PIN (cryptoRow = null) → saveBackup sẽ lưu plaintext, không cần key.
 
     const tree = await bookmarksService.getFromBrowser()
     const fp = await hashBookmarkTree(tree)
