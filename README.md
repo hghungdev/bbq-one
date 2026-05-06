@@ -1,181 +1,141 @@
 # BBQOne
 
-Extension Chrome (Manifest V3) ghi chú kiểu retro/terminal: thư mục, note rich-text (TipTap), đồng bộ Supabase, folder **secure** mã hóa AES-GCM (passphrase), tìm kiếm full-text.
+A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **personal dictionary**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
+
+**Version:** 1.1.0
 
 ---
 
-## Tính năng chính
+## Table of contents
 
-| Khu vực | Mô tả |
-|--------|--------|
-| **Đăng nhập** | Supabase Auth (email/password), phiên lưu qua Supabase client. |
-| **Thư mục & note** | CRUD folder/note, kéo chỉnh độ rộng 2 cột (có min/max), đổi tên folder/note (double-click hoặc **F2**). |
-| **Secure folder** | Bật mật khẩu folder (PBKDF2 + AES-GCM); khóa/mở; đổi passphrase; icon khiên (accent) cho folder secure. |
-| **Tìm kiếm** | FTS trên Supabase + fallback substring; khi đang gõ SEARCH, cột editor **ẩn** để tránh lệch với note đang chọn; chọn note trong kết quả sẽ tắt search và mở editor. |
-| **Đồng bộ** | Cache trong `chrome.storage.local`; **[ SYNC ]** đẩy note “dirty”; service worker đồng bộ định kỳ (~24h). |
-| **Xuất** | **[ EXPORT ]** note đang mở dạng `.txt`. |
-| **Cài đặt** | Theme/font (xem `SettingsModal` + `settings` store). |
-
----
-
-## Công nghệ
-
-- **Vue 3** (Composition API, `<script setup>`), **TypeScript** (strict), **Vite 5**
-- **Pinia**, **Vue Router** (hash history — phù hợp extension)
-- **Supabase** (`@supabase/supabase-js`): Auth, Postgres, RLS
-- **TipTap** (`@tiptap/vue-3`, `@tiptap/starter-kit`) cho nội dung note
-- **Shiki** highlight code trong editor
-- **@crxjs/vite-plugin**: đóng gói MV3
+- [Overview](#overview)
+- [Features](#features)
+- [Privacy & data](#privacy--data)
+- [Install](#install)
+- [Keyboard shortcuts](#keyboard-shortcuts)
+- [Development](#development)
+- [Configuration](#configuration)
+- [License](#license)
 
 ---
 
-## Cấu trúc mã nguồn
+## Overview
 
-```
-bbq-one/
-├── public/
-│   ├── manifest.json          # MV3: popup, permissions, CSP, background SW
-│   └── …                      # icon, assets tĩnh
-├── src/
-│   ├── main.ts                # bootstrap Pinia + router
-│   ├── App.vue                # shell: chỉ RouterView
-│   ├── background.ts        # alarm ~24h → syncFromCache (SW)
-│   ├── env.ts                 # VITE_SUPABASE_* + kiểm tra cấu hình
-│   ├── router/index.ts       # /login (public), / (requires auth)
-│   ├── pages/
-│   │   ├── Login.vue
-│   │   └── App.vue            # layout 3 cột: Sidebar | NoteList | NoteEditor
-│   ├── components/
-│   │   ├── layout/            # Sidebar, NoteList, SearchBar, SettingsModal
-│   │   ├── folders/           # FolderItem, SecureFolderModal
-│   │   ├── notes/             # NoteEditor, NoteItem, CodeBlock
-│   │   └── ui/                # RetroButton, RetroInput, TagInput, …
-│   ├── stores/
-│   │   ├── auth.ts
-│   │   ├── folders.ts
-│   │   ├── notes.ts           # searchQuery, runSearch, selectNote, …
-│   │   ├── secureFolder.ts    # khóa/mở, key trong memory
-│   │   ├── sync.ts
-│   │   └── settings.ts
-│   ├── services/
-│   │   ├── supabase.ts        # client singleton
-│   │   ├── auth.service.ts
-│   │   ├── notes.service.ts    # CRUD + searchFullText + filterNotesBySubstring
-│   │   ├── folders.service.ts
-│   │   └── sync.service.ts    # push dirty, encrypt path secure
-│   ├── composables/
-│   │   └── useColumnResize.ts # chiều rộng cột + min/max + chrome.storage
-│   ├── utils/                 # secureCrypto, export, highlight, tiptapJson, …
-│   ├── types/index.ts         # Note, Folder, …
-│   ├── constants/storage.ts   # keys cache notes/folders
-│   └── assets/styles/         # global.css, retro.css
-├── supabase/
-│   ├── bbqone_setup.sql      # schema gộp: bảng, FTS, RLS (project mới)
-│   └── migrations/            # 001 FTS, 002 RLS, 003 secure folders, 004 …
-├── .env.example
-├── vite.config.ts             # vue + crx plugin
-└── package.json
-```
+BBQOne brings together everyday knowledge work inside the browser: organized notes, optional encrypted folders, bookmark snapshots, saved translation entries, and quick translate-from-selection—all in one extension popup and dashboard.
+
+**Design goals:**
+
+- **Local-first** — work offline or without signing in; your data can stay on the device.
+- **Optional cloud** — sign in to sync and back up notes and related data to your own backend project.
+- **Focused UX** — resizable panels, search, and shortcuts for people who live in the keyboard.
 
 ---
 
-## Yêu cầu
+## Features
 
-- **Node.js** 18+ (khuyến nghị 20)
-- Tài khoản **Supabase** (project đã chạy SQL setup + Auth bật email/password)
+| Area | What you get |
+|------|----------------|
+| **Notes** | Folders, rich-text editing, code-friendly blocks, full-text search, export current note as plain text. |
+| **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are protected before they leave your unlocked session. |
+| **Bookmarks** | Snapshot your browser bookmark tree, browse history, restore to Chrome, export HTML, and optional encryption when signed in with PIN. |
+| **Personal dictionary** | Save words and phrases from the reading flow; manage entries in the dashboard tab. |
+| **Quick translate** | Select text on a page to translate/lookup (behavior depends on your settings and context). |
 
 ---
 
-## Cài đặt phát triển
+## Privacy & data
+
+- **Anonymous / not signed in:** notes, bookmark backups, and dictionary entries can be stored **locally** in the extension. No account is required for core workflows.
+- **Signed in:** data syncs against **your** configured backend; access is scoped per user on the server side (standard row-level rules).
+- **Permissions:** the extension requests only what it needs for bookmarks, storage, translation, and optional cloud APIs—see the manifest packaged with the build for the full list.
+
+For deep technical documentation (database layout, migrations, and security model), refer to the `supabase/` directory and internal docs rather than duplicating operational detail in this file.
+
+---
+
+## Install
+
+**End users:** install from the **Chrome Web Store** when a listing is available, then pin the extension and open it from the toolbar.
+
+**Developers / testers:** see [Development](#development) to load an unpacked build from `dist/`.
+
+---
+
+## Keyboard shortcuts
+
+Shortcuts apply in the **notes dashboard** (where supported).
+
+| Shortcut | Action |
+|----------|--------|
+| `F2` | Rename the selected note, or the active folder if no note is selected |
+| `Ctrl` + `F` | Focus search |
+| `Ctrl` + `N` | Create a new note in the active folder (blocked if the folder is locked) |
+| `Ctrl` + `S` | Flush save for the open editor |
+
+On macOS, use `⌘` instead of `Ctrl` where the browser maps it.
+
+---
+
+## Development
+
+### Prerequisites
+
+- **Node.js** LTS (18+ recommended; 20+ is a safe choice)
+- **npm**
+- A modern **Chromium-based** browser (Chrome, Edge, etc.)
+
+### Setup
 
 ```bash
+git clone <repository-url>
+cd bbq-one
 npm install
 cp .env.example .env
-# Điền VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY
-npm run dev
+# Edit .env per .env.example comments (required for cloud/auth features in dev builds)
 ```
 
-- `npm run build` — type-check (`vue-tsc`) + build extension vào `dist/`
-- `npm run preview` — xem bản build (ít dùng với CRX; chủ yếu load `dist` trong Chrome)
-- `npm run type-check` — chỉ kiểm tra TypeScript
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development build with hot reload |
+| `npm run build` | Type-check + production bundle (extension output) |
+| `npm run type-check` | TypeScript only |
+| `npm run preview` | Preview CLI (optional; primary workflow is loading `dist/` in Chrome) |
+
+### Load in Chrome
+
+1. Run `npm run build`.
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
+4. **Load unpacked** → select the **`dist/`** directory.
+5. After changing `.env`, rebuild and click **Reload** on the extension card.
 
 ---
 
-## Cấu hình môi trường
+## Configuration
 
-File **`.env`** (không commit):
+- **Environment:** copy `.env.example` to `.env` and set the variables documented there. Never commit secrets.
+- **Backend:** database schema and migration scripts live under `supabase/` for teams that self-host the data plane.
 
-| Biến | Ý nghĩa |
-|------|---------|
-| `VITE_SUPABASE_URL` | `https://<ref>.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Anon public key (Dashboard → Settings → API) |
-
-`src/env.ts` export `isSupabaseConfigured` và `missingEnvHint` — UI có thể cảnh báo nếu thiếu biến sau khi build.
+The repository is **public**; keep deployment specifics, keys, and architecture runbooks out of this README.
 
 ---
 
-## Database Supabase
+## Contributing
 
-1. **Project mới:** mở SQL Editor, chạy **`supabase/bbqone_setup.sql`** (bảng `folders` / `notes`, trigger `updated_at`, cột `fts`, RLS theo `user_id`).
-2. **Bổ sung secure folder:** chạy các file trong **`supabase/migrations/`** theo thứ tự số (003 secure columns, 004 folders `updated_at`, …) nếu project đã có schema cũ — hoặc đảm bảo migration đã áp dụng trên DB thật.
+Issues and pull requests are welcome. Please:
 
-**RLS:** mỗi user chỉ đọc/ghi dòng của mình (policy trong setup).
-
-**FTS:** cột `fts` generated trên `title` + `content` (English config); API dùng `textSearch('fts', …, { type: 'plain' })`.
-
----
-
-## Build & cài extension Chrome
-
-1. `npm run build`
-2. Mở `chrome://extensions` → **Developer mode** → **Load unpacked** → chọn thư mục **`dist/`**
-3. Sau khi sửa `.env`, cần **build lại** và **Reload** extension
-
-**Quyền extension** (xem `public/manifest.json`): `storage`, `identity`, `alarms`, `clipboardWrite`; `host_permissions` tới `https://*.supabase.co/*`.
-
----
-
-## Hướng dẫn sử dụng (người dùng)
-
-1. **Đăng nhập** — email/password đã tạo trong Supabase Auth (Dashboard → Authentication).
-2. **Thư mục** — chọn folder trái; `+ FOLDER` tạo mới; kéo thanh dọc giữa FOLDERS và NOTES để chỉnh độ rộng (có giới hạn min/max).
-3. **Note** — `+ NOTE` trong folder đang chọn; chọn note để sửa ở cột phải; tag / rich text trong editor.
-4. **Đổi tên** — double-click hoặc **F2** trên folder/note đang chọn (khi không focus ô search/editor).
-5. **Secure folder** — chuột phải folder → “Secure folder…” để bật; sau đó Unlock / Lock / Đổi passphrase. Nội dung note trong folder secure được mã hóa trước khi gửi server khi đã mở khóa.
-6. **Tìm kiếm** — ô **SEARCH** (hoặc **Ctrl+F**); kết quả global (folder thường; secure được lọc khỏi search). Khi có query, editor tạm ẩn; bấm note hoặc **[ X ]** để xem lại editor.
-7. **Đồng bộ** — **[ SYNC ]** đẩy thay đổi local chưa sync; badge hiển thị trạng thái. Background có thể sync định kỳ khi cache có note dirty.
-8. **Đăng xuất** — **[ LOGOUT ]**; secure store khóa lại; `auth.service` xóa `chrome.storage.local`.
-
----
-
-## Phím tắt (trong `App.vue`)
-
-| Phím | Hành động |
-|------|-----------|
-| **F2** | Đổi tên note đang chọn, hoặc folder đang chọn nếu không có note active |
-| **Ctrl+F** | Focus ô SEARCH |
-| **Ctrl+N** | Tạo note trong folder đang chọn (bị chặn nếu folder secure đang locked) |
-| **Ctrl+S** | Flush lưu editor (nếu có) |
-
----
-
-## Luồng dữ liệu tóm tắt
-
-- **Auth:** `supabase.auth` session; route guard trong `router/index.ts`.
-- **Cache:** `notes_cache` / `folders_cache` trong `chrome.storage.local`; `loadAll()` ghi đè sau khi fetch.
-- **Sync:** `synced_at` trên note; `isNoteDirty` so sánh `updated_at` vs `synced_at`; secure cần key trong memory để encrypt trước push.
-- **Secure:** khóa AES lưu trong session (store), không persist passphrase; PBKDF2 + salt trên `folders` (xem `secureCrypto.ts`).
-
----
-
-## Ghi chú phát triển
-
-- Popup có **min-width** (~720px) trong CSS global — thiết kế theo cửa sổ extension cố định.
-- Hash router tránh conflict với URL extension.
-- Service worker **không** có crypto key secure — sync nền chỉ push được khi note đã encrypted hoặc không thuộc secure locked.
+1. Keep changes focused and match existing code style.
+2. Run `npm run type-check` (and `npm run build` before submitting larger changes).
+3. Avoid committing `.env` or credentials.
 
 ---
 
 ## License
 
-`private: true` trong `package.json` — điều chỉnh theo repo của bạn.
+See **`package.json`** (`private` field and any future `license` entry) or add a **`LICENSE`** file to the repository for explicit terms.
+
+---
+
+<p align="center"><strong>BBQOne</strong> — notes, bookmarks, and vocabulary, your way.</p>
