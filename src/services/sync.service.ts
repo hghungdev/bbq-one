@@ -7,6 +7,7 @@ import type { Folder, Note, NoteBody } from '@/types'
 import { encryptField, isEncryptedEnvelope } from '@/utils/secureCrypto'
 import { noteBodiesService } from './noteBodies.service'
 import { notesService } from './notes.service'
+import { isAuthenticated } from './localFirst/authMode'
 
 export function isNoteDirty(n: Note): boolean {
   if (!n.synced_at) return true
@@ -78,8 +79,10 @@ export const syncService = {
 
   /**
    * Service worker: đọc cache, push dirty (bỏ qua note secure plaintext nếu không có key).
+   * Chỉ chạy khi đã đăng nhập — anonymous mode không có cloud để push lên.
    */
   async syncFromCache(): Promise<number> {
+    if (!(await isAuthenticated())) return 0
     const { [NOTES_CACHE_KEY]: raw, [FOLDERS_CACHE_KEY]: foldersRaw, [NOTE_BODIES_CACHE_KEY]: bodiesRaw } =
       await chrome.storage.local.get([
         NOTES_CACHE_KEY,

@@ -11,6 +11,9 @@ import {
 import PostLoginSyncToast from '@/components/sync/PostLoginSyncToast.vue'
 import SyncConflictDialog from '@/components/sync/SyncConflictDialog.vue'
 import type { SyncResult } from '@/types/localFirst'
+import { useFoldersStore } from '@/stores/folders'
+import { useNotesStore } from '@/stores/notes'
+import { useDictionaryStore } from '@/stores/dictionary'
 
 const conflictReport = ref<ConflictReport | null>(null)
 const conflictDialogVisible = ref(false)
@@ -18,6 +21,19 @@ const syncResult = ref<SyncResult | null>(null)
 const toastVisible = ref(false)
 
 let unsubAuth: (() => void) | null = null
+
+/**
+ * Reload store data from Supabase after a successful sync so the UI reflects
+ * the newly-pushed data. BookmarkTab is not included here because it has PIN
+ * unlock logic — it will reload naturally when the user opens the tab (v-if remount).
+ */
+async function reloadAfterSync(): Promise<void> {
+  await Promise.all([
+    useFoldersStore().loadAll(),
+    useNotesStore().loadAll(),
+    useDictionaryStore().loadAll(),
+  ])
+}
 
 async function handleConflictResolve(strategy: SyncStrategy): Promise<void> {
   conflictDialogVisible.value = false
@@ -29,6 +45,7 @@ async function handleConflictResolve(strategy: SyncStrategy): Promise<void> {
   try {
     const result = await pushLocalToCloud(strategy)
     syncResult.value = result
+    await reloadAfterSync()
     toastVisible.value = true
     setTimeout(() => (toastVisible.value = false), 5000)
   } catch (e) {
@@ -46,6 +63,7 @@ async function runSyncFlow(): Promise<void> {
     if (report.totalConflicts === 0) {
       const result = await pushLocalToCloud('use-local')
       syncResult.value = result
+      await reloadAfterSync()
       toastVisible.value = true
       setTimeout(() => (toastVisible.value = false), 5000)
       return
@@ -60,6 +78,7 @@ async function runSyncFlow(): Promise<void> {
     try {
       const result = await pushLocalToCloud('use-local')
       syncResult.value = result
+      await reloadAfterSync()
       toastVisible.value = true
       setTimeout(() => (toastVisible.value = false), 5000)
     } catch (err) {
