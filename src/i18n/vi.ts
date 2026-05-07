@@ -261,4 +261,6 @@ export const vi: Record<I18nKey, string> = {
   'popup.lockTitle': 'Chuột phải icon extension → Đăng nhập để lưu',
   'popup.lockAriaLabel': 'Cần đăng nhập để lưu vào từ điển',
   'popup.confidence': '% độ chính xác',
+  'popup.contextInvalid':
+    'Extension vừa được tải lại. Hãy tải lại trang này (F5) để dùng dịch khi bôi chọn.',
 }

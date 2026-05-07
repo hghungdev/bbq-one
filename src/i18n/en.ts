@@ -259,6 +259,8 @@ export const en = {
   'popup.lockTitle': 'Right-click toolbar icon → Login to save',
   'popup.lockAriaLabel': 'Sign in required to save to dictionary',
   'popup.confidence': '% confidence',
+  'popup.contextInvalid':
+    'Extension was reloaded. Refresh this page (F5) to use translate on selection again.',
 } as const
 
 export type I18nKey = keyof typeof en

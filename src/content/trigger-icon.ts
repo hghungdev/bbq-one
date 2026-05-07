@@ -79,7 +79,11 @@ export class TriggerIcon {
       overflow: 'visible',
     } satisfies Partial<CSSStyleDeclaration>)
     const img = document.createElement('img')
-    img.src = chrome.runtime.getURL('bbq_one-final.png')
+    try {
+      img.src = chrome.runtime.getURL('bbq_one-final.png')
+    } catch {
+      return
+    }
     img.alt = ''
     img.draggable = false
     Object.assign(img.style, {

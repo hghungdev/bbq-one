@@ -11,6 +11,8 @@
 
   import { BBQ_AUTH_LOGGED_IN_KEY, UI_LANG_KEY } from '@/constants/storage'
 
+  import { isExtensionContextError, isExtensionContextValid } from '@/utils/extensionContext'
+
   import { en } from '@/i18n/en'
   import { vi } from '@/i18n/vi'
   import type { I18nKey } from '@/i18n/en'
@@ -95,11 +97,16 @@
   const VIEW_MARGIN = 8
 
   async function refreshAuth(): Promise<void> {
-    const data = await chrome.storage.local.get([BBQ_AUTH_LOGGED_IN_KEY, UI_LANG_KEY])
+    try {
+      if (!isExtensionContextValid()) return
+      const data = await chrome.storage.local.get([BBQ_AUTH_LOGGED_IN_KEY, UI_LANG_KEY])
 
-    isAuthenticated.value = !!data[BBQ_AUTH_LOGGED_IN_KEY]
-    const lang = data[UI_LANG_KEY]
-    if (lang === 'vi' || lang === 'en') uiLang.value = lang
+      isAuthenticated.value = !!data[BBQ_AUTH_LOGGED_IN_KEY]
+      const lang = data[UI_LANG_KEY]
+      if (lang === 'vi' || lang === 'en') uiLang.value = lang
+    } catch {
+      /* Extension reloaded while this tab stayed open — storage API dead. */
+    }
   }
 
   function onAuthStorageChanged(
@@ -145,6 +152,11 @@
     error.value = null
 
     try {
+      if (!isExtensionContextValid()) {
+        error.value = t('popup.contextInvalid')
+        return
+      }
+
       const settings = await chrome.runtime.sendMessage({ type: 'get-settings' })
 
       const targetLang: string = (settings as { native_language?: string })?.native_language ?? 'vi'
@@ -167,7 +179,11 @@
         alreadySaved.value = false
       }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
+      if (isExtensionContextError(e)) {
+        error.value = t('popup.contextInvalid')
+      } else {
+        error.value = e instanceof Error ? e.message : String(e)
+      }
     } finally {
       loading.value = false
     }
@@ -175,6 +191,10 @@
 
   async function checkExists(src: string, srcLang: string, tgtLang: string): Promise<void> {
     try {
+      if (!isExtensionContextValid()) {
+        alreadySaved.value = false
+        return
+      }
       const resp = await chrome.runtime.sendMessage({
         type: 'entry-exists',
 
@@ -196,6 +216,11 @@
     const r = result.value
 
     try {
+      if (!isExtensionContextValid()) {
+        saveState.value = 'error'
+        return
+      }
+
       const resp = await chrome.runtime.sendMessage({
         type: 'save-entry',
 
@@ -279,7 +304,11 @@
 
     window.addEventListener('resize', onResize)
 
-    chrome.storage.onChanged.addListener(onAuthStorageChanged)
+    try {
+      chrome.storage.onChanged.addListener(onAuthStorageChanged)
+    } catch {
+      /* invalid context */
+    }
   })
 
   onUnmounted(() => {
@@ -291,7 +320,11 @@
 
     window.removeEventListener('resize', onResize)
 
-    chrome.storage.onChanged.removeListener(onAuthStorageChanged)
+    try {
+      chrome.storage.onChanged.removeListener(onAuthStorageChanged)
+    } catch {
+      /* invalid context */
+    }
   })
 </script>
 

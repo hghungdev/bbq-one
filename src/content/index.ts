@@ -1,3 +1,5 @@
+// Must run before any module imports `vue` (see popup-host). Avoids Trusted Types CSP violations on strict pages (e.g. LinkedIn).
+import './trusted-types-vue-shim'
 import { SelectionDetector } from './selection-detector'
 import { TriggerIcon } from './trigger-icon'
 import { PopupHost } from './popup-host'
