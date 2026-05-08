@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BBQOne",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Local-first notes, bookmarks, and personal dictionary. Optional cloud sync. Privacy-respecting, offline-capable.",
   "icons": {
     "16": "bbq_one-final.png",
@@ -25,7 +25,10 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content/index.ts"],
+      "js": [
+        "src/content/content-vue-trusted-types-shim-preamble.js",
+        "src/content/index.ts"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -33,15 +36,12 @@
   "permissions": [
     "storage",
     "contextMenus",
-    "identity",
     "alarms",
     "clipboardWrite",
-    "scripting",
     "offscreen",
     "bookmarks",
     "downloads",
-    "activeTab",
-    "tabs"
+    "activeTab"
   ],
   "optional_permissions": [],
   "host_permissions": [
