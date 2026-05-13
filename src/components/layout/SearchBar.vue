@@ -80,12 +80,12 @@ onMounted(() => {
     <RetroInput
       id="bbqone-search"
       v-model="localQuery"
-      placeholder="> query_"
+      :placeholder="t('search.placeholder')"
       autocomplete="off"
       :aria-label="searchMode === 'notes' ? t('search.ariaNotes') : t('search.ariaBookmarks')"
     />
     <RetroButton variant="sm" type="button" @click="onClear">
-      [ X ]
+      {{ t('common.bracketClear') }}
     </RetroButton>
     <span v-if="searchMode === 'notes' && notes.searchLoading" class="search-bar__state">…</span>
   </div>

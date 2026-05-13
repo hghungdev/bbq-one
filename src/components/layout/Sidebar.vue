@@ -122,7 +122,7 @@ async function confirmDeleteFolder(): Promise<void> {
     }
   } catch (e) {
     deleteFolderModal.value.error =
-      e instanceof Error ? e.message : 'Delete failed'
+      e instanceof Error ? e.message : t('sidebar.deleteFolderFailed')
     deleteFolderModal.value.submitting = false
   }
 }
@@ -199,10 +199,10 @@ function startCreate(): void {
       />
       <div class="sidebar__new-actions">
         <RetroButton variant="sm" type="button" :disabled="busy" @click="onCreateFolder">
-          [ OK ]
+          {{ t('common.bracketOk') }}
         </RetroButton>
         <RetroButton variant="sm" type="button" :disabled="busy" @click="creating = false">
-          [ X ]
+          {{ t('common.bracketClear') }}
         </RetroButton>
       </div>
     </div>

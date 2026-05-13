@@ -25,7 +25,11 @@ export function firstLinePreview(text: string, maxLen = 80): string {
 }
 
 /** Nhãn trong list: title nếu có, không thì preview từ body đầu tiên. */
-export function noteListLabel(note: Note, bodies?: NoteBody[]): string {
+export function noteListLabel(
+  note: Note,
+  bodies?: NoteBody[],
+  emptyLabel = 'UNTITLED_',
+): string {
   const t = note.title.trim()
   if (t) return t
   const firstBody = bodies
@@ -33,7 +37,7 @@ export function noteListLabel(note: Note, bodies?: NoteBody[]): string {
     .sort((a, b) => a.position - b.position)[0]
   const plain = plainTextFromHtml(firstBody?.content ?? '')
   const first = firstLinePreview(plain, 80)
-  return first || 'UNTITLED_'
+  return first || emptyLabel
 }
 
 /** Kết quả search global (một dòng cũ): `Folder > tên note`. */

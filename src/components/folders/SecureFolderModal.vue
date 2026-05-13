@@ -65,7 +65,7 @@ async function submit(): Promise<void> {
     emit('done')
     emit('close')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Operation failed'
+    error.value = e instanceof Error ? e.message : t('common.operationFailed')
   } finally {
     busy.value = false
   }
@@ -169,7 +169,7 @@ const titleText = (): string => {
             :disabled="busy"
             @click="submit"
           >
-            {{ t('common.ok') }}
+            {{ t('common.bracketOk') }}
           </RetroButton>
           <RetroButton
             variant="sm"
@@ -177,7 +177,7 @@ const titleText = (): string => {
             :disabled="busy"
             @click="emit('close')"
           >
-            [ X ]
+            {{ t('common.bracketClear') }}
           </RetroButton>
         </div>
       </div>

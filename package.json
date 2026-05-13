@@ -1,10 +1,12 @@
 {
   "name": "bbq-one",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "sync-version": "node scripts/sync-extension-version.mjs",
+    "prebuild": "node scripts/sync-extension-version.mjs",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json"

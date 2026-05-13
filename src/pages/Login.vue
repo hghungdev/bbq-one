@@ -7,12 +7,14 @@ import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/uiLang'
 import { isSupabaseConfigured, missingEnvHint } from '@/env'
 import { formatAuthErrorMessage } from '@/utils/authErrors'
+import { getExtensionVersion } from '@/utils/extensionVersion'
 
 const router = useRouter()
 const auth = useAuthStore()
 const langStore = useLangStore()
 const { t } = langStore
 
+const extensionVersion = getExtensionVersion()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -52,7 +54,7 @@ async function onSubmit(): Promise<void> {
     <div class="login__panel">
       <header class="login__header">
         <h1 class="login__title">
-          BBQOne v1.1<span class="cursor-blink" aria-hidden="true"></span>
+          BBQOne v{{ extensionVersion }}<span class="cursor-blink" aria-hidden="true"></span>
         </h1>
         <div class="login__rule" />
       </header>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
   open: boolean
@@ -11,6 +12,8 @@ const emit = defineEmits<{
   confirm: []
   cancel: []
 }>()
+
+const { t } = useLangStore()
 
 const panelRef = ref<HTMLElement | null>(null)
 
@@ -73,14 +76,15 @@ onUnmounted(() => {
           {{ message }}
         </p>
         <p class="retro-confirm__prompt">
-          [Y/N]: <span class="retro-prompt-cursor" aria-hidden="true">_</span>
+          {{ t('common.confirmYnPrompt') }}
+          <span class="retro-prompt-cursor" aria-hidden="true">_</span>
         </p>
         <div class="retro-confirm__actions">
           <button type="button" class="retro-confirm__btn" @click="confirm">
-            [ Y ]
+            {{ t('common.bracketYes') }}
           </button>
           <button type="button" class="retro-confirm__btn" @click="dismiss">
-            [ N ]
+            {{ t('common.bracketNo') }}
           </button>
         </div>
       </div>

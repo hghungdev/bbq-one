@@ -42,7 +42,9 @@ const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
 
 const bodies = computed(() => notes.bodiesForNote(props.note.id))
 
-const label = computed(() => noteListLabel(props.note, bodies.value))
+const label = computed(() =>
+  noteListLabel(props.note, bodies.value, t('notes.untitled')),
+)
 
 const titleHtml = computed(() =>
   highlightQueryHtml(label.value, props.highlightQuery ?? ''),

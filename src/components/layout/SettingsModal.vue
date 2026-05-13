@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import TranslationSettingsPanel from '@/components/dictionary/TranslationSettingsPanel.vue'
@@ -253,18 +254,24 @@ onUnmounted(() => {
             <RetroButton
               variant="sm"
               type="button"
+              class="settings-lang-btn"
               :disabled="langStore.lang === 'en'"
+              :aria-label="t('settings.langEN')"
+              :aria-current="langStore.lang === 'en' ? 'true' : undefined"
               @click="langStore.setLang('en')"
             >
-              🇬🇧 {{ t('settings.langEN') }}
+              <LangFlagIcon locale="en" />
             </RetroButton>
             <RetroButton
               variant="sm"
               type="button"
+              class="settings-lang-btn"
               :disabled="langStore.lang === 'vi'"
+              :aria-label="t('settings.langVI')"
+              :aria-current="langStore.lang === 'vi' ? 'true' : undefined"
               @click="langStore.setLang('vi')"
             >
-              🇻🇳 {{ t('settings.langVI') }}
+              <LangFlagIcon locale="vi" />
             </RetroButton>
           </div>
         </SettingsAccordionSection>
@@ -679,4 +686,11 @@ onUnmounted(() => {
 .settings-lang-row {
   gap: 8px;
 }
+
+.settings-lang-row :deep(.settings-lang-btn) {
+  width: 48px;
+  min-width: 48px;
+  padding: 6px;
+}
+
 </style>

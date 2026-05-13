@@ -44,7 +44,7 @@ async function onSubmit(): Promise<void> {
       <div class="lm-panel" role="dialog" aria-modal="true" aria-labelledby="lm-title">
         <header class="lm-header">
           <h2 id="lm-title" class="lm-title">
-            BBQOne v1.1<span class="cursor-blink" aria-hidden="true"></span>
+            BBQOne<span class="cursor-blink" aria-hidden="true"></span>
           </h2>
           <button class="lm-close" type="button" :title="t('common.close')" @click="emit('close')">
             ✕
