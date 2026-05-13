@@ -62,7 +62,7 @@ defineEmits<{ close: [] }>()
   background: var(--bg-primary);
   border: 1px solid var(--accent);
   padding: 12px 16px;
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  font-family: var(--font-body);
   font-size: var(--font-size-sm);
   z-index: 9999;
   min-width: 240px;

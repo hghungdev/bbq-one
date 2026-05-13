@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { fetchBookmarkCryptoRow } from '@/services/bookmarkCryptoKeys.service'
 import { bookmarksService } from './bookmarks.service'
+import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
 import {
   getPersistedBookmarkTreeHash,
   hashBookmarkTree,
@@ -47,7 +48,7 @@ async function runBookmarkAutoBackup(): Promise<void> {
     const last = await getPersistedBookmarkTreeHash()
     if (fp === last) return
 
-    const label = `auto ${new Date().toLocaleString('sv')}`
+    const label = buildBookmarkBackupLabel('auto')
     await bookmarksService.saveBackup(tree, label)
   } catch (e) {
     console.warn('[BBQNote] bookmark auto-backup failed', e)

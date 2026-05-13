@@ -1,40 +1,88 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
+/*
+ * Tokens theo apple-DESIGN.md + DESIGN.md (getdesign apple).
+ * Inter thay SF Pro ngoài hệ sinh thái Apple (spec gợi ý trong DESIGN.md).
+ */
 :root {
-  /* Vintage paper / cream — bản gốc ấm, không wash xanh */
-  --bg-primary: #efe9df;
-  --bg-secondary: #f5f0e8;
-  --bg-panel: #f0ebe3;
-  --bg-login-glow: rgba(165, 130, 85, 0.14);
-  --border: #cfc3b4;
-  /* Khối code / Shiki */
-  --bg-code: #2a2622;
-  --text-on-code: #ece6dc;
-  --text-primary: #2c2520;
-  --text-secondary: #5c534a;
-  --text-muted: #8a8075;
-  /* Accent mặc định (login / ngoài shell): vàng retro */
-  --accent: #b8731a;
-  /*
-   * Dashboard: cobalt — ít dùng nền lớn, chủ yếu CTA / focus / selection (keyboard ref).
-   * Gán lại trong .shell--dashboard, không ảnh hưởng trang login.
-   */
-  --accent-dashboard: #1e58b8;
-  --bg-dashboard-radial: rgba(32, 92, 176, 0.07);
-  --bg-dashboard-header-wash: rgba(30, 88, 184, 0.05);
-  --danger: #b8453a;
-  --success: #3d7a5a;
-  /* Đồng bộ thành công: cùng họ vàng/amber */
-  --sync-done: #9a6a1e;
-  --sync-done-muted: #c9a063;
-  --search-hit-bg: rgba(200, 155, 75, 0.32);
-  --search-hit-dashboard: rgba(30, 88, 184, 0.26);
-  /* Keyboard focus ring — login dùng accent vàng; dashboard / overlay gán lại */
-  --focus-ring: var(--accent);
-  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
-  --font-size-base: 13px;
-  --font-size-sm: 11px;
-  --font-size-lg: 15px;
+  /* —— Apple palette —— */
+  --color-primary: #0066cc;
+  --color-primary-focus: #0071e3;
+  --color-primary-on-dark: #2997ff;
+
+  --color-canvas: #ffffff;
+  --color-parchment: #f5f5f7;
+  --color-pearl: #fafafc;
+  --color-hairline: #e0e0e0;
+
+  --color-ink: #1d1d1f;
+  --color-body-muted: #6e6e73;
+  --color-ink-muted-48: #86868b;
+
+  --color-tile-1: #272729;
+  --color-on-primary: #ffffff;
+
+  --color-danger: #cf2228;
+  --color-success: #2d8643;
+
+  /* —— BBQOne semantics (đổi giá trị tại một chỗ) —— */
+  --bg-primary: var(--color-parchment);
+  --bg-secondary: var(--color-canvas);
+  --bg-panel: var(--color-pearl);
+  --bg-login-glow: rgba(0, 102, 204, 0.06);
+
+  --border: var(--color-hairline);
+  --bg-code: var(--color-tile-1);
+  --text-on-code: var(--color-parchment);
+  --text-primary: var(--color-ink);
+  --text-secondary: #515154;
+  --text-muted: var(--color-body-muted);
+
+  /* Một accent duy nhất (spec Apple) */
+  --accent: var(--color-primary);
+  --accent-dashboard: var(--color-primary);
+  --on-accent: var(--color-on-primary);
+
+  --bg-dashboard-radial: rgba(0, 102, 204, 0.04);
+  --bg-dashboard-header-wash: rgba(255, 255, 255, 0.85);
+
+  --danger: var(--color-danger);
+  --success: var(--color-success);
+  --sync-done: var(--color-success);
+  --sync-done-muted: #248a4a;
+
+  --search-hit-bg: rgba(0, 102, 204, 0.12);
+  --search-hit-dashboard: rgba(0, 113, 227, 0.12);
+
+  --accent-soft-border: rgba(0, 102, 204, 0.32);
+  --accent-soft-bg: rgba(0, 102, 204, 0.08);
+  --accent-soft-bg-hover: rgba(0, 102, 204, 0.12);
+
+  --surface-success-muted: rgba(45, 134, 67, 0.12);
+  --surface-danger-muted: rgba(207, 34, 40, 0.08);
+  --surface-accent-muted: rgba(0, 102, 204, 0.08);
+
+  --overlay-scrim: rgba(0, 0, 0, 0.42);
+  --panel-ring: rgba(0, 0, 0, 0.06);
+
+  --input-border: rgba(0, 0, 0, 0.08);
+
+  --focus-ring: var(--color-primary-focus);
+
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+  --font-body: var(--font-sans);
+  --font-display: var(--font-sans);
+
+  /* Body 17px theo spec Apple */
+  --font-size-base: 17px;
+  --font-size-sm: 14px;
+  --font-size-xs: 12px;
+  --font-size-lg: 21px;
+
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+
   --popup-min-width: 720px;
 }
 
@@ -52,10 +100,6 @@ html {
   width: 100%;
 }
 
-/*
- * Trang quick translate — popup hẹp, cao theo nội dung (Chrome không “auto-resize”
- * động sau khi mở; chiều cao cửa sổ = layout document lúc vẽ — bỏ height:600px cố định).
- */
 html.html--translate-shell {
   min-width: 380px;
   max-width: 480px;
@@ -84,8 +128,11 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--font-size-base);
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
@@ -121,21 +168,16 @@ a {
 }
 
 a:hover {
-  color: var(--text-primary);
+  color: var(--color-primary-focus);
 }
 
-/* Dashboard (App.vue .shell--dashboard): viền focus cobalt */
 .shell--dashboard {
-  --focus-ring: var(--accent-dashboard);
+  --focus-ring: var(--color-primary-focus);
 }
 
-/*
- * Teleport ra body (modal / menu): không nằm trong .shell--dashboard,
- * nên gắn class này lên backdrop để cùng ring xanh với header.
- */
 .bbqone-overlay {
-  --accent: var(--accent-dashboard);
-  --focus-ring: var(--accent-dashboard);
+  --accent: var(--color-primary);
+  --focus-ring: var(--color-primary-focus);
 }
 
 a:focus-visible,
@@ -145,4 +187,82 @@ textarea:focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+:root,
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* Dark UI — một chỗ ghi đè semantic để shell / login / modal / bookmark dùng chung tokens */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-primary: #2997ff;
+  --color-primary-focus: #66bfff;
+  --color-primary-on-dark: #7dc4ff;
+
+  --color-canvas: #1c1c1e;
+  --color-parchment: #1c1c1e;
+  --color-pearl: #2c2c2e;
+  --color-hairline: #48484a;
+
+  --color-ink: #f5f5f7;
+  --color-body-muted: #8e8e93;
+  --color-ink-muted-48: #aeaeb2;
+
+  --color-tile-1: #0e0e10;
+  --color-on-primary: #ffffff;
+
+  --bg-primary: #1c1c1e;
+  --bg-secondary: #2c2c2e;
+  --bg-panel: #3a3a3c;
+
+  --bg-login-glow: rgba(41, 151, 255, 0.14);
+
+  --border: var(--color-hairline);
+
+  --text-primary: var(--color-ink);
+  --text-secondary: #a1a1a6;
+  --text-muted: var(--color-body-muted);
+
+  --accent: var(--color-primary-on-dark);
+  --accent-dashboard: var(--color-primary-on-dark);
+
+  --bg-dashboard-radial: rgba(41, 151, 255, 0.1);
+  --bg-dashboard-header-wash: rgba(36, 36, 39, 0.94);
+
+  --sync-done: #34c759;
+  --sync-done-muted: #34c759;
+
+  --search-hit-bg: rgba(41, 151, 255, 0.22);
+  --search-hit-dashboard: rgba(125, 196, 255, 0.18);
+
+  --accent-soft-border: rgba(125, 196, 255, 0.35);
+  --accent-soft-bg: rgba(41, 151, 255, 0.14);
+  --accent-soft-bg-hover: rgba(41, 151, 255, 0.22);
+
+  --surface-success-muted: rgba(52, 199, 89, 0.16);
+  --surface-danger-muted: rgba(255, 82, 82, 0.14);
+  --surface-accent-muted: rgba(41, 151, 255, 0.12);
+
+  --overlay-scrim: rgba(0, 0, 0, 0.72);
+  --panel-ring: rgba(255, 255, 255, 0.09);
+
+  --input-border: rgba(255, 255, 255, 0.14);
+
+  --focus-ring: var(--color-primary-focus);
+
+  --bg-code: #111113;
+  --text-on-code: #ebebf5;
+}
+
+html[data-theme='dark'] .bbqone-overlay {
+  --accent: var(--color-primary-on-dark);
+  --focus-ring: var(--color-primary-focus);
+}
+
+html[data-theme='dark'] .bbqnote-overlay {
+  --accent: var(--color-primary-on-dark);
+  --focus-ring: var(--color-primary-focus);
 }

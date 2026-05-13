@@ -41,7 +41,7 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="login login--centered crt-scanlines">
+  <div class="login login--centered">
     <p
       v-if="!isSupabaseConfigured"
       class="login__config-warn"
@@ -109,10 +109,8 @@ async function onSubmit(): Promise<void> {
 
 <style scoped>
 .login {
-  /* Đồng bộ cobalt với dashboard — viền / CTA / focus không bị chìm trên nền kem */
   --accent: var(--accent-dashboard);
-  --focus-ring: var(--accent-dashboard);
-  --border: #8ca3cc;
+  --focus-ring: var(--color-primary-focus);
   box-sizing: border-box;
   min-width: 320px;
   min-height: 0;
@@ -155,7 +153,7 @@ async function onSubmit(): Promise<void> {
   border: 1px solid var(--border);
   padding: 20px 18px 16px;
   background: var(--bg-secondary);
-  box-shadow: 0 0 0 1px rgba(140, 110, 70, 0.18);
+  box-shadow: 0 0 0 1px var(--panel-ring);
 }
 
 .login__header {

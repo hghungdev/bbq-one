@@ -193,7 +193,7 @@ const titleText = (): string => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 13, 6, 0.88);
+  background: var(--overlay-scrim);
   padding: 16px;
 }
 

@@ -327,8 +327,8 @@ const saveIconAriaLabel = computed(() => {
   cursor: pointer;
   font-weight: 600;
   letter-spacing: 0.03em;
-  color: #fff;
-  background: var(--accent-dashboard);
+  color: var(--on-accent);
+  background: var(--accent);
 }
 
 .qt__translate-btn:hover:not(:disabled) {
@@ -400,16 +400,16 @@ const saveIconAriaLabel = computed(() => {
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid rgba(30, 88, 184, 0.45);
-  border-radius: 2px;
-  background: rgba(32, 92, 176, 0.08);
-  color: var(--accent-dashboard);
+  border: 1px solid var(--accent-soft-border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft-bg);
+  color: var(--accent);
   cursor: pointer;
 }
 
 .qt__save-icon:hover:not(:disabled) {
-  border-color: var(--accent-dashboard);
-  background: rgba(32, 92, 176, 0.14);
+  border-color: var(--accent);
+  background: var(--accent-soft-bg-hover);
 }
 
 .qt__save-icon:disabled,
@@ -449,7 +449,7 @@ const saveIconAriaLabel = computed(() => {
   font-size: 9px;
   padding: 2px 6px;
   border: 1px solid var(--border);
-  color: var(--accent-dashboard);
+  color: var(--accent);
   background: var(--bg-panel);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -460,8 +460,8 @@ const saveIconAriaLabel = computed(() => {
   text-transform: none;
   font-weight: 600;
   letter-spacing: 0.08em;
-  border-color: rgba(30, 88, 184, 0.42);
-  background: rgba(32, 92, 176, 0.09);
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft-bg);
 }
 
 /* Từ gốc / bản dịch: cùng cỡ, cùng độ đậm — không để nguồn nhỏ hơn đích */
@@ -480,7 +480,7 @@ const saveIconAriaLabel = computed(() => {
 }
 
 .qt__lemma--target {
-  color: var(--accent-dashboard);
+  color: var(--accent);
 }
 
 .qt__ipa {

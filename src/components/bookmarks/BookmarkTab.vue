@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import DeleteBackupModal from '@/components/bookmarks/DeleteBackupModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
 import { isAuthenticated } from '@/services/localFirst/authMode'
@@ -8,6 +9,7 @@ import { useBookmarksStore } from '@/stores/bookmarks'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
+import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
 import BookmarkPinModal from './BookmarkPinModal.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
@@ -78,10 +80,10 @@ const globalHits = computed(() =>
   bookmarksService.searchBookmarkGlobalHits(bm.searchQuery, bm.liveTree, bm.backups),
 )
 
-const deleteBackupConfirmMessage = computed(() => {
+const pendingDeleteBackupLabel = computed(() => {
   const id = pendingDeleteBackupId.value
   const bk = id ? bm.backups.find((b) => b.id === id) : undefined
-  return t('bookmark.confirmDeleteBackup', { label: bk?.label ?? id ?? '—' })
+  return bk?.label ?? ''
 })
 
 const globalHitSections = computed(() => {
@@ -132,12 +134,14 @@ function onDeleteBackupClick(id: string): void {
   confirmDeleteBackup.value = true
 }
 
-function onDeleteBackupCancel(): void {
+function onDeleteBackupModalClose(): void {
+  confirmDeleteBackup.value = false
   pendingDeleteBackupId.value = null
 }
 
 async function onDeleteBackupConfirm(): Promise<void> {
   const id = pendingDeleteBackupId.value
+  confirmDeleteBackup.value = false
   pendingDeleteBackupId.value = null
   if (!id) return
   await bm.deleteBackup(id)
@@ -155,10 +159,7 @@ async function onDeleteAllConfirm(): Promise<void> {
   confirmDeleteAll.value = false
 }
 
-const backupLabel = computed(() => {
-  const d = new Date()
-  return `${d.toLocaleDateString('sv')} ${d.toLocaleTimeString('sv', { hour: '2-digit', minute: '2-digit' })}`
-})
+const backupLabel = computed(() => buildBookmarkBackupLabel('manual'))
 
 /** REFRESH = đọc lại cây bookmark từ trình duyệt (chrome.bookmarks) và hiển thị LIVE — không tải lại danh sách backup từ server. */
 async function onRefreshLive(): Promise<void> {
@@ -293,11 +294,11 @@ async function onRefreshLive(): Promise<void> {
       :message="t('bookmark.confirmRestore')"
       @confirm="onRestoreConfirm"
     />
-    <RetroConfirm
-      v-model:open="confirmDeleteBackup"
-      :message="deleteBackupConfirmMessage"
+    <DeleteBackupModal
+      :open="confirmDeleteBackup"
+      :backup-label="pendingDeleteBackupLabel"
+      @close="onDeleteBackupModalClose"
       @confirm="onDeleteBackupConfirm"
-      @cancel="onDeleteBackupCancel"
     />
     <RetroConfirm
       v-model:open="confirmDeleteAll"

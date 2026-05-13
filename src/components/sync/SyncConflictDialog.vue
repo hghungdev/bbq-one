@@ -81,7 +81,7 @@ defineEmits<{
 .conflict-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-scrim);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -92,7 +92,7 @@ defineEmits<{
 .conflict-dialog {
   background: var(--bg-primary);
   border: 1px solid var(--accent);
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', 'Courier New', monospace;
+  font-family: var(--font-body);
   max-width: 600px;
   width: 100%;
   max-height: 80vh;

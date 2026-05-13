@@ -7,27 +7,19 @@
 /* ── CSS Variables: mặc định nền sáng (hòa trang web thông thường) ── */
 .bbq-popup {
   --bbq-bg: #ffffff;
-  --bbq-text: #1f2937;
-  --bbq-border: #e5e7eb;
-  --bbq-accent: #a16207;
-  --bbq-muted: #6b7280;
-  --bbq-danger: #b91c1c;
-  --bbq-success: #15803d;
-  --bbq-translated: #1d4ed8;
-  --bbq-meta-divider: rgba(15, 23, 42, 0.1);
-  --bbq-font: 'IBM Plex Mono', 'Courier New', monospace;
-  --bbq-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-.bbq-popup__save-icon {
-  color: var(--bbq-translated);
-  border-color: rgba(29, 78, 216, 0.35);
-  background: rgba(29, 78, 216, 0.06);
-}
-
-.bbq-popup__save-icon:hover:not(:disabled) {
-  border-color: #1d4ed8;
-  background: rgba(29, 78, 216, 0.12);
+  --bbq-text: #1d1d1f;
+  --bbq-border: #e0e0e0;
+  --bbq-accent: #0066cc;
+  --bbq-muted: #6e6e73;
+  --bbq-danger: #cf2228;
+  --bbq-success: #2d8643;
+  --bbq-translated: #0066cc;
+  --bbq-meta-divider: rgba(0, 0, 0, 0.08);
+  --bbq-soft-translated-border: rgba(0, 102, 204, 0.32);
+  --bbq-soft-translated-bg: rgba(0, 102, 204, 0.08);
+  --bbq-soft-translated-bg-hover: rgba(0, 102, 204, 0.12);
+  --bbq-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --bbq-font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* ── Container ── */
@@ -41,10 +33,10 @@
   background: var(--bbq-bg);
   color: var(--bbq-text);
   border: 1px solid var(--bbq-border);
-  border-radius: 8px;
+  border-radius: 11px;
   box-shadow:
-    0 8px 24px rgba(15, 23, 42, 0.12),
-    0 0 0 1px rgba(15, 23, 42, 0.06);
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
   z-index: 2147483647;
   /* Prevent layout issues on host page */
   box-sizing: border-box;
@@ -64,9 +56,9 @@
 .bbq-popup__brand {
   font-family: var(--bbq-font);
   color: var(--bbq-accent);
-  font-weight: bold;
+  font-weight: 600;
   font-size: 12px;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
 }
 
 .bbq-popup__close {
@@ -117,7 +109,7 @@
   font-weight: 600;
   color: var(--bbq-accent);
   border: 1px solid var(--bbq-border);
-  background: rgba(128, 128, 128, 0.12);
+  background: rgba(0, 0, 0, 0.04);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 3px;
@@ -212,16 +204,16 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid var(--bbq-border);
-  border-radius: 2px;
-  background: rgba(128, 128, 128, 0.1);
-  color: var(--bbq-accent);
+  border: 1px solid var(--bbq-soft-translated-border);
+  border-radius: 8px;
+  background: var(--bbq-soft-translated-bg);
+  color: var(--bbq-translated);
   cursor: pointer;
 }
 
 .bbq-popup__save-icon:hover:not(:disabled) {
   border-color: var(--bbq-accent);
-  background: rgba(240, 192, 64, 0.15);
+  background: var(--bbq-soft-translated-bg-hover);
 }
 
 .bbq-popup__save-icon:disabled,
@@ -233,7 +225,7 @@
 .bbq-popup__save-icon--locked {
   cursor: default;
   border-color: var(--bbq-border);
-  background: rgba(128, 128, 128, 0.08);
+  background: rgba(0, 0, 0, 0.04);
   color: var(--bbq-muted);
 }
 

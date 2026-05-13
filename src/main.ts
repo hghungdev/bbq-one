@@ -5,6 +5,7 @@ import router from './router'
 import { BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
 import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
 import { useSettingsStore } from '@/stores/settings'
+import { useThemeStore } from '@/stores/theme'
 import './assets/styles/global.css'
 import './assets/styles/retro.css'
 
@@ -15,6 +16,7 @@ async function bootstrap(): Promise<void> {
   await Promise.all([
     useSettingsStore().load(),
     useExtensionUIModeStore().init(),
+    useThemeStore().init(),
   ])
   const pending = await chrome.storage.local.get(BBQ_PENDING_ROUTE_KEY)
   const routePath = pending[BBQ_PENDING_ROUTE_KEY]

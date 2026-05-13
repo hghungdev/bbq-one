@@ -289,7 +289,7 @@ function pickAction(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-dashboard);
+  color: var(--accent);
 }
 
 .folder-item__lock {
@@ -315,7 +315,7 @@ function pickAction(
   min-width: 180px;
   border: 1px solid var(--border);
   background: var(--bg-panel);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .folder-ctx button {

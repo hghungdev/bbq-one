@@ -103,15 +103,13 @@ async function onSubmit(): Promise<void> {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
-  /* Đồng bộ cobalt accent với login page */
   --accent: var(--accent-dashboard);
-  --focus-ring: var(--accent-dashboard);
-  --border: #8ca3cc;
+  --focus-ring: var(--color-primary-focus);
 }
 
 /* ── Panel — kế thừa .login__panel ── */
@@ -121,8 +119,8 @@ async function onSubmit(): Promise<void> {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   box-shadow:
-    0 0 0 1px rgba(140, 110, 70, 0.18),
-    0 8px 32px rgba(0, 0, 0, 0.28);
+    0 0 0 1px var(--panel-ring),
+    0 8px 32px rgba(0, 0, 0, 0.16);
   padding: 18px 18px 14px;
   position: relative;
 }

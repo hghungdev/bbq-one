@@ -18,6 +18,7 @@ import { useSyncStore } from '@/stores/sync'
 import { useLangStore } from '@/stores/uiLang'
 import { downloadNoteAsTxt } from '@/utils/exportNote'
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
+import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
 import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
 import { storeToRefs } from 'pinia'
 
@@ -192,13 +193,14 @@ const noteListColumnStyle = computed(() =>
 </script>
 
 <template>
-  <div class="shell shell--dashboard crt-scanlines">
+  <div class="shell shell--dashboard">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
         <span class="shell__brand">BBQOne</span>
         <span class="shell__sep" aria-hidden="true">───────────────────────</span>
         <div class="shell__header-right">
           <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>
+          <ThemeModeToggle class="shell__theme-toggle" />
           <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
           <span
             v-if="!isAnonymous"
@@ -366,15 +368,15 @@ const noteListColumnStyle = computed(() =>
   background: var(--bg-primary);
 }
 
-/* Sau login: pha xanh cobalt (accent) + highlight tìm kiếm; badge SYNCED vẫn tông vàng */
+/* Dashboard: accent xanh + wash rất nhẹ (spec: tránh gradient trang trí — chỉ tinh chỉnh header) */
 .shell--dashboard {
   --accent: var(--accent-dashboard);
   --search-hit-bg: var(--search-hit-dashboard);
   background-color: var(--bg-primary);
   background-image: radial-gradient(
-    ellipse 130% 100% at 50% 0%,
+    ellipse 130% 90% at 50% 0%,
     var(--bg-dashboard-radial) 0%,
-    transparent 58%
+    transparent 55%
   );
 }
 
@@ -423,7 +425,7 @@ const noteListColumnStyle = computed(() =>
   gap: 8px 10px;
   flex: 0 1 auto;
   min-width: 0;
-  max-width: min(380px, 52%);
+  max-width: min(480px, 58%);
 }
 
 .shell__brand {
@@ -450,7 +452,11 @@ const noteListColumnStyle = computed(() =>
   white-space: nowrap;
   flex: 1 1 auto;
   min-width: 0;
-  max-width: min(260px, 100%);
+  max-width: min(220px, 100%);
+}
+
+.shell__theme-toggle {
+  flex-shrink: 0;
 }
 
 .shell__sync-badge {
@@ -473,7 +479,7 @@ const noteListColumnStyle = computed(() =>
 .shell__sync-badge--done {
   color: var(--sync-done);
   border-color: var(--sync-done-muted);
-  background: rgba(184, 115, 26, 0.12);
+  background: var(--surface-success-muted);
 }
 
 .shell__sync-badge--syncing {
@@ -484,7 +490,7 @@ const noteListColumnStyle = computed(() =>
 .shell__sync-badge--unsaved {
   color: var(--danger);
   border-color: var(--danger);
-  background: rgba(184, 69, 58, 0.06);
+  background: var(--surface-danger-muted);
 }
 
 .shell__sync-badge--error {
@@ -495,7 +501,7 @@ const noteListColumnStyle = computed(() =>
 .shell__sync-btn.shell__sync-btn--done:not(:disabled) {
   border-color: var(--sync-done-muted);
   color: var(--sync-done);
-  background: rgba(184, 115, 26, 0.08);
+  background: var(--surface-success-muted);
 }
 
 .shell__sync-btn.shell__sync-btn--done:not(:disabled):hover {

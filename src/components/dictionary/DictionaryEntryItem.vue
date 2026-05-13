@@ -270,7 +270,7 @@ function onConfirmDelete(): void {
 
 
 
-/* Cùng tông xanh với popup dịch (popup-styles: light #1565c0, dark #7ec8ff) */
+/* Bản dịch: accent Action Blue (popup / dict thống nhất) */
 
 .entry__translated-text {
 
@@ -278,19 +278,7 @@ function onConfirmDelete(): void {
 
   font-weight: 600;
 
-  color: #1565c0;
-
-}
-
-
-
-@media (prefers-color-scheme: dark) {
-
-  .entry__translated-text {
-
-    color: #7ec8ff;
-
-  }
+  color: var(--accent);
 
 }
 
@@ -394,7 +382,7 @@ function onConfirmDelete(): void {
 
   border-color: var(--danger);
 
-  background: rgba(184, 69, 58, 0.08);
+  background: var(--surface-danger-muted);
 
 }
 

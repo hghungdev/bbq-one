@@ -32,6 +32,12 @@ export const vi: Record<I18nKey, string> = {
   'app.errorConnect': '[LỖI] Không kết nối được máy chủ',
   'app.dragResize': 'Kéo để thay đổi kích thước',
 
+  'theme.ariaGroup':
+    'Giao diện: sáng hoặc tối. Tuỳ chọn được lưu đồng bộ trong trình duyệt.',
+  'theme.segAria': 'Chọn sáng hoặc tối',
+  'theme.lightAria': 'Chế độ sáng — biểu tượng mặt trời',
+  'theme.darkAria': 'Chế độ tối — biểu tượng mặt trăng',
+
   // ── Search ──
   'search.label': 'TÌM KIẾM',
   'search.ariaNotes': 'Tìm ghi chú',
@@ -179,8 +185,13 @@ export const vi: Record<I18nKey, string> = {
   'bookmark.clearSearch': '[ XÓA TÌM ]',
   'bookmark.liveSwitchBtn': '[LIVE]',
   'bookmark.confirmRestore': 'Khôi phục sẽ GHI ĐÈ toàn bộ bookmark hiện tại. Tiếp tục?',
-  'bookmark.confirmDeleteBackup':
-    'Xóa bản backup này?\n«{label}»\nKhông thể khôi phục từ thùng rác.',
+  'bookmark.deleteBackup.title': 'XÓA BẢN SAO LƯU',
+  'bookmark.deleteBackup.warn':
+    'Thao tác này sẽ xóa vĩnh viễn bản sao lưu «{label}». Không thể hoàn tác.',
+  'bookmark.deleteBackup.instrPre': 'Nhập',
+  'bookmark.deleteBackup.instrPost': 'để xác nhận:',
+  'bookmark.deleteBackup.confirmBtn': '[ XÓA ]',
+  'bookmark.deleteBackup.cancelBtn': '[ HỦY ]',
   'bookmark.confirmDeleteAll': 'XÓA TẤT CẢ bookmark khỏi trình duyệt? Không thể hoàn tác.',
   'bookmark.loading': '> ĐANG TẢI...',
   'bookmark.rstTitle': 'Khôi phục',

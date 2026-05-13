@@ -30,6 +30,12 @@ export const en = {
   'app.errorConnect': '[ERROR] Cannot connect to server',
   'app.dragResize': 'Drag to resize',
 
+  'theme.ariaGroup':
+    'Theme: dark or light appearance. Preference is synced in this browser.',
+  'theme.segAria': 'Choose light or dark',
+  'theme.lightAria': 'Light mode — sun icon',
+  'theme.darkAria': 'Dark mode — moon icon',
+
   // ── Search ──
   'search.label': 'SEARCH',
   'search.ariaNotes': 'Search notes',
@@ -177,8 +183,13 @@ export const en = {
   'bookmark.clearSearch': '[ CLEAR ]',
   'bookmark.liveSwitchBtn': '[LIVE]',
   'bookmark.confirmRestore': 'Restore will OVERWRITE all current bookmarks. Continue?',
-  'bookmark.confirmDeleteBackup':
-    'Delete this backup?\n«{label}»\nThis cannot be undone from the trash.',
+  'bookmark.deleteBackup.title': 'DELETE BACKUP',
+  'bookmark.deleteBackup.warn':
+    'This will permanently delete the backup «{label}». This cannot be undone.',
+  'bookmark.deleteBackup.instrPre': 'Type',
+  'bookmark.deleteBackup.instrPost': 'to confirm:',
+  'bookmark.deleteBackup.confirmBtn': '[ DELETE ]',
+  'bookmark.deleteBackup.cancelBtn': '[ CANCEL ]',
   'bookmark.confirmDeleteAll': 'DELETE ALL bookmarks from browser? This cannot be undone.',
   'bookmark.loading': '> LOADING...',
   'bookmark.rstTitle': 'Restore',

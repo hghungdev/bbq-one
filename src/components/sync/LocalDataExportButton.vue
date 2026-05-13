@@ -38,7 +38,7 @@ async function exportLocal(): Promise<void> {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-secondary);
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  font-family: var(--font-body);
   font-size: var(--font-size-sm);
   cursor: pointer;
   letter-spacing: 0.04em;

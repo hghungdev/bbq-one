@@ -54,7 +54,7 @@ onUnmounted(() => {
   padding: 2px 10px;
   border: 1px solid var(--accent);
   font-size: var(--font-size-sm);
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  font-family: var(--font-body);
   color: var(--accent);
   background: transparent;
   letter-spacing: 0.04em;

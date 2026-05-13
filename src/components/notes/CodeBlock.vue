@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { onMounted, ref, watch } from 'vue'
 import { highlightCode } from '@/utils/highlight'
+import { useThemeStore } from '@/stores/theme'
 
 const props = defineProps<{
   code: string
@@ -8,6 +10,8 @@ const props = defineProps<{
 }>()
 
 const html = ref<string>('')
+
+const { mode: themeMode } = storeToRefs(useThemeStore())
 
 async function render(): Promise<void> {
   html.value = await highlightCode(props.code, props.language || 'plaintext')
@@ -18,7 +22,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.code, props.language] as const,
+  () => [props.code, props.language, themeMode.value] as const,
   () => {
     void render()
   },

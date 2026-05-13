@@ -6,10 +6,8 @@ import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
   open: boolean
-  folderName: string
-  noteCount: number
+  backupLabel: string
   submitting?: boolean
-  serverError?: string
 }>()
 
 const emit = defineEmits<{
@@ -24,15 +22,15 @@ const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
 
 const isSubmitting = computed(() => props.submitting ?? false)
 
-const nameMatches = computed(() => confirmText.value === props.folderName)
+const nameMatches = computed(() => confirmText.value === props.backupLabel)
 
-const canSubmit = computed(() => nameMatches.value && !isSubmitting.value)
+const canSubmit = computed(() => nameMatches.value && props.backupLabel.length > 0 && !isSubmitting.value)
 
 watch(
   () => props.open,
   async (open) => {
     if (open) {
-      confirmText.value = ''
+      confirmText.value = props.backupLabel
       await nextTick()
       panelRef.value?.focus()
       inputRef.value?.focus()
@@ -62,57 +60,49 @@ function onBackdropClick(): void {
   <Teleport to="body">
     <div
       v-if="open"
-      class="delete-folder-modal__backdrop bbqone-overlay"
+      class="delete-backup-modal__backdrop bbqone-overlay"
       role="presentation"
       @click.self="onBackdropClick"
     >
       <div
         ref="panelRef"
-        class="delete-folder-modal"
+        class="delete-backup-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="delete-folder-title"
+        aria-labelledby="delete-backup-title"
         tabindex="-1"
         @keydown="onPanelKeydown"
       >
-        <p id="delete-folder-title" class="delete-folder-modal__title">
-          {{ t('deleteFolder.title') }}
+        <p id="delete-backup-title" class="delete-backup-modal__title">
+          {{ t('bookmark.deleteBackup.title') }}
         </p>
-        <p class="delete-folder-modal__warn">
-          {{ t('deleteFolder.warnPre') }}
-          <strong class="delete-folder-modal__mono">{{ folderName }}</strong>
-          {{ t('deleteFolder.warnMid') }}
-          <strong>{{ noteCount }}</strong>
-          {{ noteCount === 1 ? t('deleteFolder.warnNote') : t('deleteFolder.warnNotes') }}
-          {{ t('deleteFolder.warnPost') }}
+        <p class="delete-backup-modal__warn">
+          {{ t('bookmark.deleteBackup.warn', { label: backupLabel }) }}
         </p>
-        <p class="delete-folder-modal__instr">
-          {{ t('deleteFolder.instrPre') }}
-          <strong class="delete-folder-modal__mono">{{ folderName }}</strong>
-          {{ t('deleteFolder.instrPost') }}
-        </p>
-        <p v-if="serverError" class="delete-folder-modal__err" role="alert">
-          {{ serverError }}
+        <p class="delete-backup-modal__instr">
+          {{ t('bookmark.deleteBackup.instrPre') }}
+          <strong class="delete-backup-modal__mono">{{ backupLabel }}</strong>
+          {{ t('bookmark.deleteBackup.instrPost') }}
         </p>
         <RetroInput
-          id="delete-folder-confirm-name"
+          id="delete-backup-confirm-name"
           ref="inputRef"
           v-model="confirmText"
           type="text"
           autocomplete="off"
           :disabled="isSubmitting"
-          :placeholder="folderName"
-          :aria-label="t('deleteFolder.instrPre') + ' ' + folderName + ' ' + t('deleteFolder.instrPost')"
+          :placeholder="backupLabel"
+          :aria-label="t('bookmark.deleteBackup.instrPre') + ' ' + backupLabel + ' ' + t('bookmark.deleteBackup.instrPost')"
           @keydown.enter.prevent="submit"
         />
-        <div class="delete-folder-modal__actions">
+        <div class="delete-backup-modal__actions">
           <RetroButton
             variant="sm"
             type="button"
             :disabled="!canSubmit"
             @click="submit"
           >
-            {{ t('deleteFolder.confirmBtn') }}
+            {{ t('bookmark.deleteBackup.confirmBtn') }}
           </RetroButton>
           <RetroButton
             variant="sm"
@@ -120,7 +110,7 @@ function onBackdropClick(): void {
             :disabled="isSubmitting"
             @click="emit('close')"
           >
-            {{ t('deleteFolder.cancelBtn') }}
+            {{ t('bookmark.deleteBackup.cancelBtn') }}
           </RetroButton>
         </div>
       </div>
@@ -129,7 +119,7 @@ function onBackdropClick(): void {
 </template>
 
 <style scoped>
-.delete-folder-modal__backdrop {
+.delete-backup-modal__backdrop {
   position: fixed;
   inset: 0;
   z-index: 10003;
@@ -140,7 +130,7 @@ function onBackdropClick(): void {
   padding: 16px;
 }
 
-.delete-folder-modal {
+.delete-backup-modal {
   width: 100%;
   max-width: 400px;
   border: 1px solid var(--border);
@@ -149,39 +139,33 @@ function onBackdropClick(): void {
   outline: none;
 }
 
-.delete-folder-modal__title {
+.delete-backup-modal__title {
   margin: 0 0 12px;
   font-size: var(--font-size-sm);
   color: var(--danger);
   letter-spacing: 0.08em;
 }
 
-.delete-folder-modal__warn {
+.delete-backup-modal__warn {
   margin: 0 0 12px;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   line-height: 1.45;
 }
 
-.delete-folder-modal__instr {
+.delete-backup-modal__instr {
   margin: 0 0 8px;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-.delete-folder-modal__mono {
+.delete-backup-modal__mono {
   font-family: ui-monospace, monospace;
   color: var(--text-primary);
 }
 
-.delete-folder-modal__err {
-  margin: 0 0 10px;
-  font-size: var(--font-size-sm);
-  color: var(--danger);
-}
-
-.delete-folder-modal__actions {
+.delete-backup-modal__actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;

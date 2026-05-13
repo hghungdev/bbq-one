@@ -83,13 +83,13 @@ defineExpose({
 .retro-input {
   width: 100%;
   margin: 0;
-  padding: 8px 10px;
-  border-radius: 0;
-  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--input-border);
   background: var(--bg-secondary);
   color: var(--text-primary);
   caret-color: var(--accent);
-  transition: box-shadow 0.1s linear;
+  transition: border-color 0.1s linear;
 }
 
 .retro-input::placeholder {
@@ -100,24 +100,11 @@ defineExpose({
 .retro-input:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-color: var(--border);
-  animation: retro-input-caret-line 1s step-end infinite;
-}
-
-@keyframes retro-input-caret-line {
-  0%,
-  49% {
-    box-shadow: inset 0 -2px 0 0 var(--accent);
-  }
-  50%,
-  100% {
-    box-shadow: inset 0 -2px 0 0 transparent;
-  }
+  border-color: var(--accent);
 }
 
 .retro-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  animation: none;
 }
 </style>

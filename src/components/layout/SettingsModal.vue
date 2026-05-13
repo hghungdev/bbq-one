@@ -240,7 +240,7 @@ onUnmounted(() => {
     aria-labelledby="settings-title"
   >
     <div class="settings-backdrop" @click="emit('close')" />
-    <div class="settings-panel crt-scanlines">
+    <div class="settings-panel">
       <h2 id="settings-title" class="settings-title">
         {{ t('settings.title') }}
       </h2>
@@ -533,7 +533,7 @@ onUnmounted(() => {
 .settings-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(13, 13, 6, 0.75);
+  background: var(--overlay-scrim);
 }
 
 .settings-panel {
@@ -673,7 +673,7 @@ onUnmounted(() => {
 }
 
 .settings-btn--danger:hover:not(:disabled) {
-  background: rgba(184, 69, 58, 0.08) !important;
+  background: var(--surface-danger-muted) !important;
 }
 
 .settings-lang-row {
