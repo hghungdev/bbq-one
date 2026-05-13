@@ -140,6 +140,11 @@ export const en = {
 
   // ── Translation settings panel ──
   'translation.desc': 'Translate controls: detected language → target depends on these settings.',
+  'translation.iconModeLabel': 'EXTENSION ICON · QUICK TRANSLATE',
+  'translation.iconModeDisable': 'DISABLE',
+  'translation.iconModeActive': 'ACTIVE',
+  'translation.iconModeActiveNote':
+    '> Click toolbar icon opens quick translate · Right-click toolbar icon → Open Dashboard for notes · Dictionary tab appears only here.',
   'translation.nativeLang': 'NATIVE LANGUAGE',
   'translation.learningLangs': 'LEARNING LANGUAGES',
   'translation.warnLang': '⚠ At least one learning language required.',
@@ -172,6 +177,8 @@ export const en = {
   'bookmark.clearSearch': '[ CLEAR ]',
   'bookmark.liveSwitchBtn': '[LIVE]',
   'bookmark.confirmRestore': 'Restore will OVERWRITE all current bookmarks. Continue?',
+  'bookmark.confirmDeleteBackup':
+    'Delete this backup?\n«{label}»\nThis cannot be undone from the trash.',
   'bookmark.confirmDeleteAll': 'DELETE ALL bookmarks from browser? This cannot be undone.',
   'bookmark.loading': '> LOADING...',
   'bookmark.rstTitle': 'Restore',

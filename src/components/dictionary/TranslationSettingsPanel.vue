@@ -1,11 +1,29 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import RetroButton from '@/components/ui/RetroButton.vue'
 import { useTranslationSettingsStore } from '@/stores/translationSettings'
 import { useLangStore } from '@/stores/uiLang'
+import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
 import type { LangCode } from '@/types/dictionary'
 
 const settingsStore = useTranslationSettingsStore()
 const { t } = useLangStore()
+
+const extensionUIMode = useExtensionUIModeStore()
+const { iconQuickTranslateActive } = storeToRefs(extensionUIMode)
+
+async function setToolbarTranslateActive(active: boolean): Promise<void> {
+  await extensionUIMode.setIconQuickTranslateActive(active)
+}
+
+async function hydrateTranslationSettingsFromServer(): Promise<void> {
+  await settingsStore.load()
+  if (settingsStore.settings) {
+    native.value = settingsStore.settings.native_language
+    learning.value = [...settingsStore.settings.learning_languages]
+  }
+}
 
 const LANGS: Array<{ code: LangCode; label: string }> = [
   { code: 'vi', label: 'Tiếng Việt' },
@@ -24,12 +42,15 @@ const learning = ref<LangCode[]>(['en'])
 const saveError = ref<string | null>(null)
 
 onMounted(async () => {
-  await settingsStore.load()
-  if (settingsStore.settings) {
-    native.value = settingsStore.settings.native_language
-    learning.value = [...settingsStore.settings.learning_languages]
-  }
+  await extensionUIMode.init()
+  if (iconQuickTranslateActive.value) await hydrateTranslationSettingsFromServer()
 })
+
+watch(iconQuickTranslateActive, async (active) => {
+  if (!active) return
+  await hydrateTranslationSettingsFromServer()
+})
+
 
 // Persist changes reactively — debounced via watch
 watch(native, async (v) => {
@@ -80,64 +101,93 @@ async function updateUseMyMemory(value: boolean): Promise<void> {
 
 <template>
   <div class="tsp">
-    <p class="tsp__desc">
+    <!-- Khi Active: đoạn mô tả trước khi chỉnh ngôn ngữ -->
+    <p v-if="iconQuickTranslateActive" class="tsp__desc">
       {{ t('translation.desc') }}
     </p>
 
-    <!-- Native language -->
-    <div class="tsp__section">
-      <div class="tsp__label">{{ t('translation.nativeLang') }}</div>
-      <select v-model="native" class="tsp__select">
-        <option v-for="l in LANGS" :key="l.code" :value="l.code">
-          {{ l.label }} ({{ l.code.toUpperCase() }})
-        </option>
-      </select>
-    </div>
-
-    <!-- Learning languages -->
-    <div class="tsp__section">
-      <div class="tsp__label">{{ t('translation.learningLangs') }}</div>
-      <div class="tsp__checks">
-        <label
-          v-for="l in learningLangs()"
-          :key="l.code"
-          class="tsp__check"
+    <!-- Luôn hiện: bật/tắt dịch nhanh từ icon thanh công cụ -->
+    <div class="tsp__section tsp__section--icon-mode">
+      <div class="tsp__label">{{ t('translation.iconModeLabel') }}</div>
+      <div class="tsp__icon-modes">
+        <RetroButton
+          variant="sm"
+          type="button"
+          :disabled="!iconQuickTranslateActive"
+          @click="setToolbarTranslateActive(false)"
         >
-          <input
-            type="checkbox"
-            :checked="learning.includes(l.code)"
-            @change="toggleLearning(l.code)"
-          />
-          <span>{{ l.label }}</span>
-        </label>
+          [ {{ t('translation.iconModeDisable') }} ]
+        </RetroButton>
+        <RetroButton
+          variant="sm"
+          type="button"
+          :disabled="iconQuickTranslateActive"
+          @click="setToolbarTranslateActive(true)"
+        >
+          [ {{ t('translation.iconModeActive') }} ]
+        </RetroButton>
       </div>
-      <p v-if="!learning.length" class="tsp__warn">
-        {{ t('translation.warnLang') }}
+      <p v-if="iconQuickTranslateActive" class="tsp__toolbar-note">
+        {{ t('translation.iconModeActiveNote') }}
       </p>
     </div>
 
-    <!-- Translation quality toggle -->
-    <div class="tsp__section">
-      <div class="tsp__label">{{ t('translation.qualityLabel') }}</div>
-      <label class="tsp__check">
-        <input
-          type="checkbox"
-          :checked="settingsStore.settings?.use_mymemory ?? true"
-          :disabled="!settingsStore.settings"
-          @change="updateUseMyMemory(($event.target as HTMLInputElement).checked)"
-        />
-        <span>{{ t('translation.useMyMemory') }}</span>
-      </label>
-      <div class="tsp__hint">{{ t('translation.useMyMemoryHint') }}</div>
-    </div>
+    <template v-if="iconQuickTranslateActive">
+      <!-- Native language -->
+      <div class="tsp__section">
+        <div class="tsp__label">{{ t('translation.nativeLang') }}</div>
+        <select v-model="native" class="tsp__select">
+          <option v-for="l in LANGS" :key="l.code" :value="l.code">
+            {{ l.label }} ({{ l.code.toUpperCase() }})
+          </option>
+        </select>
+      </div>
 
-    <!-- Save error feedback -->
-    <p v-if="saveError" class="tsp__error">{{ saveError }}</p>
+      <!-- Learning languages -->
+      <div class="tsp__section">
+        <div class="tsp__label">{{ t('translation.learningLangs') }}</div>
+        <div class="tsp__checks">
+          <label
+            v-for="l in learningLangs()"
+            :key="l.code"
+            class="tsp__check"
+          >
+            <input
+              type="checkbox"
+              :checked="learning.includes(l.code)"
+              @change="toggleLearning(l.code)"
+            />
+            <span>{{ l.label }}</span>
+          </label>
+        </div>
+        <p v-if="!learning.length" class="tsp__warn">
+          {{ t('translation.warnLang') }}
+        </p>
+      </div>
 
-    <!-- Loading state -->
-    <p v-if="settingsStore.loading" class="tsp__loading">
-      {{ t('translation.saving') }}
-    </p>
+      <!-- Translation quality toggle -->
+      <div class="tsp__section">
+        <div class="tsp__label">{{ t('translation.qualityLabel') }}</div>
+        <label class="tsp__check">
+          <input
+            type="checkbox"
+            :checked="settingsStore.settings?.use_mymemory ?? true"
+            :disabled="!settingsStore.settings"
+            @change="updateUseMyMemory(($event.target as HTMLInputElement).checked)"
+          />
+          <span>{{ t('translation.useMyMemory') }}</span>
+        </label>
+        <div class="tsp__hint">{{ t('translation.useMyMemoryHint') }}</div>
+      </div>
+
+      <!-- Save error feedback -->
+      <p v-if="saveError" class="tsp__error">{{ saveError }}</p>
+
+      <!-- Loading state -->
+      <p v-if="settingsStore.loading" class="tsp__loading">
+        {{ t('translation.saving') }}
+      </p>
+    </template>
   </div>
 </template>
 
@@ -153,8 +203,25 @@ async function updateUseMyMemory(value: boolean): Promise<void> {
   line-height: 1.4;
 }
 
+.tsp__icon-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tsp__toolbar-note {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 .tsp__section {
   margin-bottom: 14px;
+}
+
+.tsp__section--icon-mode:last-child {
+  margin-bottom: 0;
 }
 
 .tsp__label {

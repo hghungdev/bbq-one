@@ -13,8 +13,12 @@ export async function isAuthenticated(): Promise<boolean> {
 
 /** Get current user id, throwing if not logged in */
 export async function getCurrentUserId(): Promise<string> {
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession()
   if (error) throw error
-  if (!user) throw new Error('Not authenticated')
-  return user.id
+  const id = session?.user?.id
+  if (!id) throw new Error('Not authenticated')
+  return id
 }

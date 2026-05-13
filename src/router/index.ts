@@ -5,7 +5,7 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
-      // Click icon → QuickTranslate popup; dashboard chỉ mở qua context menu
+      // `#/` chỉ áp khi Bootstrap không ép Dashboard (quick translate Active)
       path: '/',
       redirect: '/translate',
     },

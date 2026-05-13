@@ -13,6 +13,8 @@ export const TRANSLATION_SETTINGS_CACHE_KEY = 'translation_settings_cache'
 
 /** Chuột phải icon → mở popup tới route này (login hoặc dashboard). */
 export const BBQ_PENDING_ROUTE_KEY = 'bbq_pending_route'
+/** True: click icon mở Quick Translate; False/missing: vào Dashboard. Mặc định không lưu = false. */
+export const BBQ_ICON_QUICK_TRANSLATE_ACTIVE_KEY = 'bbqone_icon_quick_translate_active'
 /** Đồng bộ với background để đổi nhãn context menu (Login vs Dashboard). */
 export const BBQ_AUTH_LOGGED_IN_KEY = 'bbq_auth_logged_in'
 
@@ -25,3 +27,6 @@ export const UI_LANG_KEY = 'ui_lang'
  * Default: true khi key không tồn tại.
  */
 export const USE_MYMEMORY_KEY = 'bbqone_use_mymemory'
+
+/** Cài đặt translation (native/learning/use_mymemory) khi chưa đăng nhập — chỉ local. */
+export const ANON_TRANSLATION_SETTINGS_KEY = 'bbqone_anon_translation_settings'

@@ -220,17 +220,28 @@ export const bookmarksService = {
   },
 
   /** Restore: ghi lại toàn bộ bookmark tree vào Chrome
-   *  Chiến lược: xóa hết children của "Bookmarks bar" và "Other bookmarks", rồi import lại
+   *  Chiến lược: xóa hết children của các folder top-level hiện tại (bar / Other / …), rồi import lại.
+   *  Quan trọng: không dùng `id` từ bản snapshot (backup) làm parentId — ID chỉ có hiệu lực
+   *  trong profile đã chụp; profile/trình duyệt khác có ID khác → Chrome lỗi "Can't find parent bookmark for id".
+   *  Ghép từng folder top của backup với folder top của cây live theo đúng thứ tự `getTree()` (ổn định trong Chromium).
    */
   async restoreToChrome(tree: BookmarkNode[]): Promise<void> {
     await removeChildrenOfRootTopFolders()
-    // tree[0] = root "0", tree[0].children = [Bookmarks bar "1", Other "2", Mobile "3"]
-    const root = tree[0]
-    if (!root?.children) return
+    const liveRoots = (
+      (await chrome.bookmarks.getTree()) as unknown as BookmarkNode[]
+    )[0]
+    const backupRoot = tree[0]
+    if (!liveRoots?.children?.length || !backupRoot?.children?.length) return
 
-    for (const topFolder of root.children) {
-      if (topFolder.children) {
-        await importChildren(topFolder.id, topFolder.children)
+    const liveTop = liveRoots.children
+    const backupTop = backupRoot.children
+    const pairs = Math.min(liveTop.length, backupTop.length)
+    for (let i = 0; i < pairs; i++) {
+      const liveFolderId = liveTop[i].id
+      const backupFolder = backupTop[i]
+      if (!backupFolder) continue
+      if (backupFolder.children?.length) {
+        await importChildren(liveFolderId, backupFolder.children)
       }
     }
   },

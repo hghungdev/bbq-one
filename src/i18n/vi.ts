@@ -142,6 +142,11 @@ export const vi: Record<I18nKey, string> = {
 
   // ── Translation settings panel ──
   'translation.desc': 'Cài đặt ngôn ngữ dịch: phát hiện tự động → đích theo cài đặt này.',
+  'translation.iconModeLabel': 'ICON THANH CÔNG CỤ · DỊCH NHANH',
+  'translation.iconModeDisable': 'TẮT',
+  'translation.iconModeActive': 'BẬT',
+  'translation.iconModeActiveNote':
+    '> Click icon trên thanh công cụ → màn dịch nhanh · Chuột phải icon → Open Dashboard để ghi chú · Tab Dictionary chỉ hiện khi chế độ này bật.',
   'translation.nativeLang': 'NGÔN NGỮ MẸ ĐẺ',
   'translation.learningLangs': 'NGÔN NGỮ ĐANG HỌC',
   'translation.warnLang': '⚠ Cần chọn ít nhất một ngôn ngữ đang học.',
@@ -174,6 +179,8 @@ export const vi: Record<I18nKey, string> = {
   'bookmark.clearSearch': '[ XÓA TÌM ]',
   'bookmark.liveSwitchBtn': '[LIVE]',
   'bookmark.confirmRestore': 'Khôi phục sẽ GHI ĐÈ toàn bộ bookmark hiện tại. Tiếp tục?',
+  'bookmark.confirmDeleteBackup':
+    'Xóa bản backup này?\n«{label}»\nKhông thể khôi phục từ thùng rác.',
   'bookmark.confirmDeleteAll': 'XÓA TẤT CẢ bookmark khỏi trình duyệt? Không thể hoàn tác.',
   'bookmark.loading': '> ĐANG TẢI...',
   'bookmark.rstTitle': 'Khôi phục',

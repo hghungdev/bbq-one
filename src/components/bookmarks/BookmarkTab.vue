@@ -16,6 +16,8 @@ const pin = useBookmarkPinStore()
 const { t } = useLangStore()
 const confirmRestore = ref(false)
 const pendingRestoreId = ref<string | null>(null)
+const confirmDeleteBackup = ref(false)
+const pendingDeleteBackupId = ref<string | null>(null)
 const confirmDeleteAll = ref(false)
 const viewMode = ref<'live' | 'backups'>('live')
 
@@ -76,6 +78,12 @@ const globalHits = computed(() =>
   bookmarksService.searchBookmarkGlobalHits(bm.searchQuery, bm.liveTree, bm.backups),
 )
 
+const deleteBackupConfirmMessage = computed(() => {
+  const id = pendingDeleteBackupId.value
+  const bk = id ? bm.backups.find((b) => b.id === id) : undefined
+  return t('bookmark.confirmDeleteBackup', { label: bk?.label ?? id ?? '—' })
+})
+
 const globalHitSections = computed(() => {
   const all = globalHits.value
   const sections: { sourceKey: string; label: string; hits: BookmarkGlobalHit[] }[] = []
@@ -118,8 +126,20 @@ function onRestoreClick(id: string): void {
   confirmRestore.value = true
 }
 
-async function onDeleteBackupClick(id: string): Promise<void> {
+function onDeleteBackupClick(id: string): void {
   bm.clearBookmarkSearch()
+  pendingDeleteBackupId.value = id
+  confirmDeleteBackup.value = true
+}
+
+function onDeleteBackupCancel(): void {
+  pendingDeleteBackupId.value = null
+}
+
+async function onDeleteBackupConfirm(): Promise<void> {
+  const id = pendingDeleteBackupId.value
+  pendingDeleteBackupId.value = null
+  if (!id) return
   await bm.deleteBackup(id)
 }
 
@@ -272,6 +292,12 @@ async function onRefreshLive(): Promise<void> {
       v-model:open="confirmRestore"
       :message="t('bookmark.confirmRestore')"
       @confirm="onRestoreConfirm"
+    />
+    <RetroConfirm
+      v-model:open="confirmDeleteBackup"
+      :message="deleteBackupConfirmMessage"
+      @confirm="onDeleteBackupConfirm"
+      @cancel="onDeleteBackupCancel"
     />
     <RetroConfirm
       v-model:open="confirmDeleteAll"

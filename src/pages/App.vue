@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import NoteEditor from '@/components/notes/NoteEditor.vue'
 import NoteList from '@/components/layout/NoteList.vue'
 import SearchBar from '@/components/layout/SearchBar.vue'
@@ -18,6 +18,8 @@ import { useSyncStore } from '@/stores/sync'
 import { useLangStore } from '@/stores/uiLang'
 import { downloadNoteAsTxt } from '@/utils/exportNote'
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
+import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
+import { storeToRefs } from 'pinia'
 
 const auth = useAuthStore()
 const folders = useFoldersStore()
@@ -26,6 +28,7 @@ const secure = useSecureFolderStore()
 const sync = useSyncStore()
 const langStore = useLangStore()
 const { t } = langStore
+const { iconQuickTranslateActive } = storeToRefs(useExtensionUIModeStore())
 const dataReady = ref(false)
 const showSettings = ref(false)
 const activeTab = ref<'notes' | 'bookmarks' | 'dictionary'>('notes')
@@ -87,6 +90,10 @@ function onGlobalKeydown(e: KeyboardEvent): void {
     void noteEditorRef.value?.flushSave()
   }
 }
+
+watch(iconQuickTranslateActive, (active) => {
+  if (!active && activeTab.value === 'dictionary') activeTab.value = 'notes'
+})
 
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown, true)
@@ -224,6 +231,7 @@ const noteListColumnStyle = computed(() =>
             {{ t('app.tabs.bookmark') }}
           </RetroButton>
           <RetroButton
+            v-if="iconQuickTranslateActive"
             variant="sm"
             type="button"
             :class="activeTab === 'dictionary' ? 'shell__tab-btn--active' : ''"
