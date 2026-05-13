@@ -6,13 +6,10 @@ import { classifyEntryType, isKeywordEntry } from '@/services/dictionary/segment
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/uiLang'
 import { getLangName } from '@/utils/langNames'
-import { getExtensionVersion } from '@/utils/extensionVersion'
 
 const auth = useAuthStore()
 const langStore = useLangStore()
 const { t } = langStore
-
-const extensionVersion = getExtensionVersion()
 
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 
@@ -153,7 +150,6 @@ const saveIconAriaLabel = computed(() => {
   <div class="qt">
     <header class="qt__header">
       <span class="qt__brand">BBQOne</span>
-      <span class="qt__sub" aria-label="Extension version">v{{ extensionVersion }}</span>
     </header>
 
     <div class="qt__input-row">

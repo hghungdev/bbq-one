@@ -1,61 +1,53 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import RetroInput from '@/components/ui/RetroInput.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
-import { useAuthStore } from '@/stores/auth'
-import { useLangStore } from '@/stores/uiLang'
-import { isSupabaseConfigured, missingEnvHint } from '@/env'
-import { formatAuthErrorMessage } from '@/utils/authErrors'
-import { getExtensionVersion } from '@/utils/extensionVersion'
+  import { onMounted, ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import RetroInput from '@/components/ui/RetroInput.vue'
+  import RetroButton from '@/components/ui/RetroButton.vue'
+  import { useAuthStore } from '@/stores/auth'
+  import { useLangStore } from '@/stores/uiLang'
+  import { isSupabaseConfigured, missingEnvHint } from '@/env'
+  import { formatAuthErrorMessage } from '@/utils/authErrors'
 
-const router = useRouter()
-const auth = useAuthStore()
-const langStore = useLangStore()
-const { t } = langStore
+  const router = useRouter()
+  const auth = useAuthStore()
+  const langStore = useLangStore()
+  const { t } = langStore
 
-const extensionVersion = getExtensionVersion()
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
-const errorMessage = ref<string | null>(null)
+  const email = ref('')
+  const password = ref('')
+  const loading = ref(false)
+  const errorMessage = ref<string | null>(null)
 
-onMounted(async () => {
-  await langStore.loadLang()
-})
+  onMounted(async () => {
+    await langStore.loadLang()
+  })
 
-async function onSubmit(): Promise<void> {
-  errorMessage.value = null
-  if (!isSupabaseConfigured) {
-    errorMessage.value = missingEnvHint
-    return
+  async function onSubmit(): Promise<void> {
+    errorMessage.value = null
+    if (!isSupabaseConfigured) {
+      errorMessage.value = missingEnvHint
+      return
+    }
+    loading.value = true
+    try {
+      await auth.login(email.value.trim(), password.value)
+      await router.replace({ name: 'dashboard' })
+    } catch (e) {
+      errorMessage.value = formatAuthErrorMessage(e)
+    } finally {
+      loading.value = false
+    }
   }
-  loading.value = true
-  try {
-    await auth.login(email.value.trim(), password.value)
-    await router.replace({ name: 'dashboard' })
-  } catch (e) {
-    errorMessage.value = formatAuthErrorMessage(e)
-  } finally {
-    loading.value = false
-  }
-}
 </script>
 
 <template>
   <div class="login login--centered">
-    <p
-      v-if="!isSupabaseConfigured"
-      class="login__config-warn"
-      role="alert"
-    >
+    <p v-if="!isSupabaseConfigured" class="login__config-warn" role="alert">
       {{ missingEnvHint }}
     </p>
     <div class="login__panel">
       <header class="login__header">
-        <h1 class="login__title">
-          BBQOne v{{ extensionVersion }}<span class="cursor-blink" aria-hidden="true"></span>
-        </h1>
+        <h1 class="login__title">BBQOne<span class="cursor-blink" aria-hidden="true"></span></h1>
         <div class="login__rule" />
       </header>
 
@@ -80,18 +72,10 @@ async function onSubmit(): Promise<void> {
           :disabled="loading"
         />
 
-        <p
-          v-if="errorMessage"
-          class="login__error"
-          role="alert"
-        >
+        <p v-if="errorMessage" class="login__error" role="alert">
           {{ errorMessage }}
         </p>
-        <p
-          v-if="auth.initError && !errorMessage"
-          class="login__warn"
-          role="status"
-        >
+        <p v-if="auth.initError && !errorMessage" class="login__warn" role="status">
           {{ formatAuthErrorMessage(auth.initError) }}
         </p>
 
@@ -110,107 +94,107 @@ async function onSubmit(): Promise<void> {
 </template>
 
 <style scoped>
-.login {
-  --accent: var(--accent-dashboard);
-  --focus-ring: var(--color-primary-focus);
-  box-sizing: border-box;
-  min-width: 320px;
-  min-height: 0;
-  flex: 1 1 auto;
-  width: 100%;
-  max-height: 100%;
-  overflow-y: auto;
-  padding: 20px 16px;
-  background-color: var(--bg-primary);
-  background-image: radial-gradient(
-    ellipse 120% 80% at 50% 0%,
-    var(--bg-login-glow) 0%,
-    transparent 55%
-  );
-}
+  .login {
+    --accent: var(--accent-dashboard);
+    --focus-ring: var(--color-primary-focus);
+    box-sizing: border-box;
+    min-width: 320px;
+    min-height: 0;
+    flex: 1 1 auto;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    padding: 20px 16px;
+    background-color: var(--bg-primary);
+    background-image: radial-gradient(
+      ellipse 120% 80% at 50% 0%,
+      var(--bg-login-glow) 0%,
+      transparent 55%
+    );
+  }
 
-/* Căn form theo trục dọc + ngang — hết cảm giác khoảng trống phía dưới panel */
-.login--centered {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+  /* Căn form theo trục dọc + ngang — hết cảm giác khoảng trống phía dưới panel */
+  .login--centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
-.login__config-warn {
-  max-width: min(440px, calc(100% - 8px));
-  margin: 0 auto 14px;
-  padding: 10px 12px;
-  font-size: var(--font-size-sm);
-  line-height: 1.45;
-  color: var(--danger);
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
-}
+  .login__config-warn {
+    max-width: min(440px, calc(100% - 8px));
+    margin: 0 auto 14px;
+    padding: 10px 12px;
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    color: var(--danger);
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+  }
 
-.login__panel {
-  width: 100%;
-  max-width: min(440px, calc(100% - 8px));
-  margin: 0 auto;
-  border: 1px solid var(--border);
-  padding: 20px 18px 16px;
-  background: var(--bg-secondary);
-  box-shadow: 0 0 0 1px var(--panel-ring);
-}
+  .login__panel {
+    width: 100%;
+    max-width: min(440px, calc(100% - 8px));
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    padding: 20px 18px 16px;
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 1px var(--panel-ring);
+  }
 
-.login__header {
-  margin-bottom: 20px;
-}
+  .login__header {
+    margin-bottom: 20px;
+  }
 
-.login__title {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: 0.04em;
-}
+  .login__title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+  }
 
-.login__rule {
-  height: 1px;
-  margin-top: 10px;
-  background: var(--border);
-}
+  .login__rule {
+    height: 1px;
+    margin-top: 10px;
+    background: var(--border);
+  }
 
-.login__form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+  .login__form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-.login__label {
-  margin-top: 4px;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  letter-spacing: 0.08em;
-}
+  .login__label {
+    margin-top: 4px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+  }
 
-.login__actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
-}
+  .login__actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
 
-.login__error {
-  margin: 4px 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--danger);
-}
+  .login__error {
+    margin: 4px 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--danger);
+  }
 
-.login__warn {
-  margin: 4px 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
+  .login__warn {
+    margin: 4px 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+  }
 
-.login__footer {
-  margin-top: 20px;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-}
+  .login__footer {
+    margin-top: 20px;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
 </style>
