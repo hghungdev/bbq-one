@@ -9,6 +9,7 @@
   import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
   import DictionaryTab from '@/components/dictionary/DictionaryTab.vue'
   import CalendarTab from '@/components/calendar/CalendarTab.vue'
+  import CalendarTodayBanner from '@/components/calendar/CalendarTodayBanner.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useAuthStore } from '@/stores/auth'
@@ -24,6 +25,7 @@
   import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
   import { storeToRefs } from 'pinia'
   import { getExtensionVersion } from '@/utils/extensionVersion'
+  import { todayLocalKey } from '@/utils/calendarDate'
 
   const auth = useAuthStore()
   const folders = useFoldersStore()
@@ -33,6 +35,7 @@
   const langStore = useLangStore()
   const { t } = langStore
   const { iconQuickTranslateActive } = storeToRefs(useExtensionUIModeStore())
+  const calendarEvents = useCalendarEventsStore()
   const dataReady = ref(false)
   const showSettings = ref(false)
   const activeTab = ref<'notes' | 'bookmarks' | 'dictionary' | 'calendar'>('notes')
@@ -105,7 +108,7 @@
     await langStore.loadLang()
     await folders.loadAll()
     await notes.loadAll()
-    await useCalendarEventsStore().loadAll()
+    await calendarEvents.loadAll()
     dataReady.value = true
   })
 
@@ -123,7 +126,7 @@
     await Promise.all([
       folders.loadAll(),
       notes.loadAll(),
-      useCalendarEventsStore().loadAll(),
+      calendarEvents.loadAll(),
     ])
   }
 
@@ -137,7 +140,7 @@
     await Promise.all([
       folders.loadAll(),
       notes.loadAll(),
-      useCalendarEventsStore().loadAll(),
+      calendarEvents.loadAll(),
     ])
   }
 
@@ -203,6 +206,11 @@
       ? { flex: '1 1 auto', minWidth: `${colW2.value}px` }
       : { width: `${colW2.value}px` },
   )
+
+  function onOpenCalendarFromTodayBanner(): void {
+    activeTab.value = 'calendar'
+    calendarEvents.focusCalendarCellFromSearch(todayLocalKey())
+  }
 </script>
 
 <template>
@@ -227,6 +235,10 @@
           <SyncStatusBadge v-if="isAnonymous" />
         </div>
       </div>
+      <CalendarTodayBanner
+        v-if="dataReady && activeTab === 'notes'"
+        @open-calendar="onOpenCalendarFromTodayBanner"
+      />
       <div class="shell__header-row shell__header-row--actions">
         <div class="shell__actions">
           <!-- Tab switcher -->
