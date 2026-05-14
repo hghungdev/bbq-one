@@ -20,7 +20,7 @@ defineEmits<{ close: [] }>()
         <button
           class="sync-toast__close"
           type="button"
-          :aria-label="'Close'"
+          :aria-label="t('common.close')"
           @click="$emit('close')"
         >✕</button>
       </div>
@@ -29,16 +29,19 @@ defineEmits<{ close: [] }>()
           {{ t('sync.notes', { n: result.pushedNotes }) }}
         </div>
         <div v-if="result.pushedNoteBodies > 0" class="sync-toast__line">
-          + {{ result.pushedNoteBodies }} note bodies
+          {{ t('sync.noteBodies', { n: result.pushedNoteBodies }) }}
         </div>
         <div v-if="result.pushedFolders > 0" class="sync-toast__line">
-          + {{ result.pushedFolders }} folders
+          {{ t('sync.folders', { n: result.pushedFolders }) }}
         </div>
         <div v-if="result.pushedBookmarks > 0" class="sync-toast__line">
           {{ t('sync.bookmarks', { n: result.pushedBookmarks }) }}
         </div>
         <div v-if="result.pushedDictionary > 0" class="sync-toast__line">
           {{ t('sync.dictionary', { n: result.pushedDictionary }) }}
+        </div>
+        <div v-if="result.pushedCalendarEvents > 0" class="sync-toast__line">
+          {{ t('sync.calendar', { n: result.pushedCalendarEvents }) }}
         </div>
         <div
           v-if="result.errors.length > 0"

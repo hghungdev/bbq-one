@@ -6,6 +6,7 @@
 
 import type { Note, NoteBody, Folder } from '@/types'
 import type { BookmarkBackup } from '@/types/bookmark'
+import type { CalendarEvent } from '@/types/calendar'
 import type { DictionaryEntry } from '@/types/dictionary'
 
 /** Local note: thiếu user_id, có local UUID id */
@@ -31,6 +32,10 @@ export type LocalDictionaryEntry = Omit<DictionaryEntry, 'user_id'> & {
   __synced?: boolean
 }
 
+export type LocalCalendarEvent = Omit<CalendarEvent, 'user_id'> & {
+  __synced?: boolean
+}
+
 /** Kết quả của một lần sync — dùng cho toast/notification */
 export interface SyncResult {
   pushedNotes: number
@@ -38,6 +43,7 @@ export interface SyncResult {
   pushedFolders: number
   pushedBookmarks: number
   pushedDictionary: number
+  pushedCalendarEvents: number
   errors: Array<{ entity: string; id: string; error: string }>
   durationMs: number
   cancelled?: boolean // user chọn Cancel trong conflict dialog
@@ -51,5 +57,6 @@ export const LOCAL_STORAGE_KEYS = {
   folders: 'bbqone_local_folders',
   bookmarks: 'bbqone_local_bookmarks',
   dictionary: 'bbqone_local_dictionary',
+  calendarEvents: 'bbqone_local_calendar_events',
   metadata: 'bbqone_local_metadata',
 } as const

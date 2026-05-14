@@ -14,6 +14,7 @@ import type { SyncResult } from '@/types/localFirst'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useDictionaryStore } from '@/stores/dictionary'
+import { useCalendarEventsStore } from '@/stores/calendarEvents'
 
 const conflictReport = ref<ConflictReport | null>(null)
 const conflictDialogVisible = ref(false)
@@ -26,12 +27,14 @@ let unsubAuth: (() => void) | null = null
  * Reload store data from Supabase after a successful sync so the UI reflects
  * the newly-pushed data. BookmarkTab is not included here because it has PIN
  * unlock logic — it will reload naturally when the user opens the tab (v-if remount).
+ * Calendar events store is included so counts and lists stay in sync after login push.
  */
 async function reloadAfterSync(): Promise<void> {
   await Promise.all([
     useFoldersStore().loadAll(),
     useNotesStore().loadAll(),
     useDictionaryStore().loadAll(),
+    useCalendarEventsStore().loadAll(),
   ])
 }
 

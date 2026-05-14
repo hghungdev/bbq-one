@@ -1,7 +1,12 @@
 import { supabase } from '@/services/supabase'
 import { localStore } from './localStore.service'
 import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
-import type { LocalDictionaryEntry, LocalNote, LocalBookmark } from '@/types/localFirst'
+import type {
+  LocalDictionaryEntry,
+  LocalNote,
+  LocalBookmark,
+  LocalCalendarEvent,
+} from '@/types/localFirst'
 
 export interface ConflictItem {
   entity: 'dictionary' | 'note' | 'bookmark'
@@ -76,6 +81,11 @@ export async function detectSyncConflicts(): Promise<ConflictReport> {
   const localNotes = await localStore.getArray<LocalNote>(LOCAL_STORAGE_KEYS.notes)
   const localBookmarks = await localStore.getArray<LocalBookmark>(LOCAL_STORAGE_KEYS.bookmarks)
   totalLocal += localNotes.length + localBookmarks.length
+
+  const localCalendar = await localStore.getArray<LocalCalendarEvent>(
+    LOCAL_STORAGE_KEYS.calendarEvents,
+  )
+  totalLocal += localCalendar.length
 
   const totalConflicts = conflicts.length
 

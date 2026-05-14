@@ -17,6 +17,7 @@ export const en = {
   'app.tabs.notes': 'NOTES',
   'app.tabs.bookmark': 'BOOKMARK',
   'app.tabs.dict': 'DICT',
+  'app.tabs.calendar': 'CALENDAR',
   'app.sync': 'SYNC',
   'app.export': 'EXPORT',
   'app.settings': 'SETTINGS',
@@ -46,6 +47,7 @@ export const en = {
   'search.label': 'SEARCH',
   'search.ariaNotes': 'Search notes',
   'search.ariaBookmarks': 'Search bookmarks',
+  'search.ariaCalendar': 'Search calendar events',
   'search.placeholder': '> query_',
 
   // ── Sidebar / Folders ──
@@ -254,8 +256,11 @@ export const en = {
   'sync.complete': '✓ Sync complete',
   'sync.export': 'EXPORT LOCAL',
   'sync.notes': '{n} notes',
+  'sync.noteBodies': '+ {n} note bodies',
+  'sync.folders': '+ {n} folders',
   'sync.bookmarks': '{n} bookmarks',
   'sync.dictionary': '{n} dictionary entries',
+  'sync.calendar': '{n} calendar events',
   'sync.errors': '⚠ {n} errors',
 
   // ── Login ──
@@ -288,6 +293,44 @@ export const en = {
   'popup.confidence': '% confidence',
   'popup.contextInvalid':
     'Extension was reloaded. Refresh this page (F5) to use translate on selection again.',
+
+  // ── Calendar ──
+  'calendar.weekday.mon': 'Monday',
+  'calendar.weekday.tue': 'Tuesday',
+  'calendar.weekday.wed': 'Wednesday',
+  'calendar.weekday.thu': 'Thursday',
+  'calendar.weekday.fri': 'Friday',
+  'calendar.weekday.sat': 'Saturday',
+  'calendar.weekday.sun': 'Sunday',
+  'calendar.nav.prev': 'Previous month',
+  'calendar.nav.next': 'Next month',
+  'calendar.nav.today': 'TODAY',
+  'calendar.search.region': 'Calendar search results',
+  'calendar.search.resultsTitle': '{n} match(es)',
+  'calendar.search.empty': 'No events match this search.',
+  'calendar.search.hint': 'Tap a row to go to that day on the calendar.',
+  'calendar.search.doneTag': 'Done',
+  'calendar.cell.pastTitle': 'Past date — cannot add new events here. Click an event to edit.',
+  'calendar.modal.title.create': 'New event',
+  'calendar.modal.title.edit': 'Edit event',
+  'calendar.modal.title.list': 'Events on {date}',
+  'calendar.modal.field.title': 'Title',
+  'calendar.modal.field.description': 'Description',
+  'calendar.modal.field.titlePlaceholder': 'Event title',
+  'calendar.modal.field.descPlaceholder': 'Optional notes',
+  'calendar.modal.btn.add': '+ ADD EVENT',
+  'calendar.modal.btn.save': 'SAVE',
+  'calendar.modal.btn.delete': 'DELETE',
+  'calendar.modal.btn.cancel': 'CANCEL',
+  'calendar.modal.confirmDelete': 'Delete this event?',
+  'calendar.modal.empty': 'No events on this day.',
+  'calendar.modal.pastDayNoAdd': 'This date has passed. You can edit or remove existing events, but new events can only be added from today onward.',
+  'calendar.modal.dayFull': 'This day already has the maximum of {max} events.',
+  'calendar.modal.aria.toggleDone': 'Toggle done',
+  'calendar.validation.titleRequired': 'Title is required',
+  'calendar.validation.titleTooLong': 'Title must be ≤ 200 chars',
+  'calendar.validation.descTooLong': 'Description must be ≤ 5000 chars',
+  'calendar.validation.maxEventsPerDay': 'At most {max} events per day.',
 } as const
 
 export type I18nKey = keyof typeof en

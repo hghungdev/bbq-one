@@ -8,6 +8,7 @@
   import RetroButton from '@/components/ui/RetroButton.vue'
   import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
   import DictionaryTab from '@/components/dictionary/DictionaryTab.vue'
+  import CalendarTab from '@/components/calendar/CalendarTab.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useAuthStore } from '@/stores/auth'
@@ -16,6 +17,7 @@
   import { useSecureFolderStore } from '@/stores/secureFolder'
   import { useSyncStore } from '@/stores/sync'
   import { useLangStore } from '@/stores/uiLang'
+  import { useCalendarEventsStore } from '@/stores/calendarEvents'
   import { downloadNoteAsTxt } from '@/utils/exportNote'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
@@ -33,7 +35,7 @@
   const { iconQuickTranslateActive } = storeToRefs(useExtensionUIModeStore())
   const dataReady = ref(false)
   const showSettings = ref(false)
-  const activeTab = ref<'notes' | 'bookmarks' | 'dictionary'>('notes')
+  const activeTab = ref<'notes' | 'bookmarks' | 'dictionary' | 'calendar'>('notes')
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
 
@@ -103,6 +105,7 @@
     await langStore.loadLang()
     await folders.loadAll()
     await notes.loadAll()
+    await useCalendarEventsStore().loadAll()
     dataReady.value = true
   })
 
@@ -117,7 +120,11 @@
     secure.lockAll()
     await auth.logout()
     // Sau khi logout: ở lại dashboard ở local mode, reload data từ local storage
-    await Promise.all([folders.loadAll(), notes.loadAll()])
+    await Promise.all([
+      folders.loadAll(),
+      notes.loadAll(),
+      useCalendarEventsStore().loadAll(),
+    ])
   }
 
   function onGoLogin(): void {
@@ -127,7 +134,11 @@
   async function onLoginSuccess(): Promise<void> {
     showLoginModal.value = false
     // Reload data từ cloud sau khi đăng nhập thành công
-    await Promise.all([folders.loadAll(), notes.loadAll()])
+    await Promise.all([
+      folders.loadAll(),
+      notes.loadAll(),
+      useCalendarEventsStore().loadAll(),
+    ])
   }
 
   const syncBusy = computed(() => sync.status === 'syncing')
@@ -244,6 +255,14 @@
           >
             {{ t('app.tabs.dict') }}
           </RetroButton>
+          <RetroButton
+            variant="sm"
+            type="button"
+            :class="activeTab === 'calendar' ? 'shell__tab-btn--active' : ''"
+            @click="activeTab = 'calendar'"
+          >
+            {{ t('app.tabs.calendar') }}
+          </RetroButton>
           <span class="shell__sep-v" aria-hidden="true">|</span>
           <!-- Sync button: chỉ hiện khi đã đăng nhập -->
           <RetroButton
@@ -275,7 +294,7 @@
       </div>
       <SearchBar
         ref="searchBarRef"
-        :search-mode="activeTab === 'dictionary' ? 'notes' : activeTab"
+        :search-mode="activeTab === 'bookmarks' ? 'bookmarks' : activeTab === 'calendar' ? 'calendar' : 'notes'"
       />
     </header>
 
@@ -323,6 +342,10 @@
       <!-- Tab: Dictionary — mount khi active; cache-first load trong store -->
       <div v-if="activeTab === 'dictionary'" class="shell__grid shell__grid--full">
         <DictionaryTab class="shell__col--full" />
+      </div>
+
+      <div v-if="activeTab === 'calendar'" class="shell__grid shell__grid--full">
+        <CalendarTab class="shell__col--full" />
       </div>
     </template>
     <p v-else class="shell__loading retro-empty">

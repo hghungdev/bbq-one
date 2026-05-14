@@ -3,16 +3,18 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useBookmarksStore } from '@/stores/bookmarks'
+import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { useNotesStore } from '@/stores/notes'
 import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
-  /** Tab đang mở — quyết định ô search áp dụng cho notes hay bookmark. */
-  searchMode: 'notes' | 'bookmarks'
+  /** Tab đang mở — quyết định ô search áp dụng cho notes, bookmark hay calendar. */
+  searchMode: 'notes' | 'bookmarks' | 'calendar'
 }>()
 
 const notes = useNotesStore()
 const bookmarks = useBookmarksStore()
+const calendar = useCalendarEventsStore()
 const { t } = useLangStore()
 
 const localQuery = ref('')
@@ -33,9 +35,18 @@ watch(
 )
 
 watch(
+  () => calendar.searchQuery,
+  (q) => {
+    if (props.searchMode === 'calendar' && localQuery.value !== q) localQuery.value = q
+  },
+)
+
+watch(
   () => props.searchMode,
   (mode) => {
-    localQuery.value = mode === 'notes' ? notes.searchQuery : bookmarks.searchQuery
+    if (mode === 'notes') localQuery.value = notes.searchQuery
+    else if (mode === 'bookmarks') localQuery.value = bookmarks.searchQuery
+    else localQuery.value = calendar.searchQuery
   },
 )
 
@@ -44,8 +55,10 @@ watch(localQuery, (v) => {
   debounceTimer = setTimeout(() => {
     if (props.searchMode === 'notes') {
       void notes.runSearch(v)
-    } else {
+    } else if (props.searchMode === 'bookmarks') {
       bookmarks.setSearchQuery(v)
+    } else {
+      calendar.setSearchQuery(v)
     }
   }, 300)
 })
@@ -58,8 +71,10 @@ function onClear(): void {
   localQuery.value = ''
   if (props.searchMode === 'notes') {
     notes.clearSearch()
-  } else {
+  } else if (props.searchMode === 'bookmarks') {
     bookmarks.clearBookmarkSearch()
+  } else {
+    calendar.clearCalendarSearch()
   }
 }
 
@@ -69,8 +84,16 @@ function focusInput(): void {
 
 defineExpose({ focusInput })
 
+function searchAriaLabel(): string {
+  if (props.searchMode === 'notes') return t('search.ariaNotes')
+  if (props.searchMode === 'bookmarks') return t('search.ariaBookmarks')
+  return t('search.ariaCalendar')
+}
+
 onMounted(() => {
-  localQuery.value = props.searchMode === 'notes' ? notes.searchQuery : bookmarks.searchQuery
+  if (props.searchMode === 'notes') localQuery.value = notes.searchQuery
+  else if (props.searchMode === 'bookmarks') localQuery.value = bookmarks.searchQuery
+  else localQuery.value = calendar.searchQuery
 })
 </script>
 
@@ -82,7 +105,7 @@ onMounted(() => {
       v-model="localQuery"
       :placeholder="t('search.placeholder')"
       autocomplete="off"
-      :aria-label="searchMode === 'notes' ? t('search.ariaNotes') : t('search.ariaBookmarks')"
+      :aria-label="searchAriaLabel()"
     />
     <RetroButton variant="sm" type="button" @click="onClear">
       {{ t('common.bracketClear') }}
