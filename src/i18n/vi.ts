@@ -20,7 +20,6 @@ export const vi: Record<I18nKey, string> = {
   'app.tabs.bookmark': 'BOOKMARK',
   'app.tabs.calendar': 'LỊCH',
   'app.sync': 'ĐỒNG BỘ',
-  'app.export': 'XUẤT',
   'app.settings': 'CÀI ĐẶT',
   'app.find': 'TÌM',
   'app.logout': 'ĐĂNG XUẤT',
@@ -234,7 +233,6 @@ export const vi: Record<I18nKey, string> = {
   // ── Sync badge (local-first anonymous mode) ──
   'sync.pending': '{n} mục — đăng nhập để đồng bộ',
   'sync.complete': '✓ Đồng bộ hoàn tất',
-  'sync.export': 'XUẤT DỮ LIỆU LOCAL',
   'sync.notes': '{n} ghi chú',
   'sync.noteBodies': '+ {n} phần nội dung ghi chú',
   'sync.folders': '+ {n} thư mục',

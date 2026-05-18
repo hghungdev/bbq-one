@@ -18,7 +18,6 @@ export const en = {
   'app.tabs.bookmark': 'BOOKMARK',
   'app.tabs.calendar': 'CALENDAR',
   'app.sync': 'SYNC',
-  'app.export': 'EXPORT',
   'app.settings': 'SETTINGS',
   'app.find': 'FIND',
   'app.logout': 'LOGOUT',
@@ -232,7 +231,6 @@ export const en = {
   // ── Sync badge (local-first anonymous mode) ──
   'sync.pending': '{n} entries — sign in to sync',
   'sync.complete': '✓ Sync complete',
-  'sync.export': 'EXPORT LOCAL',
   'sync.notes': '{n} notes',
   'sync.noteBodies': '+ {n} note bodies',
   'sync.folders': '+ {n} folders',

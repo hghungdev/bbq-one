@@ -18,7 +18,6 @@
   import { useSyncStore } from '@/stores/sync'
   import { useLangStore } from '@/stores/uiLang'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
-  import { downloadNoteAsTxt } from '@/utils/exportNote'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
   import { getExtensionVersion } from '@/utils/extensionVersion'
@@ -164,12 +163,6 @@
     }
   }
 
-  function onExport(): void {
-    const n = notes.activeNote
-    if (!n) return
-    downloadNoteAsTxt(n, notes.bodiesForNote(n.id))
-  }
-
   const syncBadgeTitle = computed(() => {
     if (sync.status === 'error' && sync.lastError) return sync.lastError
     return t('app.sync.synced')
@@ -263,9 +256,6 @@
             @click="onSync"
           >
             {{ t('app.sync') }}
-          </RetroButton>
-          <RetroButton variant="sm" type="button" :disabled="!notes.activeNote" @click="onExport">
-            {{ t('app.export') }}
           </RetroButton>
           <RetroButton variant="sm" type="button" @click="showSettings = true">
             {{ t('app.settings') }}
