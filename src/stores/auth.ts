@@ -6,6 +6,7 @@ import { bootstrapBookmarkBaseline } from '@/services/bookmarkAutoBackup.service
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { clearPersistedBookmarkTreeHash } from '@/utils/bookmarkFingerprint'
 import { authService } from '@/services/auth.service'
+import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -29,10 +30,16 @@ export const useAuthStore = defineStore('auth', () => {
     if (initialized.value) return
     initError.value = null
     try {
-      const {
+      let {
         data: { session: current },
         error,
       } = await supabase.auth.getSession()
+      if (error) {
+        await recoverSupabaseAuthFromStaleSession(error)
+        const retry = await supabase.auth.getSession()
+        current = retry.data.session
+        error = retry.error
+      }
       if (error) throw error
 
       // Supabase tự quản lý token refresh — không force logout theo custom deadline nữa.

@@ -282,7 +282,7 @@ export const vi: Record<I18nKey, string> = {
   'qt.errorEmpty': 'Vui lòng nhập văn bản cần dịch.',
 
   // ── TranslatePopup (content script) ──
-  'popup.brand': 'BBQ-ONE > DỊCH',
+  'popup.brand': 'BBQOne > Translate',
   'popup.close': '×',
   'popup.translating': 'Đang dịch…',
   'popup.saveTitle': 'Lưu vào từ điển',

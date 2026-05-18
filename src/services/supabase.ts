@@ -20,6 +20,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     flowType: 'pkce',
+    /** Extension không có OAuth redirect URL — tránh GoTrue parse hash/query sai. */
+    detectSessionInUrl: false,
     storage: chromeSessionStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,

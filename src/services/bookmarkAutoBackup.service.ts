@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 import { fetchBookmarkCryptoRow } from '@/services/bookmarkCryptoKeys.service'
 import { bookmarksService } from './bookmarks.service'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
@@ -30,7 +31,12 @@ async function runBookmarkAutoBackup(): Promise<void> {
   try {
     const {
       data: { session },
+      error: sessionErr,
     } = await supabase.auth.getSession()
+    if (sessionErr) {
+      await recoverSupabaseAuthFromStaleSession(sessionErr)
+      return
+    }
     if (!session) return
 
     const cryptoRow = await fetchBookmarkCryptoRow()
@@ -63,7 +69,12 @@ export async function bootstrapBookmarkBaseline(): Promise<void> {
   try {
     const {
       data: { session },
+      error: sessionErr,
     } = await supabase.auth.getSession()
+    if (sessionErr) {
+      await recoverSupabaseAuthFromStaleSession(sessionErr)
+      return
+    }
     if (!session) return
 
     const existing = await getPersistedBookmarkTreeHash()

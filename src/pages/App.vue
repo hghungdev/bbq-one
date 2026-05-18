@@ -123,11 +123,7 @@
     secure.lockAll()
     await auth.logout()
     // Sau khi logout: ở lại dashboard ở local mode, reload data từ local storage
-    await Promise.all([
-      folders.loadAll(),
-      notes.loadAll(),
-      calendarEvents.loadAll(),
-    ])
+    await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
   }
 
   function onGoLogin(): void {
@@ -137,11 +133,7 @@
   async function onLoginSuccess(): Promise<void> {
     showLoginModal.value = false
     // Reload data từ cloud sau khi đăng nhập thành công
-    await Promise.all([
-      folders.loadAll(),
-      notes.loadAll(),
-      calendarEvents.loadAll(),
-    ])
+    await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
   }
 
   const syncBusy = computed(() => sync.status === 'syncing')
@@ -245,6 +237,14 @@
           <RetroButton
             variant="sm"
             type="button"
+            :class="activeTab === 'calendar' ? 'shell__tab-btn--active' : ''"
+            @click="activeTab = 'calendar'"
+          >
+            {{ t('app.tabs.calendar') }}
+          </RetroButton>
+          <RetroButton
+            variant="sm"
+            type="button"
             :class="activeTab === 'notes' ? 'shell__tab-btn--active' : ''"
             @click="activeTab = 'notes'"
           >
@@ -266,14 +266,6 @@
             @click="activeTab = 'dictionary'"
           >
             {{ t('app.tabs.dict') }}
-          </RetroButton>
-          <RetroButton
-            variant="sm"
-            type="button"
-            :class="activeTab === 'calendar' ? 'shell__tab-btn--active' : ''"
-            @click="activeTab = 'calendar'"
-          >
-            {{ t('app.tabs.calendar') }}
           </RetroButton>
           <span class="shell__sep-v" aria-hidden="true">|</span>
           <!-- Sync button: chỉ hiện khi đã đăng nhập -->
@@ -306,7 +298,9 @@
       </div>
       <SearchBar
         ref="searchBarRef"
-        :search-mode="activeTab === 'bookmarks' ? 'bookmarks' : activeTab === 'calendar' ? 'calendar' : 'notes'"
+        :search-mode="
+          activeTab === 'bookmarks' ? 'bookmarks' : activeTab === 'calendar' ? 'calendar' : 'notes'
+        "
       />
     </header>
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase'
+import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 import type { TranslationSettings } from '@/types/dictionary'
 import { ANON_TRANSLATION_SETTINGS_KEY, USE_MYMEMORY_KEY } from '@/constants/storage'
 
@@ -22,8 +23,11 @@ async function getSessionUserId(): Promise<string | null> {
     data: { session },
     error,
   } = await supabase.auth.getSession()
-  if (error || !session?.user?.id) return null
-  return session.user.id
+  if (error) {
+    await recoverSupabaseAuthFromStaleSession(error)
+    return null
+  }
+  return session?.user?.id ?? null
 }
 
 async function readUseMyMemoryFromLocalStorage(): Promise<boolean> {

@@ -7,8 +7,18 @@ import { dictionaryEntriesService } from '@/services/dictionary/entries.service'
 import { translationSettingsService } from '@/services/dictionary/settings.service'
 import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
 import type { DictMessage } from '@/types/dictionary'
+import {
+  isRecoverableRefreshTokenAuthError,
+  recoverSupabaseAuthFromStaleSession,
+} from '@/services/supabaseAuthRecovery.service'
 
 const ALARM_NAME = 'bbqone-daily-sync'
+
+self.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+  if (!isRecoverableRefreshTokenAuthError(event.reason)) return
+  event.preventDefault()
+  void recoverSupabaseAuthFromStaleSession(event.reason)
+})
 const OPEN_APP_MENU_ID = 'bbq-open-app'
 
 function refreshOpenAppMenuTitle(): void {

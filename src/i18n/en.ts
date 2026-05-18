@@ -280,7 +280,7 @@ export const en = {
   'qt.errorEmpty': 'Enter text to translate.',
 
   // ── TranslatePopup (content script) ──
-  'popup.brand': 'BBQ-ONE > TRANSLATE',
+  'popup.brand': 'BBQOne > Translate',
   'popup.close': '×',
   'popup.translating': 'Translating…',
   'popup.saveTitle': 'Save to dictionary',

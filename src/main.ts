@@ -6,8 +6,18 @@ import { BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
 import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
 import { useSettingsStore } from '@/stores/settings'
 import { useThemeStore } from '@/stores/theme'
+import {
+  isRecoverableRefreshTokenAuthError,
+  recoverSupabaseAuthFromStaleSession,
+} from '@/services/supabaseAuthRecovery.service'
 import './assets/styles/global.css'
 import './assets/styles/retro.css'
+
+window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+  if (!isRecoverableRefreshTokenAuthError(event.reason)) return
+  event.preventDefault()
+  void recoverSupabaseAuthFromStaleSession(event.reason)
+})
 
 async function bootstrap(): Promise<void> {
   const pinia = createPinia()

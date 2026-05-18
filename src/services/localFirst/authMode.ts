@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase'
+import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 
 /**
  * Check if user is authenticated (has active Supabase session).
@@ -7,7 +8,10 @@ import { supabase } from '@/services/supabase'
  */
 export async function isAuthenticated(): Promise<boolean> {
   const { data, error } = await supabase.auth.getSession()
-  if (error) return false
+  if (error) {
+    await recoverSupabaseAuthFromStaleSession(error)
+    return false
+  }
   return !!data.session
 }
 
@@ -17,7 +21,10 @@ export async function getCurrentUserId(): Promise<string> {
     data: { session },
     error,
   } = await supabase.auth.getSession()
-  if (error) throw error
+  if (error) {
+    await recoverSupabaseAuthFromStaleSession(error)
+    throw new Error('Not authenticated')
+  }
   const id = session?.user?.id
   if (!id) throw new Error('Not authenticated')
   return id
