@@ -284,7 +284,7 @@ export const vi: Record<I18nKey, string> = {
   'calendar.modal.dayFull': 'Ngày này đã đủ tối đa {max} sự kiện.',
   'calendar.modal.aria.toggleDone': 'Đánh dấu hoàn thành',
   'calendar.validation.titleRequired': 'Cần nhập tiêu đề',
-  'calendar.validation.titleTooLong': 'Tiêu đề tối đa 200 ký tự',
+  'calendar.validation.titleTooLong': 'Tiêu đề tối đa 64 ký tự',
   'calendar.validation.descTooLong': 'Mô tả tối đa 5000 ký tự',
   'calendar.validation.maxEventsPerDay': 'Tối đa {max} sự kiện mỗi ngày.',
 }

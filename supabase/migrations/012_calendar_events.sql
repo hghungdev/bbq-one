@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
 
   -- Core (v1)
   event_date      DATE NOT NULL,
-  title           TEXT NOT NULL CHECK (char_length(title) <= 200),
+  title           TEXT NOT NULL CHECK (char_length(title) <= 64),
   description     TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 5000),
   is_done         BOOLEAN NOT NULL DEFAULT FALSE,
   position        INT NOT NULL DEFAULT 0,

@@ -1,7 +1,7 @@
 export const CALENDAR_EVENTS_CACHE_KEY = 'calendar_events_cache'
 
-/** Title input hard limit — DB constraint mirror */
-export const CALENDAR_TITLE_MAX = 200
+/** Tiêu đề sự kiện — khớp CHECK Postgres + `CalendarEventModal` / maxlength. */
+export const CALENDAR_TITLE_MAX = 64
 export const CALENDAR_DESCRIPTION_MAX = 5000
 
 /** Hard cap: số sự kiện tối đa trên một ngày (DATE) — không được vượt khi tạo mới */

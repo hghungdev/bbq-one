@@ -150,35 +150,39 @@ function onRenameKeydown(e: KeyboardEvent): void {
         <button
           type="button"
           class="note-item__main"
-          :class="{ 'note-item__main--search-path': showFolderPath }"
           :title="showFolderPath ? searchBreadcrumbPlain : label"
           @click="onMainClick"
           @dblclick="onDblClick"
         >
-          <template v-if="highlightQuery?.trim()">
-            <template v-if="showFolderPath">
-              <span class="note-item__search-title" v-html="titleHtml" />
-              <span class="note-item__search-path" v-html="searchBreadcrumbHtml" />
-              <span
-                v-if="searchSnippetHtml"
-                class="note-item__search-snippet"
-                v-html="searchSnippetHtml"
-              />
+          <div
+            class="note-item__main-body"
+            :class="{ 'note-item__main-body--search-path': showFolderPath }"
+          >
+            <template v-if="highlightQuery?.trim()">
+              <template v-if="showFolderPath">
+                <span class="note-item__search-title" v-html="titleHtml" />
+                <span class="note-item__search-path" v-html="searchBreadcrumbHtml" />
+                <span
+                  v-if="searchSnippetHtml"
+                  class="note-item__search-snippet"
+                  v-html="searchSnippetHtml"
+                />
+              </template>
+              <span v-else class="note-item__title" v-html="titleHtml" />
             </template>
-            <span v-else class="note-item__title" v-html="titleHtml" />
-          </template>
-          <template v-else>
-            &gt; {{ label }}
-          </template>
+            <template v-else>
+              &gt; {{ label }}
+            </template>
+          </div>
+          <div class="note-item__foot">
+            {{ formatListUpdatedAt(note.updated_at) }}
+          </div>
         </button>
         <IconDeleteButton
           v-if="!hideDelete"
           :title="t('note.deleteTitle')"
           @click.stop="emit('delete', note.id)"
         />
-      </div>
-      <div class="note-item__foot">
-        {{ formatListUpdatedAt(note.updated_at) }}
       </div>
     </template>
   </div>
@@ -212,6 +216,10 @@ function onRenameKeydown(e: KeyboardEvent): void {
 .note-item__main {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   margin: 0;
   padding: 6px 8px;
   border: none;
@@ -224,7 +232,13 @@ function onRenameKeydown(e: KeyboardEvent): void {
   cursor: pointer;
 }
 
-.note-item__main--search-path {
+.note-item__main-body {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.note-item__main-body--search-path {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -282,7 +296,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
   color: var(--accent);
 }
 
-.note-item--active .note-item__main--search-path {
+.note-item--active .note-item__main-body--search-path {
   color: var(--text-secondary);
 }
 
@@ -305,9 +319,11 @@ function onRenameKeydown(e: KeyboardEvent): void {
 }
 
 .note-item__foot {
-  align-self: flex-end;
+  align-self: flex-start;
+  width: 100%;
   font-size: 10px;
   line-height: 1.2;
   color: var(--text-muted);
+  text-align: left;
 }
 </style>

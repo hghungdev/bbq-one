@@ -37,7 +37,7 @@
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
 
-  const { colW1, colW2, onResizeStart } = useColumnResize()
+  const { colW2, onResizeStart } = useColumnResize()
 
   const showLoginModal = ref(false)
   const extensionVersion = getExtensionVersion()
@@ -287,13 +287,6 @@
         <Sidebar
           v-model:renaming-folder-id="renamingFolderId"
           class="shell__col shell__col--folders"
-          :style="{ width: `${colW1}px` }"
-        />
-        <div
-          class="shell__resize"
-          :title="t('app.dragResize')"
-          aria-hidden="true"
-          @mousedown="onResizeStart(1, $event)"
         />
         <NoteList
           v-model:renaming-note-id="renamingNoteId"
@@ -306,7 +299,7 @@
           class="shell__resize"
           :title="t('app.dragResize')"
           aria-hidden="true"
-          @mousedown="onResizeStart(2, $event)"
+          @mousedown="onResizeStart($event)"
         />
         <div v-show="!isSearchActive" class="shell__col shell__col--editor">
           <NoteEditor ref="noteEditorRef" />
@@ -517,7 +510,14 @@
     overflow-y: hidden;
   }
 
-  .shell__col--folders,
+  .shell__col--folders {
+    flex: 0 0 180px;
+    width: 180px;
+    min-width: 180px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .shell__col--notes {
     flex-shrink: 0;
     min-height: 0;

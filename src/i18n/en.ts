@@ -282,7 +282,7 @@ export const en = {
   'calendar.modal.dayFull': 'This day already has the maximum of {max} events.',
   'calendar.modal.aria.toggleDone': 'Toggle done',
   'calendar.validation.titleRequired': 'Title is required',
-  'calendar.validation.titleTooLong': 'Title must be ≤ 200 chars',
+  'calendar.validation.titleTooLong': 'Title must be ≤ 64 characters',
   'calendar.validation.descTooLong': 'Description must be ≤ 5000 chars',
   'calendar.validation.maxEventsPerDay': 'At most {max} events per day.',
 } as const

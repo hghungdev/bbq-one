@@ -263,10 +263,12 @@ function pickAction(
 }
 
 .folder-item__foot {
-  align-self: flex-end;
+  align-self: flex-start;
+  width: 100%;
   font-size: 10px;
   line-height: 1.2;
   color: var(--text-muted);
+  text-align: left;
 }
 
 .folder-item:hover {

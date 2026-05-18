@@ -53,6 +53,11 @@ function isCurrentMonth(d: Date): boolean {
   grid-template-columns: repeat(7, 1fr);
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
+  /* Giữ Mon–Sun cố định khi cuộn các tuần cuối tháng trong .calendar-tab__grid-scroll */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-secondary);
 }
 
 .cal-grid__weekday {

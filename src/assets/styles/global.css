@@ -189,6 +189,8 @@ html[data-theme='dark'] {
 
   --color-tile-1: #0e0e10;
   --color-on-primary: #ffffff;
+  /* Đỏ huỷ / cảnh báo: đủ sáng trên nền tối (light vẫn dùng #cf2228) */
+  --color-danger: #ff6b6b;
 
   --bg-primary: #1c1c1e;
   --bg-secondary: #2c2c2e;

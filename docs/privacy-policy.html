@@ -35,27 +35,30 @@
 <p class="meta">Last updated: May 2026</p>
 
 <p>
-  BBQOne is a Chrome extension for personal note-taking, bookmark management,
-  and dictionary lookup. This policy explains what data is collected and how
-  it is used.
+  BBQOne is a Chrome extension for personal <strong>notes</strong>,
+  <strong>bookmark backups</strong>, and a simple <strong>calendar</strong>.
+  The extension runs in the extension popup — it does <strong>not</strong>
+  inject scripts into web pages you visit. This policy explains what data is
+  collected and how it is used.
 </p>
 
 <h2>Local-First Architecture</h2>
 
 <p>
-  By default, BBQOne stores all your data
+  By default, BBQOne stores your data
   <strong>locally in your browser</strong> using
-  <code>chrome.storage.local</code>. We do <strong>NOT</strong> collect,
-  transmit, or store any of your data on remote servers
-  <strong>unless you explicitly sign in</strong>.
+  <code>chrome.storage.local</code> (and, for sign-in session tokens,
+  <code>chrome.storage.session</code>). We do <strong>NOT</strong> collect,
+  transmit, or store your content on remote servers
+  <strong>unless you explicitly sign in</strong> for cloud sync.
 </p>
 
-<p>This includes:</p>
+<p>This local data may include:</p>
 <ul>
-  <li>Notes and folders</li>
-  <li>Bookmark backups</li>
-  <li>Dictionary entries (saved translations)</li>
-  <li>Translation settings</li>
+  <li>Notes, note bodies, and folders</li>
+  <li>Bookmark backup snapshots and related settings</li>
+  <li>Calendar events</li>
+  <li>Extension preferences (e.g. theme, UI language, font size)</li>
 </ul>
 
 <h3>What We Do NOT Track</h3>
@@ -72,24 +75,20 @@
 <h2>Optional Cloud Sync</h2>
 
 <p>
-  If you choose to sign in via Settings → Sign In, BBQOne will sync your
-  local data to your private Supabase account. After signing in:
+  If you choose to sign in (e.g. Sign In from the dashboard), BBQOne can sync
+  your data to your configured <strong>Supabase</strong> project. After signing in:
 </p>
 <ul>
   <li>
-    Your data is stored in your personal Supabase project, protected by
-    Row Level Security (RLS) — only you can access your own data.
+    Your data is stored under your account, protected by Row Level Security
+    (RLS) — only your authenticated user can access your own rows.
   </li>
   <li>
     Notes inside Secure Folders are encrypted client-side (AES-GCM)
     before being sent to the server.
   </li>
   <li>
-    You can sign out at any time. Future operations resume in local mode.
-  </li>
-  <li>
-    You can also export your local data as JSON before deciding to sync,
-    via Settings → Export Local Data.
+    You can sign out at any time. The extension continues to work in local mode.
   </li>
 </ul>
 
@@ -97,45 +96,18 @@
 <p>
   When you opt to sign in, BBQOne uses
   <a href="https://supabase.com/auth" target="_blank" rel="noopener">Supabase Auth</a>
-  for authentication. We collect your email and password solely for sign-in
-  purposes. Passwords are never stored in plaintext — Supabase handles
+  for authentication. Your email and password are used only for sign-in.
+  Passwords are not stored in plaintext in the extension — Supabase handles
   password hashing and security.
 </p>
 
-<h2>Translation Service Disclosure</h2>
-
-<p>When you use the translation feature, BBQOne uses two providers:</p>
-
-<ol>
-  <li>
-    <strong>Chrome Built-in Translator API</strong> (primary, local).
-    Translation is performed entirely on your device. No data leaves your
-    browser.
-  </li>
-  <li>
-    <strong>MyMemory Translation API</strong> (fallback for higher quality).
-    When the Chrome built-in translator is unavailable or returns insufficient
-    results, BBQOne sends the selected text via HTTPS to
-    <a href="https://mymemory.translated.net" target="_blank" rel="noopener">MyMemory</a>
-    for translation. We do <strong>NOT</strong> send any personal information,
-    user IDs, IP tracking codes, or browsing context — only the text you
-    selected. MyMemory's privacy policy applies to their service:
-    <a href="https://mymemory.translated.net/doc/privacy.php" target="_blank" rel="noopener">https://mymemory.translated.net/doc/privacy.php</a>
-  </li>
-</ol>
+<h2>No In-Page Translation or Dictionary</h2>
 
 <p>
-  You can disable MyMemory in Settings → Translation Quality to use only
-  the Chrome built-in translator (100% local, no network required).
-</p>
-
-<h3>English Dictionary Enrichment</h3>
-<p>
-  For English words, BBQOne fetches phonetic transcription, part-of-speech,
-  and synonyms from
-  <a href="https://dictionaryapi.dev" target="_blank" rel="noopener">Free Dictionary API</a>
-  (dictionaryapi.dev) via HTTPS. Only the English word itself is sent — no
-  user data.
+  BBQOne does <strong>not</strong> translate text on websites, does
+  <strong>not</strong> read page content for translation, and does
+  <strong>not</strong> call third-party translation or dictionary APIs.
+  For translation, use your browser or another tool you trust.
 </p>
 
 <h2>How Data Is Used</h2>
@@ -149,47 +121,48 @@
 <h2>Data Storage &amp; Security</h2>
 
 <p>
-  <strong>Local mode (default):</strong> Data is stored in
-  <code>chrome.storage.local</code>, protected by Chrome's extension sandbox.
-  Other extensions or websites cannot access this data.
+  <strong>Local mode (default):</strong> Application data is stored in
+  <code>chrome.storage.local</code>, protected by Chrome&apos;s extension sandbox.
+  Other extensions and ordinary websites cannot access this storage.
 </p>
 
 <p>
-  <strong>Cloud mode (opt-in):</strong> Data is stored in your personal
-  Supabase project. All transmission uses HTTPS (TLS 1.2+). Database access
-  is gated by Row Level Security policies — your authenticated user_id must
-  match the row's user_id to read or write.
+  <strong>Cloud mode (opt-in):</strong> Data is stored in the Supabase backend
+  configured for this build. Transmission uses HTTPS (TLS). Database access is
+  gated by Row Level Security — your <code>auth.uid()</code> must match row ownership.
 </p>
 
 <h2>Your Rights</h2>
 
 <p>You can at any time:</p>
 <ul>
-  <li>Export your local data as JSON (Settings → Export Local Data)</li>
-  <li>Delete individual entries via the extension UI</li>
-  <li>Sign out from cloud sync (Settings → Sign Out)</li>
-  <li>Uninstall the extension to remove all local data</li>
-  <li>Delete your cloud data via Supabase account management</li>
+  <li>Delete or edit items through the extension UI</li>
+  <li>Export bookmark backups as HTML from the Bookmarks tab (file saved on your device)</li>
+  <li>Sign out from cloud sync</li>
+  <li>Uninstall the extension to remove local extension data from this browser profile</li>
+  <li>Delete or export your cloud data using your Supabase project / account tools</li>
 </ul>
 
 <h2>Third-Party Services</h2>
 
-<p>BBQOne connects to the following third-party services:</p>
+<p>For this version of BBQOne, network access in normal use is limited to:</p>
 
 <ul>
   <li>
-    <strong>Supabase</strong> (supabase.co) — Authentication and optional
-    data sync. Activated only when you sign in.
+    <strong>Supabase</strong> (<code>*.supabase.co</code>) —
+    Authentication and optional data sync. Used only when you sign in.
   </li>
   <li>
-    <strong>MyMemory Translation API</strong> (mymemory.translated.net) —
-    Translation. Activated when MyMemory is enabled in settings (default ON).
-  </li>
-  <li>
-    <strong>Free Dictionary API</strong> (api.dictionaryapi.dev) — English
-    word enrichment. Activated when you save an English word.
+    <strong>Google Fonts</strong> (fonts.googleapis.com / fonts.gstatic.com) —
+    Loading UI fonts for extension pages. Google&apos;s terms and privacy policy
+    apply to those requests.
   </li>
 </ul>
+
+<p>
+  The extension does not load remote scripts from other domains into web pages;
+  it does not include content scripts on arbitrary sites.
+</p>
 
 <h2>Children's Privacy</h2>
 
@@ -203,11 +176,10 @@
 <h2>Changes to This Policy</h2>
 
 <p>
-  We may update this privacy policy from time to time. The "Last updated"
+  We may update this privacy policy from time to time. The &quot;Last updated&quot;
   date at the top will reflect the latest revision. Continued use of BBQOne
   after changes constitutes acceptance.
 </p>
-
 <h2>Contact</h2>
 
 <p>
