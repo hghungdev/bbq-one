@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BBQOne",
   "version": "1.2.0",
-  "description": "Local-first notes, bookmarks, and personal dictionary. Optional cloud sync. Privacy-respecting, offline-capable.",
+  "description": "Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respecting, offline-capable.",
   "icons": {
     "16": "bbq_one-final.png",
     "32": "bbq_one-final.png",
@@ -22,17 +22,6 @@
     "service_worker": "src/background.ts",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": [
-        "src/content/content-vue-trusted-types-shim-preamble.js",
-        "src/content/index.ts"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
-    }
-  ],
   "permissions": [
     "storage",
     "contextMenus",
@@ -43,17 +32,14 @@
     "downloads"
   ],
   "optional_permissions": [],
-  "host_permissions": [
-    "https://*.supabase.co/*",
-    "https://api.dictionaryapi.dev/*"
-  ],
+  "host_permissions": ["https://*.supabase.co/*"],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "src/content/*", "bbq_one-final.png"],
+      "resources": ["assets/*", "bbq_one-final.png"],
       "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://api.dictionaryapi.dev"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com"
   }
 }

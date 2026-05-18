@@ -18,7 +18,6 @@ export const vi: Record<I18nKey, string> = {
   // ── App header ──
   'app.tabs.notes': 'GHI CHÚ',
   'app.tabs.bookmark': 'BOOKMARK',
-  'app.tabs.dict': 'TỪ ĐIỂN',
   'app.tabs.calendar': 'LỊCH',
   'app.sync': 'ĐỒNG BỘ',
   'app.export': 'XUẤT',
@@ -121,7 +120,6 @@ export const vi: Record<I18nKey, string> = {
   'settings.languageDesc': 'Ngôn ngữ hiển thị giao diện ứng dụng.',
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',
-  'settings.translation': 'DỊCH THUẬT — NGÔN NGỮ',
   'settings.accountPassword': 'TÀI KHOẢN — MẬT KHẨU',
   'settings.bookmarkPin': 'MÃ PIN BOOKMARK',
   'settings.pwErrFill': 'Vui lòng nhập đủ mật khẩu hiện tại, mới và xác nhận.',
@@ -156,26 +154,6 @@ export const vi: Record<I18nKey, string> = {
   'settings.pinSetupBtn': 'ĐẶT PIN',
   'settings.pinSetupOk': '> Đặt PIN thành công.',
   'settings.closeBtn': 'ĐÓNG',
-
-  // ── Translation settings panel ──
-  'translation.desc': 'Cài đặt ngôn ngữ dịch: phát hiện tự động → đích theo cài đặt này.',
-  'translation.iconModeLabel': 'ICON THANH CÔNG CỤ · DỊCH NHANH',
-  'translation.iconModeDisable': 'TẮT',
-  'translation.iconModeActive': 'BẬT',
-  'translation.iconModeActiveNote':
-    '> Click icon trên thanh công cụ → màn dịch nhanh · Chuột phải icon → Open Dashboard để ghi chú · Tab Dictionary chỉ hiện khi chế độ này bật.',
-  'translation.nativeLang': 'NGÔN NGỮ MẸ ĐẺ',
-  'translation.learningLangs': 'NGÔN NGỮ ĐANG HỌC',
-  'translation.warnLang': '⚠ Cần chọn ít nhất một ngôn ngữ đang học.',
-  'translation.saving': 'Đang lưu...',
-  'translation.qualityLabel': 'CHẤT LƯỢNG DỊCH',
-  'translation.useMyMemory': 'Dùng MyMemory API (chất lượng cao hơn, gửi text qua HTTPS)',
-  'translation.useMyMemoryHint': 'Tắt để chỉ dùng Chrome built-in (100% local, không cần mạng).',
-
-  // ── Dictionary ──
-  'dict.title': 'TỪ ĐIỂN',
-  'dict.noMatches': 'Không tìm thấy "{q}"',
-  'dict.empty': 'Từ điển trống. Hãy dịch thử vài từ!',
 
   // ── Bookmark tab ──
   'bookmark.backupNow': 'SAO LƯU NGAY',
@@ -261,7 +239,6 @@ export const vi: Record<I18nKey, string> = {
   'sync.noteBodies': '+ {n} phần nội dung ghi chú',
   'sync.folders': '+ {n} thư mục',
   'sync.bookmarks': '{n} bookmark',
-  'sync.dictionary': '{n} từ điển',
   'sync.calendar': '{n} sự kiện lịch',
   'sync.errors': '⚠ {n} lỗi',
 
@@ -271,30 +248,6 @@ export const vi: Record<I18nKey, string> = {
   'login.btn': 'ĐĂNG NHẬP',
   'login.loading': '...',
   'login.footer': '> BẢO MẬT · MÃ HÓA',
-
-  // ── Quick translate ──
-  'qt.placeholder': 'Nhập hoặc dán văn bản…',
-  'qt.hintMain': 'Enter để dịch · Shift+Enter xuống dòng · Câu dài không lưu từ điển · Từ đơn',
-  'qt.hintLang': 'tiếng Anh',
-  'qt.hintTail': 'được phân tích ngữ pháp.',
-  'qt.btn': 'Dịch',
-  'qt.loading': '…',
-  'qt.errorEmpty': 'Vui lòng nhập văn bản cần dịch.',
-
-  // ── TranslatePopup (content script) ──
-  'popup.brand': 'BBQOne > Translate',
-  'popup.close': '×',
-  'popup.translating': 'Đang dịch…',
-  'popup.saveTitle': 'Lưu vào từ điển',
-  'popup.retryTitle': 'Thử lại lưu',
-  'popup.savedHint': 'Đã lưu vào từ điển',
-  'popup.alreadySaved': 'Đã có trong từ điển',
-  'popup.loginHint': 'Nhấn ổ khóa — chuột phải vào icon extension → Đăng nhập để lưu.',
-  'popup.lockTitle': 'Chuột phải icon extension → Đăng nhập để lưu',
-  'popup.lockAriaLabel': 'Cần đăng nhập để lưu vào từ điển',
-  'popup.confidence': '% độ chính xác',
-  'popup.contextInvalid':
-    'Extension vừa được tải lại. Hãy tải lại trang này (F5) để dùng dịch khi bôi chọn.',
 
   // ── Calendar ──
   'calendar.weekday.mon': 'Thứ hai',

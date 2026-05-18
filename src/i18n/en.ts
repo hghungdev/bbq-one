@@ -16,7 +16,6 @@ export const en = {
   // ── App header ──
   'app.tabs.notes': 'NOTES',
   'app.tabs.bookmark': 'BOOKMARK',
-  'app.tabs.dict': 'DICT',
   'app.tabs.calendar': 'CALENDAR',
   'app.sync': 'SYNC',
   'app.export': 'EXPORT',
@@ -119,7 +118,6 @@ export const en = {
   'settings.languageDesc': 'UI display language.',
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',
-  'settings.translation': 'TRANSLATION — LANGUAGE',
   'settings.accountPassword': 'ACCOUNT — PASSWORD',
   'settings.bookmarkPin': 'BOOKMARK PIN',
   'settings.pwErrFill': 'Please fill in current password, new password and confirmation.',
@@ -154,26 +152,6 @@ export const en = {
   'settings.pinSetupBtn': 'SET UP PIN',
   'settings.pinSetupOk': '> PIN set up successfully.',
   'settings.closeBtn': 'CLOSE',
-
-  // ── Translation settings panel ──
-  'translation.desc': 'Translate controls: detected language → target depends on these settings.',
-  'translation.iconModeLabel': 'EXTENSION ICON · QUICK TRANSLATE',
-  'translation.iconModeDisable': 'DISABLE',
-  'translation.iconModeActive': 'ACTIVE',
-  'translation.iconModeActiveNote':
-    '> Click toolbar icon opens quick translate · Right-click toolbar icon → Open Dashboard for notes · Dictionary tab appears only here.',
-  'translation.nativeLang': 'NATIVE LANGUAGE',
-  'translation.learningLangs': 'LEARNING LANGUAGES',
-  'translation.warnLang': '⚠ At least one learning language required.',
-  'translation.saving': 'Saving...',
-  'translation.qualityLabel': 'TRANSLATION QUALITY',
-  'translation.useMyMemory': 'Use MyMemory API (better quality, sends text via HTTPS)',
-  'translation.useMyMemoryHint': 'Disable to use Chrome built-in translation only (100% local, no network).',
-
-  // ── Dictionary ──
-  'dict.title': 'DICTIONARY',
-  'dict.noMatches': 'No matches for "{q}"',
-  'dict.empty': 'Dictionary empty. Translate something!',
 
   // ── Bookmark tab ──
   'bookmark.backupNow': 'BACKUP NOW',
@@ -259,7 +237,6 @@ export const en = {
   'sync.noteBodies': '+ {n} note bodies',
   'sync.folders': '+ {n} folders',
   'sync.bookmarks': '{n} bookmarks',
-  'sync.dictionary': '{n} dictionary entries',
   'sync.calendar': '{n} calendar events',
   'sync.errors': '⚠ {n} errors',
 
@@ -269,30 +246,6 @@ export const en = {
   'login.btn': 'LOGIN',
   'login.loading': '...',
   'login.footer': '> SECURE · ENCRYPTED',
-
-  // ── Quick translate ──
-  'qt.placeholder': 'Type or paste text…',
-  'qt.hintMain': 'Enter to translate · Shift+Enter for new line · Phrases & sentences are not saved · Part-of-speech (adj./verb/…) for',
-  'qt.hintLang': 'English',
-  'qt.hintTail': 'single words.',
-  'qt.btn': 'Translate',
-  'qt.loading': '…',
-  'qt.errorEmpty': 'Enter text to translate.',
-
-  // ── TranslatePopup (content script) ──
-  'popup.brand': 'BBQOne > Translate',
-  'popup.close': '×',
-  'popup.translating': 'Translating…',
-  'popup.saveTitle': 'Save to dictionary',
-  'popup.retryTitle': 'Retry save',
-  'popup.savedHint': 'Saved to dictionary',
-  'popup.alreadySaved': 'Already in dictionary',
-  'popup.loginHint': 'Tap the lock — right-click toolbar icon → Login to save.',
-  'popup.lockTitle': 'Right-click toolbar icon → Login to save',
-  'popup.lockAriaLabel': 'Sign in required to save to dictionary',
-  'popup.confidence': '% confidence',
-  'popup.contextInvalid':
-    'Extension was reloaded. Refresh this page (F5) to use translate on selection again.',
 
   // ── Calendar ──
   'calendar.weekday.mon': 'Monday',

@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
-import TranslationSettingsPanel from '@/components/dictionary/TranslationSettingsPanel.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
@@ -291,10 +290,6 @@ onUnmounted(() => {
           </div>
         </SettingsAccordionSection>
 
-        <SettingsAccordionSection :title="t('settings.translation')" :default-open="true">
-          <TranslationSettingsPanel />
-        </SettingsAccordionSection>
-
         <SettingsAccordionSection
           v-if="auth.isAuthenticated"
           :title="t('settings.accountPassword')"
@@ -573,24 +568,6 @@ onUnmounted(() => {
   overflow-y: auto;
   margin-right: -2px;
   padding-right: 2px;
-}
-
-/* Thu gọn block dịch trong Settings */
-.settings-scroll :deep(.tsp__desc) {
-  margin-bottom: 8px;
-  font-size: 10px;
-}
-
-.settings-scroll :deep(.tsp__section) {
-  margin-bottom: 8px;
-}
-
-.settings-scroll :deep(.tsp__label) {
-  margin-bottom: 4px;
-}
-
-.settings-scroll :deep(.tsp__checks) {
-  gap: 4px 10px;
 }
 
 .settings-row {

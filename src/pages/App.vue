@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
   import NoteEditor from '@/components/notes/NoteEditor.vue'
   import NoteList from '@/components/layout/NoteList.vue'
   import SearchBar from '@/components/layout/SearchBar.vue'
@@ -7,7 +7,6 @@
   import Sidebar from '@/components/layout/Sidebar.vue'
   import RetroButton from '@/components/ui/RetroButton.vue'
   import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
-  import DictionaryTab from '@/components/dictionary/DictionaryTab.vue'
   import CalendarTab from '@/components/calendar/CalendarTab.vue'
   import CalendarTodayBanner from '@/components/calendar/CalendarTodayBanner.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
@@ -22,8 +21,6 @@
   import { downloadNoteAsTxt } from '@/utils/exportNote'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
-  import { useExtensionUIModeStore } from '@/stores/extensionUIMode'
-  import { storeToRefs } from 'pinia'
   import { getExtensionVersion } from '@/utils/extensionVersion'
   import { todayLocalKey } from '@/utils/calendarDate'
 
@@ -34,11 +31,10 @@
   const sync = useSyncStore()
   const langStore = useLangStore()
   const { t } = langStore
-  const { iconQuickTranslateActive } = storeToRefs(useExtensionUIModeStore())
   const calendarEvents = useCalendarEventsStore()
   const dataReady = ref(false)
   const showSettings = ref(false)
-  const activeTab = ref<'notes' | 'bookmarks' | 'dictionary' | 'calendar'>('notes')
+  const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('notes')
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
 
@@ -98,10 +94,6 @@
       void noteEditorRef.value?.flushSave()
     }
   }
-
-  watch(iconQuickTranslateActive, (active) => {
-    if (!active && activeTab.value === 'dictionary') activeTab.value = 'notes'
-  })
 
   onMounted(async () => {
     window.addEventListener('keydown', onGlobalKeydown, true)
@@ -258,15 +250,6 @@
           >
             {{ t('app.tabs.bookmark') }}
           </RetroButton>
-          <RetroButton
-            v-if="iconQuickTranslateActive"
-            variant="sm"
-            type="button"
-            :class="activeTab === 'dictionary' ? 'shell__tab-btn--active' : ''"
-            @click="activeTab = 'dictionary'"
-          >
-            {{ t('app.tabs.dict') }}
-          </RetroButton>
           <span class="shell__sep-v" aria-hidden="true">|</span>
           <!-- Sync button: chỉ hiện khi đã đăng nhập -->
           <RetroButton
@@ -343,11 +326,6 @@
       <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
       <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
         <BookmarkTab class="shell__col--full" />
-      </div>
-
-      <!-- Tab: Dictionary — mount khi active; cache-first load trong store -->
-      <div v-if="activeTab === 'dictionary'" class="shell__grid shell__grid--full">
-        <DictionaryTab class="shell__col--full" />
       </div>
 
       <div v-if="activeTab === 'calendar'" class="shell__grid shell__grid--full">

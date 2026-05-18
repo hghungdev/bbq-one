@@ -13,7 +13,6 @@ import SyncConflictDialog from '@/components/sync/SyncConflictDialog.vue'
 import type { SyncResult } from '@/types/localFirst'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
-import { useDictionaryStore } from '@/stores/dictionary'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
 
 const conflictReport = ref<ConflictReport | null>(null)
@@ -33,7 +32,6 @@ async function reloadAfterSync(): Promise<void> {
   await Promise.all([
     useFoldersStore().loadAll(),
     useNotesStore().loadAll(),
-    useDictionaryStore().loadAll(),
     useCalendarEventsStore().loadAll(),
   ])
 }

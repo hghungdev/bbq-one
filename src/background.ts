@@ -3,10 +3,7 @@ import {
   scheduleBookmarkAutoBackup,
 } from '@/services/bookmarkAutoBackup.service'
 import { syncService } from '@/services/sync.service'
-import { dictionaryEntriesService } from '@/services/dictionary/entries.service'
-import { translationSettingsService } from '@/services/dictionary/settings.service'
 import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
-import type { DictMessage } from '@/types/dictionary'
 import {
   isRecoverableRefreshTokenAuthError,
   recoverSupabaseAuthFromStaleSession,
@@ -14,15 +11,25 @@ import {
 
 const ALARM_NAME = 'bbqone-daily-sync'
 
+/** Gỡ kho translation/dictionary cũ sau khi update extension. */
+const LEGACY_KEYS_TO_REMOVE = [
+  'bbqone_local_dictionary',
+  'dictionary_cache',
+  'translation_settings_cache',
+  'bbqone_icon_quick_translate_active',
+  'bbqone_use_mymemory',
+  'bbqone_anon_translation_settings',
+] as const
+
 self.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
   if (!isRecoverableRefreshTokenAuthError(event.reason)) return
   event.preventDefault()
   void recoverSupabaseAuthFromStaleSession(event.reason)
 })
+
 const OPEN_APP_MENU_ID = 'bbq-open-app'
 
 function refreshOpenAppMenuTitle(): void {
-  // Dashboard accessible cho cả anonymous lẫn logged-in → title cố định
   chrome.contextMenus.update(OPEN_APP_MENU_ID, { title: 'Open Dashboard' }, () => {
     void chrome.runtime.lastError
   })
@@ -61,10 +68,13 @@ function wireBookmarkAutoBackup(): void {
   chrome.bookmarks.onMoved.addListener(onChange)
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   ensureDailyAlarm()
   void bootstrapBookmarkBaseline()
   installOpenAppContextMenu()
+  if (details.reason === 'install' || details.reason === 'update') {
+    void chrome.storage.local.remove([...LEGACY_KEYS_TO_REMOVE])
+  }
 })
 
 chrome.runtime.onStartup.addListener(() => {
@@ -82,7 +92,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.contextMenus.onClicked.addListener((info) => {
   if (info.menuItemId !== OPEN_APP_MENU_ID) return
-  // Dashboard hoạt động với cả anonymous → không cần check auth nữa
   void chrome.storage.local.set({ [BBQ_PENDING_ROUTE_KEY]: '/dashboard' }, () => {
     void chrome.action.openPopup?.().catch?.(() => {})
   })
@@ -95,66 +104,53 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   void syncService.syncFromCache()
 })
 
-// ── Dictionary message handlers (content script ↔ background ↔ Supabase) ──
-chrome.runtime.onMessage.addListener((msg: DictMessage, _sender, sendResponse) => {
+interface CopyToOsClipboardMessage {
+  type: 'copy-to-os-clipboard'
+  payload: { text: string }
+}
+
+function isCopyToOsClipboardMessage(msg: unknown): msg is CopyToOsClipboardMessage {
+  if (typeof msg !== 'object' || msg === null) return false
+  const m = msg as Record<string, unknown>
+  if (m.type !== 'copy-to-os-clipboard') return false
+  const p = m.payload
+  if (typeof p !== 'object' || p === null) return false
+  return typeof (p as { text?: unknown }).text === 'string'
+}
+
+chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
   void (async () => {
     try {
-      switch (msg.type) {
-        case 'get-settings': {
-          const s = await translationSettingsService.getOrCreate()
-          sendResponse(s)
-          break
-        }
-        case 'save-entry': {
-          const entry = await dictionaryEntriesService.upsert(msg.payload)
-          sendResponse({ ok: true, entry })
-          break
-        }
-        case 'entry-exists': {
-          const r = await dictionaryEntriesService.exists(
-            msg.payload.source_text,
-            msg.payload.source_lang,
-            msg.payload.target_lang,
-          )
-          sendResponse(r)
-          break
-        }
-        case 'copy-to-os-clipboard': {
-          const { text } = msg.payload
-          const offscreenUrl = chrome.runtime.getURL('offscreen.html')
-
-          // Đảm bảo offscreen document tồn tại
-          const existingContexts = await chrome.runtime.getContexts({
-            contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
-            documentUrls: [offscreenUrl],
-          })
-          if (existingContexts.length === 0) {
-            await chrome.offscreen.createDocument({
-              url: offscreenUrl,
-              reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
-              justification: 'Write text to OS clipboard from extension popup.',
-            })
-          }
-
-          // Gửi text sang offscreen và chờ kết quả trả về
-          const result = await chrome.runtime.sendMessage({
-            type: 'offscreen-copy',
-            text,
-          }) as { ok: boolean; error?: string }
-
-          // Đóng offscreen sau khi xong
-          void chrome.offscreen.closeDocument().catch(() => {})
-
-          sendResponse(result)
-          break
-        }
-        default:
-          sendResponse({ ok: false, error: 'Unknown message type' })
+      if (!isCopyToOsClipboardMessage(msg)) {
+        sendResponse({ ok: false, error: 'Unknown message type' })
+        return
       }
+      const { text } = msg.payload
+      const offscreenUrl = chrome.runtime.getURL('offscreen.html')
+
+      const existingContexts = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
+        documentUrls: [offscreenUrl],
+      })
+      if (existingContexts.length === 0) {
+        await chrome.offscreen.createDocument({
+          url: offscreenUrl,
+          reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
+          justification: 'Write text to OS clipboard from extension popup.',
+        })
+      }
+
+      const result = (await chrome.runtime.sendMessage({
+        type: 'offscreen-copy',
+        text,
+      })) as { ok: boolean; error?: string }
+
+      void chrome.offscreen.closeDocument().catch(() => {})
+
+      sendResponse(result)
     } catch (e) {
       sendResponse({ ok: false, error: e instanceof Error ? e.message : String(e) })
     }
   })()
-  // Return true to keep the message channel open for async sendResponse
   return true
 })

@@ -1,4 +1,4 @@
-import type { LangCode } from '@/types/dictionary'
+import type { LangCode } from '@/types'
 
 /** Map ISO 639-1 → human-readable display name */
 export const LANG_NAMES: Record<LangCode, string> = {

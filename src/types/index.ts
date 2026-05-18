@@ -40,3 +40,6 @@ export interface Folder {
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
+
+/** ISO 639-1 — dùng cho nhãn ngôn ngữ UI (đã gỡ module translation). */
+export type LangCode = 'vi' | 'en' | 'ja' | 'zh' | 'th' | 'ko' | 'fr' | 'de' | 'es'

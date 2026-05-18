@@ -7,7 +7,6 @@ import type {
   LocalNoteBody,
   LocalFolder,
   LocalBookmark,
-  LocalDictionaryEntry,
   LocalCalendarEvent,
   SyncResult,
 } from '@/types/localFirst'
@@ -42,7 +41,6 @@ export async function pushLocalToCloud(
     pushedNoteBodies: 0,
     pushedFolders: 0,
     pushedBookmarks: 0,
-    pushedDictionary: 0,
     pushedCalendarEvents: 0,
     errors: [],
     durationMs: 0,
@@ -66,7 +64,6 @@ export async function pushLocalToCloud(
     pushedNoteBodies: 0,
     pushedFolders: 0,
     pushedBookmarks: 0,
-    pushedDictionary: 0,
     pushedCalendarEvents: 0,
     errors: [],
     durationMs: 0,
@@ -77,7 +74,6 @@ export async function pushLocalToCloud(
   const syncedNoteIds = new Set<string>()
   const syncedBodyIds = new Set<string>()
   const syncedBookmarkIds = new Set<string>()
-  const syncedDictIds = new Set<string>()
   const syncedCalendarIds = new Set<string>()
 
   // 1. Folders trước (notes reference folders)
@@ -179,36 +175,7 @@ export async function pushLocalToCloud(
     }
   }
 
-  // 5. Dictionary entries
-  const entries = await localStore.getArray<LocalDictionaryEntry>(
-    LOCAL_STORAGE_KEYS.dictionary,
-  )
-  for (const entry of entries) {
-    if (entry.__synced) {
-      syncedDictIds.add(entry.id)
-      continue
-    }
-    try {
-      const { __synced: _s, id: _id, ...rest } = entry
-      const { error } = await supabase
-        .from('user_dictionary_entries')
-        .upsert(
-          { ...rest, user_id: userId },
-          { onConflict: 'user_id,source_text,source_lang,target_lang' },
-        )
-      if (error) throw error
-      result.pushedDictionary++
-      syncedDictIds.add(entry.id)
-    } catch (e) {
-      result.errors.push({
-        entity: 'dictionary_entry',
-        id: entry.id,
-        error: (e as Error).message,
-      })
-    }
-  }
-
-  // 6. Calendar events
+  // 5. Calendar events
   const calendarEvents = await localStore.getArray<LocalCalendarEvent>(
     LOCAL_STORAGE_KEYS.calendarEvents,
   )
@@ -234,7 +201,7 @@ export async function pushLocalToCloud(
     }
   }
 
-  // 7. Cleanup
+  // 6. Cleanup
   if (result.errors.length === 0) {
     // Tất cả thành công → clear toàn bộ local data
     await localStore.clearAllLocal()
@@ -245,7 +212,6 @@ export async function pushLocalToCloud(
       syncedNoteIds,
       syncedBodyIds,
       syncedBookmarkIds,
-      syncedDictIds,
       syncedCalendarIds,
     )
   }
@@ -260,15 +226,13 @@ async function _clearSyncedEntries(
   noteIds: Set<string>,
   bodyIds: Set<string>,
   bookmarkIds: Set<string>,
-  dictIds: Set<string>,
   calendarIds: Set<string>,
 ): Promise<void> {
-  const [folders, notes, bodies, bookmarks, entries, calEvents] = await Promise.all([
+  const [folders, notes, bodies, bookmarks, calEvents] = await Promise.all([
     localStore.getArray<LocalFolder>(LOCAL_STORAGE_KEYS.folders),
     localStore.getArray<LocalNote>(LOCAL_STORAGE_KEYS.notes),
     localStore.getArray<LocalNoteBody>(LOCAL_STORAGE_KEYS.noteBodies),
     localStore.getArray<LocalBookmark>(LOCAL_STORAGE_KEYS.bookmarks),
-    localStore.getArray<LocalDictionaryEntry>(LOCAL_STORAGE_KEYS.dictionary),
     localStore.getArray<LocalCalendarEvent>(LOCAL_STORAGE_KEYS.calendarEvents),
   ])
 
@@ -277,7 +241,6 @@ async function _clearSyncedEntries(
     localStore.setArray(LOCAL_STORAGE_KEYS.notes, notes.filter((n) => !noteIds.has(n.id))),
     localStore.setArray(LOCAL_STORAGE_KEYS.noteBodies, bodies.filter((b) => !bodyIds.has(b.id))),
     localStore.setArray(LOCAL_STORAGE_KEYS.bookmarks, bookmarks.filter((b) => !bookmarkIds.has(b.id))),
-    localStore.setArray(LOCAL_STORAGE_KEYS.dictionary, entries.filter((e) => !dictIds.has(e.id))),
     localStore.setArray(
       LOCAL_STORAGE_KEYS.calendarEvents,
       calEvents.filter((ev) => !calendarIds.has(ev.id)),

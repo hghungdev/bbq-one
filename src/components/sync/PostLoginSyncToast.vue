@@ -37,9 +37,6 @@ defineEmits<{ close: [] }>()
         <div v-if="result.pushedBookmarks > 0" class="sync-toast__line">
           {{ t('sync.bookmarks', { n: result.pushedBookmarks }) }}
         </div>
-        <div v-if="result.pushedDictionary > 0" class="sync-toast__line">
-          {{ t('sync.dictionary', { n: result.pushedDictionary }) }}
-        </div>
         <div v-if="result.pushedCalendarEvents > 0" class="sync-toast__line">
           {{ t('sync.calendar', { n: result.pushedCalendarEvents }) }}
         </div>

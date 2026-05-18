@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { localDictionaryService } from '@/services/localFirst/localDictionary.service'
 import { localNotesService } from '@/services/localFirst/localNotes.service'
 import { localBookmarksService } from '@/services/localFirst/localBookmarks.service'
+import { localCalendarEventsService } from '@/services/localFirst/localCalendarEvents.service'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { useLangStore } from '@/stores/uiLang'
 
@@ -16,12 +16,12 @@ async function refresh(): Promise<void> {
     pendingCount.value = 0
     return
   }
-  const [dict, notes, bookmarks] = await Promise.all([
-    localDictionaryService.pendingSyncCount(),
+  const [notes, bookmarks, cal] = await Promise.all([
     localNotesService.pendingSyncCount(),
     localBookmarksService.pendingSyncCount(),
+    localCalendarEventsService.pendingSyncCount(),
   ])
-  pendingCount.value = dict + notes + bookmarks
+  pendingCount.value = notes + bookmarks + cal
   visible.value = pendingCount.value > 0
 }
 
@@ -70,7 +70,12 @@ onUnmounted(() => {
 }
 
 @keyframes badge-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 </style>
