@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
   import NoteEditor from '@/components/notes/NoteEditor.vue'
   import NoteList from '@/components/layout/NoteList.vue'
   import SearchBar from '@/components/layout/SearchBar.vue'
@@ -11,6 +12,7 @@
   import CalendarTodayBanner from '@/components/calendar/CalendarTodayBanner.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
+  import { useAppTimezoneStore } from '@/stores/appTimezone'
   import { useAuthStore } from '@/stores/auth'
   import { useFoldersStore } from '@/stores/folders'
   import { useNotesStore } from '@/stores/notes'
@@ -18,12 +20,19 @@
   import { useSyncStore } from '@/stores/sync'
   import { useLangStore } from '@/stores/uiLang'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
+  import CloudSyncStatusBadge from '@/components/sync/CloudSyncStatusBadge.vue'
+  import type { CloudSyncVariant } from '@/components/sync/CloudSyncStatusBadge.vue'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
+  import IconButton from '@/components/ui/IconButton.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
+  import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
   import { getExtensionVersion } from '@/utils/extensionVersion'
   import { todayLocalKey } from '@/utils/calendarDate'
 
   const auth = useAuthStore()
+  const { isAuthenticated, user: authUser } = storeToRefs(auth)
+  const appTimezone = useAppTimezoneStore()
+  const { utcOffsetHours } = storeToRefs(appTimezone)
   const folders = useFoldersStore()
   const notes = useNotesStore()
   const secure = useSecureFolderStore()
@@ -33,7 +42,7 @@
   const calendarEvents = useCalendarEventsStore()
   const dataReady = ref(false)
   const showSettings = ref(false)
-  const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('notes')
+  const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('calendar')
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
 
@@ -41,6 +50,14 @@
 
   const showLoginModal = ref(false)
   const extensionVersion = getExtensionVersion()
+
+  const headerClock = ref(formatAppDateTime(new Date(), utcOffsetHours.value))
+  const headerClockTitle = computed(() => formatUtcOffsetLabel(utcOffsetHours.value))
+  let headerClockTimer: ReturnType<typeof setInterval> | null = null
+
+  function tickHeaderClock(): void {
+    headerClock.value = formatAppDateTime(new Date(), utcOffsetHours.value)
+  }
 
   const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null)
   const noteEditorRef = ref<InstanceType<typeof NoteEditor> | null>(null)
@@ -85,8 +102,8 @@
     if (e.ctrlKey && e.key.toLowerCase() === 'n') {
       e.preventDefault()
       const fid = folders.activeFolderId
-      if (fid && secure.isFolderLocked(fid)) return
-      void notes.createNote(folders.activeFolderId)
+      if (!fid || secure.isFolderLocked(fid)) return
+      void notes.createNote(fid)
     }
     if (e.ctrlKey && e.key.toLowerCase() === 's') {
       e.preventDefault()
@@ -96,6 +113,8 @@
 
   onMounted(async () => {
     window.addEventListener('keydown', onGlobalKeydown, true)
+    tickHeaderClock()
+    headerClockTimer = setInterval(tickHeaderClock, 1000)
     await langStore.loadLang()
     await folders.loadAll()
     await notes.loadAll()
@@ -105,10 +124,15 @@
 
   onUnmounted(() => {
     window.removeEventListener('keydown', onGlobalKeydown, true)
+    if (headerClockTimer) clearInterval(headerClockTimer)
+  })
+
+  watch(utcOffsetHours, () => {
+    tickHeaderClock()
   })
 
   /** Anonymous: chưa đăng nhập */
-  const isAnonymous = computed(() => !auth.isAuthenticated)
+  const isAnonymous = computed(() => !isAuthenticated.value)
 
   async function onLogout(): Promise<void> {
     secure.lockAll()
@@ -130,32 +154,20 @@
   const syncBusy = computed(() => sync.status === 'syncing')
 
   const headerEmail = computed(
-    () => auth.user?.email ?? (isAnonymous.value ? t('app.anonymous') : t('app.offline')),
+    () => authUser.value?.email ?? (isAnonymous.value ? t('app.anonymous') : t('app.offline')),
   )
 
-  const syncBadgeText = computed(() => {
-    if (sync.status === 'syncing') return t('app.sync.syncing')
-    if (notes.isDirty) return t('app.sync.unsaved')
-    if (sync.status === 'error') return t('app.sync.failed')
-    return t('app.sync.synced')
-  })
-
   /** Xanh khi vừa đồng bộ thành công (store = synced); mặc định khi idle. */
-  const syncBadgeClass = computed(() => {
-    if (sync.status === 'syncing') return 'shell__sync-badge--syncing'
-    if (notes.isDirty) return 'shell__sync-badge--unsaved'
-    if (sync.status === 'error') return 'shell__sync-badge--error'
-    if (sync.status === 'synced') return 'shell__sync-badge--done'
-    return 'shell__sync-badge--idle'
-  })
-
-  const syncButtonStateClass = computed(() => {
-    if (syncBusy.value) return ''
-    if (sync.status === 'synced' && !notes.isDirty) return 'shell__sync-btn--done'
-    return ''
+  const syncBadgeVariant = computed((): CloudSyncVariant => {
+    if (sync.status === 'syncing') return 'syncing'
+    if (notes.isDirty) return 'unsaved'
+    if (sync.status === 'error') return 'error'
+    if (sync.status === 'synced') return 'done'
+    return 'idle'
   })
 
   async function onSync(): Promise<void> {
+    if (syncBusy.value) return
     try {
       await sync.runManualSync()
     } catch {
@@ -164,15 +176,11 @@
   }
 
   const syncBadgeTitle = computed(() => {
-    if (sync.status === 'error' && sync.lastError) return sync.lastError
-    return t('app.sync.synced')
-  })
-
-  const syncButtonTitle = computed(() => {
+    if (syncBusy.value) return t('app.sync.titleSyncing')
     const err = sync.lastError?.trim()
-    if (sync.status === 'error' && err) return err
-    if (sync.status === 'synced' && !notes.isDirty) return t('app.sync.titleReady')
-    return t('app.sync.titleSyncing')
+    if (sync.status === 'error' && err) return `${err} — ${t('app.sync.titleFailed')}`
+    if (sync.status === 'error') return t('app.sync.titleFailed')
+    return t('app.sync.titleReady')
   })
 
   /** Khi đang gõ SEARCH: chỉ hiện FOLDERS + NOTES, ẩn BODY để không lệch với note đang mở trước đó. */
@@ -194,26 +202,98 @@
   <div class="shell shell--dashboard">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
-        <span class="shell__brand">BBQOne v{{ extensionVersion }}</span>
+        <span class="shell__brand">
+          <span class="shell__brand-ver">BBQOne v{{ extensionVersion }}</span>
+          <span class="shell__brand-sep" aria-hidden="true">|</span>
+          <time class="shell__brand-clock" :title="headerClockTitle">{{ headerClock }}</time>
+        </span>
         <span class="shell__sep" aria-hidden="true"></span>
         <div class="shell__header-right">
           <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>
           <ThemeModeToggle class="shell__theme-toggle" />
           <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
-          <span
+          <CloudSyncStatusBadge
             v-if="!isAnonymous"
-            class="shell__sync-badge"
-            :class="syncBadgeClass"
-            role="status"
-            :title="syncBadgeTitle"
-            >{{ syncBadgeText }}</span
-          >
+            :variant="syncBadgeVariant"
+            :label="syncBadgeTitle"
+            :disabled="syncBusy"
+            @click="onSync"
+          />
           <!-- Local pending badge: chỉ hiện khi anonymous -->
-          <SyncStatusBadge v-if="isAnonymous" />
+          <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
+          <IconButton
+            variant="default"
+            :label="t('app.aria.settings')"
+            :title="t('app.aria.settings')"
+            @click="showSettings = true"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+              />
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+              />
+            </svg>
+          </IconButton>
+          <IconButton
+            v-if="isAnonymous"
+            variant="default"
+            :label="t('app.aria.login')"
+            :title="t('app.aria.login')"
+            @click="onGoLogin"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+            </svg>
+          </IconButton>
+          <IconButton
+            v-else
+            variant="default"
+            :label="t('app.aria.logout')"
+            :title="t('app.aria.logout')"
+            @click="onLogout"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+              />
+            </svg>
+          </IconButton>
         </div>
       </div>
       <CalendarTodayBanner
-        v-if="dataReady && activeTab === 'notes'"
+        v-if="dataReady"
         @open-calendar="onOpenCalendarFromTodayBanner"
       />
       <div class="shell__header-row shell__header-row--actions">
@@ -242,30 +322,6 @@
             @click="activeTab = 'bookmarks'"
           >
             {{ t('app.tabs.bookmark') }}
-          </RetroButton>
-          <span class="shell__sep-v" aria-hidden="true">|</span>
-          <!-- Sync button: chỉ hiện khi đã đăng nhập -->
-          <RetroButton
-            v-if="!isAnonymous"
-            variant="sm"
-            type="button"
-            class="shell__sync-btn"
-            :class="syncButtonStateClass"
-            :disabled="syncBusy"
-            :title="syncButtonTitle"
-            @click="onSync"
-          >
-            {{ t('app.sync') }}
-          </RetroButton>
-          <RetroButton variant="sm" type="button" @click="showSettings = true">
-            {{ t('app.settings') }}
-          </RetroButton>
-          <!-- Anonymous: hiện nút Sign In; Logged in: hiện nút Logout -->
-          <RetroButton v-if="isAnonymous" type="button" @click="onGoLogin">
-            {{ t('app.login') }}
-          </RetroButton>
-          <RetroButton v-else type="button" @click="onLogout">
-            {{ t('app.logout') }}
           </RetroButton>
         </div>
       </div>
@@ -395,14 +451,29 @@
     gap: 8px 10px;
     flex: 0 1 auto;
     min-width: 0;
-    max-width: min(480px, 58%);
+    max-width: min(560px, 68%);
   }
 
   .shell__brand {
+    display: inline-flex;
+    align-items: baseline;
     flex: 0 0 auto;
     color: var(--accent);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     white-space: nowrap;
+    gap: 0.4em;
+  }
+
+  .shell__brand-sep {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .shell__brand-clock {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
   }
 
   .shell__sep {
@@ -427,56 +498,6 @@
 
   .shell__theme-toggle {
     flex-shrink: 0;
-  }
-
-  .shell__sync-badge {
-    display: inline-flex;
-    align-items: center;
-    flex: 0 0 auto;
-    padding: 2px 8px;
-    font-size: var(--font-size-sm);
-    letter-spacing: 0.06em;
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
-    color: var(--text-muted);
-  }
-
-  .shell__sync-badge--idle {
-    color: var(--text-muted);
-    border-color: var(--border);
-  }
-
-  .shell__sync-badge--done {
-    color: var(--sync-done);
-    border-color: var(--sync-done-muted);
-    background: var(--surface-success-muted);
-  }
-
-  .shell__sync-badge--syncing {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .shell__sync-badge--unsaved {
-    color: var(--danger);
-    border-color: var(--danger);
-    background: var(--surface-danger-muted);
-  }
-
-  .shell__sync-badge--error {
-    color: var(--danger);
-    border-color: var(--danger);
-  }
-
-  .shell__sync-btn.shell__sync-btn--done:not(:disabled) {
-    border-color: var(--sync-done-muted);
-    color: var(--sync-done);
-    background: var(--surface-success-muted);
-  }
-
-  .shell__sync-btn.shell__sync-btn--done:not(:disabled):hover {
-    border-color: var(--sync-done);
-    color: var(--text-primary);
   }
 
   .shell__actions {

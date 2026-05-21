@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import NoteItem from '@/components/notes/NoteItem.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
@@ -22,6 +23,9 @@ const secure = useSecureFolderStore()
 const { t } = useLangStore()
 
 const busy = ref(false)
+const createNoteOpen = ref(false)
+const newNoteTitle = ref('')
+const createNoteError = ref<string | null>(null)
 const confirmOpen = ref(false)
 const pendingDeleteId = ref<string | null>(null)
 
@@ -30,6 +34,21 @@ const folderLocked = computed(() => {
   if (!id) return false
   return secure.isFolderLocked(id)
 })
+
+/** Chỉ thêm note khi đã chọn một folder (vd. sau khi tạo / click folder). */
+const canAddNote = computed(
+  () =>
+    !!folders.activeFolderId &&
+    !folderLocked.value &&
+    !notes.searchQuery.trim(),
+)
+
+watch(
+  () => folders.activeFolderId,
+  (id) => {
+    if (!id) closeCreateNoteModal()
+  },
+)
 
 function sortNotesByUpdatedDesc<T extends { updated_at: string }>(list: T[]): T[] {
   return list.slice().sort(
@@ -64,12 +83,34 @@ const highlightQuery = computed(() =>
   notes.searchQuery.trim() ? notes.searchQuery : '',
 )
 
-async function onCreateNote(): Promise<void> {
+function openCreateNoteModal(): void {
+  if (!canAddNote.value) return
+  newNoteTitle.value = ''
+  createNoteError.value = null
+  createNoteOpen.value = true
+}
+
+function closeCreateNoteModal(): void {
   if (busy.value) return
+  createNoteOpen.value = false
+  createNoteError.value = null
+}
+
+async function onCreateNote(): Promise<void> {
+  if (busy.value || !canAddNote.value) return
   busy.value = true
+  createNoteError.value = null
   try {
-    await notes.createNote(folders.activeFolderId)
+    await notes.createNote(folders.activeFolderId, newNoteTitle.value)
+    newNoteTitle.value = ''
+    createNoteOpen.value = false
   } catch (e) {
+    if (e instanceof Error && e.message === 'Folder locked') {
+      createNoteError.value = t('notes.folderLocked')
+    } else {
+      createNoteError.value =
+        e instanceof Error ? e.message : t('common.operationFailed')
+    }
     console.error(e)
   } finally {
     busy.value = false
@@ -128,26 +169,56 @@ function onCancelDelete(): void {
         &gt; {{ t('notes.folderLocked') }}
       </p>
       <p
+        v-else-if="!canAddNote && !notes.searchQuery.trim()"
+        class="note-list__empty retro-empty"
+      >
+        {{ folders.folders.length === 0 ? t('notes.createFolderFirst') : t('notes.selectFolderFirst') }}
+      </p>
+      <p
         v-else-if="displayedNotes.length === 0"
         class="note-list__empty retro-empty"
       >
         {{ t('notes.noNotes') }}
       </p>
     </div>
-    <div class="note-list__foot">
-      <RetroButton
-        variant="sm"
-        type="button"
+    <div v-if="canAddNote" class="note-list__foot note-list__foot--add">
+      <IconButton
+        variant="accent"
+        :label="t('notes.aria.addNote')"
         :disabled="busy || folderLocked"
-        @click="onCreateNote"
+        @click="openCreateNoteModal"
       >
-        {{ t('notes.addNote') }}
-      </RetroButton>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            d="M12 5v14M5 12h14"
+          />
+        </svg>
+      </IconButton>
+      <span class="note-list__foot-label">{{ t('notes.aria.addNote') }}</span>
     </div>
+
+    <QuickCreateModal
+      v-model:name="newNoteTitle"
+      :open="createNoteOpen"
+      :heading="t('notes.modal.createNoteTitle')"
+      :field-label="t('notes.modal.createNoteField')"
+      :placeholder="t('notes.modal.createNotePlaceholder')"
+      :busy="busy"
+      :error="createNoteError"
+      input-id="new-note-title"
+      @close="closeCreateNoteModal"
+      @save="onCreateNote"
+    />
 
     <RetroConfirm
       v-model:open="confirmOpen"
-      :message="t('notes.deleteConfirm')"
+      variant="danger"
+      :title="t('notes.deleteConfirmTitle')"
+      :message="t('notes.deleteConfirmDetail')"
       @confirm="confirmDelete"
       @cancel="onCancelDelete"
     />
@@ -179,7 +250,18 @@ function onCancelDelete(): void {
 }
 
 .note-list__foot {
-  padding: 8px 6px;
+  padding: 10px 10px;
   border-top: 1px solid var(--border);
+}
+
+.note-list__foot--add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.note-list__foot-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 </style>

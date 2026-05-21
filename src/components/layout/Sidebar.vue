@@ -4,8 +4,8 @@ import DeleteFolderModal from '@/components/folders/DeleteFolderModal.vue'
 import FolderItem from '@/components/folders/FolderItem.vue'
 import SecureFolderModal from '@/components/folders/SecureFolderModal.vue'
 import TagBadge from '@/components/ui/TagBadge.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
-import RetroInput from '@/components/ui/RetroInput.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
@@ -32,8 +32,9 @@ const uniqueTags = computed(() => {
   return [...set].sort().slice(0, 48)
 })
 
-const creating = ref(false)
+const createFolderOpen = ref(false)
 const newName = ref('')
+const createFolderError = ref<string | null>(null)
 const busy = ref(false)
 
 const secureModal = ref<{
@@ -129,22 +130,37 @@ async function confirmDeleteFolder(): Promise<void> {
 
 async function onCreateFolder(): Promise<void> {
   if (busy.value) return
+  const trimmed = newName.value.trim()
+  if (!trimmed) {
+    createFolderError.value = t('sidebar.validation.folderNameRequired')
+    return
+  }
+  createFolderError.value = null
   busy.value = true
   try {
-    await folders.createFolder(newName.value)
+    await folders.createFolder(trimmed)
     newName.value = ''
-    creating.value = false
+    createFolderOpen.value = false
   } catch (e) {
+    createFolderError.value =
+      e instanceof Error ? e.message : t('sidebar.deleteFolderFailed')
     console.error(e)
   } finally {
     busy.value = false
   }
 }
 
-function startCreate(): void {
+function openCreateFolderModal(): void {
   notes.clearSearch()
-  creating.value = true
   newName.value = ''
+  createFolderError.value = null
+  createFolderOpen.value = true
+}
+
+function closeCreateFolderModal(): void {
+  if (busy.value) return
+  createFolderOpen.value = false
+  createFolderError.value = null
 }
 </script>
 
@@ -189,29 +205,38 @@ function startCreate(): void {
       </div>
     </div>
 
-    <div v-if="creating" class="sidebar__new">
-      <RetroInput
-        id="new-folder-name"
-        v-model="newName"
-        :placeholder="t('sidebar.folderPlaceholder')"
+    <div class="sidebar__foot sidebar__foot--add">
+      <IconButton
+        variant="accent"
+        :label="t('sidebar.aria.addFolder')"
         :disabled="busy"
-        @keydown.enter.prevent="onCreateFolder"
-      />
-      <div class="sidebar__new-actions">
-        <RetroButton variant="sm" type="button" :disabled="busy" @click="onCreateFolder">
-          {{ t('common.bracketOk') }}
-        </RetroButton>
-        <RetroButton variant="sm" type="button" :disabled="busy" @click="creating = false">
-          {{ t('common.bracketClear') }}
-        </RetroButton>
-      </div>
+        @click="openCreateFolderModal"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            d="M12 5v14M5 12h14"
+          />
+        </svg>
+      </IconButton>
+      <span class="sidebar__foot-label">{{ t('sidebar.aria.addFolder') }}</span>
     </div>
 
-    <div class="sidebar__foot">
-      <RetroButton variant="sm" type="button" :disabled="busy" @click="startCreate">
-        {{ t('sidebar.addFolder') }}
-      </RetroButton>
-    </div>
+    <QuickCreateModal
+      v-model:name="newName"
+      :open="createFolderOpen"
+      :heading="t('sidebar.modal.createFolderTitle')"
+      :field-label="t('sidebar.modal.createFolderField')"
+      :placeholder="t('sidebar.folderPlaceholder')"
+      :busy="busy"
+      :error="createFolderError"
+      input-id="new-folder-name"
+      @close="closeCreateFolderModal"
+      @save="onCreateFolder"
+    />
 
     <SecureFolderModal
       v-if="secureModal.open"
@@ -258,22 +283,20 @@ function startCreate(): void {
   padding: 8px 6px;
 }
 
-.sidebar__new {
-  padding: 8px 6px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebar__new-actions {
-  display: flex;
-  gap: 8px;
-}
-
 .sidebar__foot {
-  padding: 8px 6px;
+  padding: 10px 10px;
   border-top: 1px solid var(--border);
+}
+
+.sidebar__foot--add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar__foot-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 
 .sidebar__tags {

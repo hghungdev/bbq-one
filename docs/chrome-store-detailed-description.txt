@@ -1,0 +1,89 @@
+Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respecting, offline-capable.
+
+BBQOne is an all-in-one productivity extension built around privacy and local-first defaults. Capture notes, back up bookmarks, and plan your calendar—from the same compact, retro-inspired dashboard.
+
+Release 1.2.0: Translation and personal dictionary flows have been removed to keep scope smaller and disclosures simpler. The extension does not inject translation UI into web pages. The dashboard still offers UI language (English / Vietnamese) and theme controls. Optional cloud sync via Supabase is unchanged.
+
+═══════════════════════════════════════════════════
+KEY FEATURES
+═══════════════════════════════════════════════════
+
+NOTES
+
+Rich text editing with sensible formatting for everyday writing and technical notes
+Code-friendly highlighting for many languages (see in-app editor bundle)
+Folders + full-text search
+Optional encrypted secure folders (passphrase-gated content; AES-GCM, client-side envelope where applicable)
+
+BOOKMARKS
+
+Snapshot, browse, filter, and search your Chrome bookmark tree
+Safety net: backups and restores aligned with Chrome’s bookmarks model
+Export helpers (HTML export from the Bookmarks tab where supported—see dashboard)
+
+CALENDAR
+
+Month view for events; stored locally by default
+Optional sync when you sign in (same Supabase account as notes/bookmarks)
+
+═══════════════════════════════════════════════════
+PRIVACY-FIRST DESIGN
+═══════════════════════════════════════════════════
+
+By default BBQOne keeps notes, bookmarks, and calendar state on your machine unless you explicitly sign in for sync.
+
+No mandatory account. No analytics or ads bundled for "product tracking."
+Optional sync: Sign in through Supabase when you want multi-device continuity—HTTPS in transit plus server-side Row Level Security so only your account reaches your rows.
+
+Network use in plain language
+Extensions cannot be "offline only" forever if you turn on cloud sync—you choose when:
+
+Supabase (auth + optional data sync) is used only after you sign in
+Extension pages may load Google Fonts for typography (see Privacy Policy)
+
+We do not run a behavioral ad network inside BBQOne. We do not need your browsing history as a feature. Read the Privacy Policy below for hosting, accountability, and what Supabase sign-in implies.
+
+═══════════════════════════════════════════════════
+LOOK & FEEL
+═══════════════════════════════════════════════════
+
+Vintage terminal-inspired chrome (dense panels, monospace accents where it matters), manual light / dark theme control synced to storage, typography tuned for long reading sessions. Interface copy available in EN / VI.
+
+═══════════════════════════════════════════════════
+WHY BBQONE?
+═══════════════════════════════════════════════════
+
+Defaults to offline-capable workflows
+Smaller network story: no third-party translation or dictionary APIs in this release
+Transparent declared network endpoints (manifest host_permissions: Supabase when you sync)
+Public repository you can skim for reassurance (deployment keys stay yours)
+Bookmark HTML export from the dashboard for portability
+Uninstall removes ordinary extension local storage semantics from Chrome
+
+═══════════════════════════════════════════════════
+PRIVACY POLICY
+═══════════════════════════════════════════════════
+
+Full policy (authoritative):
+https://hghungdev.github.io/bbq-one/privacy-policy.html
+
+The policy covers Supabase auth and optional sync, Google Fonts on extension pages, clipboard/offscreen clipboard helper, downloads (e.g. bookmark export), bookmarks access, and chrome.storage semantics.
+
+═══════════════════════════════════════════════════
+SUPPORT & FEEDBACK
+═══════════════════════════════════════════════════
+
+Questions, bugs, or feature requests:
+Email: hghungdev@gmail.com
+
+═══════════════════════════════════════════════════
+GETTING STARTED
+═══════════════════════════════════════════════════
+
+Install the extension
+Pin BBQOne in Chrome’s toolbar
+Open the toolbar popup and use the Dashboard (notes, bookmarks, calendar)
+Create notes / manage bookmarks / add events anytime
+Optional: Sign in to enable cloud backup & sync
+
+No account needed for core notes, bookmarks, and local calendar workflows.

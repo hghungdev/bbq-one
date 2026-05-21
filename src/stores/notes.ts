@@ -133,7 +133,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
-  async function createNote(folderId: string | null): Promise<Note> {
+  async function createNote(folderId: string | null, initialTitle = ''): Promise<Note> {
     const folders = useFoldersStore()
     const secure = useSecureFolderStore()
     const folder = folderId ? folders.folders.find((f) => f.id === folderId) : null
@@ -142,7 +142,7 @@ export const useNotesStore = defineStore('notes', () => {
     if (folder?.is_secure && !key) {
       throw new Error('Folder locked')
     }
-    let title = ''
+    let title = initialTitle.trim()
     let bodyLabel = ''
     let bodyContent = ''
     if (folder?.is_secure && key) {

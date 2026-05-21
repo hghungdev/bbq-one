@@ -94,33 +94,36 @@ function onBackdropClick(): void {
         <p v-if="serverError" class="delete-folder-modal__err" role="alert">
           {{ serverError }}
         </p>
-        <RetroInput
-          id="delete-folder-confirm-name"
-          ref="inputRef"
-          v-model="confirmText"
-          type="text"
-          autocomplete="off"
-          :disabled="isSubmitting"
-          :placeholder="folderName"
-          :aria-label="t('deleteFolder.instrPre') + ' ' + folderName + ' ' + t('deleteFolder.instrPost')"
-          @keydown.enter.prevent="submit"
-        />
+        <div class="delete-folder-modal__input-wrap">
+          <RetroInput
+            id="delete-folder-confirm-name"
+            ref="inputRef"
+            v-model="confirmText"
+            type="text"
+            autocomplete="off"
+            :disabled="isSubmitting"
+            :placeholder="folderName"
+            :aria-label="t('deleteFolder.instrPre') + ' ' + folderName + ' ' + t('deleteFolder.instrPost')"
+            @keydown.enter.prevent="submit"
+          />
+        </div>
         <div class="delete-folder-modal__actions">
-          <RetroButton
-            variant="sm"
-            type="button"
-            :disabled="!canSubmit"
-            @click="submit"
-          >
-            {{ t('deleteFolder.confirmBtn') }}
-          </RetroButton>
           <RetroButton
             variant="sm"
             type="button"
             :disabled="isSubmitting"
             @click="emit('close')"
           >
-            {{ t('deleteFolder.cancelBtn') }}
+            {{ t('common.cancel') }}
+          </RetroButton>
+          <RetroButton
+            variant="sm"
+            type="button"
+            class="delete-folder-modal__delete-btn"
+            :disabled="!canSubmit"
+            @click="submit"
+          >
+            {{ t('common.delete') }}
           </RetroButton>
         </div>
       </div>
@@ -143,17 +146,20 @@ function onBackdropClick(): void {
 .delete-folder-modal {
   width: 100%;
   max-width: 400px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(207, 34, 40, 0.28);
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   padding: 16px 14px 14px;
   outline: none;
+  box-shadow: 0 12px 48px var(--panel-ring);
 }
 
 .delete-folder-modal__title {
   margin: 0 0 12px;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
+  font-weight: 600;
   color: var(--danger);
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 
 .delete-folder-modal__warn {
@@ -181,10 +187,37 @@ function onBackdropClick(): void {
   color: var(--danger);
 }
 
+.delete-folder-modal__input-wrap :deep(.retro-input) {
+  border-color: var(--danger);
+}
+
+.delete-folder-modal__input-wrap :deep(.retro-input:focus),
+.delete-folder-modal__input-wrap :deep(.retro-input:focus-visible) {
+  border-color: var(--danger);
+  outline-color: var(--danger);
+}
+
 .delete-folder-modal__actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   margin-top: 14px;
+}
+
+.delete-folder-modal__delete-btn {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+  background: var(--surface-danger-muted) !important;
+}
+
+.delete-folder-modal__delete-btn:hover:not(:disabled) {
+  color: var(--on-accent) !important;
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+}
+
+.delete-folder-modal__delete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 </style>

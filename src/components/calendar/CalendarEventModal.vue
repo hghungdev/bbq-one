@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch, useId } from 'vue'
+import { storeToRefs } from 'pinia'
 import { CALENDAR_MAX_EVENTS_PER_DAY, CALENDAR_TITLE_MAX } from '@/constants/calendar'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { useLangStore } from '@/stores/uiLang'
+import IconButton from '@/components/ui/IconButton.vue'
+import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import type { CalendarEvent } from '@/types/calendar'
-import { isPastLocalDay } from '@/utils/calendarDate'
+import { formatCalendarBannerDate, isPastLocalDay } from '@/utils/calendarDate'
 
 const store = useCalendarEventsStore()
-const { t } = useLangStore()
+const langStore = useLangStore()
+const { t } = langStore
+const { lang } = storeToRefs(langStore)
 
 const headingId = useId()
 const isCreating = ref(false)
@@ -43,7 +48,9 @@ const modalHeading = computed(() => {
       ? t('calendar.modal.title.edit')
       : t('calendar.modal.title.create')
   }
-  return t('calendar.modal.title.list', { date: activeDateKey.value })
+  return t('calendar.modal.title.list', {
+    date: formatCalendarBannerDate(activeDateKey.value, lang.value),
+  })
 })
 
 watch(
@@ -202,15 +209,21 @@ async function saveForm(): Promise<void> {
       >
         <header class="cal-modal__header">
           <h2 :id="headingId" class="cal-modal__title">{{ modalHeading }}</h2>
-          <RetroButton
-            variant="sm"
-            type="button"
-            class="cal-modal__close"
-            :aria-label="t('common.close')"
+          <IconButton
+            variant="default"
+            :label="t('common.close')"
             @click="store.closeModal"
           >
-            {{ t('common.bracketClear') }}
-          </RetroButton>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                d="M6 6l12 12M18 6L6 18"
+              />
+            </svg>
+          </IconButton>
         </header>
 
         <p v-if="validationError" class="cal-modal__error" role="alert">
@@ -219,9 +232,23 @@ async function saveForm(): Promise<void> {
 
         <template v-if="!showForm">
           <div v-if="!isPastActiveDate && !dayIsFull" class="cal-modal__toolbar">
-            <RetroButton variant="sm" type="button" :disabled="busy" @click="startCreate">
-              {{ t('calendar.modal.btn.add') }}
-            </RetroButton>
+            <IconButton
+              variant="accent"
+              :label="t('calendar.modal.aria.add')"
+              :disabled="busy"
+              @click="startCreate"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  d="M12 5v14M5 12h14"
+                />
+              </svg>
+            </IconButton>
+            <span class="cal-modal__toolbar-label">{{ t('calendar.modal.aria.add') }}</span>
           </div>
           <p v-else-if="isPastActiveDate" class="cal-modal__past-hint">{{ t('calendar.modal.pastDayNoAdd') }}</p>
           <p v-else-if="dayIsFull" class="cal-modal__past-hint">{{ t('calendar.modal.dayFull', { max: CALENDAR_MAX_EVENTS_PER_DAY }) }}</p>
@@ -236,18 +263,18 @@ async function saveForm(): Promise<void> {
                 @change="onToggleDone(ev.id, $event)"
                 @click.stop
               />
-              <button type="button" class="cal-modal__row-title" @click.stop="startEdit(ev)">
+              <button
+                type="button"
+                class="cal-modal__row-title"
+                :class="{ 'cal-modal__row-title--done': ev.is_done }"
+                @click.stop="startEdit(ev)"
+              >
                 {{ ev.title }}
               </button>
-              <RetroButton
-                variant="sm"
-                type="button"
-                class="cal-modal__del"
-                :title="t('calendar.modal.btn.delete')"
+              <IconDeleteButton
+                :title="t('calendar.modal.aria.delete')"
                 @click="requestDelete(ev.id, $event)"
-              >
-                {{ t('calendar.modal.btn.delete') }}
-              </RetroButton>
+              />
             </li>
           </ul>
         </template>
@@ -278,7 +305,9 @@ async function saveForm(): Promise<void> {
 
   <RetroConfirm
     v-model:open="confirmOpen"
-    :message="t('calendar.modal.confirmDelete')"
+    variant="danger"
+    :title="t('calendar.modal.confirmDeleteTitle')"
+    :message="t('calendar.modal.confirmDeleteDetail')"
     @confirm="confirmDelete"
     @cancel="onCancelDelete"
   />
@@ -303,34 +332,30 @@ async function saveForm(): Promise<void> {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   box-shadow: 0 12px 48px var(--panel-ring);
+  overflow: hidden;
 }
 
 .cal-modal__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 12px 8px;
+  padding: 14px 14px 12px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  background: var(--bg-panel);
 }
 
 .cal-modal__title {
   margin: 0;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.06em;
-  line-height: 1.3;
-}
-
-.cal-modal__close {
-  min-width: auto;
-  flex-shrink: 0;
-  padding: 4px 10px;
-  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: 1.35;
+  letter-spacing: 0;
 }
 
 .cal-modal__error {
@@ -341,8 +366,17 @@ async function saveForm(): Promise<void> {
 }
 
 .cal-modal__toolbar {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cal-modal__toolbar-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 
 .cal-modal__past-hint {
@@ -366,7 +400,7 @@ async function saveForm(): Promise<void> {
 .cal-modal__list {
   list-style: none;
   margin: 0;
-  padding: 0 8px 12px;
+  padding: 6px 8px 12px;
   overflow-y: auto;
   min-height: 0;
   flex: 1 1 auto;
@@ -375,13 +409,21 @@ async function saveForm(): Promise<void> {
 .cal-modal__row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 4px;
-  border-bottom: 1px solid var(--border);
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s linear;
+}
+
+.cal-modal__row:hover {
+  background: var(--surface-accent-muted);
 }
 
 .cal-modal__check {
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
 }
 
 .cal-modal__row-title {
@@ -393,18 +435,17 @@ async function saveForm(): Promise<void> {
   color: var(--text-primary);
   font-size: var(--font-size-sm);
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  padding: 4px 0;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
 }
 
 .cal-modal__row-title:hover {
   color: var(--accent);
 }
 
-.cal-modal__del {
-  min-width: auto;
-  flex-shrink: 0;
+.cal-modal__row-title--done {
+  color: var(--text-muted);
+  text-decoration: line-through;
 }
 
 .cal-modal__form {

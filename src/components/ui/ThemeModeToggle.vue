@@ -23,6 +23,7 @@
         role="radio"
         :aria-checked="mode === 'light'"
         :aria-label="t('theme.lightAria')"
+        :title="t('theme.lightTitle')"
         @click="pick('light')"
       >
         <svg class="theme-mode__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -43,6 +44,7 @@
         role="radio"
         :aria-checked="mode === 'dark'"
         :aria-label="t('theme.darkAria')"
+        :title="t('theme.darkTitle')"
         @click="pick('dark')"
       >
         <svg class="theme-mode__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">

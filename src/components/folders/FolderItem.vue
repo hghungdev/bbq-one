@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useAppTimezoneStore } from '@/stores/appTimezone'
 import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
@@ -13,6 +15,8 @@ const props = defineProps<{
   selected: boolean
   renaming: boolean
 }>()
+
+const { utcOffsetHours } = storeToRefs(useAppTimezoneStore())
 
 const emit = defineEmits<{
   select: [id: string]
@@ -115,7 +119,11 @@ function pickAction(
 </script>
 
 <template>
-  <div class="folder-item-wrap" :title="t('folder.renameHint')">
+  <div
+    class="folder-item"
+    :class="{ 'folder-item--active': selected }"
+    :title="t('folder.renameHint')"
+  >
     <RetroInput
       v-if="renaming"
       :id="`folder-rename-${folder.id}`"
@@ -129,8 +137,7 @@ function pickAction(
     <div v-else class="folder-item__top">
       <button
         type="button"
-        class="folder-item"
-        :class="{ 'folder-item--active': selected }"
+        class="folder-item__main"
         @click="onClick"
         @dblclick="onDblClick"
         @contextmenu="onContextMenu"
@@ -169,7 +176,7 @@ function pickAction(
           </span>
         </div>
         <div class="folder-item__foot">
-          {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at) }}
+          {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at, utcOffsetHours) }}
         </div>
       </button>
       <IconDeleteButton
@@ -218,7 +225,12 @@ function pickAction(
 </template>
 
 <style scoped>
-.folder-item-wrap {
+.folder-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  border: 1px solid transparent;
   margin-bottom: 4px;
   position: relative;
 }
@@ -229,15 +241,25 @@ function pickAction(
   gap: 4px;
 }
 
-.folder-item {
+.folder-item--active {
+  border-color: var(--accent);
+}
+
+.folder-item:hover:not(.folder-item--active),
+.folder-item:focus-within:not(.folder-item--active) {
+  border-color: var(--accent);
+}
+
+.folder-item__main {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
-  width: 100%;
   margin: 0;
   padding: 6px 8px;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 0;
   background: transparent;
   color: var(--text-secondary);
@@ -245,8 +267,10 @@ function pickAction(
   font-size: var(--font-size-sm);
   text-align: left;
   cursor: pointer;
-  flex: 1 1 auto;
-  min-width: 0;
+}
+
+.folder-item--active .folder-item__main {
+  color: var(--accent);
 }
 
 .folder-item__row {
@@ -271,17 +295,11 @@ function pickAction(
   text-align: left;
 }
 
-.folder-item:hover {
-  border-color: var(--border);
+.folder-item__main:hover {
   color: var(--text-primary);
 }
 
-.folder-item--active {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.folder-item:focus-visible {
+.folder-item__main:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }

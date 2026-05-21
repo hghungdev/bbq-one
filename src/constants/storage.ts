@@ -18,3 +18,13 @@ export const UI_LANG_KEY = 'ui_lang'
 
 /** Theme popup: 'light' | 'dark' — đồng bộ chrome.storage.local, áp vào html[data-theme]. */
 export const BBQ_UI_THEME_KEY = 'bbqone_ui_theme'
+
+/** Lệch giờ app so với UTC (số nguyên −12…+14). Mặc định 0 = UTC+0. */
+export const BBQ_UTC_OFFSET_HOURS_KEY = 'bbqone_utc_offset_hours'
+
+/**
+ * chrome.storage.session: ngày (YYYY-MM-DD) của banner “1 ngày trước” user đã đóng.
+ * Xóa khi SIGNED_IN để banner hiện lại sau lần đăng nhập tiếp theo.
+ */
+export const CALENDAR_UPCOMING_BANNER_DISMISSED_SESSION_KEY =
+  'bbqone_calendar_upcoming_banner_dismissed'

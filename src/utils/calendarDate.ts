@@ -30,6 +30,34 @@ export function todayLocalKey(): string {
   return formatLocalDate(new Date())
 }
 
+/** Nhãn ngày ngắn cho banner header (theo locale UI). */
+export function formatCalendarBannerDate(dateKey: string, locale: 'vi' | 'en'): string {
+  const key = normalizeLocalDateKey(dateKey)
+  if (!key || key.length < 10) return key
+  const [y, m, d] = key.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  if (locale === 'vi') {
+    return dt.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
+  return dt.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+/** Cộng/trừ ngày trên khóa local YYYY-MM-DD (không lệch timezone). */
+export function addDaysToLocalKey(dateKey: string, deltaDays: number): string {
+  const d = parseLocalDate(dateKey)
+  if (Number.isNaN(d.getTime())) return dateKey
+  d.setDate(d.getDate() + deltaDays)
+  return formatLocalDate(d)
+}
+
 /** `true` if local date key `YYYY-MM-DD` is strictly before today (local). Lexicographic compare is valid. */
 export function isPastLocalDay(dateKey: string): boolean {
   if (!dateKey || dateKey.length < 10) return false

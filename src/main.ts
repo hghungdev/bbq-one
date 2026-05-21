@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
-import { useSettingsStore } from '@/stores/settings'
+import { useAppTimezoneStore } from '@/stores/appTimezone'
 import { useThemeStore } from '@/stores/theme'
 import {
   isRecoverableRefreshTokenAuthError,
@@ -22,7 +22,7 @@ async function bootstrap(): Promise<void> {
   const pinia = createPinia()
   const app = createApp(App)
   app.use(pinia)
-  await Promise.all([useSettingsStore().load(), useThemeStore().init()])
+  await Promise.all([useThemeStore().init(), useAppTimezoneStore().init()])
   const pending = await chrome.storage.local.get(BBQ_PENDING_ROUTE_KEY)
   const routePath = pending[BBQ_PENDING_ROUTE_KEY]
   if (typeof routePath === 'string' && routePath.length > 0) {

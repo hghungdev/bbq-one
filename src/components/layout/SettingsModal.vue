@@ -1,25 +1,35 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
+import { useAppTimezoneStore } from '@/stores/appTimezone'
 import { useAuthStore } from '@/stores/auth'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
-import { useSettingsStore, type FontSizePx } from '@/stores/settings'
 import { useLangStore } from '@/stores/uiLang'
+import { formatUtcOffsetLabel, UTC_OFFSET_OPTIONS } from '@/utils/appDateTime'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
 import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
 
 const emit = defineEmits<{ close: [] }>()
 
 const auth = useAuthStore()
-const settings = useSettingsStore()
 const bookmarkPin = useBookmarkPinStore()
+const appTimezone = useAppTimezoneStore()
+const { utcOffsetHours } = storeToRefs(appTimezone)
 const langStore = useLangStore()
 const { t } = langStore
 
-const sizes: FontSizePx[] = [11, 13, 15]
+const utcOffsetCurrentHint = computed(() =>
+  t('settings.utcOffsetCurrent', { label: formatUtcOffsetLabel(utcOffsetHours.value) }),
+)
+
+function onUtcOffsetChange(e: Event): void {
+  const v = Number((e.target as HTMLSelectElement).value)
+  void appTimezone.setOffsetHours(v)
+}
 
 const bmPinOld = ref('')
 const bmPinNew = ref('')
@@ -62,10 +72,6 @@ const acctPwCanSubmit = computed(() => {
   if (acctPwIssueKeys.value.length > 0) return false
   return true
 })
-
-function pick(px: FontSizePx): void {
-  void settings.setFontSize(px)
-}
 
 function bmDigits(s: string, max: number): string {
   const d = s.replace(/\D/g, '')
@@ -275,19 +281,22 @@ onUnmounted(() => {
           </div>
         </SettingsAccordionSection>
 
-        <SettingsAccordionSection :title="t('settings.fontSize')" :default-open="true">
-          <div class="settings-row">
-            <RetroButton
-              v-for="px in sizes"
-              :key="px"
-              variant="sm"
-              type="button"
-              :disabled="settings.fontSizePx === px"
-              @click="pick(px)"
-            >
-              [ {{ px }} ]
-            </RetroButton>
-          </div>
+        <SettingsAccordionSection :title="t('settings.timezone')" :default-open="true">
+          <p class="settings-hint">{{ t('settings.timezoneDesc') }}</p>
+          <p class="settings-hint settings-hint--sub">{{ utcOffsetCurrentHint }}</p>
+          <label class="settings-field-label" for="set-utc-offset">
+            {{ t('settings.timezoneOffset') }}
+          </label>
+          <select
+            id="set-utc-offset"
+            class="settings-utc-select"
+            :value="utcOffsetHours"
+            @change="onUtcOffsetChange"
+          >
+            <option v-for="h in UTC_OFFSET_OPTIONS" :key="h" :value="h">
+              {{ formatUtcOffsetLabel(h) }}
+            </option>
+          </select>
         </SettingsAccordionSection>
 
         <SettingsAccordionSection
@@ -575,6 +584,26 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 0;
+}
+
+.settings-utc-select {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 0 4px;
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.settings-utc-select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .settings-row--pin {

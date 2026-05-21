@@ -60,6 +60,16 @@
   --surface-danger-muted: rgba(207, 34, 40, 0.08);
   --surface-accent-muted: rgba(0, 102, 204, 0.08);
 
+  --calendar-banner-upcoming-bg: rgba(0, 102, 204, 0.1);
+  --calendar-banner-upcoming-bg-hover: rgba(0, 102, 204, 0.16);
+  --calendar-banner-upcoming-border: #0066cc;
+  --calendar-banner-upcoming-icon: var(--color-primary);
+  --calendar-banner-today-bg: rgba(255, 204, 0, 0.28);
+  --calendar-banner-today-bg-hover: rgba(255, 204, 0, 0.38);
+  --calendar-banner-today-border: #d4a800;
+  --calendar-banner-today-icon: #9a7200;
+  --calendar-banner-today-text: var(--text-primary);
+
   --overlay-scrim: rgba(0, 0, 0, 0.42);
   --panel-ring: rgba(0, 0, 0, 0.06);
 
@@ -73,10 +83,10 @@
   --font-display: var(--font-sans);
 
   /* Body 17px theo spec Apple */
-  --font-size-base: 17px;
-  --font-size-sm: 14px;
+  --font-size-base: 13px;
+  --font-size-sm: 11px;
   --font-size-xs: 12px;
-  --font-size-lg: 21px;
+  --font-size-lg: 15px;
 
   --radius-sm: 8px;
   --radius-md: 11px;
@@ -223,6 +233,17 @@ html[data-theme='dark'] {
   --surface-success-muted: rgba(52, 199, 89, 0.16);
   --surface-danger-muted: rgba(255, 82, 82, 0.14);
   --surface-accent-muted: rgba(41, 151, 255, 0.12);
+
+  /* Nền đặc (tránh vàng/xanh phủ rgba trên nền tối → ngả nâu xấu) */
+  --calendar-banner-upcoming-bg: #243548;
+  --calendar-banner-upcoming-bg-hover: #2d4158;
+  --calendar-banner-upcoming-border: #2997ff;
+  --calendar-banner-upcoming-icon: #7dc4ff;
+  --calendar-banner-today-bg: #3f3a28;
+  --calendar-banner-today-bg-hover: #4c4632;
+  --calendar-banner-today-border: #ffd60a;
+  --calendar-banner-today-icon: #ffe566;
+  --calendar-banner-today-text: #f2ecd8;
 
   --overlay-scrim: rgba(0, 0, 0, 0.72);
   --panel-ring: rgba(255, 255, 255, 0.09);

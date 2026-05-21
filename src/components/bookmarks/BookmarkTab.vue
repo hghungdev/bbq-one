@@ -23,16 +23,18 @@ const pendingDeleteBackupId = ref<string | null>(null)
 const confirmDeleteAll = ref(false)
 const viewMode = ref<'live' | 'backups'>('live')
 
-/** Chỉ hiện nội dung tab sau khi đặt PIN (lần đầu) hoặc mở khóa. */
+/** Đang xác định trạng thái PIN — tránh flash modal setup trước khi load xong. */
+const pinGateLoading = ref(true)
+/** Chỉ hiện nội dung tab sau khi mở khóa (nếu đã đặt PIN) hoặc không cần PIN. */
 const pinReady = ref(false)
-const pinModalMode = ref<'setup' | 'unlock'>('setup')
+const pinModalMode = ref<'setup' | 'unlock'>('unlock')
 
 async function loadBookmarkTabData(): Promise<void> {
   await bm.loadLive()
   await bm.loadBackups()
 }
 
-onMounted(async () => {
+async function resolvePinGate(): Promise<void> {
   // Anonymous mode: không cần PIN, vào bookmark thẳng
   if (!(await isAuthenticated())) {
     pinReady.value = true
@@ -58,6 +60,16 @@ onMounted(async () => {
 
   pinReady.value = true
   await loadBookmarkTabData()
+}
+
+onMounted(async () => {
+  pinGateLoading.value = true
+  pinReady.value = false
+  try {
+    await resolvePinGate()
+  } finally {
+    pinGateLoading.value = false
+  }
 })
 
 function onPinDone(): void {
@@ -171,7 +183,14 @@ async function onRefreshLive(): Promise<void> {
 </script>
 
 <template>
-  <BookmarkPinModal v-if="!pinReady" :mode="pinModalMode" @done="onPinDone" />
+  <p v-if="pinGateLoading" class="bm-tab__gate-loading retro-empty">
+    {{ t('bookmark.loading') }}
+  </p>
+  <BookmarkPinModal
+    v-else-if="!pinReady"
+    :mode="pinModalMode"
+    @done="onPinDone"
+  />
   <div v-else class="bm-tab">
     <!-- Toolbar -->
     <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
@@ -309,6 +328,14 @@ async function onRefreshLive(): Promise<void> {
 </template>
 
 <style scoped>
+.bm-tab__gate-loading {
+  margin: 0;
+  padding: 24px 12px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
 .bm-tab {
   display: flex;
   flex-direction: column;

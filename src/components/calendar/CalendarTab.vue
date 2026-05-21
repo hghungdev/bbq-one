@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { addMonths, normalizeLocalDateKey, parseLocalDate } from '@/utils/calendarDate'
+import {
+  addMonths,
+  normalizeLocalDateKey,
+  parseLocalDate,
+  todayLocalKey,
+} from '@/utils/calendarDate'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { useLangStore } from '@/stores/uiLang'
 import CalendarMonthNav from '@/components/calendar/CalendarMonthNav.vue'
@@ -22,6 +27,7 @@ const gridScrollRef = ref<HTMLElement | null>(null)
 
 onMounted(async () => {
   await store.loadAll()
+  scrollToTodayInView('auto')
 })
 
 function syncGridMonthToDateKey(raw: string): void {
@@ -39,21 +45,38 @@ watch(activeDate, (dateKey) => {
   syncGridMonthToDateKey(dateKey)
 })
 
-async function scrollCalendarCellIntoView(dateKey: string): Promise<void> {
+function isViewingCurrentMonth(): boolean {
+  const d = new Date()
+  return viewYear.value === d.getFullYear() && viewMonth.value === d.getMonth()
+}
+
+/** Cuộn ô ngày vào giữa vùng lưới (không kéo cả popup). */
+async function scrollCalendarCellIntoView(
+  dateKey: string,
+  behavior: ScrollBehavior = 'smooth',
+): Promise<void> {
   const key = normalizeLocalDateKey(dateKey)
   await nextTick()
   await nextTick()
-  requestAnimationFrame(() => {
-    const scrollRoot = gridScrollRef.value
-    if (!scrollRoot) return
-    const cell = scrollRoot.querySelector<HTMLElement>(`[data-cal-date="${key}"]`)
-    if (!cell) return
-    const rootRect = scrollRoot.getBoundingClientRect()
-    const cellRect = cell.getBoundingClientRect()
-    const deltaY =
-      cellRect.top + cellRect.height / 2 - (rootRect.top + rootRect.height / 2)
-    scrollRoot.scrollBy({ top: deltaY, behavior: 'smooth' })
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve())
+    })
   })
+  const scrollRoot = gridScrollRef.value
+  if (!scrollRoot) return
+  const cell = scrollRoot.querySelector<HTMLElement>(`[data-cal-date="${key}"]`)
+  if (!cell) return
+  const rootRect = scrollRoot.getBoundingClientRect()
+  const cellRect = cell.getBoundingClientRect()
+  const deltaY =
+    cellRect.top + cellRect.height / 2 - (rootRect.top + rootRect.height / 2)
+  scrollRoot.scrollBy({ top: deltaY, behavior })
+}
+
+function scrollToTodayInView(behavior: ScrollBehavior): void {
+  if (!isViewingCurrentMonth()) return
+  void scrollCalendarCellIntoView(todayLocalKey(), behavior)
 }
 
 function gotoPrev(): void {
@@ -72,14 +95,22 @@ function gotoToday(): void {
   const d = new Date()
   viewYear.value = d.getFullYear()
   viewMonth.value = d.getMonth()
+  scrollToTodayInView('smooth')
 }
+
+watch(
+  () => store.gridFocusDateKey,
+  (dateKey) => {
+    if (!dateKey) return
+    syncGridMonthToDateKey(dateKey)
+    void scrollCalendarCellIntoView(dateKey, 'smooth')
+  },
+)
 
 function jumpToEvent(ev: CalendarEvent): void {
   const key = normalizeLocalDateKey(ev.event_date)
   store.focusCalendarCellFromSearch(key)
-  syncGridMonthToDateKey(key)
   store.setSearchQuery('')
-  void scrollCalendarCellIntoView(key)
 }
 </script>
 
