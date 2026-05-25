@@ -1,8 +1,8 @@
 # BBQOne
 
-A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **personal dictionary**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
+A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 1.1.1
+**Version:** 1.2.0
 
 ---
 
@@ -10,6 +10,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **perso
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 1.2.0](#what-changed-in-120)
 - [Privacy & data](#privacy--data)
 - [Install](#install)
 - [Keyboard shortcuts](#keyboard-shortcuts)
@@ -21,13 +22,14 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **perso
 
 ## Overview
 
-BBQOne brings together everyday knowledge work inside the browser: organized notes, optional encrypted folders, bookmark snapshots, saved translation entries, and quick translate-from-selection—all in one extension popup and dashboard.
+BBQOne brings together everyday knowledge capture and daily planning inside the browser: organized notes, optional encrypted folders, bookmark snapshots, and a simple calendar—all in one extension popup and dashboard.
 
 **Design goals:**
 
-- **Local-first** — work offline or without signing in; your data can stay on the device.
-- **Optional cloud** — sign in to sync and back up notes and related data to your own backend project.
-- **Focused UX** — resizable panels, search, and shortcuts for people who live in the keyboard.
+- **Local-first** — work offline or without signing in; your data stays on the device by default.
+- **Optional cloud** — sign in to sync and back up notes, bookmarks, and calendar events to your own Supabase project.
+- **Focused UX** — resizable panels, search, and keyboard shortcuts for people who live in the keyboard.
+- **Minimal surface area** — the extension runs entirely inside its popup and extension pages. It does **not** inject content scripts into the websites you visit.
 
 ---
 
@@ -35,27 +37,42 @@ BBQOne brings together everyday knowledge work inside the browser: organized not
 
 | Area | What you get |
 |------|----------------|
-| **Notes** | Folders, rich-text editing, code-friendly blocks, full-text search, export current note as plain text. |
-| **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are protected before they leave your unlocked session. |
-| **Bookmarks** | Snapshot your browser bookmark tree, browse history, restore to Chrome, export HTML, and optional encryption when signed in with PIN. |
-| **Personal dictionary** | Save words and phrases from the reading flow; manage entries in the dashboard tab. |
-| **Quick translate** | Select text on a page to translate/lookup (behavior depends on your settings and context). |
+| **Notes** | Folders, rich-text editing, code-friendly blocks (Shiki highlighting), full-text search, copy-to-clipboard. |
+| **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are AES-GCM encrypted client-side before leaving your device. |
+| **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, export as HTML, and optional encryption when signed in with PIN. |
+| **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. |
+| **Cloud sync (optional)** | Sign in via Supabase Auth (email + password) to sync notes, folders, bookmarks, and calendar events across devices, protected by Row Level Security. |
+
+---
+
+## What changed in 1.2.0
+
+- **Added:** Calendar tab (month grid + today/tomorrow banner + per-day events, max 3/day in v1).
+- **Added:** UI refresh across notes, bookmarks, and dashboard surfaces.
+- **Removed:** In-page translation feature, personal dictionary, and the associated content script on `<all_urls>`.
+- **Removed:** Host permission `https://api.dictionaryapi.dev/*`.
+- **Removed:** Permissions `scripting`, `activeTab`, `tabs`, `identity` (no longer needed without translation/dictionary).
+- **Remaining permissions:** `storage`, `contextMenus`, `alarms`, `clipboardWrite`, `offscreen`, `bookmarks`, `downloads`, and host `https://*.supabase.co/*`.
+
+See [`docs/CHROME-STORE-PERMISSIONS.md`](docs/CHROME-STORE-PERMISSIONS.md) for the full per-permission justification.
 
 ---
 
 ## Privacy & data
 
-- **Anonymous / not signed in:** notes, bookmark backups, and dictionary entries can be stored **locally** in the extension. No account is required for core workflows.
-- **Signed in:** data syncs against **your** configured backend; access is scoped per user on the server side (standard row-level rules).
-- **Permissions:** the extension requests only what it needs for bookmarks, storage, translation, and optional cloud APIs—see the manifest packaged with the build for the full list.
+- **Anonymous / not signed in (default):** notes, bookmark snapshots, and calendar events are stored **locally** in `chrome.storage.local`. No account is required for core workflows. No network requests are made.
+- **Signed in:** data syncs to **your** configured Supabase project; access is gated per user by Row Level Security (`auth.uid() = user_id`).
+- **Encrypted surfaces:** Secure Folder notes and PIN-protected bookmark snapshots are encrypted client-side (AES-GCM) before upload. Regular notes, folders, and calendar events are stored as plaintext under your account (isolated by RLS, not end-to-end encrypted).
+- **No content scripts.** BBQOne does not inject scripts into the pages you visit.
+- **No tracking, no analytics, no ads.**
 
-For deep technical documentation (database layout, migrations, and security model), refer to the `supabase/` directory and internal docs rather than duplicating operational detail in this file.
+Full policy: [`docs/privacy-policy.html`](docs/privacy-policy.html) — also hosted at <https://hghungdev.github.io/bbq-one/privacy-policy.html>.
 
 ---
 
 ## Install
 
-**End users:** install from the **Chrome Web Store** when a listing is available, then pin the extension and open it from the toolbar.
+**End users:** install from the **Chrome Web Store** when the listing is published, then pin the extension and open it from the toolbar.
 
 **Developers / testers:** see [Development](#development) to load an unpacked build from `dist/`.
 
@@ -102,6 +119,7 @@ cp .env.example .env
 | `npm run build` | Type-check + production bundle (extension output) |
 | `npm run type-check` | TypeScript only |
 | `npm run preview` | Preview CLI (optional; primary workflow is loading `dist/` in Chrome) |
+| `npm run sync-version` | Sync extension version from `package.json` to `public/manifest.json` |
 
 ### Load in Chrome
 
@@ -110,6 +128,14 @@ cp .env.example .env
 3. Enable **Developer mode**.
 4. **Load unpacked** → select the **`dist/`** directory.
 5. After changing `.env`, rebuild and click **Reload** on the extension card.
+
+### Tech stack
+
+- **Vue 3** (Composition API + `<script setup>`) + **Pinia** + **Vue Router**
+- **TypeScript** (strict mode via `vue-tsc`)
+- **Vite** + **@crxjs/vite-plugin** (MV3 bundler)
+- **Tiptap** (note editor) + **Shiki** (syntax highlighting)
+- **Supabase** (optional cloud sync — Auth + Postgres + RLS)
 
 ---
 
@@ -138,4 +164,4 @@ See **`package.json`** (`private` field and any future `license` entry) or add a
 
 ---
 
-<p align="center"><strong>BBQOne</strong> — notes, bookmarks, and vocabulary, your way.</p>
+<p align="center"><strong>BBQOne</strong> — notes, bookmarks, and calendar, your way.</p>
