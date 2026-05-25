@@ -19,11 +19,15 @@ export const vi: Record<I18nKey, string> = {
   'app.tabs.notes': 'GHI CHÚ',
   'app.tabs.bookmark': 'BOOKMARK',
   'app.tabs.calendar': 'LỊCH',
+  'app.tabs.aria': 'Khu vực chính',
   'app.sync': 'ĐỒNG BỘ',
   'app.settings': 'CÀI ĐẶT',
   'app.aria.settings': 'Cài đặt',
+  'app.aria.clock': 'Giờ app: {time} ({offset})',
   'app.aria.login': 'Đăng nhập',
+  'app.aria.loginTitle': 'Đăng nhập tài khoản',
   'app.aria.logout': 'Đăng xuất',
+  'app.aria.logoutTitle': 'Thoát tài khoản',
   'app.find': 'TÌM',
   'app.logout': 'ĐĂNG XUẤT',
   'app.login': 'ĐĂNG NHẬP',
@@ -48,6 +52,8 @@ export const vi: Record<I18nKey, string> = {
   'theme.darkAria': 'Chế độ tối — biểu tượng mặt trăng',
   'theme.lightTitle': 'Chế độ sáng',
   'theme.darkTitle': 'Chế độ tối',
+  'theme.switchToLight': 'Chuyển sang chế độ sáng',
+  'theme.switchToDark': 'Chuyển sang chế độ tối',
 
   // ── Search ──
   'search.label': 'TÌM KIẾM',
@@ -142,6 +148,7 @@ export const vi: Record<I18nKey, string> = {
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',
   'settings.accountPassword': 'TÀI KHOẢN — MẬT KHẨU',
+  'settings.signedInAs': 'Đang đăng nhập: {email}',
   'settings.bookmarkPin': 'MÃ PIN BOOKMARK',
   'settings.pwErrFill': 'Vui lòng nhập đủ mật khẩu hiện tại, mới và xác nhận.',
   'settings.pwErrMismatch': 'Mật khẩu mới và xác nhận không khớp.',
@@ -175,6 +182,7 @@ export const vi: Record<I18nKey, string> = {
   'settings.pinSetupBtn': 'ĐẶT PIN',
   'settings.pinSetupOk': '> Đặt PIN thành công.',
   'settings.closeBtn': 'ĐÓNG',
+  'settings.version': 'BBQOne v{version}',
 
   // ── Bookmark tab ──
   'bookmark.backupNow': 'SAO LƯU NGAY',

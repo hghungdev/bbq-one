@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
 import { formatUtcOffsetLabel, UTC_OFFSET_OPTIONS } from '@/utils/appDateTime'
+import { getExtensionVersion } from '@/utils/extensionVersion'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
 import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
 
@@ -21,6 +22,8 @@ const appTimezone = useAppTimezoneStore()
 const { utcOffsetHours } = storeToRefs(appTimezone)
 const langStore = useLangStore()
 const { t } = langStore
+
+const extensionVersion = getExtensionVersion()
 
 const utcOffsetCurrentHint = computed(() =>
   t('settings.utcOffsetCurrent', { label: formatUtcOffsetLabel(utcOffsetHours.value) }),
@@ -247,9 +250,18 @@ onUnmounted(() => {
   >
     <div class="settings-backdrop" @click="emit('close')" />
     <div class="settings-panel">
-      <h2 id="settings-title" class="settings-title">
-        {{ t('settings.title') }}
-      </h2>
+      <div class="settings-header">
+        <h2 id="settings-title" class="settings-title">
+          {{ t('settings.title') }}
+        </h2>
+        <p
+          v-if="auth.isAuthenticated && auth.user?.email"
+          class="settings-header-email"
+          :title="t('settings.signedInAs', { email: auth.user.email })"
+        >
+          {{ auth.user.email }}
+        </p>
+      </div>
 
       <div class="settings-scroll">
         <!-- Language selection -->
@@ -523,6 +535,9 @@ onUnmounted(() => {
         </SettingsAccordionSection>
       </div>
 
+      <p class="settings-version">
+        {{ t('settings.version', { version: extensionVersion }) }}
+      </p>
       <RetroButton type="button" class="settings-close" @click="emit('close')">
         {{ t('settings.closeBtn') }}
       </RetroButton>
@@ -563,12 +578,36 @@ onUnmounted(() => {
 }
 
 .settings-title {
-  margin: 0 0 8px;
+  margin: 0;
   flex-shrink: 0;
   font-size: var(--font-size-lg);
   font-weight: 600;
   letter-spacing: 0.1em;
   color: var(--accent);
+}
+
+.settings-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 12px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.settings-header-email {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(220px, 58%);
+  text-align: right;
 }
 
 .settings-scroll {
@@ -658,7 +697,17 @@ onUnmounted(() => {
 .settings-close {
   flex-shrink: 0;
   width: 100%;
-  margin-top: 10px;
+  margin-top: 6px;
+}
+
+.settings-version {
+  flex-shrink: 0;
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-align: center;
 }
 
 .settings-divider {

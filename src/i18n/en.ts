@@ -17,11 +17,15 @@ export const en = {
   'app.tabs.notes': 'NOTES',
   'app.tabs.bookmark': 'BOOKMARK',
   'app.tabs.calendar': 'CALENDAR',
+  'app.tabs.aria': 'Main sections',
   'app.sync': 'SYNC',
   'app.settings': 'SETTINGS',
   'app.aria.settings': 'Settings',
+  'app.aria.clock': 'App time: {time} ({offset})',
   'app.aria.login': 'Sign in',
+  'app.aria.loginTitle': 'Sign in to your account',
   'app.aria.logout': 'Log out',
+  'app.aria.logoutTitle': 'Sign out of your account',
   'app.find': 'FIND',
   'app.logout': 'LOGOUT',
   'app.login': 'SIGN IN',
@@ -46,6 +50,8 @@ export const en = {
   'theme.darkAria': 'Dark mode — moon icon',
   'theme.lightTitle': 'Light mode',
   'theme.darkTitle': 'Dark mode',
+  'theme.switchToLight': 'Switch to light mode',
+  'theme.switchToDark': 'Switch to dark mode',
 
   // ── Search ──
   'search.label': 'SEARCH',
@@ -140,6 +146,7 @@ export const en = {
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',
   'settings.accountPassword': 'ACCOUNT — PASSWORD',
+  'settings.signedInAs': 'Signed in as {email}',
   'settings.bookmarkPin': 'BOOKMARK PIN',
   'settings.pwErrFill': 'Please fill in current password, new password and confirmation.',
   'settings.pwErrMismatch': 'New password and confirmation do not match.',
@@ -173,6 +180,7 @@ export const en = {
   'settings.pinSetupBtn': 'SET UP PIN',
   'settings.pinSetupOk': '> PIN set up successfully.',
   'settings.closeBtn': 'CLOSE',
+  'settings.version': 'BBQOne v{version}',
 
   // ── Bookmark tab ──
   'bookmark.backupNow': 'BACKUP NOW',

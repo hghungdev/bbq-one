@@ -30,7 +30,7 @@ function shiftToAppInstant(date: Date, utcOffsetHours: number): Date {
   return new Date(date.getTime() + normalizeUtcOffsetHours(utcOffsetHours) * 3_600_000)
 }
 
-/** Header clock: `2026-05-21 21:05:15` */
+/** Header clock tooltip: `2026-05-21 21:05` */
 export function formatAppDateTime(date: Date, utcOffsetHours: number): string {
   const s = shiftToAppInstant(date, utcOffsetHours)
   const y = s.getUTCFullYear()
@@ -38,8 +38,7 @@ export function formatAppDateTime(date: Date, utcOffsetHours: number): string {
   const d = String(s.getUTCDate()).padStart(2, '0')
   const h = String(s.getUTCHours()).padStart(2, '0')
   const min = String(s.getUTCMinutes()).padStart(2, '0')
-  const sec = String(s.getUTCSeconds()).padStart(2, '0')
-  return `${y}-${m}-${d} ${h}:${min}:${sec}`
+  return `${y}-${m}-${d} ${h}:${min}`
 }
 
 /** List folder/note: ngày theo múi giờ app, format YYYY/MM/dd. */

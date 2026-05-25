@@ -26,11 +26,10 @@
   import IconButton from '@/components/ui/IconButton.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
   import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
-  import { getExtensionVersion } from '@/utils/extensionVersion'
   import { todayLocalKey } from '@/utils/calendarDate'
 
   const auth = useAuthStore()
-  const { isAuthenticated, user: authUser } = storeToRefs(auth)
+  const { isAuthenticated } = storeToRefs(auth)
   const appTimezone = useAppTimezoneStore()
   const { utcOffsetHours } = storeToRefs(appTimezone)
   const folders = useFoldersStore()
@@ -49,10 +48,17 @@
   const { colW2, onResizeStart } = useColumnResize()
 
   const showLoginModal = ref(false)
-  const extensionVersion = getExtensionVersion()
 
   const headerClock = ref(formatAppDateTime(new Date(), utcOffsetHours.value))
-  const headerClockTitle = computed(() => formatUtcOffsetLabel(utcOffsetHours.value))
+  const headerClockTooltip = computed(
+    () => `${headerClock.value} (${formatUtcOffsetLabel(utcOffsetHours.value)})`,
+  )
+  const headerClockAria = computed(() =>
+    t('app.aria.clock', {
+      time: headerClock.value,
+      offset: formatUtcOffsetLabel(utcOffsetHours.value),
+    }),
+  )
   let headerClockTimer: ReturnType<typeof setInterval> | null = null
 
   function tickHeaderClock(): void {
@@ -153,10 +159,6 @@
 
   const syncBusy = computed(() => sync.status === 'syncing')
 
-  const headerEmail = computed(
-    () => authUser.value?.email ?? (isAnonymous.value ? t('app.anonymous') : t('app.offline')),
-  )
-
   /** Xanh khi vừa đồng bộ thành công (store = synced); mặc định khi idle. */
   const syncBadgeVariant = computed((): CloudSyncVariant => {
     if (sync.status === 'syncing') return 'syncing'
@@ -202,15 +204,70 @@
   <div class="shell shell--dashboard">
     <header class="shell__header">
       <div class="shell__header-row shell__header-row--top">
-        <span class="shell__brand">
-          <span class="shell__brand-ver">BBQOne v{{ extensionVersion }}</span>
-          <span class="shell__brand-sep" aria-hidden="true">|</span>
-          <time class="shell__brand-clock" :title="headerClockTitle">{{ headerClock }}</time>
-        </span>
+        <div class="shell__header-left">
+          <span class="shell__brand">BBQOne</span>
+          <nav class="shell__tabs" role="tablist" :aria-label="t('app.tabs.aria')">
+            <RetroButton
+              variant="sm"
+              type="button"
+              role="tab"
+              :class="activeTab === 'calendar' ? 'shell__tab-btn--active' : ''"
+              :aria-selected="activeTab === 'calendar'"
+              @click="activeTab = 'calendar'"
+            >
+              {{ t('app.tabs.calendar') }}
+            </RetroButton>
+            <RetroButton
+              variant="sm"
+              type="button"
+              role="tab"
+              :class="activeTab === 'notes' ? 'shell__tab-btn--active' : ''"
+              :aria-selected="activeTab === 'notes'"
+              @click="activeTab = 'notes'"
+            >
+              {{ t('app.tabs.notes') }}
+            </RetroButton>
+            <RetroButton
+              variant="sm"
+              type="button"
+              role="tab"
+              :class="activeTab === 'bookmarks' ? 'shell__tab-btn--active' : ''"
+              :aria-selected="activeTab === 'bookmarks'"
+              @click="activeTab = 'bookmarks'"
+            >
+              {{ t('app.tabs.bookmark') }}
+            </RetroButton>
+          </nav>
+        </div>
         <span class="shell__sep" aria-hidden="true"></span>
         <div class="shell__header-right">
-          <span class="shell__email" :title="headerEmail">{{ headerEmail }}</span>
           <ThemeModeToggle class="shell__theme-toggle" />
+          <IconButton
+            class="shell__clock-btn"
+            variant="default"
+            type="button"
+            :label="headerClockAria"
+            :title="headerClockTooltip"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 7v5l3 2"
+              />
+            </svg>
+          </IconButton>
           <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
           <CloudSyncStatusBadge
             v-if="!isAnonymous"
@@ -248,9 +305,9 @@
           </IconButton>
           <IconButton
             v-if="isAnonymous"
-            variant="default"
+            variant="accent"
             :label="t('app.aria.login')"
-            :title="t('app.aria.login')"
+            :title="t('app.aria.loginTitle')"
             @click="onGoLogin"
           >
             <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
@@ -260,23 +317,24 @@
                 stroke-width="1.75"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                d="M8 10V7a4 4 0 0 1 8 0v3"
               />
-              <circle
-                cx="12"
-                cy="7"
-                r="4"
+              <path
                 fill="none"
                 stroke="currentColor"
                 stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 10h12v9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-9Z"
               />
+              <circle cx="12" cy="15" r="1" fill="currentColor" />
             </svg>
           </IconButton>
           <IconButton
             v-else
             variant="default"
             :label="t('app.aria.logout')"
-            :title="t('app.aria.logout')"
+            :title="t('app.aria.logoutTitle')"
             @click="onLogout"
           >
             <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
@@ -296,35 +354,6 @@
         v-if="dataReady"
         @open-calendar="onOpenCalendarFromTodayBanner"
       />
-      <div class="shell__header-row shell__header-row--actions">
-        <div class="shell__actions">
-          <!-- Tab switcher -->
-          <RetroButton
-            variant="sm"
-            type="button"
-            :class="activeTab === 'calendar' ? 'shell__tab-btn--active' : ''"
-            @click="activeTab = 'calendar'"
-          >
-            {{ t('app.tabs.calendar') }}
-          </RetroButton>
-          <RetroButton
-            variant="sm"
-            type="button"
-            :class="activeTab === 'notes' ? 'shell__tab-btn--active' : ''"
-            @click="activeTab = 'notes'"
-          >
-            {{ t('app.tabs.notes') }}
-          </RetroButton>
-          <RetroButton
-            variant="sm"
-            type="button"
-            :class="activeTab === 'bookmarks' ? 'shell__tab-btn--active' : ''"
-            @click="activeTab = 'bookmarks'"
-          >
-            {{ t('app.tabs.bookmark') }}
-          </RetroButton>
-        </div>
-      </div>
       <SearchBar
         ref="searchBarRef"
         :search-mode="
@@ -435,45 +464,45 @@
     flex-wrap: nowrap;
     align-items: center;
     min-width: 0;
+    gap: 8px;
   }
 
-  .shell__header-row--actions {
-    width: 100%;
-    justify-content: flex-end;
+  .shell__header-left {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 10px;
   }
 
-  /* Email + badge bên phải (đối diện BBQOne) */
+  .shell__tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  /* Icon toolbar bên phải */
   .shell__header-right {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-end;
     gap: 8px 10px;
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
-    max-width: min(560px, 68%);
   }
 
   .shell__brand {
-    display: inline-flex;
-    align-items: baseline;
     flex: 0 0 auto;
     color: var(--accent);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     white-space: nowrap;
-    gap: 0.4em;
   }
 
-  .shell__brand-sep {
-    color: var(--text-muted);
-    font-weight: 400;
-  }
-
-  .shell__brand-clock {
-    font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    letter-spacing: 0.04em;
+  .shell__clock-btn {
+    cursor: default;
   }
 
   .shell__sep {
@@ -485,28 +514,8 @@
     white-space: nowrap;
   }
 
-  .shell__email {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: min(220px, 100%);
-  }
-
   .shell__theme-toggle {
     flex-shrink: 0;
-  }
-
-  .shell__actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 8px;
-    flex: 1 1 auto;
-    min-width: 0;
   }
 
   .shell__error {

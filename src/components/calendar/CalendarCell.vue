@@ -17,13 +17,14 @@ const visibleEvents = computed(() => events.value.slice(0, CALENDAR_CELL_EVENT_L
 const overflowCount = computed(() =>
   Math.max(0, events.value.length - CALENDAR_CELL_EVENT_LIMIT),
 )
-const isCalendarFocusDay = computed(() => {
-  const key = dateKey.value
+const isSearchFocusDay = computed(() => {
   const gfk = store.gridFocusDateKey
-  if (gfk && normalizeLocalDateKey(gfk) === key) return true
+  return gfk !== null && normalizeLocalDateKey(gfk) === dateKey.value
+})
+
+const isModalTargetDay = computed(() => {
   const ad = store.activeDate
-  if (ad && normalizeLocalDateKey(ad) === key) return true
-  return false
+  return ad !== null && normalizeLocalDateKey(ad) === dateKey.value
 })
 
 function onCellClick(): void {
@@ -45,7 +46,8 @@ function onEventClick(id: string, e: Event): void {
       'cal-cell--other-month': !isCurrentMonth,
       'cal-cell--today': isToday,
       'cal-cell--past': isPastDay,
-      'cal-cell--modal-target': isCalendarFocusDay,
+      'cal-cell--modal-target': isModalTargetDay,
+      'cal-cell--search-focus': isSearchFocusDay,
     }"
     :title="isPastDay ? t('calendar.cell.pastTitle') : undefined"
     @click="onCellClick"
@@ -104,6 +106,16 @@ function onEventClick(id: string, e: Event): void {
 .cal-cell--modal-target {
   box-shadow: inset 0 0 0 2px var(--accent);
   background: var(--surface-accent-muted, var(--bg-secondary));
+}
+
+.cal-cell--search-focus {
+  box-shadow: inset 0 0 0 2px var(--calendar-search-focus-border);
+  background: var(--calendar-search-focus-bg);
+}
+
+.cal-cell--today.cal-cell--search-focus {
+  outline-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--calendar-search-focus-border);
 }
 
 .cal-cell__day {

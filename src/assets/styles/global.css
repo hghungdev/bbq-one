@@ -70,6 +70,9 @@
   --calendar-banner-today-icon: #9a7200;
   --calendar-banner-today-text: var(--text-primary);
 
+  --calendar-search-focus-border: #d4a800;
+  --calendar-search-focus-bg: rgba(255, 204, 0, 0.14);
+
   --overlay-scrim: rgba(0, 0, 0, 0.42);
   --panel-ring: rgba(0, 0, 0, 0.06);
 
@@ -244,6 +247,9 @@ html[data-theme='dark'] {
   --calendar-banner-today-border: #ffd60a;
   --calendar-banner-today-icon: #ffe566;
   --calendar-banner-today-text: #f2ecd8;
+
+  --calendar-search-focus-border: #ffd60a;
+  --calendar-search-focus-bg: rgba(255, 214, 10, 0.12);
 
   --overlay-scrim: rgba(0, 0, 0, 0.72);
   --panel-ring: rgba(255, 255, 255, 0.09);
