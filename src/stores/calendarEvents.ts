@@ -148,6 +148,11 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     await updateEvent(id, { is_done: !e.is_done })
   }
 
+  async function markEventsDone(ids: string[]): Promise<void> {
+    const unique = [...new Set(ids)]
+    await Promise.all(unique.map((id) => updateEvent(id, { is_done: true })))
+  }
+
   function openModalForDate(dateKey: string): void {
     gridFocusDateKey.value = null
     activeDate.value = normalizeLocalDateKey(dateKey)
@@ -191,6 +196,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     updateEvent,
     deleteEvent,
     toggleDone,
+    markEventsDone,
     openModalForDate,
     openModalForEdit,
     closeModal,

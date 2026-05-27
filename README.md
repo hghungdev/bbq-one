@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 1.2.0
+**Version:** 1.2.1
 
 ---
 
@@ -10,6 +10,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 1.2.1](#what-changed-in-121)
 - [What changed in 1.2.0](#what-changed-in-120)
 - [Privacy & data](#privacy--data)
 - [Install](#install)
@@ -42,6 +43,15 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, export as HTML, and optional encryption when signed in with PIN. |
 | **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. |
 | **Cloud sync (optional)** | Sign in via Supabase Auth (email + password) to sync notes, folders, bookmarks, and calendar events across devices, protected by Row Level Security. |
+
+---
+
+## What changed in 1.2.1
+
+- **Performance:** Dashboard loads from cache first; network refresh runs in the background with timeouts.
+- **Offline:** Local edits while offline; auto-sync when the network returns (signed-in users).
+- **Calendar:** Overdue-events reminder on sign-in; click event opens day list (not edit form); tooltips for truncated titles.
+- **UI:** Header brand/tab hierarchy polish; privacy policy page restyle.
 
 ---
 

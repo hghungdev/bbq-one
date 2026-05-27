@@ -337,4 +337,9 @@ export const vi: Record<I18nKey, string> = {
   'calendar.overflow.btn.prev': 'TRƯỚC',
   'calendar.overflow.btn.next': 'TIẾP',
   'calendar.overflow.btn.save': 'LƯU',
+  'calendar.overdue.title': 'Sự kiện đã qua hạn',
+  'calendar.overdue.intro':
+    'Các sự kiện quá hạn chưa đánh dấu hoàn thành ({n} mục). Tích những việc đã xong, rồi xác nhận.',
+  'calendar.overdue.btnLater': 'ĐỂ SAU',
+  'calendar.overdue.btnConfirm': 'HOÀN THÀNH',
 }

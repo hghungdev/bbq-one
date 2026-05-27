@@ -335,6 +335,11 @@ export const en = {
   'calendar.overflow.btn.prev': 'PREV',
   'calendar.overflow.btn.next': 'NEXT',
   'calendar.overflow.btn.save': 'SAVE',
+  'calendar.overdue.title': 'Overdue events',
+  'calendar.overdue.intro':
+    'These past events are not marked done yet ({n} total). Check the ones you finished, then confirm.',
+  'calendar.overdue.btnLater': 'LATER',
+  'calendar.overdue.btnConfirm': 'MARK DONE',
 } as const
 
 export type I18nKey = keyof typeof en

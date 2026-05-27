@@ -32,9 +32,9 @@ function onCellClick(): void {
   store.openModalForDate(dateKey.value)
 }
 
-function onEventClick(id: string, e: Event): void {
+function onEventClick(e: Event): void {
   e.stopPropagation()
-  store.openModalForEdit(id)
+  store.openModalForDate(dateKey.value)
 }
 </script>
 
@@ -59,7 +59,8 @@ function onEventClick(id: string, e: Event): void {
         :key="ev.id"
         class="cal-cell__event"
         :class="{ 'cal-cell__event--done': ev.is_done }"
-        @click="onEventClick(ev.id, $event)"
+        :title="ev.title.trim() || undefined"
+        @click="onEventClick($event)"
       >
         <span class="cal-cell__event-title">{{ ev.title }}</span>
       </li>

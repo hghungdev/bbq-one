@@ -10,6 +10,7 @@
   import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
   import CalendarTab from '@/components/calendar/CalendarTab.vue'
   import CalendarTodayBanner from '@/components/calendar/CalendarTodayBanner.vue'
+  import CalendarOverdueReminderDialog from '@/components/calendar/CalendarOverdueReminderDialog.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useAppTimezoneStore } from '@/stores/appTimezone'
@@ -32,6 +33,11 @@
     isAutoSyncCompleteMessage,
   } from '@/services/autoSync.service'
   import { isOnline, onNetworkStatusChange } from '@/services/networkReachability.service'
+  import {
+    dismissOverdueReminder,
+    groupOverdueIncompleteEvents,
+    isOverdueReminderDismissed,
+  } from '@/services/calendarOverdueReminder.service'
 
   const auth = useAuthStore()
   const { isAuthenticated } = storeToRefs(auth)
@@ -54,6 +60,7 @@
   const { colW2, onResizeStart } = useColumnResize()
 
   const showLoginModal = ref(false)
+  const showOverdueReminder = ref(false)
 
   const headerClock = ref(formatAppDateTime(new Date(), utcOffsetHours.value))
   const headerClockTooltip = computed(
@@ -162,6 +169,9 @@
       if (online) void refreshStoresFromNetwork()
     })
     chrome.runtime.onMessage.addListener(onAutoSyncMessage)
+    if (isAuthenticated.value) {
+      void maybeShowOverdueReminder()
+    }
   })
 
   onUnmounted(() => {
@@ -194,6 +204,7 @@
     showLoginModal.value = false
     // Reload data từ cloud sau khi đăng nhập thành công
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+    await maybeShowOverdueReminder()
   }
 
   const syncBusy = computed(() => sync.status === 'syncing')
@@ -238,6 +249,34 @@
       ? { flex: '1 1 auto', minWidth: `${colW2.value}px` }
       : { width: `${colW2.value}px` },
   )
+
+  const overdueGroups = computed(() =>
+    groupOverdueIncompleteEvents(calendarEvents.events),
+  )
+
+  async function maybeShowOverdueReminder(): Promise<void> {
+    if (!dataReady.value || !isAuthenticated.value) return
+    if (showOverdueReminder.value) return
+    if (await isOverdueReminderDismissed()) return
+    if (overdueGroups.value.length === 0) return
+    showOverdueReminder.value = true
+  }
+
+  async function closeOverdueReminder(): Promise<void> {
+    showOverdueReminder.value = false
+    await dismissOverdueReminder()
+  }
+
+  async function onOverdueReminderConfirm(checkedIds: string[]): Promise<void> {
+    if (checkedIds.length > 0) {
+      await calendarEvents.markEventsDone(checkedIds)
+    }
+    await closeOverdueReminder()
+  }
+
+  function onOverdueReminderClose(): void {
+    void closeOverdueReminder()
+  }
 
   function onOpenCalendarFromTodayBanner(): void {
     activeTab.value = 'calendar'
@@ -455,6 +494,13 @@
 
     <!-- Login popup: hiện ngay trên dashboard thay vì navigate sang trang riêng -->
     <LoginModal v-if="showLoginModal" @close="showLoginModal = false" @success="onLoginSuccess" />
+
+    <CalendarOverdueReminderDialog
+      :visible="showOverdueReminder"
+      :groups="overdueGroups"
+      @close="onOverdueReminderClose"
+      @confirm="onOverdueReminderConfirm"
+    />
   </div>
 </template>
 

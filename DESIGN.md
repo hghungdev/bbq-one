@@ -330,7 +330,7 @@ Keep legal copy in sync with `manifest.json` version and actual permissions.
 ```yaml
 # Mirrors src/assets/styles/global.css — do not edit here without updating CSS
 product: BBQOne
-version: 1.2.0
+version: 1.2.1
 popup:
   minWidth: 720px
   height: 600px

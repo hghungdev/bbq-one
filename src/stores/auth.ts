@@ -9,6 +9,7 @@ import { authService } from '@/services/auth.service'
 import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
 import { clearUpcomingBannerDismiss } from '@/services/calendarBannerDismiss.service'
+import { clearOverdueReminderDismiss } from '@/services/calendarOverdueReminder.service'
 
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session | null>(null)
@@ -57,6 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
           if (event === 'SIGNED_IN' && newSession) {
             void bootstrapBookmarkBaseline()
             void clearUpcomingBannerDismiss()
+            void clearOverdueReminderDismiss()
           }
           if (!newSession) {
             void clearPersistedBookmarkTreeHash()
@@ -82,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = data.session.user
     void persistLoggedInForContextMenu(true)
     void clearUpcomingBannerDismiss()
+    void clearOverdueReminderDismiss()
   }
 
   async function logout(): Promise<void> {
