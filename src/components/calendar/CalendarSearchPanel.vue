@@ -108,7 +108,7 @@ function onRowClick(ev: CalendarEvent, e: MouseEvent): void {
   padding: 6px 8px;
   margin-bottom: 4px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-family: inherit;

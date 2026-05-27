@@ -583,12 +583,12 @@
     min-width: 0;
   }
 
-  /* Tab có box — inactive nhẹ hơn brand; active accent rõ */
+  /* Tab dạng pill — giống segmented control, không khung vuông từng ô */
   .shell__tabs :deep(.retro-btn) {
     min-width: auto;
-    padding: 5px 12px;
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
+    padding: 6px 14px;
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--text-secondary);
     font-weight: 500;
     letter-spacing: -0.012em;
@@ -720,9 +720,16 @@
 
   .shell__tab-btn--active {
     border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    background: var(--accent-soft-bg) !important;
+    color: var(--on-accent) !important;
+    background: var(--accent) !important;
     font-weight: 600;
+    box-shadow: 0 1px 2px var(--panel-ring);
+  }
+
+  .shell__tab-btn--active:hover:not(:disabled) {
+    color: var(--on-accent) !important;
+    background: var(--color-primary-focus) !important;
+    border-color: var(--color-primary-focus) !important;
   }
 
   .shell__sep-v {

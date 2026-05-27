@@ -32,7 +32,7 @@ defineProps<{
   padding: 0;
   margin: 0;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   background: var(--bg-panel);
   color: var(--text-secondary);
   cursor: pointer;

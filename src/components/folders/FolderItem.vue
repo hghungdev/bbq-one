@@ -143,7 +143,7 @@ function pickAction(
         @contextmenu="onContextMenu"
       >
         <div class="folder-item__row">
-          <span class="folder-item__label">&gt; {{ folder.name }}</span>
+          <span class="folder-item__label">{{ folder.name }}</span>
 
           <span
             v-if="folder.is_secure"
@@ -231,6 +231,7 @@ function pickAction(
   align-items: stretch;
   gap: 2px;
   border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   margin-bottom: 4px;
   position: relative;
 }
@@ -260,7 +261,7 @@ function pickAction(
   margin: 0;
   padding: 6px 8px;
   border: none;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;

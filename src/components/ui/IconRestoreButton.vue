@@ -8,35 +8,29 @@ defineProps<{
 <template>
   <button
     type="button"
-    class="icon-del"
+    class="icon-rst"
     :title="title"
     :aria-label="title"
     :disabled="disabled"
   >
     <svg
-      class="icon-del__svg"
+      class="icon-rst__svg"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       focusable="false"
     >
-      <polyline
-        class="icon-del__stroke"
-        points="3 6 5 6 21 6"
-      />
       <path
-        class="icon-del__stroke"
-        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+        class="icon-rst__stroke"
+        d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
       />
-      <line class="icon-del__stroke" x1="10" y1="11" x2="10" y2="17" />
-      <line class="icon-del__stroke" x1="14" y1="11" x2="14" y2="17" />
     </svg>
   </button>
 </template>
 
 <style scoped>
-.icon-del {
+.icon-rst {
   box-sizing: border-box;
   flex: 0 0 auto;
   display: inline-flex;
@@ -49,36 +43,37 @@ defineProps<{
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--danger);
+  color: var(--accent);
   cursor: pointer;
 }
 
-.icon-del:hover:not(:disabled) {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 12%, var(--bg-secondary));
+.icon-rst:hover:not(:disabled) {
+  border-color: var(--accent-soft-border);
+  color: var(--accent);
+  background: var(--surface-accent-muted);
 }
 
-.icon-del:focus-visible {
+.icon-rst:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-.icon-del:disabled {
+.icon-rst:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.icon-del__svg {
+.icon-rst__svg {
   width: 15px;
   height: 15px;
   display: block;
 }
 
-.icon-del__stroke {
+.icon-rst__stroke {
   stroke: currentColor;
   stroke-width: 1.85;
   stroke-linecap: round;
   stroke-linejoin: round;
+  fill: none;
 }
 </style>

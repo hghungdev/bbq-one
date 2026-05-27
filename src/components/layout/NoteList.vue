@@ -166,7 +166,7 @@ function onCancelDelete(): void {
         v-if="displayedNotes.length === 0 && folderLocked && !notes.searchQuery.trim()"
         class="note-list__empty retro-empty"
       >
-        &gt; {{ t('notes.folderLocked') }}
+        {{ t('notes.folderLocked') }}
       </p>
       <p
         v-else-if="!canAddNote && !notes.searchQuery.trim()"
@@ -237,8 +237,9 @@ function onCancelDelete(): void {
 .note-list__head {
   padding: 8px 10px;
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.012em;
   border-bottom: 1px solid var(--border);
 }
 

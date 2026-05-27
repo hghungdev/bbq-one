@@ -50,15 +50,16 @@ export function noteSearchPathLine(
 }
 
 /**
- * Breadcrumb cho kết quả search note — cùng phong cách bookmark: `NOTES > folder > tên hiển thị`.
+ * Breadcrumb kết quả search note — đồng bộ với bookmark: `Notes · folder · tên`.
  * Không có folder → segment `—`.
  */
 export function noteSearchBreadcrumbPath(
+  sectionLabel: string,
   folderName: string | null,
   noteLabel: string,
 ): string {
   const folder = folderName?.trim() ? folderName.trim() : '—'
-  return `NOTES > ${folder} > ${noteLabel}`
+  return `${sectionLabel} · ${folder} · ${noteLabel}`
 }
 
 /** Escape text for safe insertion into HTML (except we wrap in mark). */

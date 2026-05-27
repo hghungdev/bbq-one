@@ -353,13 +353,13 @@ export const bookmarksService = {
     pushFromRows(
       flattenBookmarkUrls(liveTree),
       'live',
-      'LIVE BROWSER',
+      'Live browser',
     )
     for (const bk of backups) {
       pushFromRows(
         flattenBookmarkUrls(bk.tree_json),
         bk.id,
-        `BACKUP · ${bk.label}`,
+        `Backup · ${bk.label}`,
       )
     }
 

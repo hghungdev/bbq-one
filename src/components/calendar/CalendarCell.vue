@@ -79,29 +79,36 @@ function onEventClick(e: Event): void {
   min-height: 0;
   overflow: hidden;
   cursor: pointer;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
 }
 
 .cal-cell:hover:not(.cal-cell--past) {
-  background: var(--bg-secondary);
+  background: var(--bg-panel);
 }
 
 .cal-cell--past {
   cursor: default;
-  background: var(--bg-panel);
+  background: var(--bg-primary);
 }
 
-.cal-cell--past .cal-cell__day {
+.cal-cell--past .cal-cell__day,
+.cal-cell--other-month .cal-cell__day {
   color: var(--text-muted);
 }
 
-.cal-cell--other-month {
-  opacity: 0.45;
+.cal-cell--other-month .cal-cell__event,
+.cal-cell--other-month .cal-cell__overflow {
+  opacity: 0.62;
 }
 
 .cal-cell--today {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  background: var(--accent-soft-bg);
+  box-shadow: inset 0 0 0 1px var(--accent-soft-border);
+}
+
+.cal-cell--today .cal-cell__day {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .cal-cell--modal-target {
@@ -115,7 +122,6 @@ function onEventClick(e: Event): void {
 }
 
 .cal-cell--today.cal-cell--search-focus {
-  outline-color: var(--accent);
   box-shadow: inset 0 0 0 2px var(--calendar-search-focus-border);
 }
 
@@ -148,7 +154,7 @@ function onEventClick(e: Event): void {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;

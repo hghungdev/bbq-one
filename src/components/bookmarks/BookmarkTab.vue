@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
+import IconRestoreButton from '@/components/ui/IconRestoreButton.vue'
 import DeleteBackupModal from '@/components/bookmarks/DeleteBackupModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
@@ -216,7 +218,7 @@ async function onRefreshLive(): Promise<void> {
       </span>
     </div>
 
-    <p v-if="bm.error" class="bm-tab__error">&gt; {{ t('common.error') }} {{ bm.error }}</p>
+    <p v-if="bm.error" class="bm-tab__error">{{ t('common.error') }} {{ bm.error }}</p>
 
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
@@ -230,12 +232,20 @@ async function onRefreshLive(): Promise<void> {
           :class="{ 'bm-tab__backup-item--active': bm.selectedBackupId === bk.id }"
           @click="onBackupRowClick(bk.id)"
         >
-          <span class="bm-tab__backup-label">{{ bk.label }}</span>
-          <span class="bm-tab__backup-hint">{{ bk.browser_hint }}</span>
-          <div class="bm-tab__backup-actions">
-            <button class="bm-tab__act-btn" :title="t('bookmark.rstTitle')" @click.stop="onRestoreClick(bk.id)">{{ t('bookmark.rst') }}</button>
-            <button class="bm-tab__act-btn bm-tab__act-btn--del" :title="t('bookmark.delTitle')" @click.stop="onDeleteBackupClick(bk.id)">{{ t('bookmark.del') }}</button>
+          <div class="bm-tab__backup-top">
+            <span class="bm-tab__backup-label">{{ bk.label }}</span>
+            <div class="bm-tab__backup-actions">
+              <IconRestoreButton
+                :title="t('bookmark.rstTitle')"
+                @click.stop="onRestoreClick(bk.id)"
+              />
+              <IconDeleteButton
+                :title="t('bookmark.delTitle')"
+                @click.stop="onDeleteBackupClick(bk.id)"
+              />
+            </div>
           </div>
+          <span class="bm-tab__backup-hint">{{ bk.browser_hint }}</span>
         </div>
       </div>
 
@@ -386,9 +396,10 @@ async function onRefreshLive(): Promise<void> {
   margin: 0 0 6px;
   padding: 0 12px 6px;
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
-  letter-spacing: 0.08em;
+  letter-spacing: -0.012em;
 }
 .bm-tab__empty {
   margin: 0;
@@ -397,7 +408,7 @@ async function onRefreshLive(): Promise<void> {
   color: var(--text-muted);
 }
 .bm-tab__backup-item {
-  padding: 6px 12px;
+  padding: 6px 10px;
   cursor: pointer;
   font-size: var(--font-size-sm);
   border-bottom: 1px solid var(--border);
@@ -408,35 +419,49 @@ async function onRefreshLive(): Promise<void> {
 .bm-tab__backup-item:hover,
 .bm-tab__backup-item--active {
   background: var(--bg-panel);
+}
+
+.bm-tab__backup-item--active .bm-tab__backup-label {
   color: var(--accent);
 }
+
+.bm-tab__backup-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .bm-tab__backup-label {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: var(--font-size-sm);
-  word-break: break-all;
+  line-height: 1.35;
+  color: var(--text-primary);
+  word-break: break-word;
 }
 .bm-tab__backup-hint {
-  font-size: 10px;
+  font-size: var(--font-size-sm);
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: -0.012em;
 }
 .bm-tab__backup-actions {
   display: flex;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  align-items: center;
   gap: 4px;
-  margin-top: 2px;
 }
 .bm-tab__act-btn {
-  background: none;
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   color: var(--accent);
-  font-size: 10px;
-  padding: 1px 4px;
+  font-size: var(--font-size-sm);
+  padding: 2px 8px;
   cursor: pointer;
-  font-family: var(--font-mono, monospace);
+  font-family: inherit;
 }
 .bm-tab__act-btn:hover { border-color: var(--accent); }
-.bm-tab__act-btn--del { color: var(--danger); }
-.bm-tab__act-btn--del:hover { border-color: var(--danger); }
 
 .bm-tab__btn--danger {
   border-color: var(--danger) !important;
@@ -474,8 +499,9 @@ async function onRefreshLive(): Promise<void> {
 
 .bm-tab__global-sec-title {
   font-size: var(--font-size-sm);
-  color: var(--accent);
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.012em;
 }
 
 .bm-tab__global-list {

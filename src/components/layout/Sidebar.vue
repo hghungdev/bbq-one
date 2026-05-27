@@ -271,8 +271,9 @@ function closeCreateFolderModal(): void {
 .sidebar__head {
   padding: 8px 10px;
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.012em;
   border-bottom: 1px solid var(--border);
 }
 
@@ -307,8 +308,9 @@ function closeCreateFolderModal(): void {
 .sidebar__tag-head {
   margin-bottom: 6px;
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.012em;
 }
 
 .sidebar__tag-list {

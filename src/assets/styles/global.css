@@ -9,13 +9,14 @@
   --color-primary-on-dark: #2997ff;
 
   --color-canvas: #ffffff;
-  --color-parchment: #f5f5f7;
-  --color-pearl: #fafafc;
-  --color-hairline: #e0e0e0;
+  /* Nền hơi ấm — tránh xám lạnh quá so với bản vintage / v1.1.x */
+  --color-parchment: #f6f5f2;
+  --color-pearl: #faf9f7;
+  --color-hairline: #e4e2dd;
 
-  --color-ink: #1d1d1f;
-  --color-body-muted: #6e6e73;
-  --color-ink-muted-48: #86868b;
+  --color-ink: #2b2a27;
+  --color-body-muted: #6b6964;
+  --color-ink-muted-48: #86847e;
 
   --color-tile-1: #272729;
   --color-on-primary: #ffffff;
@@ -33,7 +34,7 @@
   --bg-code: var(--color-tile-1);
   --text-on-code: var(--color-parchment);
   --text-primary: var(--color-ink);
-  --text-secondary: #515154;
+  --text-secondary: #4f4d48;
   --text-muted: var(--color-body-muted);
 
   /* Một accent duy nhất (spec Apple) */
@@ -91,10 +92,11 @@
   --font-size-xs: 12px;
   --font-size-lg: 15px;
 
-  --radius-sm: 8px;
-  --radius-md: 11px;
-  --radius-lg: 18px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-pill: 9999px;
+  --radius-control: var(--radius-md);
 
   --popup-min-width: 720px;
 }

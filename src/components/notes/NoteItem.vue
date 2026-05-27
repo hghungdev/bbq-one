@@ -60,7 +60,7 @@ const folderNameForNote = computed((): string | null => {
 })
 
 const searchBreadcrumbPlain = computed(() =>
-  noteSearchBreadcrumbPath(folderNameForNote.value, label.value),
+  noteSearchBreadcrumbPath(t('notes.header'), folderNameForNote.value, label.value),
 )
 
 const searchBreadcrumbHtml = computed(() =>
@@ -174,7 +174,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
               <span v-else class="note-item__title" v-html="titleHtml" />
             </template>
             <template v-else>
-              &gt; {{ label }}
+              {{ label }}
             </template>
           </div>
           <div class="note-item__foot">
@@ -198,6 +198,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
   align-items: stretch;
   gap: 2px;
   border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   margin-bottom: 4px;
 }
 
@@ -226,7 +227,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
   margin: 0;
   padding: 6px 8px;
   border: none;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;

@@ -4,7 +4,13 @@ import { buildMonthGrid, formatLocalDate } from '@/utils/calendarDate'
 import { useLangStore } from '@/stores/uiLang'
 import CalendarCell from '@/components/calendar/CalendarCell.vue'
 
-const props = defineProps<{ year: number; month: number }>()
+const props = withDefaults(defineProps<{
+  year: number
+  month: number
+  showWeekdays?: boolean
+}>(), {
+  showWeekdays: true,
+})
 const { t } = useLangStore()
 
 const cells = computed(() => buildMonthGrid(props.year, props.month))
@@ -26,7 +32,7 @@ function isCurrentMonth(d: Date): boolean {
 
 <template>
   <div class="cal-grid">
-    <div class="cal-grid__weekdays">
+    <div v-if="showWeekdays" class="cal-grid__weekdays">
       <div v-for="w in weekdayLabels" :key="w" class="cal-grid__weekday">{{ w }}</div>
     </div>
     <div class="cal-grid__cells">

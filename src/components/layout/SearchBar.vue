@@ -90,6 +90,12 @@ function searchAriaLabel(): string {
   return t('search.ariaCalendar')
 }
 
+function searchPlaceholder(): string {
+  if (props.searchMode === 'notes') return t('search.placeholderNotes')
+  if (props.searchMode === 'bookmarks') return t('search.placeholderBookmarks')
+  return t('search.placeholderCalendar')
+}
+
 onMounted(() => {
   if (props.searchMode === 'notes') localQuery.value = notes.searchQuery
   else if (props.searchMode === 'bookmarks') localQuery.value = bookmarks.searchQuery
@@ -99,11 +105,10 @@ onMounted(() => {
 
 <template>
   <div class="search-bar">
-    <span class="search-bar__label" aria-hidden="true">{{ t('search.label') }}</span>
     <RetroInput
       id="bbqone-search"
       v-model="localQuery"
-      :placeholder="t('search.placeholder')"
+      :placeholder="searchPlaceholder()"
       autocomplete="off"
       :aria-label="searchAriaLabel()"
     />
@@ -121,17 +126,16 @@ onMounted(() => {
   gap: 8px;
   flex-wrap: wrap;
   width: 100%;
-}
-
-.search-bar__label {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+  padding: 6px 8px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  border: 1px solid var(--input-border);
 }
 
 .search-bar :deep(.retro-input) {
   flex: 1 1 160px;
   min-width: 120px;
+  background: var(--bg-secondary);
 }
 
 .search-bar__state {

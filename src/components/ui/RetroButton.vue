@@ -24,7 +24,7 @@ defineProps<{
   justify-content: center;
   min-width: 120px;
   padding: 10px 20px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   border: 1px solid var(--border);
   background: var(--bg-panel);
   color: var(--accent);
@@ -60,5 +60,6 @@ defineProps<{
   min-width: auto;
   padding: 6px 14px;
   font-size: var(--font-size-sm);
+  border-radius: var(--radius-pill);
 }
 </style>

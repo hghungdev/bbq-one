@@ -63,15 +63,22 @@ const monthLabel = computed(() => {
 }
 
 .cal-month-nav__label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
   color: var(--text-primary);
   min-width: 140px;
   text-align: center;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.02em;
 }
 
-.cal-month-nav__icon-btn {
-  min-width: 44px;
+.cal-month-nav :deep(.cal-month-nav__icon-btn) {
+  min-width: 36px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.cal-month-nav :deep(.cal-month-nav__today) {
+  border-radius: var(--radius-pill);
 }
 
 .cal-month-nav__today {

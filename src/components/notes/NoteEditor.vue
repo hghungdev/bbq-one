@@ -219,12 +219,12 @@ onBeforeUnmount(() => {
   <div class="note-editor">
     <template v-if="!notesStore.activeNote">
       <p class="note-editor__empty retro-empty">
-        &gt; {{ t('editor.noNoteSelected') }}<span class="cursor-blink" aria-hidden="true"></span>
+        {{ t('editor.noNoteSelected') }}
       </p>
     </template>
     <template v-else-if="bodiesForEditor.length === 0">
       <p class="note-editor__empty retro-empty">
-        &gt; {{ t('editor.noBody') }}<span class="cursor-blink" aria-hidden="true"></span>
+        {{ t('editor.noBody') }}
       </p>
       <RetroButton
         variant="sm"
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
             :aria-selected="notesStore.activeBodyId === b.id"
             @click="onSelectBodyTab(b.id)"
           >
-            &gt; {{ bodyListLabel(b, i) }}
+            {{ bodyListLabel(b, i) }}
           </button>
           <RetroButton
             variant="sm"

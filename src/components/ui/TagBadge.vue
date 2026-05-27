@@ -26,7 +26,7 @@ const emit = defineEmits<{
   align-items: center;
   margin: 0 4px 4px 0;
   padding: 2px 6px;
-  border-radius: 0;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-secondary);

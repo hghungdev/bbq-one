@@ -191,10 +191,12 @@ async function onDismissUpcoming(e: MouseEvent): Promise<void> {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 8px 8px 12px;
+  padding: 8px 10px 8px 12px;
+  margin: 0 8px;
   flex: 0 0 auto;
   text-align: left;
   color: var(--text-primary);
+  border-radius: var(--radius-md);
 }
 
 .calendar-today-banner--today {
