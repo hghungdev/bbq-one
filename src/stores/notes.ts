@@ -7,6 +7,12 @@ import { useFoldersStore } from '@/stores/folders'
 import { useSecureFolderStore } from '@/stores/secureFolder'
 import type { Note, NoteBody } from '@/types'
 import { decryptField, encryptField } from '@/utils/secureCrypto'
+import { withTimeout } from '@/utils/withTimeout'
+import { isNetworkError } from '@/utils/networkErrors'
+import { scheduleAutoSync } from '@/services/autoSync.service'
+import { isOnline } from '@/services/networkReachability.service'
+
+const NETWORK_LOAD_MS = 12_000
 
 export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])
@@ -93,25 +99,31 @@ export const useNotesStore = defineStore('notes', () => {
     })
   }
 
+  async function hydrateFromCache(): Promise<void> {
+    const cached = await chrome.storage.local.get([
+      NOTES_CACHE_KEY,
+      NOTE_BODIES_CACHE_KEY,
+    ])
+    const rawNotes = cached[NOTES_CACHE_KEY] as Note[] | undefined
+    const rawBodies = cached[NOTE_BODIES_CACHE_KEY] as NoteBody[] | undefined
+    if (Array.isArray(rawNotes) && rawNotes.length > 0) {
+      notes.value = rawNotes
+    }
+    if (Array.isArray(rawBodies) && rawBodies.length > 0) {
+      bodies.value = rawBodies
+    }
+  }
+
   async function loadAll(): Promise<void> {
     loadError.value = null
     try {
-      const cached = await chrome.storage.local.get([
-        NOTES_CACHE_KEY,
-        NOTE_BODIES_CACHE_KEY,
-      ])
-      const rawNotes = cached[NOTES_CACHE_KEY] as Note[] | undefined
-      const rawBodies = cached[NOTE_BODIES_CACHE_KEY] as NoteBody[] | undefined
-      if (Array.isArray(rawNotes) && rawNotes.length > 0) {
-        notes.value = rawNotes
-      }
-      if (Array.isArray(rawBodies) && rawBodies.length > 0) {
-        bodies.value = rawBodies
-      }
-      const [freshNotes, freshBodies] = await Promise.all([
-        notesService.getAll(),
-        noteBodiesService.getAll(),
-      ])
+      await hydrateFromCache()
+      if (!isOnline()) return
+      const [freshNotes, freshBodies] = await withTimeout(
+        Promise.all([notesService.getAll(), noteBodiesService.getAll()]),
+        NETWORK_LOAD_MS,
+        'Load notes timed out',
+      )
       notes.value = freshNotes
       bodies.value = freshBodies
       await persistCache()
@@ -208,24 +220,33 @@ export const useNotesStore = defineStore('notes', () => {
       }
     }
 
-    const data = await notesService.update(id, payload)
-    const merged: Note = { ...prev, ...data }
+    try {
+      const data = await notesService.update(id, payload)
+      const merged: Note = { ...prev, ...data }
 
-    if (folder?.is_secure) {
-      const k = secure.getKey(folderId!)
-      if (k) {
-        notes.value[idx] = {
-          ...merged,
-          title: await decryptField(data.title, k),
+      if (folder?.is_secure) {
+        const k = secure.getKey(folderId!)
+        if (k) {
+          notes.value[idx] = {
+            ...merged,
+            title: await decryptField(data.title, k),
+          }
+        } else {
+          notes.value[idx] = merged
         }
       } else {
         notes.value[idx] = merged
       }
-    } else {
-      notes.value[idx] = merged
+      isDirty.value = false
+      await persistCache()
+    } catch (e) {
+      if (isOnline() && !isNetworkError(e)) throw e
+      const ts = new Date().toISOString()
+      notes.value[idx] = { ...prev, ...updates, updated_at: ts }
+      isDirty.value = true
+      await persistCache()
+      scheduleAutoSync('note-offline')
     }
-    isDirty.value = false
-    await persistCache()
   }
 
   async function updateBody(
@@ -255,25 +276,43 @@ export const useNotesStore = defineStore('notes', () => {
       }
     }
 
-    const data = await noteBodiesService.update(id, payload)
-    const merged: NoteBody = { ...prev, ...data }
+    try {
+      const data = await noteBodiesService.update(id, payload)
+      const merged: NoteBody = { ...prev, ...data }
 
-    if (folder?.is_secure) {
-      const k = secure.getKey(folderId!)
-      if (k) {
-        bodies.value[idx] = {
-          ...merged,
-          label: await decryptField(data.label, k),
-          content: await decryptField(data.content, k),
+      if (folder?.is_secure) {
+        const k = secure.getKey(folderId!)
+        if (k) {
+          bodies.value[idx] = {
+            ...merged,
+            label: await decryptField(data.label, k),
+            content: await decryptField(data.content, k),
+          }
+        } else {
+          bodies.value[idx] = merged
         }
       } else {
         bodies.value[idx] = merged
       }
-    } else {
-      bodies.value[idx] = merged
+      isDirty.value = false
+      await persistCache()
+    } catch (e) {
+      if (isOnline() && !isNetworkError(e)) throw e
+      const ts = new Date().toISOString()
+      bodies.value[idx] = {
+        ...prev,
+        label: updates.label ?? prev.label,
+        content: updates.content ?? prev.content,
+        updated_at: ts,
+      }
+      const noteIdx = notes.value.findIndex((n) => n.id === prev.note_id)
+      if (noteIdx !== -1) {
+        notes.value[noteIdx] = { ...notes.value[noteIdx], updated_at: ts }
+      }
+      isDirty.value = true
+      await persistCache()
+      scheduleAutoSync('body-offline')
     }
-    isDirty.value = false
-    await persistCache()
   }
 
   async function createBodyForNote(noteId: string): Promise<NoteBody> {
@@ -407,6 +446,7 @@ export const useNotesStore = defineStore('notes', () => {
     clearSearch,
     setFilterTag,
     loadAll,
+    hydrateFromCache,
     createNote,
     createBodyForNote,
     updateNote,

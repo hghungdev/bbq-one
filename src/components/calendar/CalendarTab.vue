@@ -25,8 +25,7 @@ const viewMonth = ref(now.getMonth())
 /** Chỉ cuộn trong khối này — tránh scrollIntoView kéo cả popup làm mất thanh tháng. */
 const gridScrollRef = ref<HTMLElement | null>(null)
 
-onMounted(async () => {
-  await store.loadAll()
+onMounted(() => {
   scrollToTodayInView('auto')
 })
 

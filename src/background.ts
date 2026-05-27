@@ -3,6 +3,7 @@ import {
   scheduleBookmarkAutoBackup,
 } from '@/services/bookmarkAutoBackup.service'
 import { syncService } from '@/services/sync.service'
+import { initAutoSyncOnNetworkRestore } from '@/services/autoSync.service'
 import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
 import {
   isRecoverableRefreshTokenAuthError,
@@ -98,6 +99,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 })
 
 wireBookmarkAutoBackup()
+initAutoSyncOnNetworkRestore()
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== ALARM_NAME) return

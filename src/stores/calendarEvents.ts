@@ -8,6 +8,10 @@ import type {
   CalendarEventCreateInput,
   CalendarEventUpdateInput,
 } from '@/types/calendar'
+import { withTimeout } from '@/utils/withTimeout'
+import { isOnline } from '@/services/networkReachability.service'
+
+const NETWORK_LOAD_MS = 12_000
 
 export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   const events = ref<CalendarEvent[]>([])
@@ -75,15 +79,24 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     await chrome.storage.local.set({ [CALENDAR_EVENTS_CACHE_KEY]: events.value })
   }
 
+  async function hydrateFromCache(): Promise<void> {
+    const cached = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
+    const raw = cached[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[] | undefined
+    if (Array.isArray(raw) && raw.length > 0) {
+      events.value = withNormalizedDates(raw)
+    }
+  }
+
   async function loadAll(): Promise<void> {
     loadError.value = null
     try {
-      const cached = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
-      const raw = cached[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[] | undefined
-      if (Array.isArray(raw) && raw.length > 0) {
-        events.value = withNormalizedDates(raw)
-      }
-      const fresh = await calendarEventsService.getAll()
+      await hydrateFromCache()
+      if (!isOnline()) return
+      const fresh = await withTimeout(
+        calendarEventsService.getAll(),
+        NETWORK_LOAD_MS,
+        'Load calendar timed out',
+      )
       events.value = withNormalizedDates(fresh)
       await persistCache()
     } catch (e) {
@@ -173,6 +186,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     clearCalendarSearch,
     calendarSearchMatches,
     loadAll,
+    hydrateFromCache,
     createEvent,
     updateEvent,
     deleteEvent,

@@ -14,9 +14,9 @@ export const en = {
   'common.operationFailed': 'Operation failed',
 
   // ── App header ──
-  'app.tabs.notes': 'NOTES',
-  'app.tabs.bookmark': 'BOOKMARK',
-  'app.tabs.calendar': 'CALENDAR',
+  'app.tabs.notes': 'Notes',
+  'app.tabs.bookmark': 'Bookmark',
+  'app.tabs.calendar': 'Calendar',
   'app.tabs.aria': 'Main sections',
   'app.sync': 'SYNC',
   'app.settings': 'SETTINGS',
@@ -40,6 +40,8 @@ export const en = {
   'app.sync.titleIdle': 'Cloud sync — up to date when you sync',
   'app.sync.titleFailed': 'Sync failed — click to retry',
   'app.sync.titleReady': 'Click to sync with cloud',
+  'app.sync.titleOffline': 'Offline — changes saved locally; will sync when online',
+  'app.sync.titleOfflinePending': 'Offline — unsaved changes will sync when online',
   'app.errorConnect': '[ERROR] Cannot connect to server',
   'app.dragResize': 'Drag to resize',
 

@@ -16,9 +16,9 @@ export const vi: Record<I18nKey, string> = {
   'common.operationFailed': 'Thao tác thất bại',
 
   // ── App header ──
-  'app.tabs.notes': 'GHI CHÚ',
-  'app.tabs.bookmark': 'BOOKMARK',
-  'app.tabs.calendar': 'LỊCH',
+  'app.tabs.notes': 'Ghi chú',
+  'app.tabs.bookmark': 'Bookmark',
+  'app.tabs.calendar': 'Lịch',
   'app.tabs.aria': 'Khu vực chính',
   'app.sync': 'ĐỒNG BỘ',
   'app.settings': 'CÀI ĐẶT',
@@ -42,6 +42,8 @@ export const vi: Record<I18nKey, string> = {
   'app.sync.titleIdle': 'Đồng bộ cloud — nhấn ĐỒNG BỘ khi cần',
   'app.sync.titleFailed': 'Đồng bộ thất bại — nhấp để thử lại',
   'app.sync.titleReady': 'Nhấn để đồng bộ cloud',
+  'app.sync.titleOffline': 'Ngoại tuyến — đã lưu local, sẽ tự đồng bộ khi có mạng',
+  'app.sync.titleOfflinePending': 'Ngoại tuyến — thay đổi chưa lên cloud, sẽ sync khi có mạng',
   'app.errorConnect': '[LỖI] Không kết nối được máy chủ',
   'app.dragResize': 'Kéo để thay đổi kích thước',
 

@@ -27,6 +27,11 @@
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
   import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
   import { todayLocalKey } from '@/utils/calendarDate'
+  import {
+    initAutoSyncOnNetworkRestore,
+    isAutoSyncCompleteMessage,
+  } from '@/services/autoSync.service'
+  import { isOnline, onNetworkStatusChange } from '@/services/networkReachability.service'
 
   const auth = useAuthStore()
   const { isAuthenticated } = storeToRefs(auth)
@@ -40,6 +45,7 @@
   const { t } = langStore
   const calendarEvents = useCalendarEventsStore()
   const dataReady = ref(false)
+  const networkOnline = ref(isOnline())
   const showSettings = ref(false)
   const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('calendar')
   const renamingFolderId = ref<string | null>(null)
@@ -60,6 +66,26 @@
     }),
   )
   let headerClockTimer: ReturnType<typeof setInterval> | null = null
+  let stopAutoSyncListener: (() => void) | null = null
+  let stopNetworkListener: (() => void) | null = null
+
+  async function refreshStoresFromNetwork(): Promise<void> {
+    if (!isOnline()) return
+    await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+  }
+
+  function onAutoSyncMessage(
+    msg: unknown,
+    _sender: chrome.runtime.MessageSender,
+    _sendResponse: (response?: unknown) => void,
+  ): void {
+    if (!isAutoSyncCompleteMessage(msg)) return
+    void refreshStoresFromNetwork().then(() => {
+      if (sync.status !== 'syncing') {
+        sync.status = 'synced'
+      }
+    })
+  }
 
   function tickHeaderClock(): void {
     headerClock.value = formatAppDateTime(new Date(), utcOffsetHours.value)
@@ -122,15 +148,28 @@
     tickHeaderClock()
     headerClockTimer = setInterval(tickHeaderClock, 1000)
     await langStore.loadLang()
-    await folders.loadAll()
-    await notes.loadAll()
-    await calendarEvents.loadAll()
+    // Hiện UI ngay từ cache; refresh network chạy nền (tránh treo popup khi Supabase chậm).
+    await Promise.all([
+      folders.hydrateFromCache(),
+      notes.hydrateFromCache(),
+      calendarEvents.hydrateFromCache(),
+    ])
     dataReady.value = true
+    void refreshStoresFromNetwork()
+    stopAutoSyncListener = initAutoSyncOnNetworkRestore()
+    stopNetworkListener = onNetworkStatusChange((online) => {
+      networkOnline.value = online
+      if (online) void refreshStoresFromNetwork()
+    })
+    chrome.runtime.onMessage.addListener(onAutoSyncMessage)
   })
 
   onUnmounted(() => {
     window.removeEventListener('keydown', onGlobalKeydown, true)
     if (headerClockTimer) clearInterval(headerClockTimer)
+    stopAutoSyncListener?.()
+    stopNetworkListener?.()
+    chrome.runtime.onMessage.removeListener(onAutoSyncMessage)
   })
 
   watch(utcOffsetHours, () => {
@@ -161,6 +200,7 @@
 
   /** Xanh khi vừa đồng bộ thành công (store = synced); mặc định khi idle. */
   const syncBadgeVariant = computed((): CloudSyncVariant => {
+    if (!networkOnline.value && (notes.isDirty || sync.status === 'error')) return 'unsaved'
     if (sync.status === 'syncing') return 'syncing'
     if (notes.isDirty) return 'unsaved'
     if (sync.status === 'error') return 'error'
@@ -170,6 +210,7 @@
 
   async function onSync(): Promise<void> {
     if (syncBusy.value) return
+    if (!networkOnline.value) return
     try {
       await sync.runManualSync()
     } catch {
@@ -178,6 +219,10 @@
   }
 
   const syncBadgeTitle = computed(() => {
+    if (!networkOnline.value) {
+      if (notes.isDirty) return t('app.sync.titleOfflinePending')
+      return t('app.sync.titleOffline')
+    }
     if (syncBusy.value) return t('app.sync.titleSyncing')
     const err = sync.lastError?.trim()
     if (sync.status === 'error' && err) return `${err} — ${t('app.sync.titleFailed')}`
@@ -206,6 +251,7 @@
       <div class="shell__header-row shell__header-row--top">
         <div class="shell__header-left">
           <span class="shell__brand">BBQOne</span>
+          <span class="shell__brand-sep" aria-hidden="true" />
           <nav class="shell__tabs" role="tablist" :aria-label="t('app.tabs.aria')">
             <RetroButton
               variant="sm"
@@ -472,7 +518,15 @@
     align-items: center;
     flex: 0 1 auto;
     min-width: 0;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  .shell__brand-sep {
+    flex: 0 0 auto;
+    align-self: center;
+    width: 1px;
+    height: 18px;
+    background: var(--border);
   }
 
   .shell__tabs {
@@ -481,6 +535,23 @@
     align-items: center;
     gap: 6px;
     min-width: 0;
+  }
+
+  /* Tab có box — inactive nhẹ hơn brand; active accent rõ */
+  .shell__tabs :deep(.retro-btn) {
+    min-width: auto;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: -0.012em;
+  }
+
+  .shell__tabs :deep(.retro-btn:hover:not(:disabled)) {
+    color: var(--accent);
+    border-color: var(--accent-soft-border);
+    background: var(--accent-soft-bg);
   }
 
   /* Icon toolbar bên phải */
@@ -496,8 +567,10 @@
 
   .shell__brand {
     flex: 0 0 auto;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
     color: var(--accent);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     white-space: nowrap;
   }
 
@@ -602,6 +675,8 @@
   .shell__tab-btn--active {
     border-color: var(--accent) !important;
     color: var(--accent) !important;
+    background: var(--accent-soft-bg) !important;
+    font-weight: 600;
   }
 
   .shell__sep-v {

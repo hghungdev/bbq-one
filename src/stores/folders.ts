@@ -4,6 +4,10 @@ import { FOLDERS_CACHE_KEY } from '@/constants/storage'
 import { foldersService } from '@/services/folders.service'
 import { useNotesStore } from '@/stores/notes'
 import type { Folder } from '@/types'
+import { withTimeout } from '@/utils/withTimeout'
+import { isOnline } from '@/services/networkReachability.service'
+
+const NETWORK_LOAD_MS = 12_000
 
 function sortFoldersByUpdatedDesc(list: Folder[]): Folder[] {
   return list.slice().sort((a, b) => {
@@ -26,15 +30,24 @@ export const useFoldersStore = defineStore('folders', () => {
     await chrome.storage.local.set({ [FOLDERS_CACHE_KEY]: folders.value })
   }
 
+  async function hydrateFromCache(): Promise<void> {
+    const cached = await chrome.storage.local.get(FOLDERS_CACHE_KEY)
+    const raw = cached[FOLDERS_CACHE_KEY] as Folder[] | undefined
+    if (Array.isArray(raw) && raw.length > 0) {
+      folders.value = raw
+    }
+  }
+
   async function loadAll(): Promise<void> {
     loadError.value = null
     try {
-      const cached = await chrome.storage.local.get(FOLDERS_CACHE_KEY)
-      const raw = cached[FOLDERS_CACHE_KEY] as Folder[] | undefined
-      if (Array.isArray(raw) && raw.length > 0) {
-        folders.value = raw
-      }
-      const fresh = await foldersService.getAll()
+      await hydrateFromCache()
+      if (!isOnline()) return
+      const fresh = await withTimeout(
+        foldersService.getAll(),
+        NETWORK_LOAD_MS,
+        'Load folders timed out',
+      )
       folders.value = sortFoldersByUpdatedDesc(fresh)
       await persistCache()
     } catch (e) {
@@ -142,6 +155,7 @@ export const useFoldersStore = defineStore('folders', () => {
     activeFolder,
     loadError,
     loadAll,
+    hydrateFromCache,
     selectFolder,
     alignActiveFolderToNoteFolder,
     isSecureFolder,
