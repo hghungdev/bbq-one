@@ -183,9 +183,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  box-shadow: 0 12px 48px var(--panel-ring);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
   overflow: hidden;
 }
 
@@ -194,26 +200,32 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 14px 12px;
-  border-bottom: 1px solid var(--border);
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   flex-shrink: 0;
-  background: var(--bg-panel);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .cal-overdue__title {
   margin: 0;
   font-size: var(--font-size-base);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
 .cal-overdue__intro {
   margin: 0;
-  padding: 10px 14px;
+  margin: 10px;
+  padding: 9px 10px;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   line-height: 1.45;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
   flex-shrink: 0;
 }
 
@@ -230,11 +242,14 @@ onUnmounted(() => {
 
 .cal-overdue__day-title {
   margin: 0 0 6px;
-  padding: 0 4px;
+  padding: 6px 9px;
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  letter-spacing: -0.012em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .cal-overdue__list {
@@ -247,11 +262,15 @@ onUnmounted(() => {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 5px 6px;
-  border-radius: var(--radius-sm);
+  padding: 7px 8px;
+  margin-bottom: 5px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
 }
 
 .cal-overdue__row:hover {
+  border-color: var(--accent-soft-border);
   background: var(--surface-accent-muted);
 }
 
@@ -273,9 +292,11 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--border);
+  margin: 0 10px 10px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   flex-shrink: 0;
-  background: var(--bg-panel);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 </style>

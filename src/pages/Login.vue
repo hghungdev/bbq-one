@@ -47,8 +47,7 @@
     </p>
     <div class="login__panel">
       <header class="login__header">
-        <h1 class="login__title">BBQOne<span class="cursor-blink" aria-hidden="true"></span></h1>
-        <div class="login__rule" />
+        <h1 class="login__title">BBQOne</h1>
       </header>
 
       <form class="login__form" @submit.prevent="onSubmit">
@@ -128,8 +127,9 @@
     font-size: var(--font-size-sm);
     line-height: 1.45;
     color: var(--danger);
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
+    border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+    border-radius: var(--radius-md);
+    background: var(--surface-danger-muted);
   }
 
   .login__panel {
@@ -137,40 +137,52 @@
     max-width: min(440px, calc(100% - 8px));
     margin: 0 auto;
     border: 1px solid var(--border);
-    padding: 20px 18px 16px;
-    background: var(--bg-secondary);
-    box-shadow: 0 0 0 1px var(--panel-ring);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    background:
+      radial-gradient(
+        ellipse 110% 80% at 50% 0%,
+        color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+        transparent 58%
+      ),
+      var(--bg-secondary);
+    box-shadow: 0 18px 54px var(--panel-ring);
+    overflow: hidden;
   }
 
   .login__header {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
   }
 
   .login__title {
     margin: 0;
     font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
-    letter-spacing: 0.04em;
-  }
-
-  .login__rule {
-    height: 1px;
-    margin-top: 10px;
-    background: var(--border);
+    letter-spacing: -0.035em;
   }
 
   .login__form {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
   }
 
   .login__label {
     margin-top: 4px;
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    letter-spacing: -0.012em;
   }
 
   .login__actions {
@@ -181,20 +193,33 @@
 
   .login__error {
     margin: 4px 0 0;
+    padding: 7px 9px;
     font-size: var(--font-size-sm);
     color: var(--danger);
+    border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+    border-radius: var(--radius-md);
+    background: var(--surface-danger-muted);
   }
 
   .login__warn {
     margin: 4px 0 0;
+    padding: 7px 9px;
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
   }
 
   .login__footer {
     margin-top: 20px;
+    padding: 6px 8px;
     font-size: var(--font-size-sm);
     color: var(--text-muted);
-    letter-spacing: 0.06em;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--bg-panel) 64%, transparent);
+    letter-spacing: -0.012em;
   }
 </style>

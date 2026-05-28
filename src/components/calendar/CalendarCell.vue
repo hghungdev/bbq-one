@@ -80,10 +80,13 @@ function onEventClick(e: Event): void {
   overflow: hidden;
   cursor: pointer;
   background: var(--bg-secondary);
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .cal-cell:hover:not(.cal-cell--past) {
-  background: var(--bg-panel);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .cal-cell--past {
@@ -103,7 +106,7 @@ function onEventClick(e: Event): void {
 
 .cal-cell--today {
   background: var(--accent-soft-bg);
-  box-shadow: inset 0 0 0 1px var(--accent-soft-border);
+  box-shadow: inset 0 0 0 1px var(--accent-soft-border), inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .cal-cell--today .cal-cell__day {
@@ -112,7 +115,7 @@ function onEventClick(e: Event): void {
 }
 
 .cal-cell--modal-target {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent), inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
   background: var(--surface-accent-muted, var(--bg-secondary));
 }
 
@@ -148,7 +151,7 @@ function onEventClick(e: Event): void {
   min-height: 28px;
   padding: 5px 8px;
   border: 1px solid var(--border);
-  background: var(--surface-accent-muted, var(--bg-panel));
+  background: color-mix(in srgb, var(--surface-accent-muted) 72%, var(--bg-panel));
   font-size: var(--font-size-sm);
   line-height: 1.3;
   white-space: nowrap;
@@ -161,7 +164,8 @@ function onEventClick(e: Event): void {
 }
 
 .cal-cell__event:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
 }
 
 .cal-cell--past .cal-cell__event {

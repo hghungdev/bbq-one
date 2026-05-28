@@ -265,34 +265,44 @@ function closeCreateFolderModal(): void {
   flex-direction: column;
   min-height: 0;
   border-right: 1px solid var(--border);
-  background: var(--bg-panel);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-panel) 84%, transparent), transparent 180px),
+    var(--bg-primary);
 }
 
 .sidebar__head {
-  padding: 8px 10px;
+  margin: 8px 8px 4px;
+  padding: 7px 10px;
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 700;
+  color: var(--text-primary);
   letter-spacing: -0.012em;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .sidebar__list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 6px;
+  padding: 6px 8px 8px;
 }
 
 .sidebar__foot {
-  padding: 10px 10px;
+  padding: 10px;
   border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
 }
 
 .sidebar__foot--add {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin: 0 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
 .sidebar__foot-label {
@@ -301,15 +311,19 @@ function closeCreateFolderModal(): void {
 }
 
 .sidebar__tags {
-  padding: 8px 6px;
+  margin: 0 8px 8px;
+  padding: 8px;
   border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .sidebar__tag-head {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 700;
+  color: var(--text-primary);
   letter-spacing: -0.012em;
 }
 

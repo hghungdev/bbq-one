@@ -337,7 +337,14 @@ onBeforeUnmount(() => {
   gap: 10px;
   min-height: 0;
   flex: 1 1 auto;
-  padding: 10px 12px;
+  padding: 12px;
+  background:
+    radial-gradient(
+      ellipse 100% 70% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-primary);
 }
 
 .note-editor__empty {
@@ -356,31 +363,43 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 8px;
   flex: 0 0 auto;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .note-editor__head-actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 0 0 auto;
   margin-left: auto;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .note-editor__label {
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.012em;
 }
 
 .note-editor__tabs {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 0 0 auto;
   max-height: min(40vh, 200px);
   overflow-y: auto;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .note-editor__tab {
@@ -388,19 +407,24 @@ onBeforeUnmount(() => {
   align-items: stretch;
   gap: 4px;
   border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .note-editor__tab--active {
-  border-color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
 }
 
 .note-editor__tab-main {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  padding: 6px 8px;
+  padding: 7px 9px;
   border: none;
-  border-radius: 0;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-muted);
   font-family: inherit;
@@ -413,11 +437,12 @@ onBeforeUnmount(() => {
 }
 
 .note-editor__tab-main:hover {
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .note-editor__tab--active .note-editor__tab-main {
-  color: var(--accent);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .note-editor__tab-main:focus-visible {
@@ -440,10 +465,12 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   margin: 0;
-  padding: 4px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border: 1px solid var(--border);
-  border-radius: 0;
-  background: var(--bg-panel);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
   color: var(--accent);
   cursor: pointer;
   line-height: 0;
@@ -474,8 +501,9 @@ onBeforeUnmount(() => {
   outline: none;
   min-height: 120px;
   box-sizing: border-box;
-  padding: 8px 10px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-family: inherit;
@@ -490,6 +518,7 @@ onBeforeUnmount(() => {
   margin: 0.6em 0;
   padding: 8px 10px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--bg-panel);
   color: var(--accent);
   font-family: var(--font-mono, inherit);
@@ -498,8 +527,10 @@ onBeforeUnmount(() => {
 }
 
 .note-editor__code {
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .note-editor__code-head {

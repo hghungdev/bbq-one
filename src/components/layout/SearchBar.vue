@@ -123,13 +123,14 @@ onMounted(() => {
 .search-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   width: 100%;
-  padding: 6px 8px;
-  border-radius: var(--radius-lg);
-  background: var(--bg-panel);
+  padding: 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
   border: 1px solid var(--input-border);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .search-bar :deep(.retro-input) {

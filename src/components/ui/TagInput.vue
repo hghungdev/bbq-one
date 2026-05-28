@@ -84,19 +84,22 @@ function onKeydown(e: KeyboardEvent): void {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
+  padding: 4px 7px 4px 9px;
   border: 1px solid var(--border);
-  background: var(--bg-panel);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 70%, var(--bg-secondary));
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
 }
 
 .tag-input__x {
   margin: 0;
-  padding: 0 2px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
   color: var(--accent);
   cursor: pointer;
   font-family: inherit;
@@ -105,7 +108,9 @@ function onKeydown(e: KeyboardEvent): void {
 }
 
 .tag-input__x:hover {
-  color: var(--text-primary);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
+  background: var(--surface-danger-muted);
 }
 
 .tag-input__x:focus-visible {

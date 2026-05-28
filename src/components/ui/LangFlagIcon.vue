@@ -45,7 +45,7 @@ defineProps<{
   display: block;
   width: 32px;
   height: calc(32px * 30 / 57);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 0 0 1px var(--panel-ring);
 }
 </style>

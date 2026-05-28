@@ -80,6 +80,10 @@ defineExpose({ reshuffle })
 <style scoped>
 .pin-keypad {
   margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -108,16 +112,26 @@ defineExpose({ reshuffle })
   font-size: var(--font-size-lg);
   letter-spacing: 0.04em;
   border: 1px solid var(--border);
-  border-radius: 0;
-  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
   color: var(--text-primary);
   cursor: pointer;
-  transition: border-color 0.1s, color 0.1s;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease,
+    color 0.1s ease,
+    transform 0.1s ease;
 }
 
 .pin-keypad__btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
+  color: var(--text-primary);
+}
+
+.pin-keypad__btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .pin-keypad__btn:focus-visible {
@@ -139,5 +153,6 @@ defineExpose({ reshuffle })
 .pin-keypad__btn--del:hover:not(:disabled) {
   border-color: var(--danger);
   color: var(--danger);
+  background: var(--surface-danger-muted);
 }
 </style>

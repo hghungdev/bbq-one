@@ -32,8 +32,8 @@ defineProps<{
   padding: 0;
   margin: 0;
   border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--bg-panel);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
   color: var(--text-secondary);
   cursor: pointer;
   flex-shrink: 0;
@@ -53,6 +53,7 @@ defineProps<{
   color: var(--accent);
   border-color: var(--accent-soft-border);
   background: var(--surface-accent-muted);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .icon-btn--accent:hover:not(:disabled) {

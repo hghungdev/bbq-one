@@ -10,18 +10,46 @@ import { useSecureFolderStore } from '@/stores/secureFolder'
 export const useSyncStore = defineStore('sync', () => {
   const status = ref<SyncStatus>('idle')
   const lastError = ref<string | null>(null)
+  let syncedResetTimer: ReturnType<typeof setTimeout> | null = null
+
+  function clearSyncedResetTimer(): void {
+    if (syncedResetTimer === null) return
+    clearTimeout(syncedResetTimer)
+    syncedResetTimer = null
+  }
+
+  function markSynced(): void {
+    clearSyncedResetTimer()
+    status.value = 'synced'
+    syncedResetTimer = setTimeout(() => {
+      if (status.value === 'synced') {
+        status.value = 'idle'
+      }
+      syncedResetTimer = null
+    }, 5000)
+  }
+
+  function markSyncing(): void {
+    clearSyncedResetTimer()
+    status.value = 'syncing'
+  }
+
+  function markError(message: string): void {
+    clearSyncedResetTimer()
+    lastError.value = message
+    status.value = 'error'
+  }
 
   async function runManualSync(): Promise<void> {
     if (!isOnline()) {
-      lastError.value = 'Offline'
-      status.value = 'error'
+      markError('Offline')
       throw new Error('Offline')
     }
     const notes = useNotesStore()
     const folders = useFoldersStore()
     const secure = useSecureFolderStore()
     lastError.value = null
-    status.value = 'syncing'
+    markSyncing()
     try {
       await syncService.syncDirtyNotesFromList(
         notes.notes,
@@ -30,10 +58,9 @@ export const useSyncStore = defineStore('sync', () => {
         (id) => secure.getKey(id),
       )
       await notes.loadAll()
-      status.value = 'synced'
+      markSynced()
     } catch (e) {
-      status.value = 'error'
-      lastError.value = e instanceof Error ? e.message : 'Sync failed'
+      markError(e instanceof Error ? e.message : 'Sync failed')
       throw e
     }
   }
@@ -48,5 +75,5 @@ export const useSyncStore = defineStore('sync', () => {
     }
   }
 
-  return { status, lastError, runManualSync, runAutoSync }
+  return { status, lastError, markSynced, runManualSync, runAutoSync }
 })

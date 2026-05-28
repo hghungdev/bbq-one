@@ -134,23 +134,41 @@ function onBackdropClick(): void {
   width: 100%;
   max-width: 400px;
   border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  padding: 16px 14px 14px;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--danger) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
+  padding: 12px;
   outline: none;
+  overflow: hidden;
 }
 
 .delete-backup-modal__title {
   margin: 0 0 12px;
-  font-size: var(--font-size-sm);
-  color: var(--danger);
-  letter-spacing: 0.08em;
+  padding: 8px 10px;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.012em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
 }
 
 .delete-backup-modal__warn {
   margin: 0 0 12px;
+  padding: 9px 10px;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   line-height: 1.45;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .delete-backup-modal__instr {
@@ -170,5 +188,9 @@ function onBackdropClick(): void {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 14px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 </style>

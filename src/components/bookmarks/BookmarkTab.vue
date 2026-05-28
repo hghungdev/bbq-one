@@ -255,8 +255,7 @@ async function onRefreshLive(): Promise<void> {
           {{ t('bookmark.globalSearch', { n: globalHits.length }) }}
           <button
             type="button"
-            class="bm-tab__act-btn"
-            style="margin-left:8px"
+            class="bm-tab__act-btn bm-tab__title-action"
             :title="t('bookmark.clearTitle')"
             @click="bm.clearBookmarkSearch()"
           >
@@ -267,8 +266,7 @@ async function onRefreshLive(): Promise<void> {
           {{ viewMode === 'live' ? t('bookmark.live') : t('bookmark.backupTitle', { label: bm.selectedBackup?.label ?? '' }) }}
           <button
             v-if="viewMode === 'backups'"
-            class="bm-tab__act-btn"
-            style="margin-left:8px"
+            class="bm-tab__act-btn bm-tab__title-action"
             @click="viewMode = 'live'; bm.selectedBackupId = null"
           >
             {{ t('bookmark.liveSwitchBtn') }}
@@ -351,14 +349,25 @@ async function onRefreshLive(): Promise<void> {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--bg-primary);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-primary);
 }
 .bm-tab__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 6px;
+  margin: 10px 12px 8px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -378,27 +387,40 @@ async function onRefreshLive(): Promise<void> {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  padding: 0 12px 12px;
+  gap: 10px;
 }
 .bm-tab__backups {
   width: 200px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 8px;
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 .bm-tab__tree-col {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 8px 12px;
+  padding: 8px;
   min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
 }
 .bm-tab__col-title {
-  margin: 0 0 6px;
-  padding: 0 12px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 7px 10px;
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
   letter-spacing: -0.012em;
 }
 .bm-tab__empty {
@@ -408,17 +430,23 @@ async function onRefreshLive(): Promise<void> {
   color: var(--text-muted);
 }
 .bm-tab__backup-item {
-  padding: 6px 10px;
+  padding: 8px 10px;
   cursor: pointer;
   font-size: var(--font-size-sm);
-  border-bottom: 1px solid var(--border);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 2px;
+  margin-bottom: 6px;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 .bm-tab__backup-item:hover,
 .bm-tab__backup-item--active {
-  background: var(--bg-panel);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
 }
 
 .bm-tab__backup-item--active .bm-tab__backup-label {
@@ -452,16 +480,20 @@ async function onRefreshLive(): Promise<void> {
   gap: 4px;
 }
 .bm-tab__act-btn {
-  background: var(--bg-secondary);
+  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   color: var(--accent);
   font-size: var(--font-size-sm);
-  padding: 2px 8px;
+  padding: 3px 9px;
   cursor: pointer;
   font-family: inherit;
 }
 .bm-tab__act-btn:hover { border-color: var(--accent); }
+
+.bm-tab__title-action {
+  margin-left: auto;
+}
 
 .bm-tab__btn--danger {
   border-color: var(--danger) !important;
@@ -484,7 +516,11 @@ async function onRefreshLive(): Promise<void> {
 }
 
 .bm-tab__global-sec {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
 }
 
 .bm-tab__global-sec-head {
@@ -492,8 +528,7 @@ async function onRefreshLive(): Promise<void> {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 4px 0 6px;
-  border-bottom: 1px solid var(--border);
+  padding: 0 0 8px;
   margin-bottom: 6px;
 }
 
@@ -514,9 +549,15 @@ async function onRefreshLive(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 4px;
-  border-bottom: 1px solid var(--border);
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
+}
+
+.bm-tab__global-row:hover {
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
 }
 
 .bm-tab__global-link {

@@ -201,22 +201,40 @@ const titleText = (): string => {
   width: 100%;
   max-width: 360px;
   border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  padding: 16px 14px 14px;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
+  padding: 12px;
   outline: none;
+  overflow: hidden;
 }
 
 .secure-modal__title {
   margin: 0 0 12px;
-  font-size: var(--font-size-sm);
-  color: var(--accent);
-  letter-spacing: 0.08em;
+  padding: 8px 10px;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.012em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
 }
 
 .secure-modal__err {
   margin: 0 0 10px;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .secure-modal__label {
@@ -224,7 +242,8 @@ const titleText = (): string => {
   margin: 8px 0 4px;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: -0.012em;
 }
 
 .secure-modal__actions {
@@ -232,5 +251,9 @@ const titleText = (): string => {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 14px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 </style>

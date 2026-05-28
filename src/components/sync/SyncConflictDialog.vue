@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import IconButton from '@/components/ui/IconButton.vue'
 import type { ConflictReport } from '@/services/localFirst/conflictDetector'
 import type { SyncStrategy } from '@/services/localFirst/syncEngine.service'
+import { useLangStore } from '@/stores/uiLang'
+
+const { t } = useLangStore()
 
 defineProps<{
   report: ConflictReport
@@ -18,7 +22,21 @@ defineEmits<{
       <div class="conflict-dialog" role="dialog" aria-modal="true">
         <header class="conflict-dialog__header">
           <span class="conflict-dialog__title">⚠ SYNC CONFLICT DETECTED</span>
-          <button class="conflict-dialog__close" @click="$emit('resolve', 'cancel')">✕</button>
+          <IconButton
+            variant="default"
+            :label="t('common.close')"
+            @click="$emit('resolve', 'cancel')"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                d="M6 6l12 12M18 6L6 18"
+              />
+            </svg>
+          </IconButton>
         </header>
 
         <section class="conflict-dialog__summary">
@@ -90,49 +108,52 @@ defineEmits<{
 }
 
 .conflict-dialog {
-  background: var(--bg-primary);
-  border: 1px solid var(--accent);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--danger) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 18px 54px var(--panel-ring);
   font-family: var(--font-body);
   max-width: 600px;
   width: 100%;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  padding: 12px;
+  overflow: hidden;
 }
 
 .conflict-dialog__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .conflict-dialog__title {
   font-size: 12px;
-  color: var(--accent);
-  letter-spacing: 1px;
-}
-
-.conflict-dialog__close {
-  background: transparent;
-  border: none;
-  cursor: pointer;
   color: var(--text-primary);
-  font-size: 14px;
-  padding: 0;
-  line-height: 1;
-}
-
-.conflict-dialog__close:hover {
-  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: -0.012em;
 }
 
 .conflict-dialog__summary {
-  padding: 12px;
+  padding: 10px;
   font-size: 13px;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+  margin-bottom: 10px;
 }
 
 .conflict-dialog__summary p {
@@ -142,12 +163,16 @@ defineEmits<{
 .conflict-dialog__list {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
 }
 
 .conflict-dialog__list-header {
   font-size: 10px;
-  color: var(--accent);
+  color: var(--text-primary);
+  font-weight: 700;
   margin-bottom: 8px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -163,6 +188,8 @@ defineEmits<{
   margin-bottom: 12px;
   padding: 8px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
 }
 
 .conflict-item__id {
@@ -200,17 +227,21 @@ defineEmits<{
 .conflict-dialog__actions {
   display: flex;
   gap: 8px;
-  padding: 12px;
-  border-top: 1px solid var(--border);
+  padding: 6px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
   flex-wrap: wrap;
 }
 
 .conflict-dialog__btn {
   flex: 1;
   min-width: 140px;
-  background: transparent;
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
   color: var(--text-primary);
   border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   font-family: inherit;
   font-size: 11px;
   padding: 6px 10px;
@@ -219,13 +250,15 @@ defineEmits<{
 }
 
 .conflict-dialog__btn:hover {
-  background: var(--accent);
-  color: var(--bg-primary);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
+  color: var(--text-primary);
 }
 
 .conflict-dialog__btn--primary {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--on-accent);
+  background: var(--accent);
 }
 
 .conflict-dialog__btn--cancel {

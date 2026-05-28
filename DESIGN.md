@@ -1,6 +1,6 @@
 # BBQOne — Design System
 
-Design reference for the **BBQOne Chrome extension** (Manifest V3). The UI is **Apple-inspired** — single blue accent, parchment surfaces, tight negative letter-spacing — adapted to a **fixed-size extension popup** (not a marketing website).
+Design reference for the **BBQOne Chrome extension** (Manifest V3). The UI is **Apple-inspired** — single blue accent, parchment surfaces, rounded capsule controls, soft cards, and tight negative letter-spacing — adapted to a **fixed-size extension popup** (not a marketing website).
 
 **Source of truth (code):**
 
@@ -24,7 +24,7 @@ BBQOne is a **local-first** productivity popup: **Calendar**, **Notes**, and **B
 - **Compact & readable** — 720×600 px popup; base text 13px; dense but not cramped.
 - **One accent** — Action Blue (`#0066cc` light / `#2997ff` dark) for links, active tabs, focus rings, and primary actions.
 - **Light + dark** — Class strategy on `<html data-theme="light|dark">`, persisted in `chrome.storage.local`.
-- **Consistent chrome** — Same header, tokens, and button grammar across tabs and modals.
+- **Consistent chrome** — Same header, capsule/card surfaces, tokens, and button grammar across tabs and modals.
 - **Accessible focus** — `outline: 2px solid var(--focus-ring)` on interactive elements.
 
 ---
@@ -103,9 +103,9 @@ Search focus intentionally uses **yellow**; “today” in the grid uses **blue*
 
 **Principles:**
 
-- **Letter-spacing:** `-0.022em` on body; `0.06–0.1em` on uppercase section labels in settings.
-- **Weights:** 400 body, 600 labels/buttons/headings. No weight 500.
-- **Brand line:** `BBQOne` in header — `font-size: sm`, `letter-spacing: 0.08em`, `color: var(--accent)`.
+- **Letter-spacing:** body text uses normal/tight spacing; headings and tabs use `-0.012em` to `-0.035em`. Avoid wide terminal-style tracking except for monospace metadata.
+- **Weights:** 400 body, 600 labels/buttons, 700 section/card headings. Avoid 500 unless a component already uses it intentionally.
+- **Brand line:** `BBQOne` in header — `font-size: 17px`, `font-weight: 700`, `letter-spacing: -0.035em`, `color: var(--accent)`.
 - **Google Fonts:** Inter loaded on extension pages per CSP (`fonts.googleapis.com`).
 
 ---
@@ -144,7 +144,7 @@ The shell is a **single column flex column**: header → optional error strip �
 | Settings | `IconButton` | Opens `SettingsModal` |
 | Login / Logout | `IconButton` | Padlock (accent) vs door-out; no email in header |
 
-**Tabs:** `RetroButton variant="sm"` with `.shell__tab-btn--active` → accent border + text.
+**Tabs:** `RetroButton variant="sm"` inside `.shell__tabs` segmented capsule. Active tab is filled with `var(--accent)` and `var(--on-accent)`; inactive tabs stay transparent but keep hover affordance.
 
 **Notes tab grid:**
 
@@ -175,13 +175,155 @@ Dark mode **redefines semantic tokens** in `global.css` (not a separate styleshe
 
 ## Components
 
+### Modern Surface Grammar
+
+Use this as the default UI recipe for all new screens. A new component should look like it belongs beside `App.vue`, `BookmarkTab.vue`, `NoteEditor.vue`, `CalendarEventModal.vue`, and `SettingsModal.vue`.
+
+#### 1. Outer Screens
+
+Tab-level screens use a subtle accent wash over the main surface:
+
+```css
+background:
+  radial-gradient(
+    ellipse 110% 80% at 50% 0%,
+    color-mix(in srgb, var(--accent) 4%, transparent) 0%,
+    transparent 58%
+  ),
+  var(--bg-primary);
+```
+
+Use this for full tab panes and major panels, not every small card.
+
+#### 2. Cards
+
+Primary cards use `--radius-lg`, `var(--border)`, and a light inset highlight:
+
+```css
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);
+background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+```
+
+Use cards for panel headers, settings sections, toolbars, modal headers, form groups, and list containers.
+
+#### 3. Capsules
+
+Use `--radius-pill` for:
+
+- Main tab groups and active tabs.
+- Toolbar action groups.
+- Small action buttons and inline action chips.
+- Footer action bars in dialogs.
+- Tags and small status pills.
+
+#### 4. Rows
+
+Rows should feel like soft list cards, not divider-only tables:
+
+```css
+border: 1px solid transparent;
+border-radius: var(--radius-md);
+background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
+transition: background 0.12s ease, border-color 0.12s ease;
+```
+
+Hover:
+
+```css
+border-color: var(--accent-soft-border);
+background: var(--surface-accent-muted);
+```
+
+Active/selected:
+
+```css
+border-color: var(--accent-soft-border);
+background: var(--surface-accent-muted);
+box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+```
+
+#### 5. Dialogs and Modals
+
+All modal shells should follow the same pattern:
+
+```css
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-scrim);
+  padding: 16px;
+}
+
+.modal-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
+  overflow: hidden;
+}
+```
+
+Modal internals:
+
+- Header: inset `--radius-lg` card, not a full-width old-style stripe.
+- Close: `IconButton`, not raw `✕` text.
+- Body groups: card/form sections with `--radius-lg`.
+- Actions: pill/capsule action bar with `RetroButton variant="sm"`.
+- Errors: rounded danger callout using `--surface-danger-muted`.
+
+Danger modals use the same shell, with a subtle danger wash:
+
+```css
+color-mix(in srgb, var(--danger) 5%, transparent)
+```
+
+Do not use square panels, raw horizontal rules, or `border-radius: 0`.
+
+#### 6. Forms and Feedback
+
+Labels:
+
+- Use `font-size: var(--font-size-sm)` or `--font-size-xs`.
+- Use `font-weight: 600`.
+- Use tight/normal letter spacing, not terminal-style wide tracking.
+
+Error callout:
+
+```css
+padding: 7px 9px;
+border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+border-radius: var(--radius-md);
+background: var(--surface-danger-muted);
+color: var(--danger);
+```
+
+Success callout:
+
+```css
+border: 1px solid color-mix(in srgb, var(--success) 34%, var(--border));
+border-radius: var(--radius-md);
+background: color-mix(in srgb, var(--success) 10%, var(--bg-secondary));
+color: var(--success);
+```
+
 ### Buttons & inputs
 
 | Component | File | Notes |
 |-----------|------|-------|
-| `RetroButton` | `src/components/ui/RetroButton.vue` | Default + `sm` variant; panel bg, accent text; `scale(0.97)` active |
+| `RetroButton` | `src/components/ui/RetroButton.vue` | Default + `sm` variant; `sm` is capsule-style; `scale(0.97)` active |
 | `RetroInput` | `src/components/ui/RetroInput.vue` | Pill shape (`--radius-pill`); accent caret; optional `digitOnly` for PIN |
-| `IconButton` | `src/components/ui/IconButton.vue` | 32×32; variants `default`, `accent`, `danger` |
+| `IconButton` | `src/components/ui/IconButton.vue` | 32×32 pill; variants `default`, `accent`, `danger` |
 | `ThemeModeToggle` | `src/components/ui/ThemeModeToggle.vue` | Wraps `IconButton` + sun/moon SVG (17px) |
 | `RetroConfirm` | `src/components/ui/RetroConfirm.vue` | Destructive confirm dialog pattern |
 
@@ -192,8 +334,9 @@ Dark mode **redefines semantic tokens** in `global.css` (not a separate styleshe
 Shared pattern:
 
 - Fixed overlay: `background: var(--overlay-scrim)`
-- Panel: `background: var(--bg-secondary)`, `border: 1px solid var(--border)`
-- Settings panel adds **accent hairline**: `box-shadow: 0 0 0 1px var(--accent)`
+- Panel: `--radius-lg`, `background: var(--bg-secondary)` with subtle accent radial wash
+- Shadow: `box-shadow: 0 18px 54px var(--panel-ring)`
+- Inset header/action cards: `--radius-lg` or `--radius-pill`
 
 | Modal | File |
 |-------|------|
@@ -239,7 +382,7 @@ Upcoming (1-day) banner dismiss state: `chrome.storage.session` via `calendarBan
 | Folders | `FolderItem`, `SecureFolderModal`, `DeleteFolderModal` |
 | Bookmarks | `BookmarkTab`, `BookmarkTree`, `PinKeypad`, `DeleteBackupModal` |
 
-Active list items use `--accent-soft-bg` / accent border — same search-hit grammar as `.search-hit`.
+Active list items use `--surface-accent-muted` + `--accent-soft-border`. Avoid active states that only change text color or border.
 
 ---
 
@@ -250,7 +393,7 @@ Active list items use `--accent-soft-bg` / accent border — same search-hit gra
 | `.search-hit` | Highlight matched search text |
 | `.retro-empty` | Empty / loading placeholder copy |
 | `.retro-loading__dots` | Animated `...` after loading label |
-| `.cursor-blink` | Blinking `\|` after text (login title) |
+| `.cursor-blink` | Legacy blinking `\|`; avoid in new UI unless intentionally preserving old branding |
 | Scrollbar | 6px; track `--bg-secondary`, thumb `--color-hairline` |
 
 **Removed:** CRT scanlines / terminal chrome — class `.crt-scanlines` is a no-op stub for backward compatibility.
@@ -290,6 +433,9 @@ Keep legal copy in sync with `manifest.json` version and actual permissions.
 - Use CSS variables from `global.css` for colors, radii, and fonts.
 - Test **both** `data-theme="light"` and `data-theme="dark"` for new UI.
 - Use existing primitives (`RetroButton`, `IconButton`, `RetroInput`) before inventing new button styles.
+- Build new panels with the modern surface grammar above: radial shell, inset card headers, capsule action bars.
+- Use `--radius-lg` for dialogs/cards, `--radius-md` for rows, and `--radius-pill` for controls/chips.
+- Use `IconButton` for close/delete/restore icon actions.
 - Keep header minimal: brand + tabs + icon toolbar; put email and version in **Settings**.
 - Use `--focus-ring` for keyboard focus on all interactive elements.
 - Respect popup overflow: tab content uses `min-height: 0` + internal scroll, not page scroll.
@@ -299,6 +445,8 @@ Keep legal copy in sync with `manifest.json` version and actual permissions.
 - Hard-code hex colors in Vue `<style>` blocks (except one-off SVG assets if unavoidable).
 - Add a second accent color (yellow is **calendar semantic only**, not general CTAs).
 - Reintroduce decorative CRT/terminal effects or heavy box shadows on chrome.
+- Use `border-radius: 0`, raw `✕` text close buttons, full-width modal header stripes, or divider-only list rows.
+- Use square keypad/button tiles; PIN/keypad controls should be rounded cards/capsules.
 - Add font-size UI — body is fixed at 13px.
 - Put email or extension version in the main header bar.
 - Use ALL CAPS section titles in prose pages (privacy policy); sentence case reads more professional.
@@ -309,10 +457,24 @@ Keep legal copy in sync with `manifest.json` version and actual permissions.
 
 1. **Read** `global.css` tokens before styling new UI.
 2. **Prefer** extending `RetroButton` / `IconButton` variants over new button classes.
-3. **Modals:** copy overlay + panel pattern from `LoginModal.vue` or `SettingsModal.vue`.
+3. **Modals:** copy overlay + panel pattern from `SettingsModal.vue`, `CalendarEventModal.vue`, or `RetroConfirm.vue`.
 4. **Dark mode:** add overrides only in `html[data-theme='dark']` block in `global.css` when introducing new semantic colors.
 5. **Calendar colors:** if adding a new banner or focus state, define tokens in `global.css` with explicit dark-mode solid backgrounds.
 6. **Verify** at 720×600 in Chrome extension popup after visual changes.
+7. **Before release:** run `npm run type-check` and `npm run build`.
+
+### New Screen Checklist
+
+Before shipping a new screen or modal:
+
+- [ ] Uses semantic CSS variables only; no hard-coded colors in Vue styles.
+- [ ] Supports both light and dark via existing tokens.
+- [ ] Uses modern shell/card/capsule patterns from this file.
+- [ ] Uses `RetroButton`, `RetroInput`, and `IconButton` where possible.
+- [ ] Has visible `:focus-visible` states.
+- [ ] Avoids `border-radius: 0`, raw separators, and text-only icon buttons.
+- [ ] Keeps scroll inside the component with `min-height: 0` where needed.
+- [ ] Uses i18n for all user-visible text.
 
 ---
 
@@ -345,9 +507,9 @@ typography:
   base: 13px
   mono: ui-monospace
 radii:
-  sm: 8px
-  md: 11px
-  lg: 18px
+  sm: 10px
+  md: 12px
+  lg: 16px
   pill: 9999px
 theme:
   attribute: data-theme

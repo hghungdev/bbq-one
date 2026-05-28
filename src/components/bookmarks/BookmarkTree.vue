@@ -40,28 +40,48 @@ function toggle(id: string): void {
 
 <style scoped>
 .bm-tree { list-style: none; margin: 0; padding: 0; }
-.bm-tree--child { padding-left: 16px; }
-.bm-tree__item { margin: 0; }
+.bm-tree--child {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+.bm-tree__item { margin: 0 0 3px; }
 .bm-tree__row {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 4px;
+  padding: 6px 8px;
   font-size: var(--font-size-sm);
   cursor: pointer;
-  border-radius: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
-.bm-tree__row:hover { background: var(--bg-panel); }
-.bm-tree__row--folder { color: var(--accent); font-weight: 500; }
+.bm-tree__row:hover {
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
+}
+.bm-tree__row--folder { color: var(--accent); font-weight: 600; }
 .bm-tree__row--link { color: var(--text-secondary); cursor: default; }
-.bm-tree__icon { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+.bm-tree__icon {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
 .bm-tree__icon--link { color: var(--text-muted); }
 .bm-tree__title { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bm-tree__count {
   font-size: 10px;
   color: var(--text-muted);
-  padding: 0 4px;
+  padding: 1px 6px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
   flex-shrink: 0;
 }
 .bm-tree__link {

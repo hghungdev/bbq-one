@@ -198,8 +198,13 @@ function onRenameKeydown(e: KeyboardEvent): void {
   align-items: stretch;
   gap: 2px;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  margin-bottom: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+  background: transparent;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .note-item__top {
@@ -209,12 +214,15 @@ function onRenameKeydown(e: KeyboardEvent): void {
 }
 
 .note-item--active {
-  border-color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .note-item:hover:not(.note-item--active),
 .note-item:focus-within:not(.note-item--active) {
-  border-color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
 }
 
 .note-item__main {
@@ -225,9 +233,9 @@ function onRenameKeydown(e: KeyboardEvent): void {
   align-items: flex-start;
   gap: 2px;
   margin: 0;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
@@ -252,9 +260,9 @@ function onRenameKeydown(e: KeyboardEvent): void {
 }
 
 .note-item--search-hit {
-  padding-bottom: 6px;
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .note-item__search-title {
@@ -297,7 +305,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
 }
 
 .note-item--active .note-item__main {
-  color: var(--accent);
+  color: var(--text-primary);
 }
 
 .note-item--active .note-item__main-body--search-path {
@@ -305,7 +313,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
 }
 
 .note-item--active .note-item__search-title {
-  color: var(--accent);
+  color: var(--text-primary);
 }
 
 .note-item--active .note-item__search-path {

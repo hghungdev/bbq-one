@@ -346,9 +346,18 @@ const attemptsLeft = computed(() => {
   width: 100%;
   max-width: 340px;
   border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  padding: 16px 14px 14px;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
+  padding: 12px;
   outline: none;
+  overflow: hidden;
 }
 
 .bm-pin--wide {
@@ -359,24 +368,29 @@ const attemptsLeft = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
+  gap: 6px;
   margin-top: 10px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .bm-pin__keypad-toggle {
-  background: none;
-  border: none;
-  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 4px 9px;
   font-size: 11px;
   color: var(--accent);
-  letter-spacing: 0.04em;
+  letter-spacing: -0.012em;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .bm-pin__keypad-toggle:hover:not(:disabled) {
   color: var(--text-primary);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
 }
 
 .bm-pin__keypad-toggle:disabled {
@@ -386,13 +400,20 @@ const attemptsLeft = computed(() => {
 
 .bm-pin__title {
   margin: 0 0 8px;
-  font-size: var(--font-size-sm);
-  color: var(--accent);
-  letter-spacing: 0.06em;
+  padding: 8px 10px;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.012em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .bm-pin__hint {
   margin: 0 0 12px;
+  padding: 0 2px;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   line-height: 1.4;
@@ -404,6 +425,10 @@ const attemptsLeft = computed(() => {
   align-items: center;
   gap: 12px;
   margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 62%, transparent);
 }
 
 .bm-pin__label {
@@ -411,7 +436,8 @@ const attemptsLeft = computed(() => {
   margin: 8px 0 4px;
   font-size: 11px;
   color: var(--text-muted);
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: -0.012em;
   text-transform: uppercase;
 }
 
@@ -426,25 +452,41 @@ const attemptsLeft = computed(() => {
 
 .bm-pin__err {
   margin: 10px 0 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .bm-pin__lock {
   margin: 0 0 10px;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .bm-pin__warn {
   margin: 0 0 10px;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
 }
 
 .bm-pin__actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 14px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 </style>

@@ -280,24 +280,35 @@ function sourceLabel(source: 'local' | 'cloud'): string {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  box-shadow: 0 8px 32px var(--panel-ring);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
 }
 
 .cal-overflow-dialog__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .cal-overflow-dialog__title {
   margin: 0;
   font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.3;
 }
@@ -313,6 +324,10 @@ function sourceLabel(source: 'local' | 'cloud'): string {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   line-height: 1.45;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
 }
 
 .cal-overflow-dialog__pager {
@@ -321,28 +336,39 @@ function sourceLabel(source: 'local' | 'cloud'): string {
 
 .cal-overflow-dialog__error {
   margin: 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .cal-overflow-dialog__list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 8px;
   overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
 }
 
 .cal-overflow-dialog__row {
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
-.cal-overflow-dialog__row:last-child {
-  border-bottom: none;
+.cal-overflow-dialog__row:hover {
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
 }
 
 .cal-overflow-dialog__label {
@@ -371,6 +397,10 @@ function sourceLabel(source: 'local' | 'cloud'): string {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .cal-overflow-dialog__done {
@@ -384,6 +414,10 @@ function sourceLabel(source: 'local' | 'cloud'): string {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .cal-overflow-fade-enter-active,

@@ -181,8 +181,14 @@ onUnmounted(() => {
   width: 100%;
   max-width: 400px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
   outline: none;
   box-shadow: 0 12px 48px var(--panel-ring);
   overflow: hidden;
@@ -199,15 +205,18 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 14px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-panel);
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .retro-confirm__title {
   margin: 0;
   font-size: var(--font-size-base);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.35;
 }
@@ -217,7 +226,11 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 18px 16px 8px;
+  margin: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
   text-align: center;
 }
 
@@ -242,7 +255,11 @@ onUnmounted(() => {
 
 .retro-confirm__msg {
   margin: 0;
-  padding: 18px 16px 8px;
+  margin: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   line-height: 1.5;
@@ -254,7 +271,11 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  padding: 12px 14px 14px;
+  margin: 0 10px 10px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .retro-confirm__confirm-btn--danger {

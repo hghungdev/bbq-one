@@ -49,9 +49,12 @@ function toggle(): void {
 
 <style scoped>
 .set-acc {
-  margin-bottom: 3px;
+  margin-bottom: 8px;
   border: 1px solid var(--border);
-  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .set-acc__heading {
@@ -66,20 +69,20 @@ function toggle(): void {
   gap: 8px;
   width: 100%;
   margin: 0;
-  padding: 7px 10px;
+  padding: 9px 10px;
   border: none;
-  background: transparent;
-  color: var(--accent-dashboard);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  color: var(--text-primary);
   font-family: inherit;
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: -0.012em;
   text-align: left;
   cursor: pointer;
 }
 
 .set-acc__trigger:hover {
-  background: var(--bg-secondary);
+  background: var(--surface-accent-muted);
   color: var(--accent-dashboard);
 }
 
@@ -103,9 +106,10 @@ function toggle(): void {
 
 .set-acc__panel {
   border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
 }
 
 .set-acc__inner {
-  padding: 8px 10px 10px;
+  padding: 10px;
 }
 </style>

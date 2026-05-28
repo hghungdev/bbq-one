@@ -63,16 +63,21 @@ function onRowClick(ev: CalendarEvent, e: MouseEvent): void {
   max-height: 180px;
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-panel);
+  margin: 0 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  overflow: hidden;
 }
 
 .cal-search-panel__title {
   margin: 0;
-  padding: 6px 10px 4px;
+  padding: 8px 10px 4px;
   font-size: var(--font-size-xs);
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.012em;
 }
 
 .cal-search-panel__hint {
@@ -93,7 +98,7 @@ function onRowClick(ev: CalendarEvent, e: MouseEvent): void {
 .cal-search-panel__list {
   list-style: none;
   margin: 0;
-  padding: 0 6px 8px;
+  padding: 0 8px 8px;
   overflow-y: auto;
   min-height: 0;
 }
@@ -107,17 +112,18 @@ function onRowClick(ev: CalendarEvent, e: MouseEvent): void {
   text-align: left;
   padding: 6px 8px;
   margin-bottom: 4px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--bg-secondary);
+  background: color-mix(in srgb, var(--bg-panel) 62%, transparent);
   color: var(--text-primary);
   font-family: inherit;
   cursor: pointer;
 }
 
 .cal-search-panel__row:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
+  color: var(--text-primary);
 }
 
 .cal-search-panel__date {
@@ -140,7 +146,9 @@ function onRowClick(ev: CalendarEvent, e: MouseEvent): void {
 .cal-search-panel__done {
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
-  text-decoration: line-through;
-  opacity: 0.7;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-secondary));
+  color: var(--success);
 }
 </style>

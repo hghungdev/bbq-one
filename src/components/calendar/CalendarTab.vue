@@ -263,6 +263,13 @@ function jumpToEvent(ev: CalendarEvent): void {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-primary);
 }
 
 .calendar-tab__grid-scroll {
@@ -271,14 +278,20 @@ function jumpToEvent(ev: CalendarEvent): void {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding: 0 12px 12px;
 }
 
 .calendar-tab__weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   flex: 0 0 auto;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
+  margin: 0 12px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  overflow: hidden;
 }
 
 .calendar-tab__weekday {
@@ -292,6 +305,9 @@ function jumpToEvent(ev: CalendarEvent): void {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--bg-secondary);
 }
 
 .calendar-tab__month-page + .calendar-tab__month-page {

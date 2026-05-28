@@ -231,9 +231,13 @@ function pickAction(
   align-items: stretch;
   gap: 2px;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  margin-bottom: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
   position: relative;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .folder-item__top {
@@ -243,12 +247,15 @@ function pickAction(
 }
 
 .folder-item--active {
-  border-color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: var(--surface-accent-muted);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .folder-item:hover:not(.folder-item--active),
 .folder-item:focus-within:not(.folder-item--active) {
-  border-color: var(--accent);
+  border-color: var(--accent-soft-border);
+  background: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
 }
 
 .folder-item__main {
@@ -259,9 +266,9 @@ function pickAction(
   align-items: stretch;
   gap: 2px;
   margin: 0;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
@@ -271,7 +278,7 @@ function pickAction(
 }
 
 .folder-item--active .folder-item__main {
-  color: var(--accent);
+  color: var(--text-primary);
 }
 
 .folder-item__row {
@@ -335,8 +342,10 @@ function pickAction(
   list-style: none;
   min-width: 180px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--bg-panel);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 28px var(--panel-ring);
+  overflow: hidden;
 }
 
 .folder-ctx button {
@@ -354,7 +363,7 @@ function pickAction(
 }
 
 .folder-ctx button:hover {
-  background: var(--bg-secondary);
+  background: var(--surface-accent-muted);
   color: var(--accent);
 }
 

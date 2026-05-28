@@ -332,9 +332,15 @@ async function saveForm(): Promise<void> {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  box-shadow: 0 12px 48px var(--panel-ring);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
   overflow: hidden;
 }
 
@@ -343,35 +349,45 @@ async function saveForm(): Promise<void> {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 14px 12px;
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  background: var(--bg-panel);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .cal-modal__title {
   margin: 0;
   font-size: var(--font-size-base);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.35;
   letter-spacing: 0;
 }
 
 .cal-modal__error {
-  margin: 0;
-  padding: 8px 12px;
+  margin: 10px 10px 0;
+  padding: 8px 10px;
   font-size: var(--font-size-xs);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .cal-modal__toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
+  margin: 10px;
+  padding: 8px 10px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
 }
 
 .cal-modal__toolbar-label {
@@ -381,16 +397,20 @@ async function saveForm(): Promise<void> {
 
 .cal-modal__past-hint {
   margin: 0;
-  padding: 8px 12px;
+  margin: 10px;
+  padding: 8px 10px;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   line-height: 1.45;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
 }
 
 .cal-modal__empty {
   margin: 0;
+  margin: 10px;
   padding: 20px 12px;
   text-align: center;
   font-size: var(--font-size-sm);
@@ -400,7 +420,7 @@ async function saveForm(): Promise<void> {
 .cal-modal__list {
   list-style: none;
   margin: 0;
-  padding: 6px 8px 12px;
+  padding: 10px;
   overflow-y: auto;
   min-height: 0;
   flex: 1 1 auto;
@@ -410,12 +430,18 @@ async function saveForm(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 6px;
-  border-radius: var(--radius-sm);
-  transition: background 0.12s linear;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .cal-modal__row:hover {
+  border-color: var(--accent-soft-border);
   background: var(--surface-accent-muted);
 }
 
@@ -436,7 +462,7 @@ async function saveForm(): Promise<void> {
   font-size: var(--font-size-sm);
   cursor: pointer;
   padding: 8px 4px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 .cal-modal__row-title:hover {
@@ -452,7 +478,7 @@ async function saveForm(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px;
+  padding: 12px 10px 10px;
   overflow-y: auto;
   min-height: 0;
 }
@@ -461,6 +487,10 @@ async function saveForm(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 62%, transparent);
 }
 
 .cal-modal__label {
@@ -473,6 +503,10 @@ async function saveForm(): Promise<void> {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 0;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 </style>

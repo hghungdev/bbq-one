@@ -138,8 +138,14 @@ function onSubmit(): void {
   width: 100%;
   max-width: 400px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
   box-shadow: 0 12px 48px var(--panel-ring);
   overflow: hidden;
   outline: none;
@@ -150,37 +156,47 @@ function onSubmit(): void {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 14px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-panel);
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .quick-create__title {
   margin: 0;
   font-size: var(--font-size-base);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.35;
 }
 
 .quick-create__error {
   margin: 0;
-  padding: 8px 14px 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .quick-create__form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px;
+  padding: 10px;
 }
 
 .quick-create__field {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 62%, transparent);
 }
 
 .quick-create__label {
@@ -194,6 +210,10 @@ function onSubmit(): void {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
 }
 
 .quick-create-fade-enter-active,

@@ -55,20 +55,27 @@ const monthLabel = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  gap: 6px;
+  margin: 10px 12px 8px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   flex: 0 0 auto;
-  background: var(--bg-secondary);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .cal-month-nav__label {
   font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
-  min-width: 140px;
+  min-width: 150px;
+  padding: 5px 12px;
   text-align: center;
   letter-spacing: -0.02em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .cal-month-nav :deep(.cal-month-nav__icon-btn) {

@@ -570,28 +570,41 @@ onUnmounted(() => {
   min-width: 320px;
   max-width: 100%;
   width: min(100%, 480px);
-  max-height: min(90vh, 420px);
-  padding: 11px 12px 12px;
+  max-height: min(90vh, 520px);
+  padding: 12px;
   border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
+  box-shadow: 0 18px 54px var(--panel-ring);
+  overflow: hidden;
 }
 
 .settings-title {
   margin: 0;
   flex-shrink: 0;
   font-size: var(--font-size-lg);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
 }
 
 .settings-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px 12px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
   flex-shrink: 0;
   min-width: 0;
 }
@@ -608,14 +621,18 @@ onUnmounted(() => {
   min-width: 0;
   max-width: min(220px, 58%);
   text-align: right;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .settings-scroll {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  margin-right: -2px;
-  padding-right: 2px;
+  margin-right: -4px;
+  padding-right: 4px;
 }
 
 .settings-row {
@@ -628,15 +645,15 @@ onUnmounted(() => {
 .settings-utc-select {
   display: block;
   width: 100%;
-  max-width: 200px;
+  max-width: 220px;
   margin: 0 0 4px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   color: var(--text-primary);
-  background: var(--bg-panel);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   cursor: pointer;
 }
 
@@ -663,7 +680,7 @@ onUnmounted(() => {
 
 .settings-field-label {
   display: block;
-  margin: 6px 0 3px;
+  margin: 8px 0 4px;
   font-size: 10px;
   color: var(--text-muted);
   letter-spacing: 0.06em;
@@ -676,38 +693,53 @@ onUnmounted(() => {
 
 .settings-pw-issues {
   margin: 8px 0 0;
-  padding-left: 18px;
+  padding: 8px 10px 8px 26px;
   font-size: 11px;
   color: var(--danger);
   line-height: 1.45;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .settings-pin-err {
   margin: 8px 0 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .settings-pin-ok {
   margin: 8px 0 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
-  color: var(--accent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--success) 10%, var(--bg-secondary));
 }
 
 .settings-close {
   flex-shrink: 0;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .settings-version {
   flex-shrink: 0;
   margin: 10px 0 0;
+  padding: 6px 8px;
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   letter-spacing: 0.06em;
   text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 64%, transparent);
 }
 
 .settings-divider {
@@ -746,6 +778,13 @@ onUnmounted(() => {
   width: 48px;
   min-width: 48px;
   padding: 6px;
+}
+
+.settings-lang-row :deep(.settings-lang-btn[aria-current='true']) {
+  opacity: 1;
+  border-color: var(--accent);
+  background: var(--surface-accent-muted);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 </style>

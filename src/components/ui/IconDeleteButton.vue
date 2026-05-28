@@ -47,7 +47,7 @@ defineProps<{
   padding: 0;
   margin: 0;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--danger);
   cursor: pointer;

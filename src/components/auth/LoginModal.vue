@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/uiLang'
 import { isSupabaseConfigured, missingEnvHint } from '@/env'
@@ -46,11 +47,22 @@ async function onSubmit(): Promise<void> {
           <h2 id="lm-title" class="lm-title">
             BBQOne<span class="cursor-blink" aria-hidden="true"></span>
           </h2>
-          <button class="lm-close" type="button" :title="t('common.close')" @click="emit('close')">
-            ✕
-          </button>
+          <IconButton
+            variant="default"
+            :label="t('common.close')"
+            @click="emit('close')"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                d="M6 6l12 12M18 6L6 18"
+              />
+            </svg>
+          </IconButton>
         </header>
-        <div class="lm-rule" />
 
         <p v-if="!isSupabaseConfigured" class="lm-config-warn" role="alert">
           {{ missingEnvHint }}
@@ -116,51 +128,41 @@ async function onSubmit(): Promise<void> {
 .lm-panel {
   width: 100%;
   max-width: min(420px, calc(100% - 8px));
-  background: var(--bg-secondary);
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--bg-secondary);
   border: 1px solid var(--border);
-  box-shadow:
-    0 0 0 1px var(--panel-ring),
-    0 8px 32px rgba(0, 0, 0, 0.16);
-  padding: 18px 18px 14px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 18px 54px var(--panel-ring);
+  padding: 12px;
   position: relative;
+  overflow: hidden;
 }
 
 /* ── Header ── */
 .lm-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .lm-title {
   margin: 0;
   font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: 0.04em;
-}
-
-.lm-close {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 14px;
-  padding: 0;
-  line-height: 1;
-  margin-top: 2px;
-  transition: color 0.15s;
-}
-
-.lm-close:hover {
-  color: var(--accent);
-}
-
-.lm-rule {
-  height: 1px;
-  background: var(--border);
-  margin-bottom: 16px;
+  letter-spacing: -0.035em;
 }
 
 /* ── Form ── */
@@ -168,13 +170,18 @@ async function onSubmit(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
 }
 
 .lm-label {
   margin-top: 4px;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: -0.012em;
 }
 
 .lm-actions {
@@ -185,21 +192,34 @@ async function onSubmit(): Promise<void> {
 
 .lm-error {
   margin: 2px 0 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 .lm-warn {
   margin: 2px 0 0;
+  padding: 7px 9px;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
 }
 
 .lm-footer {
   margin-top: 16px;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
-  letter-spacing: 0.06em;
+  padding: 6px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 64%, transparent);
+  letter-spacing: -0.012em;
 }
 
 .lm-config-warn {
@@ -207,8 +227,9 @@ async function onSubmit(): Promise<void> {
   padding: 8px 10px;
   font-size: var(--font-size-sm);
   color: var(--danger);
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--surface-danger-muted);
 }
 
 /* ── Transition ── */
