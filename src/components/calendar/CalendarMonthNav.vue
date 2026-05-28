@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import { useLangStore } from '@/stores/uiLang'
 
@@ -21,6 +21,16 @@ const monthLabel = computed(() => {
     year: 'numeric',
   })
 })
+
+// Direction để chọn hướng slide cho title transition theo prev/next.
+const slideDir = ref<'next' | 'prev'>('next')
+watch(
+  () => props.year * 12 + props.month,
+  (n, o) => {
+    if (n === o) return
+    slideDir.value = n > o ? 'next' : 'prev'
+  },
+)
 </script>
 
 <template>
@@ -34,7 +44,11 @@ const monthLabel = computed(() => {
     >
       ◀
     </RetroButton>
-    <span class="cal-month-nav__label">{{ monthLabel }}</span>
+    <span class="cal-month-nav__label" :class="`cal-month-nav__label--${slideDir}`">
+      <Transition :name="`cal-month-label-${slideDir}`" mode="out-in">
+        <span :key="monthLabel" class="cal-month-nav__label-text">{{ monthLabel }}</span>
+      </Transition>
+    </span>
     <RetroButton
       variant="sm"
       type="button"
@@ -76,6 +90,58 @@ const monthLabel = computed(() => {
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.cal-month-nav__label-text {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* Hướng next: title mới trượt từ dưới lên, title cũ trượt lên & mờ. */
+.cal-month-label-next-enter-active,
+.cal-month-label-next-leave-active,
+.cal-month-label-prev-enter-active,
+.cal-month-label-prev-leave-active {
+  transition: transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 180ms ease;
+}
+
+.cal-month-label-next-enter-from {
+  transform: translateY(60%);
+  opacity: 0;
+}
+.cal-month-label-next-leave-to {
+  transform: translateY(-60%);
+  opacity: 0;
+}
+
+.cal-month-label-prev-enter-from {
+  transform: translateY(-60%);
+  opacity: 0;
+}
+.cal-month-label-prev-leave-to {
+  transform: translateY(60%);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-month-label-next-enter-active,
+  .cal-month-label-next-leave-active,
+  .cal-month-label-prev-enter-active,
+  .cal-month-label-prev-leave-active {
+    transition: opacity 120ms ease;
+  }
+  .cal-month-label-next-enter-from,
+  .cal-month-label-next-leave-to,
+  .cal-month-label-prev-enter-from,
+  .cal-month-label-prev-leave-to {
+    transform: none;
+  }
 }
 
 .cal-month-nav :deep(.cal-month-nav__icon-btn) {

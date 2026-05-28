@@ -76,8 +76,10 @@ function onEventClick(e: Event): void {
   padding: 6px 6px 6px;
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
+  overflow-anchor: none;
   cursor: pointer;
   background: var(--bg-secondary);
   transition:

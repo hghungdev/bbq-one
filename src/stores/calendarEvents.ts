@@ -10,6 +10,8 @@ import type {
 } from '@/types/calendar'
 import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
+import { useUndoToastStore } from '@/stores/undoToast'
+import { useLangStore } from '@/stores/uiLang'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -137,9 +139,53 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   }
 
   async function deleteEvent(id: string): Promise<void> {
-    await calendarEventsService.delete(id)
+    const eventIndex = events.value.findIndex((e) => e.id === id)
+    const event = eventIndex === -1 ? null : { ...events.value[eventIndex] }
+    if (!event) return
+    const prevActiveDate = activeDate.value
+    const prevActiveEventId = activeEventId.value
+
     events.value = events.value.filter((e) => e.id !== id)
+    if (activeEventId.value === id) activeEventId.value = null
     await persistCache()
+
+    const undoToast = useUndoToastStore()
+    const { t } = useLangStore()
+    await undoToast.schedule({
+      id: `calendar:${id}`,
+      message: t('undo.calendarEventDeleted', {
+        title: event.title,
+        date: event.event_date,
+      }),
+      undo: async () => {
+        restoreEventSnapshot(event, eventIndex)
+        if (activeDate.value === null) activeDate.value = prevActiveDate
+        if (activeEventId.value === null && prevActiveEventId === id) {
+          activeEventId.value = prevActiveEventId
+        }
+        await persistCache()
+      },
+      commit: async () => {
+        try {
+          await calendarEventsService.delete(id)
+        } catch (e) {
+          restoreEventSnapshot(event, eventIndex)
+          if (activeDate.value === null) activeDate.value = prevActiveDate
+          if (activeEventId.value === null && prevActiveEventId === id) {
+            activeEventId.value = prevActiveEventId
+          }
+          loadError.value = e instanceof Error ? e.message : 'Delete calendar event failed'
+          await persistCache()
+        }
+      },
+    })
+  }
+
+  function restoreEventSnapshot(event: CalendarEvent, index: number): void {
+    if (events.value.some((e) => e.id === event.id)) return
+    const next = events.value.slice()
+    next.splice(Math.min(Math.max(index, 0), next.length), 0, event)
+    events.value = next
   }
 
   async function toggleDone(id: string): Promise<void> {

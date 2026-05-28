@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { bookmarksService } from '@/services/bookmarks.service'
+import { useUndoToastStore } from '@/stores/undoToast'
+import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkBackup, BookmarkNode } from '@/types/bookmark'
 
 export const useBookmarksStore = defineStore('bookmarks', () => {
@@ -76,9 +78,47 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
   }
 
   async function deleteBackup(id: string): Promise<void> {
-    await bookmarksService.deleteBackup(id)
+    const backupIndex = backups.value.findIndex((b) => b.id === id)
+    const backup = backupIndex === -1 ? null : {
+      ...backups.value[backupIndex],
+      tree_json: backups.value[backupIndex].tree_json,
+    }
+    if (!backup) return
+    const prevSelectedBackupId = selectedBackupId.value
+
     backups.value = backups.value.filter(b => b.id !== id)
     if (selectedBackupId.value === id) selectedBackupId.value = null
+
+    const undoToast = useUndoToastStore()
+    const { t } = useLangStore()
+    await undoToast.schedule({
+      id: `bookmark-backup:${id}`,
+      message: t('undo.bookmarkBackupDeleted', { label: backup.label }),
+      undo: () => {
+        restoreBackupSnapshot(backup, backupIndex)
+        if (selectedBackupId.value === null && prevSelectedBackupId === id) {
+          selectedBackupId.value = prevSelectedBackupId
+        }
+      },
+      commit: async () => {
+        try {
+          await bookmarksService.deleteBackup(id)
+        } catch (e) {
+          restoreBackupSnapshot(backup, backupIndex)
+          if (selectedBackupId.value === null && prevSelectedBackupId === id) {
+            selectedBackupId.value = prevSelectedBackupId
+          }
+          error.value = e instanceof Error ? e.message : 'Delete backup failed'
+        }
+      },
+    })
+  }
+
+  function restoreBackupSnapshot(backup: BookmarkBackup, index: number): void {
+    if (backups.value.some((b) => b.id === backup.id)) return
+    const next = backups.value.slice()
+    next.splice(Math.min(Math.max(index, 0), next.length), 0, backup)
+    backups.value = next
   }
 
   function exportHTML(): void {

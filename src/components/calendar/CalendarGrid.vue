@@ -8,12 +8,34 @@ const props = withDefaults(defineProps<{
   year: number
   month: number
   showWeekdays?: boolean
+  minDateExclusive?: string
+  maxDateExclusive?: string
 }>(), {
   showWeekdays: true,
 })
 const { t } = useLangStore()
 
-const cells = computed(() => buildMonthGrid(props.year, props.month))
+const cells = computed(() => {
+  const rows: Date[][] = []
+  const grid = buildMonthGrid(props.year, props.month)
+  for (let i = 0; i < grid.length; i += 7) {
+    rows.push(grid.slice(i, i + 7))
+  }
+  return rows
+    .filter((row) => {
+      const first = row[0]
+      const last = row[row.length - 1]
+      if (!first || !last) return false
+      if (props.minDateExclusive && formatLocalDate(last) <= props.minDateExclusive) {
+        return false
+      }
+      if (props.maxDateExclusive && formatLocalDate(first) >= props.maxDateExclusive) {
+        return false
+      }
+      return true
+    })
+    .flat()
+})
 
 const weekdayLabels = computed(() => [
   t('calendar.weekday.mon'),
@@ -50,8 +72,9 @@ function isCurrentMonth(d: Date): boolean {
 .cal-grid {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
+  overflow-anchor: none;
 }
 
 .cal-grid__weekdays {
@@ -76,8 +99,11 @@ function isCurrentMonth(d: Date): boolean {
 .cal-grid__cells {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: minmax(104px, 1fr);
-  flex: 1 1 auto;
+  /* Row có chiều cao tối thiểu cố định để KHÔNG phụ thuộc số hàng của trang,
+     tránh hiện tượng nhảy giật khi shiftVirtualMonth đổi current page. */
+  grid-auto-rows: minmax(112px, auto);
+  flex: 0 0 auto;
   min-height: 0;
+  overflow-anchor: none;
 }
 </style>

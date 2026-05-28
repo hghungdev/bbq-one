@@ -11,6 +11,8 @@ import { withTimeout } from '@/utils/withTimeout'
 import { isNetworkError } from '@/utils/networkErrors'
 import { scheduleAutoSync } from '@/services/autoSync.service'
 import { isOnline } from '@/services/networkReachability.service'
+import { useUndoToastStore } from '@/stores/undoToast'
+import { useLangStore } from '@/stores/uiLang'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -371,7 +373,19 @@ export const useNotesStore = defineStore('notes', () => {
     await persistCache()
   }
 
-  async function deleteNote(id: string): Promise<void> {
+  async function deleteNote(
+    id: string,
+    options: { undoable?: boolean } = {},
+  ): Promise<void> {
+    const undoable = options.undoable ?? true
+    if (undoable) {
+      await scheduleDeleteNote(id)
+      return
+    }
+    await deleteNoteImmediately(id)
+  }
+
+  async function deleteNoteImmediately(id: string): Promise<void> {
     await notesService.delete(id)
     notes.value = notes.value.filter((n) => n.id !== id)
     bodies.value = bodies.value.filter((b) => b.note_id !== id)
@@ -380,6 +394,107 @@ export const useNotesStore = defineStore('notes', () => {
       activeBodyId.value = null
     }
     await persistCache()
+  }
+
+  async function scheduleDeleteNote(id: string): Promise<void> {
+    const noteIndex = notes.value.findIndex((n) => n.id === id)
+    const note = noteIndex === -1 ? null : {
+      ...notes.value[noteIndex],
+      tags: notes.value[noteIndex].tags.slice(),
+    }
+    if (!note) return
+    const folders = useFoldersStore()
+    const folder = note.folder_id
+      ? folders.folders.find((f) => f.id === note.folder_id)
+      : null
+    const noteBodies = bodies.value
+      .map((body, index) => ({ body: { ...body }, index }))
+      .filter(({ body }) => body.note_id === id)
+    const searchResultIndex = searchResults.value.findIndex((n) => n.id === id)
+    const wasInSearchResults = searchResultIndex !== -1
+    const prevSearchQuery = searchQuery.value
+    const prevActiveNoteId = activeNoteId.value
+    const prevActiveBodyId = activeBodyId.value
+
+    notes.value = notes.value.filter((n) => n.id !== id)
+    bodies.value = bodies.value.filter((b) => b.note_id !== id)
+    searchResults.value = searchResults.value.filter((n) => n.id !== id)
+    if (activeNoteId.value === id) activeNoteId.value = null
+    if (activeBodyId.value && !bodies.value.some((b) => b.id === activeBodyId.value)) {
+      activeBodyId.value = null
+    }
+    await persistCache()
+
+    const undoToast = useUndoToastStore()
+    const { t } = useLangStore()
+    await undoToast.schedule({
+      id: `note:${id}`,
+      message: t('undo.noteDeleted', {
+        title: note.title.trim() || t('notes.untitled'),
+        folder: folder?.name ?? t('undo.noFolder'),
+      }),
+      undo: async () => {
+        restoreNoteSnapshot(note, noteIndex, noteBodies)
+        if (wasInSearchResults && searchQuery.value === prevSearchQuery) {
+          restoreSearchResultSnapshot(note, searchResultIndex)
+        }
+        if (activeNoteId.value === null && prevActiveNoteId === id) {
+          activeNoteId.value = prevActiveNoteId
+        }
+        if (activeBodyId.value === null && prevActiveBodyId) {
+          activeBodyId.value = prevActiveBodyId
+        }
+        await persistCache()
+      },
+      commit: async () => {
+        try {
+          await notesService.delete(id)
+        } catch (e) {
+          restoreNoteSnapshot(note, noteIndex, noteBodies)
+          if (wasInSearchResults && searchQuery.value === prevSearchQuery) {
+            restoreSearchResultSnapshot(note, searchResultIndex)
+          }
+          if (activeNoteId.value === null && prevActiveNoteId === id) {
+            activeNoteId.value = prevActiveNoteId
+          }
+          if (activeBodyId.value === null && prevActiveBodyId) {
+            activeBodyId.value = prevActiveBodyId
+          }
+          loadError.value = e instanceof Error ? e.message : 'Delete note failed'
+          await persistCache()
+          return
+        }
+        if (noteBodies.length > 0) {
+          await persistCache()
+        }
+      },
+    })
+  }
+
+  function restoreNoteSnapshot(
+    note: Note,
+    noteIndex: number,
+    noteBodies: { body: NoteBody; index: number }[],
+  ): void {
+    if (!notes.value.some((n) => n.id === note.id)) {
+      const nextNotes = notes.value.slice()
+      nextNotes.splice(Math.min(Math.max(noteIndex, 0), nextNotes.length), 0, note)
+      notes.value = nextNotes
+    }
+
+    let nextBodies = bodies.value.slice()
+    for (const { body, index } of noteBodies) {
+      if (nextBodies.some((b) => b.id === body.id)) continue
+      nextBodies.splice(Math.min(Math.max(index, 0), nextBodies.length), 0, body)
+    }
+    bodies.value = nextBodies
+  }
+
+  function restoreSearchResultSnapshot(note: Note, index: number): void {
+    if (searchResults.value.some((n) => n.id === note.id)) return
+    const next = searchResults.value.slice()
+    next.splice(Math.min(Math.max(index, 0), next.length), 0, note)
+    searchResults.value = next
   }
 
   /**

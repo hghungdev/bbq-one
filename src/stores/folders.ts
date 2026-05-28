@@ -120,7 +120,7 @@ export const useFoldersStore = defineStore('folders', () => {
       .filter((n) => n.folder_id === id)
       .map((n) => n.id)
     for (const noteId of noteIds) {
-      await notesStore.deleteNote(noteId)
+      await notesStore.deleteNote(noteId, { undoable: false })
     }
     await foldersService.delete(id)
     folders.value = folders.value.filter((f) => f.id !== id)

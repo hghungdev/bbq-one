@@ -99,6 +99,7 @@ function onBackdropClick(): void {
           <RetroButton
             variant="sm"
             type="button"
+            class="delete-backup-modal__delete-btn"
             :disabled="!canSubmit"
             @click="submit"
           >
@@ -192,5 +193,18 @@ function onBackdropClick(): void {
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+}
+
+.delete-backup-modal__delete-btn {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-panel));
+  color: var(--danger);
+}
+
+.delete-backup-modal__delete-btn:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, var(--bg-panel));
+  color: var(--danger);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--danger) 18%, transparent);
 }
 </style>

@@ -26,6 +26,7 @@
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
   import IconButton from '@/components/ui/IconButton.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
+  import UndoToast from '@/components/ui/UndoToast.vue'
   import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
   import { todayLocalKey } from '@/utils/calendarDate'
   import {
@@ -501,6 +502,7 @@
       @close="onOverdueReminderClose"
       @confirm="onOverdueReminderConfirm"
     />
+    <UndoToast />
   </div>
 </template>
 

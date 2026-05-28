@@ -3,6 +3,8 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
   addMonths,
+  buildMonthGrid,
+  formatLocalDate,
   normalizeLocalDateKey,
   parseLocalDate,
   todayLocalKey,
@@ -25,8 +27,11 @@ const viewMonth = ref(now.getMonth())
 /** Chỉ cuộn trong khối này — tránh scrollIntoView kéo cả popup làm mất thanh tháng. */
 const gridScrollRef = ref<HTMLElement | null>(null)
 
-/** Render sẵn tháng trước / hiện tại / sau để user cuộn mượt, title chỉ đổi khi qua ngưỡng. */
-const MONTH_PAGE_OFFSETS = [-1, 0, 1] as const
+/** Render sẵn ±2 tháng quanh tháng hiện tại để user cuộn mượt; title chỉ đổi khi
+ *  qua ngưỡng nửa trang. Cửa sổ rộng giúp shiftVirtualMonth hiếm khi cần chạy
+ *  trong lúc người dùng đang cuộn ⇒ giảm hẳn cảm giác giật. */
+const MONTH_PAGE_OFFSETS = [-2, -1, 0, 1, 2] as const
+type MonthPageOffset = (typeof MONTH_PAGE_OFFSETS)[number]
 const PROGRAMMATIC_SCROLL_SUPPRESS_MS = 850
 let monthVirtualizing = false
 let programmaticScrollUntil = 0
@@ -38,10 +43,35 @@ const monthPages = computed(() =>
       key: `${year}-${month}`,
       year,
       month,
-      offset,
+      offset: offset as MonthPageOffset,
     }
   }),
 )
+
+/** Bounds của mỗi trang để filter các tuần chồng lấp với trang kế bên,
+ *  tránh hiển thị 2 lần cùng 1 tuần giữa các tháng liền kề. */
+function monthGridBoundsFor(offset: MonthPageOffset): { start: string; end: string } {
+  const { year, month } = addMonths(viewYear.value, viewMonth.value, offset)
+  const cells = buildMonthGrid(year, month)
+  const first = cells[0]
+  const last = cells[cells.length - 1]
+  return {
+    start: first ? formatLocalDate(first) : '',
+    end: last ? formatLocalDate(last) : '',
+  }
+}
+
+/** Trang offset > 0 cắt tuần overlap với trang trước nó (về phía current = offset-1).
+ *  Trang offset < 0 cắt tuần overlap với trang sau nó (về phía current = offset+1). */
+function pageMinDateExclusive(offset: MonthPageOffset): string | undefined {
+  if (offset <= 0) return undefined
+  return monthGridBoundsFor((offset - 1) as MonthPageOffset).end
+}
+
+function pageMaxDateExclusive(offset: MonthPageOffset): string | undefined {
+  if (offset >= 0) return undefined
+  return monthGridBoundsFor((offset + 1) as MonthPageOffset).start
+}
 
 const weekdayLabels = computed(() => [
   t('calendar.weekday.mon'),
@@ -52,6 +82,11 @@ const weekdayLabels = computed(() => [
   t('calendar.weekday.sat'),
   t('calendar.weekday.sun'),
 ])
+
+type ScrollAnchor = {
+  dateKey: string
+  deltaFromViewportCenter: number
+}
 
 onMounted(() => {
   void centerCurrentMonthPage().then(() => scrollToTodayInView('auto'))
@@ -72,13 +107,65 @@ async function centerCurrentMonthPage(): Promise<void> {
   const scrollRoot = gridScrollRef.value
   const currentPage = getMonthPage(0)
   if (!scrollRoot || !currentPage) return
-  scrollRoot.scrollTop = currentPage.offsetTop
+  scrollRoot.scrollTop = Math.round(currentPage.offsetTop)
 }
 
-function getMonthPage(offset: -1 | 0 | 1): HTMLElement | null {
+function getMonthPage(offset: MonthPageOffset): HTMLElement | null {
   return gridScrollRef.value?.querySelector<HTMLElement>(
     `[data-cal-month-offset="${offset}"]`,
   ) ?? null
+}
+
+function captureScrollAnchor(page: HTMLElement, scrollRoot: HTMLElement): ScrollAnchor | null {
+  const cells = [...page.querySelectorAll<HTMLElement>('[data-cal-date]')]
+  if (cells.length === 0) return null
+  const rootRect = scrollRoot.getBoundingClientRect()
+  const viewportCenter = rootRect.top + scrollRoot.clientHeight / 2
+  let best: { cell: HTMLElement; distance: number } | null = null
+  for (const cell of cells) {
+    const rect = cell.getBoundingClientRect()
+    const cellCenter = rect.top + rect.height / 2
+    const distance = Math.abs(cellCenter - viewportCenter)
+    if (!best || distance < best.distance) {
+      best = { cell, distance }
+    }
+  }
+  const dateKey = best?.cell.dataset.calDate
+  if (!best || !dateKey) return null
+  const rect = best.cell.getBoundingClientRect()
+  return {
+    dateKey,
+    deltaFromViewportCenter: rect.top + rect.height / 2 - viewportCenter,
+  }
+}
+
+function restoreScrollAnchor(anchor: ScrollAnchor): void {
+  const scrollRoot = gridScrollRef.value
+  const currentPage = getMonthPage(0)
+  if (!scrollRoot || !currentPage) return
+  const cell = currentPage.querySelector<HTMLElement>(
+    `[data-cal-date="${anchor.dateKey}"]`,
+  )
+  if (!cell) {
+    scrollRoot.scrollTop = Math.round(currentPage.offsetTop)
+    return
+  }
+  const rootRect = scrollRoot.getBoundingClientRect()
+  const cellRect = cell.getBoundingClientRect()
+  const viewportCenter = rootRect.top + scrollRoot.clientHeight / 2
+  const currentDelta = cellRect.top + cellRect.height / 2 - viewportCenter
+  // Math.round để tránh sub-pixel render gây cảm giác "rung" 1px khi shift.
+  scrollRoot.scrollTop = Math.round(scrollRoot.scrollTop + (currentDelta - anchor.deltaFromViewportCenter))
+}
+
+function renderedPageOffsetForDateKey(dateKey: string): MonthPageOffset | null {
+  const d = parseLocalDate(dateKey)
+  if (Number.isNaN(d.getTime())) return null
+  for (const offset of MONTH_PAGE_OFFSETS) {
+    const { year, month } = addMonths(viewYear.value, viewMonth.value, offset)
+    if (d.getFullYear() === year && d.getMonth() === month) return offset
+  }
+  return null
 }
 
 async function syncGridMonthToDateKey(raw: string, centerPage = true): Promise<void> {
@@ -94,6 +181,8 @@ async function syncGridMonthToDateKey(raw: string, centerPage = true): Promise<v
 /** Pinia: watch ref trực tiếp — đảm bảo đổi tháng khi mở modal (ô / search / sửa). */
 watch(activeDate, (dateKey) => {
   if (!dateKey) return
+  const normalized = normalizeLocalDateKey(dateKey)
+  if (renderedPageOffsetForDateKey(normalized) !== null) return
   void syncGridMonthToDateKey(dateKey)
 })
 
@@ -154,28 +243,35 @@ function gotoNext(): void {
   void centerCurrentMonthPage()
 }
 
-/** Khi tâm viewport qua trang tháng kế/cũ, đổi title và giữ nguyên vị trí tương đối. */
+/** Khi qua mốc nửa trang tháng kế/cũ, đổi title và giữ nguyên vị trí tương đối.
+ *  Ngưỡng dựa trên offsetHeight thực của trang (variable height) thay vì giả định
+ *  mỗi trang = clientHeight, tránh trigger lặp khi viewport cao hơn 1 trang. */
 function onGridScroll(): void {
   const el = gridScrollRef.value
   if (!el) return
   if (monthVirtualizing || isProgrammaticScrollActive()) return
-  const viewportCenter = el.scrollTop + el.clientHeight / 2
   const previousPage = getMonthPage(-1)
   const currentPage = getMonthPage(0)
   const nextPage = getMonthPage(1)
   if (!previousPage || !currentPage || !nextPage) return
-  if (viewportCenter >= nextPage.offsetTop) {
-    void shiftVirtualMonth(1, el.scrollTop - nextPage.offsetTop)
+  const scrollTop = el.scrollTop
+  const forwardTrigger = currentPage.offsetTop + currentPage.offsetHeight / 2
+  const backwardTrigger = currentPage.offsetTop - previousPage.offsetHeight / 2
+  if (scrollTop >= forwardTrigger) {
+    void shiftVirtualMonth(1, captureScrollAnchor(nextPage, el))
     return
   }
-  if (viewportCenter < currentPage.offsetTop) {
-    void shiftVirtualMonth(-1, el.scrollTop - previousPage.offsetTop)
+  if (scrollTop < backwardTrigger) {
+    void shiftVirtualMonth(-1, captureScrollAnchor(previousPage, el))
   }
 }
 
-async function shiftVirtualMonth(deltaMonths: -1 | 1, relativeScrollTop: number): Promise<void> {
+async function shiftVirtualMonth(deltaMonths: -1 | 1, anchor: ScrollAnchor | null): Promise<void> {
   if (monthVirtualizing) return
   monthVirtualizing = true
+  // Đặt suppress TRƯỚC khi mutate state để chặn inertia scroll event
+  // (trackpad/touch) kích lại onGridScroll trong lúc DOM đang re-render.
+  suppressProgrammaticScroll(280)
   if (deltaMonths > 0) {
     const { year, month } = addMonths(viewYear.value, viewMonth.value, 1)
     viewYear.value = year
@@ -189,8 +285,14 @@ async function shiftVirtualMonth(deltaMonths: -1 | 1, relativeScrollTop: number)
   requestAnimationFrame(() => {
     const el = gridScrollRef.value
     const currentPage = getMonthPage(0)
-    if (el && currentPage) el.scrollTop = currentPage.offsetTop + relativeScrollTop
-    suppressProgrammaticScroll(120)
+    if (el && currentPage) {
+      if (anchor) {
+        restoreScrollAnchor(anchor)
+      } else {
+        el.scrollTop = currentPage.offsetTop
+      }
+    }
+    suppressProgrammaticScroll(160)
     monthVirtualizing = false
   })
 }
@@ -247,6 +349,8 @@ function jumpToEvent(ev: CalendarEvent): void {
           :year="page.year"
           :month="page.month"
           :show-weekdays="false"
+          :min-date-exclusive="pageMinDateExclusive(page.offset)"
+          :max-date-exclusive="pageMaxDateExclusive(page.offset)"
         />
       </section>
     </div>
@@ -278,7 +382,15 @@ function jumpToEvent(ev: CalendarEvent): void {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  overflow-anchor: none;
   padding: 0 12px 12px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.calendar-tab__grid-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .calendar-tab__weekdays {
@@ -302,12 +414,11 @@ function jumpToEvent(ev: CalendarEvent): void {
 }
 
 .calendar-tab__month-page {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: block;
   border-left: 1px solid var(--border);
   border-right: 1px solid var(--border);
   background: var(--bg-secondary);
+  overflow-anchor: none;
 }
 
 .calendar-tab__month-page + .calendar-tab__month-page {
