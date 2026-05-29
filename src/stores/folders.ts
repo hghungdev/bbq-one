@@ -2,10 +2,13 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { FOLDERS_CACHE_KEY } from '@/constants/storage'
 import { foldersService } from '@/services/folders.service'
+import { localFoldersService } from '@/services/localFirst/localNotes.service'
 import { useNotesStore } from '@/stores/notes'
 import type { Folder } from '@/types'
 import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
+import { isNetworkError } from '@/utils/networkErrors'
+import { scheduleAutoSync } from '@/services/autoSync.service'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -91,11 +94,21 @@ export const useFoldersStore = defineStore('folders', () => {
       folders.value.length === 0
         ? 0
         : Math.max(...folders.value.map((f) => f.position)) + 1
-    const folder = await foldersService.create(trimmed, position)
+    let folder: Folder
+    let createdOffline = false
+    try {
+      folder = await foldersService.create(trimmed, position)
+    } catch (e) {
+      if (isOnline() && !isNetworkError(e)) throw e
+      const local = await localFoldersService.create(trimmed, position)
+      folder = { ...local, user_id: '' } as Folder
+      createdOffline = true
+    }
     folders.value = sortFoldersByUpdatedDesc([...folders.value, folder])
     activeFolderId.value = folder.id
     useNotesStore().selectNote(null)
     await persistCache()
+    if (createdOffline) scheduleAutoSync('folder-create-offline')
     return folder
   }
 
@@ -104,6 +117,9 @@ export const useFoldersStore = defineStore('folders', () => {
     if (!trimmed) {
       throw new Error('Folder name required')
     }
+    // Folder không có cột synced_at trong DB schema hiện tại → không thể queue
+    // rename offline rồi push sau qua dirty-detection. Để tránh data drift, yêu
+    // cầu mạng cho rename. createFolder offline vẫn được xử lý qua localFirst.
     const data = await foldersService.update(id, { name: trimmed })
     const idx = folders.value.findIndex((f) => f.id === id)
     if (idx !== -1) folders.value[idx] = data

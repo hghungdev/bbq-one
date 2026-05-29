@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { BOOKMARKS_CACHE_KEY } from '@/constants/storage'
 import { bookmarksService } from '@/services/bookmarks.service'
+import { isOnline } from '@/services/networkReachability.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkBackup, BookmarkNode } from '@/types/bookmark'
+import { isNetworkError } from '@/utils/networkErrors'
 
 export const useBookmarksStore = defineStore('bookmarks', () => {
   const liveTree = ref<BookmarkNode[]>([])
@@ -19,27 +22,72 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
     () => backups.value.find(b => b.id === selectedBackupId.value) ?? null
   )
 
-  /** Load bookmark từ Chrome (live) */
+  async function hydrateBackupsFromCache(): Promise<boolean> {
+    try {
+      const cached = await chrome.storage.local.get(BOOKMARKS_CACHE_KEY)
+      const raw = cached[BOOKMARKS_CACHE_KEY] as BookmarkBackup[] | undefined
+      if (Array.isArray(raw)) {
+        backups.value = raw
+        return raw.length > 0
+      }
+    } catch {
+      /* chrome.storage optional in tests */
+    }
+    return false
+  }
+
+  async function persistBackupsCache(): Promise<void> {
+    try {
+      await chrome.storage.local.set({ [BOOKMARKS_CACHE_KEY]: backups.value })
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /** Gán lỗi thân thiện — không hiện "Failed to fetch" khi offline (banner đã giải thích). */
+  function setErrorFromCaught(e: unknown, offlineSilent = false): void {
+    if (offlineSilent && (!isOnline() || isNetworkError(e))) {
+      error.value = null
+      return
+    }
+    const { t } = useLangStore()
+    if (isNetworkError(e)) {
+      error.value = t('bookmark.errorOfflineCloud')
+      return
+    }
+    error.value = e instanceof Error ? e.message : String(e)
+  }
+
+  /** Load bookmark từ Chrome (live) — không cần mạng. */
   async function loadLive(): Promise<void> {
     loading.value = true
-    error.value = null
     try {
       liveTree.value = await bookmarksService.getFromBrowser()
+      error.value = null
     } catch (e) {
-      error.value = (e as Error).message
+      setErrorFromCaught(e)
     } finally {
       loading.value = false
     }
   }
 
-  /** Load danh sách backup từ Supabase */
+  /** Load danh sách backup từ Supabase; offline dùng cache, không báo lỗi mạng thô. */
   async function loadBackups(): Promise<void> {
     loading.value = true
-    error.value = null
     try {
+      if (!isOnline()) {
+        await hydrateBackupsFromCache()
+        return
+      }
       backups.value = await bookmarksService.listBackups()
+      await persistBackupsCache()
     } catch (e) {
-      error.value = (e as Error).message
+      if (isNetworkError(e)) {
+        await hydrateBackupsFromCache()
+        error.value = null
+        return
+      }
+      setErrorFromCaught(e)
     } finally {
       loading.value = false
     }
@@ -54,8 +102,9 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
       const saved = await bookmarksService.saveBackup(tree, label)
       backups.value.unshift(saved)
       lastBackupAt.value = saved.created_at
+      await persistBackupsCache()
     } catch (e) {
-      error.value = (e as Error).message
+      setErrorFromCaught(e)
     } finally {
       loading.value = false
     }
@@ -71,7 +120,7 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
       await bookmarksService.restoreToChrome(bk.tree_json)
       await loadLive()
     } catch (e) {
-      error.value = (e as Error).message
+      setErrorFromCaught(e)
     } finally {
       loading.value = false
     }
@@ -108,7 +157,7 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
           if (selectedBackupId.value === null && prevSelectedBackupId === id) {
             selectedBackupId.value = prevSelectedBackupId
           }
-          error.value = e instanceof Error ? e.message : 'Delete backup failed'
+          setErrorFromCaught(e)
         }
       },
     })
@@ -141,7 +190,7 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
       await bookmarksService.deleteAllFromBrowser()
       await loadLive()
     } catch (e) {
-      error.value = (e as Error).message
+      setErrorFromCaught(e)
     } finally {
       loading.value = false
     }

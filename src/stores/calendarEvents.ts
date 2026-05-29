@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { CALENDAR_EVENTS_CACHE_KEY, CALENDAR_MAX_EVENTS_PER_DAY } from '@/constants/calendar'
 import { calendarEventsService } from '@/services/calendarEvents.service'
+import { localCalendarEventsService } from '@/services/localFirst/localCalendarEvents.service'
 import { normalizeLocalDateKey } from '@/utils/calendarDate'
 import type {
   CalendarEvent,
@@ -10,6 +11,8 @@ import type {
 } from '@/types/calendar'
 import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
+import { isNetworkError } from '@/utils/networkErrors'
+import { scheduleAutoSync } from '@/services/autoSync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 
@@ -117,25 +120,58 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
       throw new Error('MAX_EVENTS_PER_DAY')
     }
     const nextPos = siblings.length
-    const created = await calendarEventsService.create({
-      ...input,
-      event_date: dayKey,
-      position: nextPos,
-    })
+    let created: CalendarEvent
+    let createdOffline = false
+    try {
+      created = await calendarEventsService.create({
+        ...input,
+        event_date: dayKey,
+        position: nextPos,
+      })
+    } catch (e) {
+      if (isOnline() && !isNetworkError(e)) throw e
+      // Offline fallback: tạo trong LocalFirst → autoSync push qua pushLocalToCloud.
+      const local = await localCalendarEventsService.create({
+        ...input,
+        event_date: dayKey,
+        position: nextPos,
+      })
+      created = { ...local, user_id: '' } as CalendarEvent
+      createdOffline = true
+    }
     const row = { ...created, event_date: normalizeLocalDateKey(created.event_date) }
     events.value = [...events.value, row]
     await persistCache()
+    if (createdOffline) scheduleAutoSync('calendar-create-offline')
     return row
   }
 
   async function updateEvent(id: string, updates: CalendarEventUpdateInput): Promise<void> {
     const idx = events.value.findIndex((e) => e.id === id)
     if (idx < 0) return
-    const updated = await calendarEventsService.update(id, updates)
-    const next = events.value.slice()
-    next[idx] = { ...updated, event_date: normalizeLocalDateKey(updated.event_date) }
-    events.value = next
-    await persistCache()
+    try {
+      const updated = await calendarEventsService.update(id, updates)
+      const next = events.value.slice()
+      next[idx] = { ...updated, event_date: normalizeLocalDateKey(updated.event_date) }
+      events.value = next
+      await persistCache()
+    } catch (e) {
+      if (isOnline() && !isNetworkError(e)) throw e
+      // Offline: cập nhật Pinia + cache với updated_at mới; syncFromCache push sau
+      // qua dirty-detection (calendar event có cột synced_at trong DB).
+      const ts = new Date().toISOString()
+      const next = events.value.slice()
+      const cur = next[idx]
+      next[idx] = {
+        ...cur,
+        ...updates,
+        event_date: normalizeLocalDateKey(updates.event_date ?? cur.event_date),
+        updated_at: ts,
+      }
+      events.value = next
+      await persistCache()
+      scheduleAutoSync('calendar-update-offline')
+    }
   }
 
   async function deleteEvent(id: string): Promise<void> {

@@ -3,6 +3,10 @@ import { computed, ref } from 'vue'
 import { NOTE_BODIES_CACHE_KEY, NOTES_CACHE_KEY } from '@/constants/storage'
 import { noteBodiesService } from '@/services/noteBodies.service'
 import { filterNotesBySubstring, notesService } from '@/services/notes.service'
+import {
+  localNoteBodiesService,
+  localNotesService,
+} from '@/services/localFirst/localNotes.service'
 import { useFoldersStore } from '@/stores/folders'
 import { useSecureFolderStore } from '@/stores/secureFolder'
 import type { Note, NoteBody } from '@/types'
@@ -164,16 +168,38 @@ export const useNotesStore = defineStore('notes', () => {
       bodyLabel = await encryptField('', key)
       bodyContent = await encryptField('', key)
     }
-    const note = await notesService.create({
-      title,
-      folder_id: folderId,
-      tags: [],
-    })
-    const bodyRow = await noteBodiesService.create(note.id, {
-      label: bodyLabel,
-      content: bodyContent,
-      position: 0,
-    })
+    let note: Note
+    let bodyRow: NoteBody
+    let createdOffline = false
+    try {
+      note = await notesService.create({
+        title,
+        folder_id: folderId,
+        tags: [],
+      })
+      bodyRow = await noteBodiesService.create(note.id, {
+        label: bodyLabel,
+        content: bodyContent,
+        position: 0,
+      })
+    } catch (e) {
+      // Offline / network fail: ghi vào LocalFirst storage để autoSync push sau.
+      // KHÔNG mất dữ liệu user vừa tạo.
+      if (isOnline() && !isNetworkError(e)) throw e
+      const localNote = await localNotesService.create({
+        title,
+        folder_id: folderId,
+        tags: [],
+      })
+      const localBody = await localNoteBodiesService.create(localNote.id, {
+        label: bodyLabel,
+        content: bodyContent,
+        position: 0,
+      })
+      note = { ...localNote, user_id: '' } as Note
+      bodyRow = { ...localBody, user_id: '' } as NoteBody
+      createdOffline = true
+    }
     let storedNote = note
     let storedBody = bodyRow
     if (folder?.is_secure && key) {
@@ -191,8 +217,9 @@ export const useNotesStore = defineStore('notes', () => {
     bodies.value = [storedBody, ...bodies.value]
     activeNoteId.value = storedNote.id
     activeBodyId.value = storedBody.id
-    isDirty.value = false
+    isDirty.value = createdOffline
     await persistCache()
+    if (createdOffline) scheduleAutoSync('note-create-offline')
     return storedNote
   }
 
@@ -337,11 +364,24 @@ export const useNotesStore = defineStore('notes', () => {
       label = await encryptField('', key)
       content = await encryptField('', key)
     }
-    const row = await noteBodiesService.create(noteId, {
-      label,
-      content,
-      position,
-    })
+    let row: NoteBody
+    let createdOffline = false
+    try {
+      row = await noteBodiesService.create(noteId, {
+        label,
+        content,
+        position,
+      })
+    } catch (e) {
+      if (isOnline() && !isNetworkError(e)) throw e
+      const localBody = await localNoteBodiesService.create(noteId, {
+        label,
+        content,
+        position,
+      })
+      row = { ...localBody, user_id: '' } as NoteBody
+      createdOffline = true
+    }
     let stored = row
     if (folder?.is_secure && key) {
       stored = {
@@ -353,6 +393,7 @@ export const useNotesStore = defineStore('notes', () => {
     bodies.value = [...bodies.value, stored]
     activeBodyId.value = stored.id
     await persistCache()
+    if (createdOffline) scheduleAutoSync('body-create-offline')
     return stored
   }
 

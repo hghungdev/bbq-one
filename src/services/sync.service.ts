@@ -3,8 +3,11 @@ import {
   NOTE_BODIES_CACHE_KEY,
   NOTES_CACHE_KEY,
 } from '@/constants/storage'
+import { CALENDAR_EVENTS_CACHE_KEY } from '@/constants/calendar'
 import type { Folder, Note, NoteBody } from '@/types'
+import type { CalendarEvent } from '@/types/calendar'
 import { encryptField, isEncryptedEnvelope } from '@/utils/secureCrypto'
+import { calendarEventsService } from './calendarEvents.service'
 import { noteBodiesService } from './noteBodies.service'
 import { notesService } from './notes.service'
 import { isAuthenticated } from './localFirst/authMode'
@@ -12,6 +15,11 @@ import { isAuthenticated } from './localFirst/authMode'
 export function isNoteDirty(n: Note): boolean {
   if (!n.synced_at) return true
   return new Date(n.updated_at) > new Date(n.synced_at)
+}
+
+export function isCalendarEventDirty(e: CalendarEvent): boolean {
+  if (!e.synced_at) return true
+  return new Date(e.updated_at) > new Date(e.synced_at)
 }
 
 function bodiesForNoteSorted(all: NoteBody[], noteId: string): NoteBody[] {
@@ -77,36 +85,77 @@ export const syncService = {
     return count
   },
 
+  /** Push dirty calendar events (created_offline/updated_offline) lên cloud. */
+  async syncDirtyCalendarEventsFromList(events: CalendarEvent[]): Promise<number> {
+    const dirty = events.filter(isCalendarEventDirty)
+    let count = 0
+    const ts = new Date().toISOString()
+    for (const ev of dirty) {
+      try {
+        await calendarEventsService.update(ev.id, {
+          title: ev.title,
+          description: ev.description,
+          event_date: ev.event_date,
+          is_done: ev.is_done,
+          position: ev.position,
+          color: ev.color,
+          synced_at: ts,
+        })
+        count++
+      } catch {
+        /* offline / row đã bị xóa cloud — skip, retry lần sau */
+      }
+    }
+    return count
+  },
+
   /**
    * Service worker: đọc cache, push dirty (bỏ qua note secure plaintext nếu không có key).
    * Chỉ chạy khi đã đăng nhập — anonymous mode không có cloud để push lên.
    */
   async syncFromCache(): Promise<number> {
     if (!(await isAuthenticated())) return 0
-    const { [NOTES_CACHE_KEY]: raw, [FOLDERS_CACHE_KEY]: foldersRaw, [NOTE_BODIES_CACHE_KEY]: bodiesRaw } =
-      await chrome.storage.local.get([
-        NOTES_CACHE_KEY,
-        FOLDERS_CACHE_KEY,
-        NOTE_BODIES_CACHE_KEY,
-      ])
+    const {
+      [NOTES_CACHE_KEY]: raw,
+      [FOLDERS_CACHE_KEY]: foldersRaw,
+      [NOTE_BODIES_CACHE_KEY]: bodiesRaw,
+      [CALENDAR_EVENTS_CACHE_KEY]: calRaw,
+    } = await chrome.storage.local.get([
+      NOTES_CACHE_KEY,
+      FOLDERS_CACHE_KEY,
+      NOTE_BODIES_CACHE_KEY,
+      CALENDAR_EVENTS_CACHE_KEY,
+    ])
     const notes = Array.isArray(raw) ? (raw as Note[]) : []
     const folders = Array.isArray(foldersRaw) ? (foldersRaw as Folder[]) : []
     const noteBodies = Array.isArray(bodiesRaw) ? (bodiesRaw as NoteBody[]) : []
-    if (notes.length === 0) return 0
-    const count = await this.syncDirtyNotesFromList(
-      notes,
-      noteBodies,
-      folders,
-      () => null,
-    )
+    const calendarEvents = Array.isArray(calRaw) ? (calRaw as CalendarEvent[]) : []
+
+    let count = 0
+    if (notes.length > 0) {
+      count += await this.syncDirtyNotesFromList(
+        notes,
+        noteBodies,
+        folders,
+        () => null,
+      )
+    }
+    if (calendarEvents.length > 0) {
+      count += await this.syncDirtyCalendarEventsFromList(calendarEvents)
+    }
+
+    if (count === 0) return 0
+
     try {
-      const [freshNotes, freshBodies] = await Promise.all([
+      const [freshNotes, freshBodies, freshCalendar] = await Promise.all([
         notesService.getAll(),
         noteBodiesService.getAll(),
+        calendarEventsService.getAll(),
       ])
       await chrome.storage.local.set({
         [NOTES_CACHE_KEY]: freshNotes,
         [NOTE_BODIES_CACHE_KEY]: freshBodies,
+        [CALENDAR_EVENTS_CACHE_KEY]: freshCalendar,
       })
     } catch {
       /* offline */

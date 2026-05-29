@@ -12,6 +12,8 @@ import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
+import BookmarkSkeleton from '@/components/ui/BookmarkSkeleton.vue'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import BookmarkPinModal from './BookmarkPinModal.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
@@ -185,9 +187,7 @@ async function onRefreshLive(): Promise<void> {
 </script>
 
 <template>
-  <p v-if="pinGateLoading" class="bm-tab__gate-loading retro-empty">
-    {{ t('bookmark.loading') }}
-  </p>
+  <BookmarkSkeleton v-if="pinGateLoading" class="bm-tab__skeleton" />
   <BookmarkPinModal
     v-else-if="!pinReady"
     :mode="pinModalMode"
@@ -224,7 +224,21 @@ async function onRefreshLive(): Promise<void> {
       <!-- Cột trái: danh sách backup -->
       <div class="bm-tab__backups" @click.self="bm.clearBookmarkSearch()">
         <p class="bm-tab__col-title">{{ t('bookmark.backups') }}</p>
-        <p v-if="bm.backups.length === 0" class="bm-tab__empty">{{ t('bookmark.noneYet') }}</p>
+        <div
+          v-if="bm.loading && bm.backups.length === 0"
+          class="bm-tab__backups-skel"
+          role="status"
+          :aria-label="t('bookmark.loading')"
+        >
+          <div v-for="i in 3" :key="i" class="bm-tab__backup-skel-item">
+            <SkeletonLoader variant="line" width="100%" height="12" rounded="6px" />
+            <SkeletonLoader variant="line" width="60%" height="10" rounded="6px" />
+          </div>
+        </div>
+        <p
+          v-else-if="bm.backups.length === 0"
+          class="bm-tab__empty"
+        >{{ t('bookmark.noneYet') }}</p>
         <div
           v-for="bk in bm.backups"
           :key="bk.id"
@@ -272,7 +286,27 @@ async function onRefreshLive(): Promise<void> {
             {{ t('bookmark.liveSwitchBtn') }}
           </button>
         </p>
-        <p v-if="bm.loading" class="bm-tab__empty">{{ t('bookmark.loading') }}</p>
+        <div
+          v-if="bm.loading"
+          class="bm-tab__tree-skel"
+          role="status"
+          :aria-label="t('bookmark.loading')"
+        >
+          <div
+            v-for="row in 8"
+            :key="row"
+            class="bm-tab__tree-skel-row"
+            :class="[`bm-tab__tree-skel-row--depth-${row % 3}`]"
+          >
+            <SkeletonLoader variant="circle" width="14" height="14" />
+            <SkeletonLoader
+              variant="line"
+              :width="`${72 - (row % 4) * 8}%`"
+              height="12"
+              rounded="6px"
+            />
+          </div>
+        </div>
         <!-- Có ô SEARCH: quét LIVE + mọi backup -->
         <div v-else-if="isBookmarkSearchActive" class="bm-tab__global">
           <p v-if="globalHits.length === 0" class="bm-tab__empty">{{ t('bookmark.noMatchesAny') }}</p>
@@ -336,12 +370,52 @@ async function onRefreshLive(): Promise<void> {
 </template>
 
 <style scoped>
-.bm-tab__gate-loading {
-  margin: 0;
-  padding: 24px 12px;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+.bm-tab__skeleton {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bm-tab__tree-skel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 4px 8px;
+}
+
+.bm-tab__tree-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+}
+
+.bm-tab__tree-skel-row--depth-0 {
+  padding-left: 4px;
+}
+
+.bm-tab__tree-skel-row--depth-1 {
+  padding-left: 22px;
+}
+
+.bm-tab__tree-skel-row--depth-2 {
+  padding-left: 40px;
+}
+
+.bm-tab__backups-skel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px;
+}
+
+.bm-tab__backup-skel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-panel) 40%, transparent);
 }
 
 .bm-tab {

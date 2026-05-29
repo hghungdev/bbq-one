@@ -28,8 +28,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function init(): Promise<void> {
+  /** Set isAuthenticated từ cờ cache offline khi Supabase getSession có thể hang.
+   *  Cho phép popup mở instant offline; sau đó init() chạy nền sẽ verify lại session. */
+  async function hydrateOfflineLoggedIn(loggedInFromCache: boolean): Promise<void> {
     if (initialized.value) return
+    if (loggedInFromCache) {
+      // Đặt session "soft" để isAuthenticated=true; user/email chưa cần
+      // (UI ch\u1ec9 ki\u1ec3m tra isAuthenticated; init() s\u1ebd ghi \u0111\u00e8 b\u1eb1ng session th\u1eadt khi online).
+      session.value = { __offlineHydrated: true } as unknown as Session
+    }
+    initialized.value = true
+  }
+
+  async function init(): Promise<void> {
+    if (initialized.value && session.value && !(session.value as unknown as { __offlineHydrated?: boolean }).__offlineHydrated) {
+      return
+    }
     initError.value = null
     try {
       let {
@@ -118,6 +132,7 @@ export const useAuthStore = defineStore('auth', () => {
     initError,
     isAuthenticated,
     init,
+    hydrateOfflineLoggedIn,
     login,
     logout,
     changeAccountPassword,

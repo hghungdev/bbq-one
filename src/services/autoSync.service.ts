@@ -1,5 +1,8 @@
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { syncService } from '@/services/sync.service'
+import { pushLocalToCloud } from '@/services/localFirst/syncEngine.service'
+import { localStore } from '@/services/localFirst/localStore.service'
+import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
 import {
   initNetworkReachability,
   isOnline,
@@ -45,7 +48,24 @@ export function scheduleAutoSync(_reason: string): void {
   }, ONLINE_DEBOUNCE_MS)
 }
 
-/** Chạy sync từ cache — dùng được trong SW lẫn popup. */
+/** Có entry nào tạo offline (LocalFirst storage còn dữ liệu) cần push lên cloud không? */
+async function hasLocalFirstPending(): Promise<boolean> {
+  for (const key of [
+    LOCAL_STORAGE_KEYS.folders,
+    LOCAL_STORAGE_KEYS.notes,
+    LOCAL_STORAGE_KEYS.noteBodies,
+    LOCAL_STORAGE_KEYS.calendarEvents,
+    LOCAL_STORAGE_KEYS.bookmarks,
+  ]) {
+    const arr = await localStore.getArray<unknown>(key)
+    if (arr.length > 0) return true
+  }
+  return false
+}
+
+/** Chạy sync từ cache — dùng được trong SW lẫn popup.
+ *  Bao gồm: (1) push entry tạo offline trong LocalFirst (insert mới); rồi
+ *  (2) sync dirty rows từ NOTES_CACHE_KEY (update existing). */
 export async function runBackgroundAutoSync(reason: string): Promise<number> {
   if (syncInFlight) return 0
   if (!isOnline()) return 0
@@ -53,15 +73,29 @@ export async function runBackgroundAutoSync(reason: string): Promise<number> {
 
   syncInFlight = true
   try {
-    const count = await syncService.syncFromCache()
-    if (count > 0) {
+    let total = 0
+    if (await hasLocalFirstPending()) {
       try {
-        await chrome.runtime.sendMessage({ type: AUTO_SYNC_MESSAGE, count })
+        const result = await pushLocalToCloud('use-local')
+        total
+          += result.pushedNotes
+          + result.pushedNoteBodies
+          + result.pushedFolders
+          + result.pushedCalendarEvents
+      } catch (e) {
+        console.warn('[BBQOne] pushLocalToCloud failed:', reason, e)
+      }
+    }
+    const count = await syncService.syncFromCache()
+    total += count
+    if (total > 0) {
+      try {
+        await chrome.runtime.sendMessage({ type: AUTO_SYNC_MESSAGE, count: total })
       } catch {
         /* popup có thể đóng */
       }
     }
-    return count
+    return total
   } catch (e) {
     console.warn('[BBQOne] auto sync failed:', reason, e)
     return 0

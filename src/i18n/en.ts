@@ -51,6 +51,10 @@ export const en = {
   'app.sync.titleOfflinePending': 'Offline — unsaved changes will sync when online',
   'app.errorConnect': '[ERROR] Cannot connect to server',
   'app.dragResize': 'Drag to resize',
+  'app.offlineBanner.title': 'You are offline',
+  'app.offlineBanner.body': 'Changes are saved locally and will sync automatically when you are back online.',
+  'app.offlineBanner.syncing': 'Network restored — syncing your changes…',
+  'app.offlineBanner.synced': 'All changes synced to cloud.',
 
   'theme.ariaGroup':
     'Theme: dark or light appearance. Preference is synced in this browser.',
@@ -222,6 +226,8 @@ export const en = {
   'bookmark.deleteBackup.cancelBtn': 'CANCEL',
   'bookmark.confirmDeleteAll': 'DELETE ALL bookmarks from browser? This cannot be undone. Create or export a backup first if you need a recovery point.',
   'bookmark.loading': 'Loading…',
+  'bookmark.errorOfflineCloud':
+    'This action needs the internet. Your live bookmarks still work offline.',
   'bookmark.rstTitle': 'Restore',
   'bookmark.delTitle': 'Delete',
   'bookmark.clearTitle': 'Clear search',

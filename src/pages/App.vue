@@ -27,6 +27,8 @@
   import IconButton from '@/components/ui/IconButton.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
   import UndoToast from '@/components/ui/UndoToast.vue'
+  import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
+  import OfflineBanner from '@/components/ui/OfflineBanner.vue'
   import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
   import { todayLocalKey } from '@/utils/calendarDate'
   import {
@@ -448,6 +450,8 @@
       />
     </header>
 
+    <OfflineBanner />
+
     <p v-if="loadErrorLine" class="shell__error" role="alert">
       {{ loadErrorLine }}
     </p>
@@ -486,10 +490,7 @@
         <CalendarTab class="shell__col--full" />
       </div>
     </template>
-    <p v-else class="shell__loading retro-empty">
-      {{ t('app.loading')
-      }}<span class="retro-loading__dots"><span>.</span><span>.</span><span>.</span></span>
-    </p>
+    <DashboardSkeleton v-else class="shell__loading-skel" />
 
     <SettingsModal v-if="showSettings" @close="showSettings = false" />
 
@@ -723,6 +724,11 @@
     flex: 1 1 auto;
     margin: 0;
     padding: 16px 12px;
+  }
+
+  .shell__loading-skel {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .shell__grid--full {

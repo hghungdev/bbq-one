@@ -53,6 +53,10 @@ export const vi: Record<I18nKey, string> = {
   'app.sync.titleOfflinePending': 'Ngoại tuyến — thay đổi chưa lên cloud, sẽ sync khi có mạng',
   'app.errorConnect': '[LỖI] Không kết nối được máy chủ',
   'app.dragResize': 'Kéo để thay đổi kích thước',
+  'app.offlineBanner.title': 'Bạn đang ngoại tuyến',
+  'app.offlineBanner.body': 'Mọi thay đổi được lưu cục bộ và sẽ tự đồng bộ khi mạng quay lại.',
+  'app.offlineBanner.syncing': 'Mạng đã trở lại — đang đồng bộ thay đổi…',
+  'app.offlineBanner.synced': 'Đã đồng bộ tất cả thay đổi lên cloud.',
 
   'theme.ariaGroup':
     'Giao diện: sáng hoặc tối. Tuỳ chọn được lưu đồng bộ trong trình duyệt.',
@@ -224,6 +228,8 @@ export const vi: Record<I18nKey, string> = {
   'bookmark.deleteBackup.cancelBtn': 'HỦY',
   'bookmark.confirmDeleteAll': 'XÓA TẤT CẢ bookmark khỏi trình duyệt? Thao tác này không thể hoàn tác. Hãy tạo hoặc xuất bản sao lưu trước nếu cần điểm khôi phục.',
   'bookmark.loading': 'Đang tải…',
+  'bookmark.errorOfflineCloud':
+    'Thao tác này cần mạng. Bookmark trên trình duyệt vẫn xem được khi ngoại tuyến.',
   'bookmark.rstTitle': 'Khôi phục',
   'bookmark.delTitle': 'Xóa',
   'bookmark.clearTitle': 'Xóa tìm kiếm',
