@@ -10,6 +10,7 @@ import {
   recoverSupabaseAuthFromStaleSession,
 } from '@/services/supabaseAuthRecovery.service'
 import './assets/styles/global.css'
+import './assets/styles/calendar-events.css'
 import './assets/styles/retro.css'
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {

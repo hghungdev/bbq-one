@@ -13,6 +13,8 @@
   import CalendarOverdueReminderDialog from '@/components/calendar/CalendarOverdueReminderDialog.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
+  import { useCommitPendingDeletesOnClose } from '@/composables/useCommitPendingDeletesOnClose'
+  import { flushOrphanedPendingDeleteCommits } from '@/services/pendingDeleteCommit.service'
   import { useAppTimezoneStore } from '@/stores/appTimezone'
   import { useAuthStore } from '@/stores/auth'
   import { useFoldersStore } from '@/stores/folders'
@@ -41,6 +43,8 @@
     groupOverdueIncompleteEvents,
     isOverdueReminderDismissed,
   } from '@/services/calendarOverdueReminder.service'
+
+  useCommitPendingDeletesOnClose()
 
   const auth = useAuthStore()
   const { isAuthenticated } = storeToRefs(auth)
@@ -158,6 +162,8 @@
     tickHeaderClock()
     headerClockTimer = setInterval(tickHeaderClock, 1000)
     await langStore.loadLang()
+    // Chốt xóa còn trong queue trước khi pull server — tránh “revert” sau khi đóng popup giữa undo 5s.
+    await flushOrphanedPendingDeleteCommits()
     // Hiện UI ngay từ cache; refresh network chạy nền (tránh treo popup khi Supabase chậm).
     await Promise.all([
       folders.hydrateFromCache(),

@@ -5,6 +5,7 @@ import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { useLangStore } from '@/stores/uiLang'
 import type { CalendarEvent } from '@/types/calendar'
 import { normalizeLocalDateKey } from '@/utils/calendarDate'
+import { calendarEventToneClass } from '@/utils/calendarEventTone'
 
 const emit = defineEmits<{
   pick: [event: CalendarEvent]
@@ -47,7 +48,12 @@ function onRowClick(ev: CalendarEvent, e: MouseEvent): void {
     <p v-else class="cal-search-panel__hint">{{ t('calendar.search.hint') }}</p>
     <ul v-if="matches.length > 0" class="cal-search-panel__list">
       <li v-for="ev in matches" :key="ev.id">
-        <button type="button" class="cal-search-panel__row" @click="onRowClick(ev, $event)">
+        <button
+          type="button"
+          class="cal-search-panel__row"
+          :class="calendarEventToneClass(ev.id)"
+          @click="onRowClick(ev, $event)"
+        >
           <span class="cal-search-panel__date">{{ formatDateLabel(ev.event_date) }}</span>
           <span class="cal-search-panel__event-title">{{ ev.title }}</span>
           <span v-if="ev.is_done" class="cal-search-panel__done">{{ t('calendar.search.doneTag') }}</span>

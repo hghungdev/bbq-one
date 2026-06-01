@@ -137,17 +137,19 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
 
     backups.value = backups.value.filter(b => b.id !== id)
     if (selectedBackupId.value === id) selectedBackupId.value = null
+    await persistBackupsCache()
 
     const undoToast = useUndoToastStore()
     const { t } = useLangStore()
     await undoToast.schedule({
       id: `bookmark-backup:${id}`,
       message: t('undo.bookmarkBackupDeleted', { label: backup.label }),
-      undo: () => {
+      undo: async () => {
         restoreBackupSnapshot(backup, backupIndex)
         if (selectedBackupId.value === null && prevSelectedBackupId === id) {
           selectedBackupId.value = prevSelectedBackupId
         }
+        await persistBackupsCache()
       },
       commit: async () => {
         try {

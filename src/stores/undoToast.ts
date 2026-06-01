@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import {
+  registerPendingDeleteCommit,
+  unregisterPendingDeleteCommit,
+} from '@/services/pendingDeleteCommit.service'
 
 type UndoToastAction = {
   id: string
@@ -44,8 +48,12 @@ export const useUndoToastStore = defineStore('undoToast', () => {
     clearTimer(id)
     pendingActions.delete(id)
     removeItem(id)
-    if (!action) return
+    if (!action) {
+      await unregisterPendingDeleteCommit(id)
+      return
+    }
     await action.commit()
+    await unregisterPendingDeleteCommit(id)
   }
 
   async function schedule(action: UndoToastAction): Promise<void> {
@@ -66,6 +74,7 @@ export const useUndoToastStore = defineStore('undoToast', () => {
         expiresAt: Date.now() + durationMs,
       },
     ]
+    void registerPendingDeleteCommit(action.id)
     timers.set(action.id, setTimeout(() => {
       void commit(action.id).catch((error) => {
         console.error('[BBQOne] Undo toast commit failed', error)
@@ -78,8 +87,15 @@ export const useUndoToastStore = defineStore('undoToast', () => {
     clearTimer(id)
     pendingActions.delete(id)
     removeItem(id)
+    await unregisterPendingDeleteCommit(id)
     if (!action) return
     await action.undo()
+  }
+
+  /** Đóng popup = không còn undo — commit mọi xóa đang chờ. */
+  async function commitAllPending(): Promise<void> {
+    const ids = [...pendingActions.keys()]
+    await Promise.all(ids.map((id) => commit(id)))
   }
 
   async function dismiss(id: string): Promise<void> {
@@ -92,5 +108,6 @@ export const useUndoToastStore = defineStore('undoToast', () => {
     schedule,
     undo,
     dismiss,
+    commitAllPending,
   }
 })

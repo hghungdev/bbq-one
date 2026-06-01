@@ -4,6 +4,10 @@ import {
 } from '@/services/bookmarkAutoBackup.service'
 import { syncService } from '@/services/sync.service'
 import { initAutoSyncOnNetworkRestore } from '@/services/autoSync.service'
+import {
+  flushOrphanedPendingDeleteCommits,
+  isFlushPendingDeletesMessage,
+} from '@/services/pendingDeleteCommit.service'
 import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
 import {
   isRecoverableRefreshTokenAuthError,
@@ -100,6 +104,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 
 wireBookmarkAutoBackup()
 initAutoSyncOnNetworkRestore()
+void flushOrphanedPendingDeleteCommits()
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== ALARM_NAME) return
@@ -123,6 +128,11 @@ function isCopyToOsClipboardMessage(msg: unknown): msg is CopyToOsClipboardMessa
 chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
   void (async () => {
     try {
+      if (isFlushPendingDeletesMessage(msg)) {
+        await flushOrphanedPendingDeleteCommits()
+        sendResponse({ ok: true })
+        return
+      }
       if (!isCopyToOsClipboardMessage(msg)) {
         sendResponse({ ok: false, error: 'Unknown message type' })
         return

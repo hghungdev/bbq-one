@@ -4,6 +4,7 @@ import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { CALENDAR_CELL_EVENT_LIMIT } from '@/constants/calendar'
 import { useLangStore } from '@/stores/uiLang'
 import { formatLocalDate, isPastLocalDay, normalizeLocalDateKey, todayLocalKey } from '@/utils/calendarDate'
+import { calendarEventToneClass } from '@/utils/calendarEventTone'
 
 const props = defineProps<{ date: Date; isCurrentMonth: boolean }>()
 const store = useCalendarEventsStore()
@@ -58,7 +59,10 @@ function onEventClick(e: Event): void {
         v-for="ev in visibleEvents"
         :key="ev.id"
         class="cal-cell__event"
-        :class="{ 'cal-cell__event--done': ev.is_done }"
+        :class="[
+          calendarEventToneClass(ev.id),
+          { 'cal-cell__event--done': ev.is_done },
+        ]"
         :title="ev.title.trim() || undefined"
         @click="onEventClick($event)"
       >
@@ -153,7 +157,6 @@ function onEventClick(e: Event): void {
   min-height: 28px;
   padding: 5px 8px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface-accent-muted) 72%, var(--bg-panel));
   font-size: var(--font-size-sm);
   line-height: 1.3;
   white-space: nowrap;
@@ -163,11 +166,10 @@ function onEventClick(e: Event): void {
   cursor: pointer;
   display: flex;
   align-items: center;
-}
-
-.cal-cell__event:hover {
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    filter 0.12s ease;
 }
 
 .cal-cell--past .cal-cell__event {
@@ -175,11 +177,10 @@ function onEventClick(e: Event): void {
 }
 
 .cal-cell--past .cal-cell__event:hover {
-  border-color: var(--accent);
+  filter: brightness(1.02);
 }
 
-.cal-cell__event--done {
-  opacity: 0.5;
+.cal-cell__event--done .cal-cell__event-title {
   text-decoration: line-through;
 }
 

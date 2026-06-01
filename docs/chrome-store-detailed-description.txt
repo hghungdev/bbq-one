@@ -2,6 +2,8 @@ Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respect
 
 BBQOne is an all-in-one productivity extension built around privacy and local-first defaults. Capture notes, back up bookmarks, and plan your calendar—from the same compact, retro-inspired dashboard.
 
+Release 1.2.2: Closing the popup during the 5-second undo window now finalizes the delete (no data coming back on reopen). Calendar events use soft pastel colors per item. Removed unused unlimitedStorage permission.
+
 Release 1.2.1: Faster popup load (cache-first), offline-friendly edits with auto-sync when online, calendar overdue reminder on sign-in, and UI polish.
 
 Release 1.2.0: Translation and personal dictionary flows have been removed to keep scope smaller and disclosures simpler. The extension does not inject translation UI into web pages. The dashboard still offers UI language (English / Vietnamese) and theme controls. Optional cloud sync via Supabase is unchanged.

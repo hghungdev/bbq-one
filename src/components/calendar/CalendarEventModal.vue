@@ -11,6 +11,7 @@ import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import type { CalendarEvent } from '@/types/calendar'
 import { formatCalendarBannerDate, isPastLocalDay } from '@/utils/calendarDate'
+import { calendarEventToneClass } from '@/utils/calendarEventTone'
 
 const store = useCalendarEventsStore()
 const langStore = useLangStore()
@@ -254,7 +255,12 @@ async function saveForm(): Promise<void> {
           <p v-else-if="dayIsFull" class="cal-modal__past-hint">{{ t('calendar.modal.dayFull', { max: CALENDAR_MAX_EVENTS_PER_DAY }) }}</p>
           <p v-if="!dayEvents.length" class="cal-modal__empty">{{ t('calendar.modal.empty') }}</p>
           <ul v-else class="cal-modal__list">
-            <li v-for="ev in dayEvents" :key="ev.id" class="cal-modal__row">
+            <li
+              v-for="ev in dayEvents"
+              :key="ev.id"
+              class="cal-modal__row"
+              :class="calendarEventToneClass(ev.id)"
+            >
               <input
                 type="checkbox"
                 class="cal-modal__check"

@@ -1,0 +1,156 @@
+/*
+ * Pastel tones cho calendar events — hài hòa với parchment/Apple palette,
+ * không dùng hex cứng trong component (chỉ token tại đây).
+ */
+:root {
+  --cal-event-0-bg: rgba(0, 102, 204, 0.11);
+  --cal-event-0-border: rgba(0, 102, 204, 0.24);
+  --cal-event-1-bg: rgba(45, 134, 67, 0.12);
+  --cal-event-1-border: rgba(45, 134, 67, 0.26);
+  --cal-event-2-bg: rgba(107, 92, 184, 0.11);
+  --cal-event-2-border: rgba(107, 92, 184, 0.26);
+  --cal-event-3-bg: rgba(181, 118, 72, 0.12);
+  --cal-event-3-border: rgba(181, 118, 72, 0.28);
+  --cal-event-4-bg: rgba(56, 142, 142, 0.11);
+  --cal-event-4-border: rgba(56, 142, 142, 0.26);
+  --cal-event-5-bg: rgba(176, 98, 122, 0.11);
+  --cal-event-5-border: rgba(176, 98, 122, 0.26);
+  --cal-event-6-bg: rgba(154, 132, 52, 0.13);
+  --cal-event-6-border: rgba(154, 132, 52, 0.3);
+  --cal-event-7-bg: rgba(88, 108, 128, 0.11);
+  --cal-event-7-border: rgba(88, 108, 128, 0.26);
+}
+
+html[data-theme='dark'] {
+  --cal-event-0-bg: rgba(41, 151, 255, 0.16);
+  --cal-event-0-border: rgba(125, 196, 255, 0.32);
+  --cal-event-1-bg: rgba(52, 199, 89, 0.14);
+  --cal-event-1-border: rgba(110, 220, 140, 0.3);
+  --cal-event-2-bg: rgba(152, 132, 220, 0.15);
+  --cal-event-2-border: rgba(180, 165, 235, 0.32);
+  --cal-event-3-bg: rgba(214, 148, 96, 0.14);
+  --cal-event-3-border: rgba(230, 175, 130, 0.32);
+  --cal-event-4-bg: rgba(72, 178, 178, 0.14);
+  --cal-event-4-border: rgba(120, 210, 210, 0.3);
+  --cal-event-5-bg: rgba(210, 120, 145, 0.14);
+  --cal-event-5-border: rgba(235, 165, 185, 0.3);
+  --cal-event-6-bg: rgba(210, 178, 72, 0.14);
+  --cal-event-6-border: rgba(235, 205, 110, 0.32);
+  --cal-event-7-bg: rgba(130, 145, 165, 0.16);
+  --cal-event-7-border: rgba(170, 182, 198, 0.32);
+}
+
+.cal-event-tone-0 {
+  --cal-event-bg: var(--cal-event-0-bg);
+  --cal-event-border: var(--cal-event-0-border);
+}
+.cal-event-tone-1 {
+  --cal-event-bg: var(--cal-event-1-bg);
+  --cal-event-border: var(--cal-event-1-border);
+}
+.cal-event-tone-2 {
+  --cal-event-bg: var(--cal-event-2-bg);
+  --cal-event-border: var(--cal-event-2-border);
+}
+.cal-event-tone-3 {
+  --cal-event-bg: var(--cal-event-3-bg);
+  --cal-event-border: var(--cal-event-3-border);
+}
+.cal-event-tone-4 {
+  --cal-event-bg: var(--cal-event-4-bg);
+  --cal-event-border: var(--cal-event-4-border);
+}
+.cal-event-tone-5 {
+  --cal-event-bg: var(--cal-event-5-bg);
+  --cal-event-border: var(--cal-event-5-border);
+}
+.cal-event-tone-6 {
+  --cal-event-bg: var(--cal-event-6-bg);
+  --cal-event-border: var(--cal-event-6-border);
+}
+.cal-event-tone-7 {
+  --cal-event-bg: var(--cal-event-7-bg);
+  --cal-event-border: var(--cal-event-7-border);
+}
+
+/* —— Lưới tháng —— */
+.cal-cell__event.cal-event-tone-0,
+.cal-cell__event.cal-event-tone-1,
+.cal-cell__event.cal-event-tone-2,
+.cal-cell__event.cal-event-tone-3,
+.cal-cell__event.cal-event-tone-4,
+.cal-cell__event.cal-event-tone-5,
+.cal-cell__event.cal-event-tone-6,
+.cal-cell__event.cal-event-tone-7 {
+  background: var(--cal-event-bg);
+  border-color: var(--cal-event-border);
+  color: var(--text-primary);
+}
+
+.cal-cell__event.cal-event-tone-0:hover,
+.cal-cell__event.cal-event-tone-1:hover,
+.cal-cell__event.cal-event-tone-2:hover,
+.cal-cell__event.cal-event-tone-3:hover,
+.cal-cell__event.cal-event-tone-4:hover,
+.cal-cell__event.cal-event-tone-5:hover,
+.cal-cell__event.cal-event-tone-6:hover,
+.cal-cell__event.cal-event-tone-7:hover {
+  background: color-mix(in srgb, var(--cal-event-bg) 72%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--cal-event-border) 88%, var(--accent-soft-border));
+}
+
+.cal-cell__event--done {
+  opacity: 0.58;
+  filter: saturate(0.72);
+}
+
+/* —— Modal danh sách ngày —— */
+.cal-modal__row.cal-event-tone-0,
+.cal-modal__row.cal-event-tone-1,
+.cal-modal__row.cal-event-tone-2,
+.cal-modal__row.cal-event-tone-3,
+.cal-modal__row.cal-event-tone-4,
+.cal-modal__row.cal-event-tone-5,
+.cal-modal__row.cal-event-tone-6,
+.cal-modal__row.cal-event-tone-7 {
+  border-left: 3px solid var(--cal-event-border);
+  background: color-mix(in srgb, var(--cal-event-bg) 55%, var(--bg-panel));
+}
+
+.cal-modal__row.cal-event-tone-0:hover,
+.cal-modal__row.cal-event-tone-1:hover,
+.cal-modal__row.cal-event-tone-2:hover,
+.cal-modal__row.cal-event-tone-3:hover,
+.cal-modal__row.cal-event-tone-4:hover,
+.cal-modal__row.cal-event-tone-5:hover,
+.cal-modal__row.cal-event-tone-6:hover,
+.cal-modal__row.cal-event-tone-7:hover {
+  border-color: color-mix(in srgb, var(--cal-event-border) 70%, transparent);
+  border-left-color: var(--cal-event-border);
+  background: color-mix(in srgb, var(--cal-event-bg) 72%, var(--bg-panel));
+}
+
+/* —— Kết quả search —— */
+.cal-search-panel__row.cal-event-tone-0,
+.cal-search-panel__row.cal-event-tone-1,
+.cal-search-panel__row.cal-event-tone-2,
+.cal-search-panel__row.cal-event-tone-3,
+.cal-search-panel__row.cal-event-tone-4,
+.cal-search-panel__row.cal-event-tone-5,
+.cal-search-panel__row.cal-event-tone-6,
+.cal-search-panel__row.cal-event-tone-7 {
+  border-left: 3px solid var(--cal-event-border);
+  background: color-mix(in srgb, var(--cal-event-bg) 50%, var(--bg-panel));
+}
+
+.cal-search-panel__row.cal-event-tone-0:hover,
+.cal-search-panel__row.cal-event-tone-1:hover,
+.cal-search-panel__row.cal-event-tone-2:hover,
+.cal-search-panel__row.cal-event-tone-3:hover,
+.cal-search-panel__row.cal-event-tone-4:hover,
+.cal-search-panel__row.cal-event-tone-5:hover,
+.cal-search-panel__row.cal-event-tone-6:hover,
+.cal-search-panel__row.cal-event-tone-7:hover {
+  border-color: var(--cal-event-border);
+  background: color-mix(in srgb, var(--cal-event-bg) 68%, var(--bg-panel));
+}
