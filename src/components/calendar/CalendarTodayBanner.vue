@@ -1,108 +1,102 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useCalendarEventsStore } from '@/stores/calendarEvents'
-import { useLangStore } from '@/stores/uiLang'
-import {
-  dismissUpcomingBannerForDate,
-  getDismissedUpcomingBannerDateKey,
-} from '@/services/calendarBannerDismiss.service'
-import {
-  addDaysToLocalKey,
-  formatCalendarBannerDate,
-  todayLocalKey,
-} from '@/utils/calendarDate'
+  import { computed, onMounted, ref } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useCalendarEventsStore } from '@/stores/calendarEvents'
+  import { useLangStore } from '@/stores/uiLang'
+  import {
+    dismissUpcomingBannerForDate,
+    getDismissedUpcomingBannerDateKey,
+  } from '@/services/calendarBannerDismiss.service'
+  import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
 
-const emit = defineEmits<{
-  'open-calendar': []
-}>()
+  const emit = defineEmits<{
+    'open-calendar': []
+  }>()
 
-const calendar = useCalendarEventsStore()
-const langStore = useLangStore()
-const { t } = langStore
-const { lang } = storeToRefs(langStore)
+  const calendar = useCalendarEventsStore()
+  const langStore = useLangStore()
+  const { t } = langStore
+  const { lang } = storeToRefs(langStore)
 
-const dismissLoaded = ref(false)
-const dismissedUpcomingDateKey = ref<string | null>(null)
+  const dismissLoaded = ref(false)
+  const dismissedUpcomingDateKey = ref<string | null>(null)
 
-const todayKey = computed(() => todayLocalKey())
-const tomorrowKey = computed(() => addDaysToLocalKey(todayKey.value, 1))
+  const todayKey = computed(() => todayLocalKey())
+  const tomorrowKey = computed(() => addDaysToLocalKey(todayKey.value, 1))
 
-function sortedTitlesForDate(dateKey: string): string[] {
-  const list = calendar.eventsForDate(dateKey)
-  return list
-    .slice()
-    .sort((a, b) => a.position - b.position)
-    .map((e) => e.title.trim())
-    .filter(Boolean)
-}
+  function sortedTitlesForDate(dateKey: string): string[] {
+    const list = calendar.eventsForDate(dateKey)
+    return list
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((e) => e.title.trim())
+      .filter(Boolean)
+  }
 
-function joinTitles(titles: string[]): string {
-  return titles.join(t('calendar.banner.listSeparator'))
-}
+  function joinTitles(titles: string[]): string {
+    return titles.join(t('calendar.banner.listSeparator'))
+  }
 
-function bannerDateLabel(dateKey: string): string {
-  return formatCalendarBannerDate(dateKey, lang.value)
-}
+  function bannerDateLabel(dateKey: string): string {
+    return formatCalendarBannerDate(dateKey, lang.value)
+  }
 
-const upcomingTitles = computed(() => sortedTitlesForDate(tomorrowKey.value))
-const todayTitles = computed(() => sortedTitlesForDate(todayKey.value))
+  const upcomingTitles = computed(() => sortedTitlesForDate(tomorrowKey.value))
+  const todayTitles = computed(() => sortedTitlesForDate(todayKey.value))
 
-const showUpcomingBanner = computed(() => {
-  if (!dismissLoaded.value) return false
-  if (upcomingTitles.value.length === 0) return false
-  return dismissedUpcomingDateKey.value !== tomorrowKey.value
-})
-
-const upcomingLineText = computed(() => {
-  const date = bannerDateLabel(tomorrowKey.value)
-  return t('calendar.banner.upcomingLine', {
-    date,
-    list: joinTitles(upcomingTitles.value),
+  const showUpcomingBanner = computed(() => {
+    if (!dismissLoaded.value) return false
+    if (upcomingTitles.value.length === 0) return false
+    return dismissedUpcomingDateKey.value !== tomorrowKey.value
   })
-})
 
-const upcomingAriaLabel = computed(() =>
-  t('calendar.banner.ariaOpenCalendarUpcoming', {
-    date: bannerDateLabel(tomorrowKey.value),
-  }),
-)
-
-const todayLineText = computed(() => {
-  const date = bannerDateLabel(todayKey.value)
-  return t('calendar.banner.todayLine', {
-    date,
-    list: joinTitles(todayTitles.value),
+  const upcomingLineText = computed(() => {
+    const date = bannerDateLabel(tomorrowKey.value)
+    return t('calendar.banner.upcomingLine', {
+      date,
+      list: joinTitles(upcomingTitles.value),
+    })
   })
-})
 
-const todayAriaLabel = computed(() =>
-  t('calendar.banner.ariaOpenCalendarToday', {
-    date: bannerDateLabel(todayKey.value),
-  }),
-)
+  const upcomingAriaLabel = computed(() =>
+    t('calendar.banner.ariaOpenCalendarUpcoming', {
+      date: bannerDateLabel(tomorrowKey.value),
+    }),
+  )
 
-const showTodayBanner = computed(
-  () => dismissLoaded.value && todayTitles.value.length > 0,
-)
+  const todayLineText = computed(() => {
+    const date = bannerDateLabel(todayKey.value)
+    return t('calendar.banner.todayLine', {
+      date,
+      list: joinTitles(todayTitles.value),
+    })
+  })
 
-const visible = computed(() => showUpcomingBanner.value || showTodayBanner.value)
+  const todayAriaLabel = computed(() =>
+    t('calendar.banner.ariaOpenCalendarToday', {
+      date: bannerDateLabel(todayKey.value),
+    }),
+  )
 
-onMounted(async () => {
-  dismissedUpcomingDateKey.value = await getDismissedUpcomingBannerDateKey()
-  dismissLoaded.value = true
-})
+  const showTodayBanner = computed(() => dismissLoaded.value && todayTitles.value.length > 0)
 
-function onActivate(): void {
-  emit('open-calendar')
-}
+  const visible = computed(() => showUpcomingBanner.value || showTodayBanner.value)
 
-async function onDismissUpcoming(e: MouseEvent): Promise<void> {
-  e.stopPropagation()
-  const key = tomorrowKey.value
-  dismissedUpcomingDateKey.value = key
-  await dismissUpcomingBannerForDate(key)
-}
+  onMounted(async () => {
+    dismissedUpcomingDateKey.value = await getDismissedUpcomingBannerDateKey()
+    dismissLoaded.value = true
+  })
+
+  function onActivate(): void {
+    emit('open-calendar')
+  }
+
+  async function onDismissUpcoming(e: MouseEvent): Promise<void> {
+    e.stopPropagation()
+    const key = tomorrowKey.value
+    dismissedUpcomingDateKey.value = key
+    await dismissUpcomingBannerForDate(key)
+  }
 </script>
 
 <template>
@@ -110,7 +104,6 @@ async function onDismissUpcoming(e: MouseEvent): Promise<void> {
     <div
       v-if="showUpcomingBanner"
       class="calendar-today-banner calendar-today-banner--upcoming"
-      :class="{ 'calendar-today-banner--not-first': false }"
     >
       <button
         type="button"
@@ -180,134 +173,138 @@ async function onDismissUpcoming(e: MouseEvent): Promise<void> {
 </template>
 
 <style scoped>
-.calendar-today-banner-stack {
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 auto;
-  border-top: 1px solid var(--border);
-}
+  .calendar-today-banner-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
 
-.calendar-today-banner {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px 8px 12px;
-  margin: 0 8px;
-  flex: 0 0 auto;
-  text-align: left;
-  color: var(--text-primary);
-  border-radius: var(--radius-md);
-}
+  .calendar-today-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 6px 10px 6px 12px;
+    margin: 0 8px;
+    flex: 0 0 auto;
+    text-align: left;
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
 
-.calendar-today-banner--today {
-  cursor: pointer;
-  gap: 10px;
-  padding-right: 12px;
-}
+  .calendar-today-banner--today {
+    cursor: pointer;
+  }
 
-.calendar-today-banner--not-first {
-  border-top: 1px solid var(--border);
-}
+  .calendar-today-banner--not-first {
+    margin-top: 0;
+  }
 
-.calendar-today-banner--upcoming {
-  background: var(--calendar-banner-upcoming-bg);
-  border-left: 3px solid var(--calendar-banner-upcoming-border);
-}
+  .calendar-today-banner--upcoming {
+    background: var(--calendar-banner-upcoming-bg);
+    box-shadow: inset 3px 0 0 var(--calendar-banner-upcoming-border);
+  }
 
-.calendar-today-banner--upcoming:hover .calendar-today-banner__main {
-  color: var(--text-primary);
-}
+  .calendar-today-banner--upcoming:hover .calendar-today-banner__main {
+    color: var(--text-primary);
+  }
 
-.calendar-today-banner--upcoming .calendar-today-banner__speaker {
-  color: var(--calendar-banner-upcoming-icon);
-}
+  .calendar-today-banner--upcoming .calendar-today-banner__speaker {
+    color: var(--calendar-banner-upcoming-icon);
+  }
 
-.calendar-today-banner--today {
-  background: var(--calendar-banner-today-bg);
-  border-left: 3px solid var(--calendar-banner-today-border);
-  color: var(--calendar-banner-today-text);
-}
+  .calendar-today-banner--today {
+    background: var(--calendar-banner-today-bg);
+    box-shadow: inset 3px 0 0 var(--calendar-banner-today-border);
+    color: var(--calendar-banner-today-text);
+  }
 
-.calendar-today-banner--today:hover {
-  background: var(--calendar-banner-today-bg-hover);
-}
+  .calendar-today-banner--today:hover {
+    background: var(--calendar-banner-today-bg-hover);
+    box-shadow: inset 3px 0 0 var(--calendar-banner-today-border);
+  }
 
-.calendar-today-banner--today .calendar-today-banner__speaker {
-  color: var(--calendar-banner-today-icon);
-}
+  .calendar-today-banner--today .calendar-today-banner__speaker {
+    color: var(--calendar-banner-today-icon);
+  }
 
-.calendar-today-banner--today:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
-}
+  .calendar-today-banner--today:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+  }
 
-.calendar-today-banner__main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
+  .calendar-today-banner__main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
 
-.calendar-today-banner__main:hover {
-  color: var(--accent);
-}
+  .calendar-today-banner__main:hover {
+    color: var(--accent);
+  }
 
-.calendar-today-banner__main:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
+  .calendar-today-banner__main:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 
-.calendar-today-banner__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition:
-    color 0.12s linear,
-    border-color 0.12s linear,
-    background 0.12s linear;
-}
+  .calendar-today-banner__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition:
+      color 0.12s linear,
+      border-color 0.12s linear,
+      background 0.12s linear;
+  }
 
-.calendar-today-banner__close:hover {
-  color: var(--text-primary);
-  border-color: var(--border);
-  background: var(--bg-panel);
-}
+  .calendar-today-banner__close:hover {
+    color: var(--text-primary);
+    border-color: var(--border);
+    background: var(--bg-panel);
+  }
 
-.calendar-today-banner__close:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
+  .calendar-today-banner__close:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
 
-.calendar-today-banner__speaker {
-  flex: 0 0 auto;
-  display: block;
-  color: var(--calendar-banner-upcoming-icon, var(--accent));
-}
+  .calendar-today-banner__speaker {
+    flex: 0 0 auto;
+    display: block;
+    color: var(--calendar-banner-upcoming-icon, var(--accent));
+  }
 
-.calendar-today-banner__text {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: var(--font-size-sm);
-  line-height: 1.45;
-}
+  .calendar-today-banner__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+  }
 </style>

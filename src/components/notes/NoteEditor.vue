@@ -12,6 +12,11 @@ import { extractCodeBlocksFromDocJSON } from '@/utils/tiptapJson'
 import { copyTextToClipboard } from '@/utils/clipboard'
 import type { EditorView } from 'prosemirror-view'
 import { firstLinePreview, plainTextFromHtml } from '@/utils/text'
+import {
+  handleNoteEditorPaste,
+  noteHtmlNeedsPlainSanitize,
+  sanitizeHtmlToNoteContent,
+} from '@/utils/pastePlainText'
 
 const notesStore = useNotesStore()
 const { t } = useLangStore()
@@ -71,8 +76,16 @@ function applyBody(ed: Editor, body: NoteBody | null): void {
     notesStore.setDirty(false)
     return
   }
-  ed.commands.setContent(body.content || '<p></p>', false)
-  notesStore.setDirty(false)
+  const raw = body.content || '<p></p>'
+  const needsSanitize = noteHtmlNeedsPlainSanitize(raw)
+  const content = needsSanitize ? sanitizeHtmlToNoteContent(raw) : raw
+  ed.commands.setContent(content || '<p></p>', false)
+  if (needsSanitize) {
+    notesStore.setDirty(true)
+    scheduleSave()
+  } else {
+    notesStore.setDirty(false)
+  }
   scheduleCodeExtract()
 }
 
@@ -98,6 +111,10 @@ const editor = useEditor({
      * có thể ghi đè clipboard / mất format.
      */
     handleDOMEvents: {
+      paste(view: EditorView, event: Event): boolean {
+        if (!(event instanceof ClipboardEvent)) return false
+        return handleNoteEditorPaste(view, event)
+      },
       copy(view: EditorView, event: Event): boolean {
         if (!(event instanceof ClipboardEvent)) return false
         const sel = view.state.selection
