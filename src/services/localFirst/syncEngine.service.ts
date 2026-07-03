@@ -203,8 +203,14 @@ export async function pushLocalToCloud(
 
   // 6. Cleanup
   if (result.errors.length === 0) {
-    // Tất cả thành công → clear toàn bộ local data
-    await localStore.clearAllLocal()
+    // Chỉ xóa entry đã push thành công — entry mới ghi mid-push vẫn còn để retry
+    await _clearSyncedEntries(
+      syncedFolderIds,
+      syncedNoteIds,
+      syncedBodyIds,
+      syncedBookmarkIds,
+      syncedCalendarIds,
+    )
   } else {
     // Partial success → giữ lại entry lỗi, xóa entry đã sync thành công
     await _clearSyncedEntries(
