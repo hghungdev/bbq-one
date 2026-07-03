@@ -13,8 +13,10 @@ import type { Note, NoteBody } from '@/types'
 import { decryptField, encryptField } from '@/utils/secureCrypto'
 import { withTimeout } from '@/utils/withTimeout'
 import { isNetworkError } from '@/utils/networkErrors'
+import { isSyncConflictError } from '@/utils/syncConflict'
 import { scheduleAutoSync } from '@/services/autoSync.service'
 import { isOnline } from '@/services/networkReachability.service'
+import { isRowDirty, mergeFreshWithDirtyLocal } from '@/services/sync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 
@@ -130,8 +132,9 @@ export const useNotesStore = defineStore('notes', () => {
         NETWORK_LOAD_MS,
         'Load notes timed out',
       )
-      notes.value = freshNotes
-      bodies.value = freshBodies
+      // Không đè row đang dirty (sửa offline chưa push) bằng bản server cũ.
+      notes.value = mergeFreshWithDirtyLocal(freshNotes, notes.value, isRowDirty)
+      bodies.value = mergeFreshWithDirtyLocal(freshBodies, bodies.value, isRowDirty)
       await persistCache()
       await useSecureFolderStore().refreshDecryptedNotesAfterLoad()
     } catch (e) {
@@ -250,7 +253,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     try {
-      const data = await notesService.update(id, payload)
+      const data = await notesService.update(id, payload, { row: prev })
       const merged: Note = { ...prev, ...data }
 
       if (folder?.is_secure) {
@@ -269,6 +272,7 @@ export const useNotesStore = defineStore('notes', () => {
       isDirty.value = false
       await persistCache()
     } catch (e) {
+      if (isSyncConflictError(e)) throw e
       if (isOnline() && !isNetworkError(e)) throw e
       const ts = new Date().toISOString()
       notes.value[idx] = { ...prev, ...updates, updated_at: ts }
@@ -306,7 +310,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     try {
-      const data = await noteBodiesService.update(id, payload)
+      const data = await noteBodiesService.update(id, payload, { row: prev })
       const merged: NoteBody = { ...prev, ...data }
 
       if (folder?.is_secure) {
@@ -326,6 +330,7 @@ export const useNotesStore = defineStore('notes', () => {
       isDirty.value = false
       await persistCache()
     } catch (e) {
+      if (isSyncConflictError(e)) throw e
       if (isOnline() && !isNetworkError(e)) throw e
       const ts = new Date().toISOString()
       bodies.value[idx] = {
@@ -491,6 +496,10 @@ export const useNotesStore = defineStore('notes', () => {
         try {
           await notesService.delete(id)
         } catch (e) {
+          if (isNetworkError(e)) {
+            loadError.value = e instanceof Error ? e.message : 'Delete note failed'
+            throw e
+          }
           restoreNoteSnapshot(note, noteIndex, noteBodies)
           if (wasInSearchResults && searchQuery.value === prevSearchQuery) {
             restoreSearchResultSnapshot(note, searchResultIndex)

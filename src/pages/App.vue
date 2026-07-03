@@ -36,6 +36,7 @@
   import {
     initAutoSyncOnNetworkRestore,
     isAutoSyncCompleteMessage,
+    runBackgroundAutoSync,
   } from '@/services/autoSync.service'
   import { isOnline, onNetworkStatusChange } from '@/services/networkReachability.service'
   import {
@@ -85,6 +86,8 @@
 
   async function refreshStoresFromNetwork(): Promise<void> {
     if (!isOnline()) return
+    // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
+    await runBackgroundAutoSync('pre-pull')
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
   }
 
@@ -171,16 +174,13 @@
       calendarEvents.hydrateFromCache(),
     ])
     dataReady.value = true
-    void refreshStoresFromNetwork()
+    void refreshStoresFromNetwork().then(() => maybeShowOverdueReminder())
     stopAutoSyncListener = initAutoSyncOnNetworkRestore()
     stopNetworkListener = onNetworkStatusChange((online) => {
       networkOnline.value = online
       if (online) void refreshStoresFromNetwork()
     })
     chrome.runtime.onMessage.addListener(onAutoSyncMessage)
-    if (isAuthenticated.value) {
-      void maybeShowOverdueReminder()
-    }
   })
 
   onUnmounted(() => {
@@ -193,6 +193,10 @@
 
   watch(utcOffsetHours, () => {
     tickHeaderClock()
+  })
+
+  watch(isAuthenticated, (authed) => {
+    if (authed) void maybeShowOverdueReminder()
   })
 
   /** Anonymous: chưa đăng nhập */

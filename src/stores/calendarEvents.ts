@@ -12,7 +12,9 @@ import type {
 import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
 import { isNetworkError } from '@/utils/networkErrors'
+import { isSyncConflictError } from '@/utils/syncConflict'
 import { scheduleAutoSync } from '@/services/autoSync.service'
+import { isCalendarEventDirty, mergeFreshWithDirtyLocal } from '@/services/sync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 
@@ -102,7 +104,12 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
         NETWORK_LOAD_MS,
         'Load calendar timed out',
       )
-      events.value = withNormalizedDates(fresh)
+      // Không đè row đang dirty (sửa offline chưa push) bằng bản server cũ.
+      events.value = mergeFreshWithDirtyLocal(
+        withNormalizedDates(fresh),
+        events.value,
+        isCalendarEventDirty,
+      )
       await persistCache()
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load calendar failed'
@@ -119,7 +126,8 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     if (siblings.length >= CALENDAR_MAX_EVENTS_PER_DAY) {
       throw new Error('MAX_EVENTS_PER_DAY')
     }
-    const nextPos = siblings.length
+    const nextPos =
+      siblings.length === 0 ? 0 : Math.max(...siblings.map((e) => e.position)) + 1
     let created: CalendarEvent
     let createdOffline = false
     try {
@@ -150,12 +158,13 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     const idx = events.value.findIndex((e) => e.id === id)
     if (idx < 0) return
     try {
-      const updated = await calendarEventsService.update(id, updates)
+      const updated = await calendarEventsService.update(id, updates, { row: events.value[idx] })
       const next = events.value.slice()
       next[idx] = { ...updated, event_date: normalizeLocalDateKey(updated.event_date) }
       events.value = next
       await persistCache()
     } catch (e) {
+      if (isSyncConflictError(e)) throw e
       if (isOnline() && !isNetworkError(e)) throw e
       // Offline: cập nhật Pinia + cache với updated_at mới; syncFromCache push sau
       // qua dirty-detection (calendar event có cột synced_at trong DB).
@@ -205,6 +214,10 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
         try {
           await calendarEventsService.delete(id)
         } catch (e) {
+          if (isNetworkError(e)) {
+            loadError.value = e instanceof Error ? e.message : 'Delete calendar event failed'
+            throw e
+          }
           restoreEventSnapshot(event, eventIndex)
           if (activeDate.value === null) activeDate.value = prevActiveDate
           if (activeEventId.value === null && prevActiveEventId === id) {

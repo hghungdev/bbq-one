@@ -22,6 +22,37 @@ export function isCalendarEventDirty(e: CalendarEvent): boolean {
   return new Date(e.updated_at) > new Date(e.synced_at)
 }
 
+/** Cùng logic isNoteDirty/isCalendarEventDirty nhưng structural — dùng được cho Note | NoteBody | CalendarEvent. */
+export function isRowDirty(row: { updated_at: string; synced_at?: string | null }): boolean {
+  if (!row.synced_at) return true
+  return new Date(row.updated_at) > new Date(row.synced_at)
+}
+
+/**
+ * Trộn dữ liệu fetch được (server, hoặc local-first store khi anonymous) với state hiện tại:
+ * - row local DIRTY thắng row fresh cùng id (edit offline chưa push không bị đè)
+ * - row local DIRTY không còn trong fresh vẫn được GIỮ (chờ push lại — bắt buộc cho scenario C
+ *   khi fresh là mảng rỗng của anonymous mode)
+ * - row local sạch → fresh thắng (giữ nguyên hành vi pull hiện tại)
+ */
+export function mergeFreshWithDirtyLocal<T extends { id: string }>(
+  fresh: T[],
+  local: T[],
+  isDirty: (row: T) => boolean,
+): T[] {
+  const dirtyById = new Map<string, T>()
+  for (const row of local) {
+    if (isDirty(row)) dirtyById.set(row.id, row)
+  }
+  if (dirtyById.size === 0) return fresh
+  const freshIds = new Set(fresh.map((r) => r.id))
+  const merged = fresh.map((row) => dirtyById.get(row.id) ?? row)
+  for (const row of local) {
+    if (dirtyById.has(row.id) && !freshIds.has(row.id)) merged.push(row)
+  }
+  return merged
+}
+
 function bodiesForNoteSorted(all: NoteBody[], noteId: string): NoteBody[] {
   return all
     .filter((b) => b.note_id === noteId)
@@ -55,32 +86,44 @@ export const syncService = {
           continue
         }
       }
-      for (const b of bodies) {
-        let label = b.label
-        let content = b.content
-        if (folder?.is_secure && key) {
-          if (!isEncryptedEnvelope(label)) label = await encryptField(label, key)
-          if (!isEncryptedEnvelope(content)) {
-            content = await encryptField(content, key)
+      try {
+        for (const b of bodies) {
+          let label = b.label
+          let content = b.content
+          if (folder?.is_secure && key) {
+            if (!isEncryptedEnvelope(label)) label = await encryptField(label, key)
+            if (!isEncryptedEnvelope(content)) {
+              content = await encryptField(content, key)
+            }
           }
+          await noteBodiesService.update(
+            b.id,
+            {
+              label,
+              content,
+              synced_at: ts,
+            },
+            { row: b },
+          )
         }
-        await noteBodiesService.update(b.id, {
-          label,
-          content,
-          synced_at: ts,
-        })
+        let title = n.title
+        if (folder?.is_secure && key) {
+          if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
+        }
+        await notesService.update(
+          n.id,
+          {
+            title,
+            folder_id: n.folder_id,
+            tags: n.tags,
+            synced_at: ts,
+          },
+          { row: n },
+        )
+        count++
+      } catch {
+        /* offline / row đã bị xóa cloud — skip, retry lần sau */
       }
-      let title = n.title
-      if (folder?.is_secure && key) {
-        if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
-      }
-      await notesService.update(n.id, {
-        title,
-        folder_id: n.folder_id,
-        tags: n.tags,
-        synced_at: ts,
-      })
-      count++
     }
     return count
   },
@@ -92,15 +135,19 @@ export const syncService = {
     const ts = new Date().toISOString()
     for (const ev of dirty) {
       try {
-        await calendarEventsService.update(ev.id, {
-          title: ev.title,
-          description: ev.description,
-          event_date: ev.event_date,
-          is_done: ev.is_done,
-          position: ev.position,
-          color: ev.color,
-          synced_at: ts,
-        })
+        await calendarEventsService.update(
+          ev.id,
+          {
+            title: ev.title,
+            description: ev.description,
+            event_date: ev.event_date,
+            is_done: ev.is_done,
+            position: ev.position,
+            color: ev.color,
+            synced_at: ts,
+          },
+          { row: ev },
+        )
         count++
       } catch {
         /* offline / row đã bị xóa cloud — skip, retry lần sau */
