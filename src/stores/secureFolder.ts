@@ -169,7 +169,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
         throw new Error('Note already encrypted')
       }
       title = await encryptField(title, key)
-      await notesService.update(n.id, { title })
+      await notesService.update(n.id, { title }, { row: n })
       const bs = notes.bodiesForNote(n.id)
       for (const b of bs) {
         if (isEncryptedEnvelope(b.label) || isEncryptedEnvelope(b.content)) {
@@ -177,7 +177,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
         }
         const label = await encryptField(b.label, key)
         const content = await encryptField(b.content, key)
-        await noteBodiesService.update(b.id, { label, content })
+        await noteBodiesService.update(b.id, { label, content }, { row: b })
       }
     }
 
@@ -279,14 +279,14 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     for (const n of list) {
       const titlePlain = await decryptField(n.title, oldKey)
       const title = await encryptField(titlePlain, newKey)
-      await notesService.update(n.id, { title })
+      await notesService.update(n.id, { title }, { row: n })
       const bs = notes.bodiesForNote(n.id)
       for (const b of bs) {
         const labelPlain = await decryptField(b.label, oldKey)
         const contentPlain = await decryptField(b.content, oldKey)
         const label = await encryptField(labelPlain, newKey)
         const content = await encryptField(contentPlain, newKey)
-        await noteBodiesService.update(b.id, { label, content })
+        await noteBodiesService.update(b.id, { label, content }, { row: b })
       }
     }
 
