@@ -61,15 +61,74 @@ export function nextLocalUpdatedAt(row: { updated_at: string; synced_at?: string
 export const BBQ_CONFLICT_BACKUPS_KEY = 'bbqone_conflict_backups'
 const CONFLICT_BACKUPS_MAX = 20
 
-/** Bản local thua conflict (server-wins nền) — giữ lại để không mất dữ liệu im lặng. */
-export async function stashConflictBackup(kind: string, row: unknown): Promise<void> {
+export type ConflictBackupKind = 'note' | 'note_body' | 'calendar'
+
+export interface ConflictBackupEntry {
+  id: string
+  kind: ConflictBackupKind
+  /** Bản local thua conflict, nguyên trạng tại thời điểm thua. */
+  row: Record<string, unknown>
+  at: string
+}
+
+function normalizeBackupEntry(raw: unknown): ConflictBackupEntry | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const e = raw as { id?: unknown; kind?: unknown; row?: unknown; at?: unknown }
+  if (typeof e.kind !== 'string' || typeof e.row !== 'object' || e.row === null) return null
+  return {
+    id: typeof e.id === 'string' && e.id
+      ? e.id
+      : `${e.kind}:${(e.row as { id?: unknown }).id ?? '?'}:${e.at ?? ''}`,
+    kind: e.kind as ConflictBackupKind,
+    row: e.row as Record<string, unknown>,
+    at: typeof e.at === 'string' ? e.at : '',
+  }
+}
+
+export async function listConflictBackups(): Promise<ConflictBackupEntry[]> {
   try {
     const chunk = await chrome.storage.local.get(BBQ_CONFLICT_BACKUPS_KEY)
     const raw = chunk[BBQ_CONFLICT_BACKUPS_KEY]
-    const list = Array.isArray(raw) ? raw : []
-    list.unshift({ kind, row, at: new Date().toISOString() })
+    if (!Array.isArray(raw)) return []
+    return raw
+      .map(normalizeBackupEntry)
+      .filter((e): e is ConflictBackupEntry => e !== null)
+  } catch {
+    return []
+  }
+}
+
+export async function removeConflictBackup(id: string): Promise<void> {
+  try {
+    const list = await listConflictBackups()
+    const next = list.filter((e) => e.id !== id)
+    if (next.length === 0) {
+      await chrome.storage.local.remove(BBQ_CONFLICT_BACKUPS_KEY)
+      return
+    }
+    await chrome.storage.local.set({ [BBQ_CONFLICT_BACKUPS_KEY]: next })
+  } catch {
+    /* best-effort */
+  }
+}
+
+/**
+ * Bản local thua conflict (server-wins nền) — giữ lại để không mất dữ liệu im lặng.
+ * Dedupe theo (kind, row.id): cùng row thua nhiều lần chỉ giữ bản MỚI NHẤT.
+ */
+export async function stashConflictBackup(kind: ConflictBackupKind, row: unknown): Promise<void> {
+  try {
+    const list = await listConflictBackups()
+    const rowId = (row as { id?: unknown })?.id
+    const deduped = list.filter((e) => !(e.kind === kind && e.row?.id === rowId))
+    deduped.unshift({
+      id: crypto.randomUUID(),
+      kind,
+      row: row as Record<string, unknown>,
+      at: new Date().toISOString(),
+    })
     await chrome.storage.local.set({
-      [BBQ_CONFLICT_BACKUPS_KEY]: list.slice(0, CONFLICT_BACKUPS_MAX),
+      [BBQ_CONFLICT_BACKUPS_KEY]: deduped.slice(0, CONFLICT_BACKUPS_MAX),
     })
   } catch {
     /* best-effort */

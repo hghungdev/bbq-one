@@ -222,7 +222,7 @@ const onMountedBlock = appSrc.match(/onMounted\(async \(\) => \{([\s\S]*?)\n  \}
 
 check(
   'C7a refreshStoresFromNetwork().then(() => maybeShowOverdueReminder()) trong onMounted',
-  /refreshStoresFromNetwork\(\)\s*\.\s*then\s*\(\s*\(\)\s*=>\s*maybeShowOverdueReminder\s*\(\s*\)/.test(
+  /refreshStoresFromNetwork\(\)\s*\.\s*then\s*\([\s\S]*maybeShowOverdueReminder\s*\(\s*\)/.test(
     onMountedBlock,
   ),
   'maybeShowOverdueReminder chạy trên cache hydrate (có thể stale) trước khi pull xong',

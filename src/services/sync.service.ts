@@ -70,10 +70,13 @@ export const syncService = {
     getKey: (folderId: string) => CryptoKey | null,
   ): Promise<number> {
     const byId = new Map(folders.map((f) => [f.id, f]))
-    const dirty = notes.filter(isNoteDirty)
+    const dirtyBodyNoteIds = new Set(
+      noteBodies.filter(isRowDirty).map((b) => b.note_id),
+    )
+    const candidates = notes.filter((n) => isNoteDirty(n) || dirtyBodyNoteIds.has(n.id))
     let count = 0
     const ts = new Date().toISOString()
-    for (const n of dirty) {
+    for (const n of candidates) {
       const folder = n.folder_id ? byId.get(n.folder_id) : undefined
       const key = n.folder_id ? getKey(n.folder_id) : null
       const bodies = bodiesForNoteSorted(noteBodies, n.id)
@@ -87,22 +90,40 @@ export const syncService = {
           continue
         }
       }
-      try {
-        let title = n.title
-        if (folder?.is_secure && key) {
-          if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
+
+      if (isNoteDirty(n)) {
+        try {
+          let title = n.title
+          if (folder?.is_secure && key) {
+            if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
+          }
+          const savedNote = await notesService.update(
+            n.id,
+            {
+              title,
+              folder_id: n.folder_id,
+              tags: n.tags,
+              synced_at: ts,
+            },
+            { row: n },
+          )
+          n.updated_at = savedNote.updated_at
+          n.synced_at = savedNote.synced_at
+          count++
+        } catch (e) {
+          if (isSyncConflictError(e)) {
+            await stashConflictBackup('note', n)
+            n.synced_at = n.updated_at
+            count++
+          } else {
+            continue
+          }
         }
-        await notesService.update(
-          n.id,
-          {
-            title,
-            folder_id: n.folder_id,
-            tags: n.tags,
-            synced_at: ts,
-          },
-          { row: n },
-        )
-        for (const b of bodies) {
+      }
+
+      for (const b of bodies) {
+        if (!isRowDirty(b)) continue
+        try {
           let label = b.label
           let content = b.content
           if (folder?.is_secure && key) {
@@ -111,7 +132,7 @@ export const syncService = {
               content = await encryptField(content, key)
             }
           }
-          await noteBodiesService.update(
+          const savedBody = await noteBodiesService.update(
             b.id,
             {
               label,
@@ -120,15 +141,18 @@ export const syncService = {
             },
             { row: b },
           )
-        }
-        count++
-      } catch (e) {
-        if (isSyncConflictError(e)) {
-          void stashConflictBackup('note', n)
-          n.synced_at = n.updated_at
+          b.updated_at = savedBody.updated_at
+          b.synced_at = savedBody.synced_at
           count++
+        } catch (e) {
+          if (isSyncConflictError(e)) {
+            await stashConflictBackup('note_body', b)
+            b.synced_at = b.updated_at
+            count++
+            continue
+          }
+          break
         }
-        /* network / lỗi khác: skip, retry lần sau */
       }
     }
     return count
@@ -141,7 +165,7 @@ export const syncService = {
     const ts = new Date().toISOString()
     for (const ev of dirty) {
       try {
-        await calendarEventsService.update(
+        const saved = await calendarEventsService.update(
           ev.id,
           {
             title: ev.title,
@@ -154,10 +178,12 @@ export const syncService = {
           },
           { row: ev },
         )
+        ev.updated_at = saved.updated_at
+        ev.synced_at = saved.synced_at
         count++
       } catch (e) {
         if (isSyncConflictError(e)) {
-          void stashConflictBackup('calendar', ev)
+          await stashConflictBackup('calendar', ev)
           ev.synced_at = ev.updated_at
           count++
         }

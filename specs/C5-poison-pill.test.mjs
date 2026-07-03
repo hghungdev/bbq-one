@@ -160,7 +160,11 @@ check(
   noteUpdatesP2.includes('n-good-2'),
   `note updates = ${JSON.stringify(noteUpdatesP2)}`,
 )
-check('P2.2 return count = 1', countP2 === 1, `count = ${countP2}`)
+check(
+  'P2.2 return count >= 1 (per-row count sau C9.2; note thành công + note sau poison)',
+  countP2 >= 1 && noteUpdatesP2.includes('n-good-2'),
+  `count = ${countP2}, note updates = ${JSON.stringify(noteUpdatesP2)}`,
+)
 
 // ═════════════════════════════════════════════════════════════════════════════
 console.log('\nCASE P3 — pin invariant: calendar loop đã có try/catch per-event (không regression)')
@@ -236,12 +240,14 @@ check(
 console.log('\nCASE P4 — static: syncDirtyNotesFromList có try/catch per-note (mirror calendar)')
 const syncSrc = fs.readFileSync(SYNC_SERVICE_PATH, 'utf8')
 const notesLoop = syncSrc.match(
-  /async syncDirtyNotesFromList[\s\S]*?for \(const n of dirty\) \{([\s\S]*?\n    \})/,
+  /async syncDirtyNotesFromList[\s\S]*?for \(const n of candidates\) \{([\s\S]*?\n    \})/,
 )
 const loopBody = notesLoop?.[1] ?? ''
 check(
   'P4 try/catch bọc per-note push (không để throw thoát khỏi for-loop)',
-  /try\s*\{[\s\S]*await notesService\.update[\s\S]*\}\s*catch/.test(loopBody),
+  /if \(isNoteDirty\(n\)\)[\s\S]*try\s*\{[\s\S]*await notesService\.update[\s\S]*\}\s*catch/.test(
+    loopBody,
+  ),
   'syncDirtyNotesFromList chưa có try/catch per-note — poison-pill vẫn chặn loop',
 )
 

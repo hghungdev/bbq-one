@@ -11,6 +11,7 @@
   import CalendarTab from '@/components/calendar/CalendarTab.vue'
   import CalendarTodayBanner from '@/components/calendar/CalendarTodayBanner.vue'
   import CalendarOverdueReminderDialog from '@/components/calendar/CalendarOverdueReminderDialog.vue'
+  import ConflictBackupsDialog from '@/components/sync/ConflictBackupsDialog.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useCommitPendingDeletesOnClose } from '@/composables/useCommitPendingDeletesOnClose'
@@ -44,6 +45,11 @@
     groupOverdueIncompleteEvents,
     isOverdueReminderDismissed,
   } from '@/services/calendarOverdueReminder.service'
+  import {
+    listConflictBackups,
+    removeConflictBackup,
+    type ConflictBackupEntry,
+  } from '@/utils/syncConflict'
 
   useCommitPendingDeletesOnClose()
 
@@ -69,6 +75,8 @@
 
   const showLoginModal = ref(false)
   const showOverdueReminder = ref(false)
+  const conflictBackups = ref<ConflictBackupEntry[]>([])
+  const showConflictBackups = ref(false)
 
   const headerClock = ref(formatAppDateTime(new Date(), utcOffsetHours.value))
   const headerClockTooltip = computed(
@@ -176,7 +184,10 @@
       calendarEvents.hydrateFromCache(),
     ])
     dataReady.value = true
-    void refreshStoresFromNetwork().then(() => maybeShowOverdueReminder())
+    void refreshStoresFromNetwork().then(() => {
+      void maybeShowOverdueReminder()
+      void maybeShowConflictBackups()
+    })
     stopAutoSyncListener = initAutoSyncOnNetworkRestore()
     stopNetworkListener = onNetworkStatusChange((online) => {
       networkOnline.value = online
@@ -198,7 +209,10 @@
   })
 
   watch(isAuthenticated, (authed) => {
-    if (authed) void maybeShowOverdueReminder()
+    if (authed) {
+      void maybeShowOverdueReminder()
+      void maybeShowConflictBackups()
+    }
   })
 
   /** Anonymous: chưa đăng nhập */
@@ -291,6 +305,66 @@
 
   function onOverdueReminderClose(): void {
     void closeOverdueReminder()
+  }
+
+  async function maybeShowConflictBackups(): Promise<void> {
+    if (!isAuthenticated.value) return
+    conflictBackups.value = await listConflictBackups()
+    if (conflictBackups.value.length > 0) showConflictBackups.value = true
+  }
+
+  const restorableBackupIds = computed(() => {
+    const ids = new Set<string>()
+    for (const e of conflictBackups.value) {
+      const rowId = String(e.row.id ?? '')
+      if (!rowId) continue
+      if (e.kind === 'calendar') {
+        if (calendarEvents.events.some((ev) => ev.id === rowId)) ids.add(e.id)
+        continue
+      }
+      const noteId = e.kind === 'note' ? rowId : String(e.row.note_id ?? '')
+      const note = notes.notes.find((n) => n.id === noteId)
+      if (!note) continue
+      if (e.kind === 'note_body' && !notes.bodies.some((b) => b.id === rowId)) continue
+      const folder = note.folder_id ? folders.folders.find((f) => f.id === note.folder_id) : null
+      if (folder?.is_secure) continue
+      ids.add(e.id)
+    }
+    return ids
+  })
+
+  async function onConflictBackupRestore(entry: ConflictBackupEntry): Promise<void> {
+    const rowId = String(entry.row.id ?? '')
+    try {
+      if (entry.kind === 'note') {
+        await notes.updateNote(rowId, {
+          title: String(entry.row.title ?? ''),
+          tags: Array.isArray(entry.row.tags) ? (entry.row.tags as string[]) : [],
+        })
+      } else if (entry.kind === 'note_body') {
+        await notes.updateBody(rowId, {
+          label: String(entry.row.label ?? ''),
+          content: String(entry.row.content ?? ''),
+        })
+      } else {
+        await calendarEvents.updateEvent(rowId, {
+          title: String(entry.row.title ?? ''),
+          description: String(entry.row.description ?? ''),
+          is_done: Boolean(entry.row.is_done),
+        })
+      }
+      await removeConflictBackup(entry.id)
+      conflictBackups.value = conflictBackups.value.filter((e) => e.id !== entry.id)
+    } catch (e) {
+      console.error('[BBQOne] Conflict backup restore failed:', e)
+    }
+    if (conflictBackups.value.length === 0) showConflictBackups.value = false
+  }
+
+  async function onConflictBackupDismiss(entry: ConflictBackupEntry): Promise<void> {
+    await removeConflictBackup(entry.id)
+    conflictBackups.value = conflictBackups.value.filter((e) => e.id !== entry.id)
+    if (conflictBackups.value.length === 0) showConflictBackups.value = false
   }
 
   function onOpenCalendarFromTodayBanner(): void {
@@ -514,6 +588,14 @@
       :groups="overdueGroups"
       @close="onOverdueReminderClose"
       @confirm="onOverdueReminderConfirm"
+    />
+    <ConflictBackupsDialog
+      :visible="showConflictBackups"
+      :entries="conflictBackups"
+      :restorable-ids="restorableBackupIds"
+      @restore="onConflictBackupRestore"
+      @dismiss="onConflictBackupDismiss"
+      @close="showConflictBackups = false"
     />
     <UndoToast />
   </div>
