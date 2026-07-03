@@ -235,6 +235,21 @@ check(
 )
 
 // ═════════════════════════════════════════════════════════════════════════════
+console.log('\nR4 — flush pending-delete trước pull (chống resurrect tạm thời sau offline delete)')
+
+const refreshFnStart = appSrc.indexOf('async function refreshStoresFromNetwork')
+const refreshFn =
+  refreshFnStart === -1 ? '' : appSrc.slice(refreshFnStart, appSrc.indexOf('}', refreshFnStart) + 1)
+const iFlush = refreshFn.indexOf("flushOrphanedPendingDeleteCommits('respect-expiry')")
+const iPullR4 = refreshFn.indexOf('Promise.all')
+
+check(
+  "R4 refreshStoresFromNetwork: flushOrphanedPendingDeleteCommits('respect-expiry') TRƯỚC pull",
+  iFlush !== -1 && iPullR4 !== -1 && iFlush < iPullR4,
+  `offline delete (C3, entry còn treo trong queue) → mạng về khi popup mở → pull thấy row còn trên server → row hiện lại UI cho tới lần mở popup sau (iFlush=${iFlush}, iPull=${iPullR4})`,
+)
+
+// ═════════════════════════════════════════════════════════════════════════════
 console.log('\n──────────────────────────────────────────────')
 if (failures.length > 0) {
   console.log(`❌ FAIL (${failures.length}):\n- ${failures.join('\n- ')}`)

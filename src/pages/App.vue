@@ -86,6 +86,8 @@
 
   async function refreshStoresFromNetwork(): Promise<void> {
     if (!isOnline()) return
+    // Chốt delete còn treo (offline-delete đã hết undo window) trước khi pull — tránh row hiện lại tạm thời.
+    await flushOrphanedPendingDeleteCommits('respect-expiry')
     // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
     await runBackgroundAutoSync('pre-pull')
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
