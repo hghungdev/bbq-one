@@ -62,6 +62,7 @@ export const useUndoToastStore = defineStore('undoToast', () => {
     }
 
     const durationMs = action.durationMs ?? DEFAULT_UNDO_MS
+    const expiresAt = Date.now() + durationMs
     pendingActions.set(action.id, {
       undo: action.undo,
       commit: action.commit,
@@ -71,10 +72,10 @@ export const useUndoToastStore = defineStore('undoToast', () => {
       {
         id: action.id,
         message: action.message,
-        expiresAt: Date.now() + durationMs,
+        expiresAt,
       },
     ]
-    void registerPendingDeleteCommit(action.id)
+    void registerPendingDeleteCommit(action.id, expiresAt)
     timers.set(action.id, setTimeout(() => {
       void commit(action.id).catch((error) => {
         console.error('[BBQOne] Undo toast commit failed', error)

@@ -104,7 +104,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 
 wireBookmarkAutoBackup()
 initAutoSyncOnNetworkRestore()
-void flushOrphanedPendingDeleteCommits()
+void flushOrphanedPendingDeleteCommits('respect-expiry')
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== ALARM_NAME) return
