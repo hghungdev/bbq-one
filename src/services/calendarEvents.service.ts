@@ -8,6 +8,8 @@ import type {
   CalendarEventUpdateInput,
 } from '@/types/calendar'
 import {
+  acceptServerRow,
+  isSyncConflictError,
   type OptimisticUpdateOptions,
   resolveExpectedServerUpdatedAt,
   throwIfSyncConflict,
@@ -22,7 +24,7 @@ export const calendarEventsService = {
         .order('event_date', { ascending: true })
         .order('position', { ascending: true })
       if (error) throw error
-      return (data ?? []) as CalendarEvent[]
+      return (data ?? []).map(acceptServerRow) as CalendarEvent[]
     }
     const arr = await localCalendarEventsService.getAll()
     return arr
@@ -43,7 +45,7 @@ export const calendarEventsService = {
         .order('event_date', { ascending: true })
         .order('position', { ascending: true })
       if (error) throw error
-      return (data ?? []) as CalendarEvent[]
+      return (data ?? []).map(acceptServerRow) as CalendarEvent[]
     }
     const arr = await localCalendarEventsService.listByDateRange(startISO, endISO)
     return arr
@@ -80,7 +82,7 @@ export const calendarEventsService = {
         .select()
         .single()
       if (error) throw error
-      return data as CalendarEvent
+      return acceptServerRow(data) as CalendarEvent
     }
     const local = await localCalendarEventsService.create(input)
     return { ...local, user_id: '' } as CalendarEvent
@@ -95,20 +97,41 @@ export const calendarEventsService = {
       const expected = resolveExpectedServerUpdatedAt(options)
       const base = options?.row
       if (expected !== null && base) {
-        const { data, error } = await supabase.rpc('bbq_update_calendar_event_if_current', {
+        const rpcArgs = (expectedUpdatedAt: string, baseRow: CalendarEvent) => ({
           p_id: id,
-          p_expected_updated_at: expected,
-          p_title: updates.title ?? base.title,
-          p_description: updates.description ?? base.description,
-          p_event_date: updates.event_date ?? base.event_date,
-          p_is_done: updates.is_done ?? base.is_done,
-          p_position: updates.position ?? base.position,
-          p_color: updates.color !== undefined ? updates.color : base.color,
-          p_synced_at: updates.synced_at ?? base.synced_at ?? new Date().toISOString(),
+          p_expected_updated_at: expectedUpdatedAt,
+          p_title: updates.title ?? baseRow.title,
+          p_description: updates.description ?? baseRow.description,
+          p_event_date: updates.event_date ?? baseRow.event_date,
+          p_is_done: updates.is_done ?? baseRow.is_done,
+          p_position: updates.position ?? baseRow.position,
+          p_color: updates.color !== undefined ? updates.color : baseRow.color,
+          p_synced_at: updates.synced_at ?? baseRow.synced_at ?? new Date().toISOString(),
         })
-        throwIfSyncConflict(error)
-        if (error) throw error
-        return data as CalendarEvent
+        let attempt = await supabase.rpc(
+          'bbq_update_calendar_event_if_current',
+          rpcArgs(expected, base),
+        )
+        if (
+          attempt.error
+          && isSyncConflictError(attempt.error)
+          && options?.retryOnConflictWithServerState
+        ) {
+          const { data: fresh, error: freshErr } = await supabase
+            .from('calendar_events')
+            .select('*')
+            .eq('id', id)
+            .single()
+          if (!freshErr && fresh) {
+            attempt = await supabase.rpc(
+              'bbq_update_calendar_event_if_current',
+              rpcArgs(fresh.updated_at, fresh as CalendarEvent),
+            )
+          }
+        }
+        throwIfSyncConflict(attempt.error)
+        if (attempt.error) throw attempt.error
+        return acceptServerRow(attempt.data) as CalendarEvent
       }
       const { data, error } = await supabase
         .from('calendar_events')
@@ -117,7 +140,7 @@ export const calendarEventsService = {
         .select()
         .single()
       if (error) throw error
-      return data as CalendarEvent
+      return acceptServerRow(data) as CalendarEvent
     }
     const local = await localCalendarEventsService.update(id, updates)
     return { ...local, user_id: '' } as CalendarEvent

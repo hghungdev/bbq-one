@@ -72,9 +72,9 @@ check(
 )
 
 check(
-  'C9.4b C9_OPTIMISTIC_RPC_ENABLED (hotfix: false cho tới C9.1)',
-  C9_OPTIMISTIC_RPC_ENABLED === false,
-  `C9_OPTIMISTIC_RPC_ENABLED=${C9_OPTIMISTIC_RPC_ENABLED} — bật lại chỉ sau C9.1 baseline fix`,
+  'C9.4b C9_OPTIMISTIC_RPC_ENABLED (C9.1 đã bật lại)',
+  C9_OPTIMISTIC_RPC_ENABLED === true,
+  `C9_OPTIMISTIC_RPC_ENABLED=${C9_OPTIMISTIC_RPC_ENABLED} — phải true sau C9.1 baseline fix`,
 )
 
 // ── Part 2: notes.service RPC wiring ─────────────────────────────────────────

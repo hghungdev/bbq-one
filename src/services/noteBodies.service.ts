@@ -3,6 +3,8 @@ import type { NoteBody } from '@/types'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localNoteBodiesService } from '@/services/localFirst/localNotes.service'
 import {
+  acceptServerRow,
+  isSyncConflictError,
   type OptimisticUpdateOptions,
   resolveExpectedServerUpdatedAt,
   throwIfSyncConflict,
@@ -17,7 +19,7 @@ export const noteBodiesService = {
         .order('note_id', { ascending: true })
         .order('position', { ascending: true })
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map(acceptServerRow)
     }
 
     // Local mode
@@ -33,7 +35,7 @@ export const noteBodiesService = {
         .eq('note_id', noteId)
         .order('position', { ascending: true })
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map(acceptServerRow)
     }
 
     // Local mode
@@ -61,7 +63,7 @@ export const noteBodiesService = {
         .select()
         .single()
       if (error) throw error
-      return data
+      return acceptServerRow(data)
     }
 
     // Local mode
@@ -78,16 +80,34 @@ export const noteBodiesService = {
       const expected = resolveExpectedServerUpdatedAt(options)
       const base = options?.row
       if (expected !== null && base) {
-        const { data, error } = await supabase.rpc('bbq_update_note_body_if_current', {
+        const rpcArgs = (expectedUpdatedAt: string, baseRow: typeof base) => ({
           p_id: id,
-          p_expected_updated_at: expected,
-          p_label: updates.label ?? base.label,
-          p_content: updates.content ?? base.content,
-          p_synced_at: updates.synced_at ?? base.synced_at ?? new Date().toISOString(),
+          p_expected_updated_at: expectedUpdatedAt,
+          p_label: updates.label ?? baseRow.label,
+          p_content: updates.content ?? baseRow.content,
+          p_synced_at: updates.synced_at ?? baseRow.synced_at ?? new Date().toISOString(),
         })
-        throwIfSyncConflict(error)
-        if (error) throw error
-        return data as NoteBody
+        let attempt = await supabase.rpc('bbq_update_note_body_if_current', rpcArgs(expected, base))
+        if (
+          attempt.error
+          && isSyncConflictError(attempt.error)
+          && options?.retryOnConflictWithServerState
+        ) {
+          const { data: fresh, error: freshErr } = await supabase
+            .from('note_bodies')
+            .select('*')
+            .eq('id', id)
+            .single()
+          if (!freshErr && fresh) {
+            attempt = await supabase.rpc(
+              'bbq_update_note_body_if_current',
+              rpcArgs(fresh.updated_at, fresh),
+            )
+          }
+        }
+        throwIfSyncConflict(attempt.error)
+        if (attempt.error) throw attempt.error
+        return acceptServerRow(attempt.data as NoteBody)
       }
       const { data, error } = await supabase
         .from('note_bodies')
@@ -96,7 +116,7 @@ export const noteBodiesService = {
         .select()
         .single()
       if (error) throw error
-      return data
+      return acceptServerRow(data)
     }
 
     // Local mode

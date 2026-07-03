@@ -58,6 +58,7 @@ function makeNote(id, title) {
 }
 
 function loadSyncWithMocks(notesServiceMock, noteBodiesServiceMock = { update: async () => ({}) }) {
+  const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
   return loadTsModule(SYNC_SERVICE_PATH, {
     '@/constants/storage': {
       NOTES_CACHE_KEY: 'notes_cache',
@@ -66,6 +67,7 @@ function loadSyncWithMocks(notesServiceMock, noteBodiesServiceMock = { update: a
     },
     '@/constants/calendar': { CALENDAR_EVENTS_CACHE_KEY: 'calendar_events_cache' },
     '@/utils/secureCrypto': { encryptField: async (v) => v, isEncryptedEnvelope: () => false },
+    '@/utils/syncConflict': syncConflictReal,
     './calendarEvents.service': { calendarEventsService: {} },
     './noteBodies.service': { noteBodiesService: noteBodiesServiceMock },
     './notes.service': { notesService: notesServiceMock },
@@ -175,6 +177,7 @@ syncP3.calendarEventsService = {
   },
 }
 // Re-load with calendar mock wired
+const syncConflictRealP3 = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
 const syncP3b = loadTsModule(SYNC_SERVICE_PATH, {
   '@/constants/storage': {
     NOTES_CACHE_KEY: 'notes_cache',
@@ -183,6 +186,7 @@ const syncP3b = loadTsModule(SYNC_SERVICE_PATH, {
   },
   '@/constants/calendar': { CALENDAR_EVENTS_CACHE_KEY: 'calendar_events_cache' },
   '@/utils/secureCrypto': { encryptField: async (v) => v, isEncryptedEnvelope: () => false },
+  '@/utils/syncConflict': syncConflictRealP3,
   './calendarEvents.service': {
     calendarEventsService: {
       update: async (id) => {

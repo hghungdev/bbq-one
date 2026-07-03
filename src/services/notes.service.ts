@@ -4,6 +4,8 @@ import type { Note, NoteBody } from '@/types'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localNotesService } from '@/services/localFirst/localNotes.service'
 import {
+  acceptServerRow,
+  isSyncConflictError,
   type OptimisticUpdateOptions,
   resolveExpectedServerUpdatedAt,
   throwIfSyncConflict,
@@ -17,7 +19,7 @@ export const notesService = {
         .select('*')
         .order('updated_at', { ascending: false })
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map(acceptServerRow)
     }
 
     // Local mode
@@ -43,7 +45,7 @@ export const notesService = {
         .select()
         .single()
       if (error) throw error
-      return data
+      return acceptServerRow(data)
     }
 
     // Local mode
@@ -60,17 +62,35 @@ export const notesService = {
       const expected = resolveExpectedServerUpdatedAt(options)
       const base = options?.row
       if (expected !== null && base) {
-        const { data, error } = await supabase.rpc('bbq_update_note_if_current', {
+        const rpcArgs = (expectedUpdatedAt: string, baseRow: typeof base) => ({
           p_id: id,
-          p_expected_updated_at: expected,
-          p_title: updates.title ?? base.title,
-          p_folder_id: updates.folder_id !== undefined ? updates.folder_id : base.folder_id,
-          p_tags: updates.tags ?? base.tags,
-          p_synced_at: updates.synced_at ?? base.synced_at ?? new Date().toISOString(),
+          p_expected_updated_at: expectedUpdatedAt,
+          p_title: updates.title ?? baseRow.title,
+          p_folder_id: updates.folder_id !== undefined ? updates.folder_id : baseRow.folder_id,
+          p_tags: updates.tags ?? baseRow.tags,
+          p_synced_at: updates.synced_at ?? baseRow.synced_at ?? new Date().toISOString(),
         })
-        throwIfSyncConflict(error)
-        if (error) throw error
-        return data as Note
+        let attempt = await supabase.rpc('bbq_update_note_if_current', rpcArgs(expected, base))
+        if (
+          attempt.error
+          && isSyncConflictError(attempt.error)
+          && options?.retryOnConflictWithServerState
+        ) {
+          const { data: fresh, error: freshErr } = await supabase
+            .from('notes')
+            .select('*')
+            .eq('id', id)
+            .single()
+          if (!freshErr && fresh) {
+            attempt = await supabase.rpc(
+              'bbq_update_note_if_current',
+              rpcArgs(fresh.updated_at, fresh),
+            )
+          }
+        }
+        throwIfSyncConflict(attempt.error)
+        if (attempt.error) throw attempt.error
+        return acceptServerRow(attempt.data as Note)
       }
       const { data, error } = await supabase
         .from('notes')
@@ -79,7 +99,7 @@ export const notesService = {
         .select()
         .single()
       if (error) throw error
-      return data
+      return acceptServerRow(data)
     }
 
     // Local mode
@@ -145,7 +165,7 @@ export const notesService = {
         const bodies = await noteBodiesService.getAll()
         return filterNotesBySubstring(all, bodies, q)
       }
-      return merged ?? []
+      return (merged ?? []).map(acceptServerRow)
     }
 
     // Local mode: substring search

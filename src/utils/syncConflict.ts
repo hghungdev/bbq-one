@@ -1,10 +1,6 @@
 /** Supabase RPC optimistic lock (migration 014) — client helpers. */
 
-/**
- * Tắt tạm (C9 hotfix): baseline synced_at client ≠ server updated_at sau trigger
- * → mọi dirty push BBQ_CONFLICT vĩnh viễn. Bật lại sau C9.1 (synced_at := server updated_at).
- */
-export const C9_OPTIMISTIC_RPC_ENABLED = false
+export const C9_OPTIMISTIC_RPC_ENABLED = true
 
 export class SyncConflictError extends Error {
   constructor(message = 'BBQ_CONFLICT') {
@@ -30,13 +26,54 @@ export type ServerVersionRow = {
 }
 
 /**
- * Baseline server `updated_at` for `bbq_update_*_if_current` RPC.
- * null → row chưa có synced_at (chưa push lần nào) → plain `.update()` không guard.
+ * Chuẩn hóa row nhận từ server: synced_at := updated_at (string NGUYÊN VĂN từ PostgREST).
+ * Đây là nguồn duy nhất của baseline optimistic-lock. KHÔNG đi qua new Date() (mất microsecond).
+ * CHỈ áp cho nhánh authenticated — row local-mode giữ synced_at null.
+ */
+export function acceptServerRow<T extends { updated_at: string; synced_at?: string | null }>(
+  row: T,
+): T {
+  return { ...row, synced_at: row.updated_at }
+}
+
+/**
+ * Baseline cho bbq_update_*_if_current: sau chuẩn hóa acceptServerRow, synced_at LUÔN là
+ * server updated_at last-seen — dùng thẳng cho cả row sạch lẫn dirty.
+ * null → chưa từng có bản server (local-mode / chưa push) → plain update, không guard.
  */
 export function expectedServerUpdatedAt(row: ServerVersionRow): string | null {
-  if (!row.synced_at) return null
-  const dirty = new Date(row.updated_at) > new Date(row.synced_at)
-  return dirty ? row.synced_at : row.updated_at
+  return row.synced_at ?? null
+}
+
+/**
+ * Timestamp cho edit offline: luôn LỚN HƠN updated_at/synced_at hiện có ít nhất 1ms —
+ * client clock chậm hơn server không làm edit trông "sạch" (mất push).
+ */
+export function nextLocalUpdatedAt(row: { updated_at: string; synced_at?: string | null }): string {
+  const floor =
+    Math.max(
+      new Date(row.updated_at).getTime(),
+      row.synced_at ? new Date(row.synced_at).getTime() : 0,
+    ) + 1
+  return new Date(Math.max(Date.now(), floor)).toISOString()
+}
+
+export const BBQ_CONFLICT_BACKUPS_KEY = 'bbqone_conflict_backups'
+const CONFLICT_BACKUPS_MAX = 20
+
+/** Bản local thua conflict (server-wins nền) — giữ lại để không mất dữ liệu im lặng. */
+export async function stashConflictBackup(kind: string, row: unknown): Promise<void> {
+  try {
+    const chunk = await chrome.storage.local.get(BBQ_CONFLICT_BACKUPS_KEY)
+    const raw = chunk[BBQ_CONFLICT_BACKUPS_KEY]
+    const list = Array.isArray(raw) ? raw : []
+    list.unshift({ kind, row, at: new Date().toISOString() })
+    await chrome.storage.local.set({
+      [BBQ_CONFLICT_BACKUPS_KEY]: list.slice(0, CONFLICT_BACKUPS_MAX),
+    })
+  } catch {
+    /* best-effort */
+  }
 }
 
 export type OptimisticUpdateOptions = {
@@ -44,6 +81,8 @@ export type OptimisticUpdateOptions = {
   row?: ServerVersionRow
   /** Override baseline (hiếm khi cần). */
   expectedServerUpdatedAt?: string
+  /** UI edit trực tiếp: conflict → refetch server row, retry 1 lần với baseline mới (user intent thắng). */
+  retryOnConflictWithServerState?: boolean
 }
 
 export function resolveExpectedServerUpdatedAt(

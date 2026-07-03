@@ -12,7 +12,7 @@ import type {
 import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
 import { isNetworkError } from '@/utils/networkErrors'
-import { isSyncConflictError } from '@/utils/syncConflict'
+import { isSyncConflictError, nextLocalUpdatedAt } from '@/utils/syncConflict'
 import { scheduleAutoSync } from '@/services/autoSync.service'
 import { isCalendarEventDirty, mergeFreshWithDirtyLocal } from '@/services/sync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
@@ -158,7 +158,10 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     const idx = events.value.findIndex((e) => e.id === id)
     if (idx < 0) return
     try {
-      const updated = await calendarEventsService.update(id, updates, { row: events.value[idx] })
+      const updated = await calendarEventsService.update(id, updates, {
+        row: events.value[idx],
+        retryOnConflictWithServerState: true,
+      })
       const next = events.value.slice()
       next[idx] = { ...updated, event_date: normalizeLocalDateKey(updated.event_date) }
       events.value = next
@@ -168,9 +171,9 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
       if (isOnline() && !isNetworkError(e)) throw e
       // Offline: cập nhật Pinia + cache với updated_at mới; syncFromCache push sau
       // qua dirty-detection (calendar event có cột synced_at trong DB).
-      const ts = new Date().toISOString()
       const next = events.value.slice()
       const cur = next[idx]
+      const ts = nextLocalUpdatedAt(cur)
       next[idx] = {
         ...cur,
         ...updates,

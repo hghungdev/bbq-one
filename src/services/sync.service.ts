@@ -11,6 +11,7 @@ import { calendarEventsService } from './calendarEvents.service'
 import { noteBodiesService } from './noteBodies.service'
 import { notesService } from './notes.service'
 import { isAuthenticated } from './localFirst/authMode'
+import { isSyncConflictError, stashConflictBackup } from '@/utils/syncConflict'
 
 export function isNoteDirty(n: Note): boolean {
   if (!n.synced_at) return true
@@ -87,6 +88,20 @@ export const syncService = {
         }
       }
       try {
+        let title = n.title
+        if (folder?.is_secure && key) {
+          if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
+        }
+        await notesService.update(
+          n.id,
+          {
+            title,
+            folder_id: n.folder_id,
+            tags: n.tags,
+            synced_at: ts,
+          },
+          { row: n },
+        )
         for (const b of bodies) {
           let label = b.label
           let content = b.content
@@ -106,23 +121,14 @@ export const syncService = {
             { row: b },
           )
         }
-        let title = n.title
-        if (folder?.is_secure && key) {
-          if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
-        }
-        await notesService.update(
-          n.id,
-          {
-            title,
-            folder_id: n.folder_id,
-            tags: n.tags,
-            synced_at: ts,
-          },
-          { row: n },
-        )
         count++
-      } catch {
-        /* offline / row đã bị xóa cloud — skip, retry lần sau */
+      } catch (e) {
+        if (isSyncConflictError(e)) {
+          void stashConflictBackup('note', n)
+          n.synced_at = n.updated_at
+          count++
+        }
+        /* network / lỗi khác: skip, retry lần sau */
       }
     }
     return count
@@ -149,8 +155,13 @@ export const syncService = {
           { row: ev },
         )
         count++
-      } catch {
-        /* offline / row đã bị xóa cloud — skip, retry lần sau */
+      } catch (e) {
+        if (isSyncConflictError(e)) {
+          void stashConflictBackup('calendar', ev)
+          ev.synced_at = ev.updated_at
+          count++
+        }
+        /* network / lỗi khác: skip, retry lần sau */
       }
     }
     return count
@@ -200,9 +211,13 @@ export const syncService = {
         calendarEventsService.getAll(),
       ])
       await chrome.storage.local.set({
-        [NOTES_CACHE_KEY]: freshNotes,
-        [NOTE_BODIES_CACHE_KEY]: freshBodies,
-        [CALENDAR_EVENTS_CACHE_KEY]: freshCalendar,
+        [NOTES_CACHE_KEY]: mergeFreshWithDirtyLocal(freshNotes, notes, isRowDirty),
+        [NOTE_BODIES_CACHE_KEY]: mergeFreshWithDirtyLocal(freshBodies, noteBodies, isRowDirty),
+        [CALENDAR_EVENTS_CACHE_KEY]: mergeFreshWithDirtyLocal(
+          freshCalendar,
+          calendarEvents,
+          isRowDirty,
+        ),
       })
     } catch {
       /* offline */

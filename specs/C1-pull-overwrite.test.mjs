@@ -57,6 +57,7 @@ function check(name, ok, detail) {
 console.log('PART 1 — merge-guard behavior (thực thi sync.service.ts thật, mock imports)')
 
 const stub = {}
+const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
 const sync = loadTsModule(SYNC_SERVICE_PATH, {
   '@/constants/storage': {
     NOTES_CACHE_KEY: 'notes_cache',
@@ -65,6 +66,7 @@ const sync = loadTsModule(SYNC_SERVICE_PATH, {
   },
   '@/constants/calendar': { CALENDAR_EVENTS_CACHE_KEY: 'calendar_events_cache' },
   '@/utils/secureCrypto': { encryptField: async (v) => v, isEncryptedEnvelope: () => false },
+  '@/utils/syncConflict': syncConflictReal,
   './calendarEvents.service': { calendarEventsService: stub },
   './noteBodies.service': { noteBodiesService: stub },
   './notes.service': { notesService: stub },

@@ -13,7 +13,7 @@ import type { Note, NoteBody } from '@/types'
 import { decryptField, encryptField } from '@/utils/secureCrypto'
 import { withTimeout } from '@/utils/withTimeout'
 import { isNetworkError } from '@/utils/networkErrors'
-import { isSyncConflictError } from '@/utils/syncConflict'
+import { isSyncConflictError, nextLocalUpdatedAt } from '@/utils/syncConflict'
 import { scheduleAutoSync } from '@/services/autoSync.service'
 import { isOnline } from '@/services/networkReachability.service'
 import { isRowDirty, mergeFreshWithDirtyLocal } from '@/services/sync.service'
@@ -253,7 +253,10 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     try {
-      const data = await notesService.update(id, payload, { row: prev })
+      const data = await notesService.update(id, payload, {
+        row: prev,
+        retryOnConflictWithServerState: true,
+      })
       const merged: Note = { ...prev, ...data }
 
       if (folder?.is_secure) {
@@ -274,7 +277,7 @@ export const useNotesStore = defineStore('notes', () => {
     } catch (e) {
       if (isSyncConflictError(e)) throw e
       if (isOnline() && !isNetworkError(e)) throw e
-      const ts = new Date().toISOString()
+      const ts = nextLocalUpdatedAt(prev)
       notes.value[idx] = { ...prev, ...updates, updated_at: ts }
       isDirty.value = true
       await persistCache()
@@ -310,7 +313,10 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     try {
-      const data = await noteBodiesService.update(id, payload, { row: prev })
+      const data = await noteBodiesService.update(id, payload, {
+        row: prev,
+        retryOnConflictWithServerState: true,
+      })
       const merged: NoteBody = { ...prev, ...data }
 
       if (folder?.is_secure) {
@@ -332,7 +338,7 @@ export const useNotesStore = defineStore('notes', () => {
     } catch (e) {
       if (isSyncConflictError(e)) throw e
       if (isOnline() && !isNetworkError(e)) throw e
-      const ts = new Date().toISOString()
+      const ts = nextLocalUpdatedAt(prev)
       bodies.value[idx] = {
         ...prev,
         label: updates.label ?? prev.label,
