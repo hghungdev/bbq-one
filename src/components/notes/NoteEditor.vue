@@ -2,7 +2,7 @@
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import type { Editor } from '@tiptap/core'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import { useNotesStore } from '@/stores/notes'
@@ -169,6 +169,19 @@ async function flushSave(): Promise<void> {
   })
 }
 
+function onPopupHideFlush(): void {
+  void flushSave()
+}
+
+function onVisibilityChangeFlush(): void {
+  if (document.visibilityState === 'hidden') onPopupHideFlush()
+}
+
+onMounted(() => {
+  window.addEventListener('pagehide', onPopupHideFlush)
+  document.addEventListener('visibilitychange', onVisibilityChangeFlush)
+})
+
 async function copyBodyToClipboard(): Promise<void> {
   const ed = editor.value
   if (!ed) return
@@ -214,6 +227,8 @@ async function onDeleteBody(bodyId: string, e: MouseEvent): Promise<void> {
 defineExpose({ flushSave })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('pagehide', onPopupHideFlush)
+  document.removeEventListener('visibilitychange', onVisibilityChangeFlush)
   cancelScheduledSave()
   if (codeTimer !== null) {
     clearTimeout(codeTimer)
