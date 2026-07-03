@@ -1,8 +1,8 @@
 # SPEC C9 — Cross-device conflict (Supabase optimistic lock) — PLANNING
 
-> **Trạng thái:** Migration 014 deployed + **client wired**.  
-> **Migration:** `supabase/migrations/014_optimistic_update_guard.sql`  
-> **Test:** `node specs/C9-supabase-optimistic-lock.test.mjs`
+> **Trạng thái:** Migration 014 deployed. Client wired nhưng **RPC tắt tạm** (`C9_OPTIMISTIC_RPC_ENABLED = false`
+> trong `syncConflict.ts`) — baseline `synced_at` client ≠ server `updated_at` sau trigger → dirty push
+> conflict vĩnh viễn. **C9.1** bắt buộc trước khi bật lại.
 
 ---
 

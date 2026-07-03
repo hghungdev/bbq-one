@@ -92,10 +92,14 @@ const supabaseDeleteOk = {
   }),
 }
 
+// C9 (commit 852885a) thêm import syncConflict vào services — mock bằng module THẬT để không drift
+const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+
 let notesLocalDeleteCalls = []
 const notesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'notes.service.ts'), {
   './supabase': { supabase: supabaseDeleteOk },
   './noteBodies.service': { noteBodiesService: {} },
+  '@/utils/syncConflict': syncConflictReal,
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localNotes.service': {
     localNotesService: {
@@ -118,6 +122,7 @@ let calLocalDeleteCalls = []
 const calMod = loadTsModule(path.join(ROOT, 'src', 'services', 'calendarEvents.service.ts'), {
   '@/constants/calendar': { CALENDAR_MAX_EVENTS_PER_DAY: 50 },
   './supabase': { supabase: supabaseDeleteOk },
+  '@/utils/syncConflict': syncConflictReal,
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localCalendarEvents.service': {
     localCalendarEventsService: {

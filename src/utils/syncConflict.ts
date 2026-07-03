@@ -1,5 +1,11 @@
 /** Supabase RPC optimistic lock (migration 014) — client helpers. */
 
+/**
+ * Tắt tạm (C9 hotfix): baseline synced_at client ≠ server updated_at sau trigger
+ * → mọi dirty push BBQ_CONFLICT vĩnh viễn. Bật lại sau C9.1 (synced_at := server updated_at).
+ */
+export const C9_OPTIMISTIC_RPC_ENABLED = false
+
 export class SyncConflictError extends Error {
   constructor(message = 'BBQ_CONFLICT') {
     super(message)
@@ -43,6 +49,7 @@ export type OptimisticUpdateOptions = {
 export function resolveExpectedServerUpdatedAt(
   options?: OptimisticUpdateOptions,
 ): string | null {
+  if (!C9_OPTIMISTIC_RPC_ENABLED) return null
   if (!options) return null
   if (options.expectedServerUpdatedAt) return options.expectedServerUpdatedAt
   if (options.row) return expectedServerUpdatedAt(options.row)

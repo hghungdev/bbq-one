@@ -53,10 +53,14 @@ function check(name, ok, detail) {
 // ═════════════════════════════════════════════════════════════════════════════
 console.log('C4 — behavior: authenticated delete phải gọi local delete (service thật)')
 
+// C9 (commit 852885a) thêm import syncConflict vào services — mock bằng module THẬT để không drift
+const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+
 let notesLocalCalls = []
 const notesMod = loadTsModule(NOTES_PATH, {
   './supabase': { supabase: supabaseDeleteOk },
   './noteBodies.service': { noteBodiesService: {} },
+  '@/utils/syncConflict': syncConflictReal,
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localNotes.service': {
     localNotesService: {
@@ -79,6 +83,7 @@ let calLocalCalls = []
 const calMod = loadTsModule(CAL_PATH, {
   '@/constants/calendar': { CALENDAR_MAX_EVENTS_PER_DAY: 50 },
   './supabase': { supabase: supabaseDeleteOk },
+  '@/utils/syncConflict': syncConflictReal,
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localCalendarEvents.service': {
     localCalendarEventsService: {

@@ -37,7 +37,8 @@ function check(name, ok, detail) {
 console.log('PART 1 — expectedServerUpdatedAt (syncConflict.ts thật)')
 
 const syncConflict = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
-const { expectedServerUpdatedAt, isSyncConflictError, SyncConflictError } = syncConflict
+const { expectedServerUpdatedAt, isSyncConflictError, SyncConflictError, C9_OPTIMISTIC_RPC_ENABLED } =
+  syncConflict
 
 check(
   'C9.1 dirty row → baseline = synced_at',
@@ -70,8 +71,14 @@ check(
   'conflict detector',
 )
 
+check(
+  'C9.4b C9_OPTIMISTIC_RPC_ENABLED (hotfix: false cho tới C9.1)',
+  C9_OPTIMISTIC_RPC_ENABLED === false,
+  `C9_OPTIMISTIC_RPC_ENABLED=${C9_OPTIMISTIC_RPC_ENABLED} — bật lại chỉ sau C9.1 baseline fix`,
+)
+
 // ── Part 2: notes.service RPC wiring ─────────────────────────────────────────
-console.log('\nPART 2 — notesService.update gọi bbq_update_note_if_current khi có row baseline')
+console.log('\nPART 2 — notesService.update: RPC khi enabled, plain update khi hotfix tắt')
 
 const rpcCalls = []
 const notesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'notes.service.ts'), {
@@ -108,13 +115,21 @@ await notesMod.notesService.update(
   { row: dirtyRow },
 )
 
-check(
-  'C9.5 RPC bbq_update_note_if_current với p_expected_updated_at = synced_at',
-  rpcCalls.length === 1
-    && rpcCalls[0].name === 'bbq_update_note_if_current'
-    && rpcCalls[0].args.p_expected_updated_at === '2026-01-01T08:00:00Z',
-  `rpcCalls = ${JSON.stringify(rpcCalls)}`,
-)
+if (C9_OPTIMISTIC_RPC_ENABLED) {
+  check(
+    'C9.5 RPC bbq_update_note_if_current với p_expected_updated_at = synced_at',
+    rpcCalls.length === 1
+      && rpcCalls[0].name === 'bbq_update_note_if_current'
+      && rpcCalls[0].args.p_expected_updated_at === '2026-01-01T08:00:00Z',
+    `rpcCalls = ${JSON.stringify(rpcCalls)}`,
+  )
+} else {
+  check(
+    'C9.5 hotfix: RPC tắt → plain .update() (sync hoạt động, không BBQ_CONFLICT giả)',
+    rpcCalls.length === 0,
+    `rpcCalls = ${JSON.stringify(rpcCalls)} — RPC vẫn bật sẽ conflict vĩnh viễn trên dirty row`,
+  )
+}
 
 // ── Part 3: static wiring sync + services ────────────────────────────────────
 console.log('\nPART 3 — static wiring')
