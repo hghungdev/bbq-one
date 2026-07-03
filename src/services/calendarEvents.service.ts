@@ -7,6 +7,11 @@ import type {
   CalendarEventCreateInput,
   CalendarEventUpdateInput,
 } from '@/types/calendar'
+import {
+  type OptimisticUpdateOptions,
+  resolveExpectedServerUpdatedAt,
+  throwIfSyncConflict,
+} from '@/utils/syncConflict'
 
 export const calendarEventsService = {
   async getAll(): Promise<CalendarEvent[]> {
@@ -81,8 +86,30 @@ export const calendarEventsService = {
     return { ...local, user_id: '' } as CalendarEvent
   },
 
-  async update(id: string, updates: CalendarEventUpdateInput): Promise<CalendarEvent> {
+  async update(
+    id: string,
+    updates: CalendarEventUpdateInput,
+    options?: OptimisticUpdateOptions & { row?: CalendarEvent },
+  ): Promise<CalendarEvent> {
     if (await isAuthenticated()) {
+      const expected = resolveExpectedServerUpdatedAt(options)
+      const base = options?.row
+      if (expected !== null && base) {
+        const { data, error } = await supabase.rpc('bbq_update_calendar_event_if_current', {
+          p_id: id,
+          p_expected_updated_at: expected,
+          p_title: updates.title ?? base.title,
+          p_description: updates.description ?? base.description,
+          p_event_date: updates.event_date ?? base.event_date,
+          p_is_done: updates.is_done ?? base.is_done,
+          p_position: updates.position ?? base.position,
+          p_color: updates.color !== undefined ? updates.color : base.color,
+          p_synced_at: updates.synced_at ?? base.synced_at ?? new Date().toISOString(),
+        })
+        throwIfSyncConflict(error)
+        if (error) throw error
+        return data as CalendarEvent
+      }
       const { data, error } = await supabase
         .from('calendar_events')
         .update(updates)
@@ -100,6 +127,7 @@ export const calendarEventsService = {
     if (await isAuthenticated()) {
       const { error } = await supabase.from('calendar_events').delete().eq('id', id)
       if (error) throw error
+      await localCalendarEventsService.delete(id)
       return
     }
     await localCalendarEventsService.delete(id)

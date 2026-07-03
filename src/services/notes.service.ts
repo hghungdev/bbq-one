@@ -3,6 +3,11 @@ import { noteBodiesService } from './noteBodies.service'
 import type { Note, NoteBody } from '@/types'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localNotesService } from '@/services/localFirst/localNotes.service'
+import {
+  type OptimisticUpdateOptions,
+  resolveExpectedServerUpdatedAt,
+  throwIfSyncConflict,
+} from '@/utils/syncConflict'
 
 export const notesService = {
   async getAll(): Promise<Note[]> {
@@ -49,8 +54,24 @@ export const notesService = {
   async update(
     id: string,
     updates: Partial<Pick<Note, 'title' | 'folder_id' | 'tags' | 'synced_at'>>,
+    options?: OptimisticUpdateOptions & { row?: Pick<Note, 'title' | 'folder_id' | 'tags' | 'updated_at' | 'synced_at'> },
   ): Promise<Note> {
     if (await isAuthenticated()) {
+      const expected = resolveExpectedServerUpdatedAt(options)
+      const base = options?.row
+      if (expected !== null && base) {
+        const { data, error } = await supabase.rpc('bbq_update_note_if_current', {
+          p_id: id,
+          p_expected_updated_at: expected,
+          p_title: updates.title ?? base.title,
+          p_folder_id: updates.folder_id !== undefined ? updates.folder_id : base.folder_id,
+          p_tags: updates.tags ?? base.tags,
+          p_synced_at: updates.synced_at ?? base.synced_at ?? new Date().toISOString(),
+        })
+        throwIfSyncConflict(error)
+        if (error) throw error
+        return data as Note
+      }
       const { data, error } = await supabase
         .from('notes')
         .update(updates)
@@ -70,6 +91,7 @@ export const notesService = {
     if (await isAuthenticated()) {
       const { error } = await supabase.from('notes').delete().eq('id', id)
       if (error) throw error
+      await localNotesService.delete(id)
       return
     }
     await localNotesService.delete(id)
