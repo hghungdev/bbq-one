@@ -149,12 +149,13 @@ check(
 )
 
 const appSrc = fs.readFileSync(path.join(ROOT, 'src', 'pages', 'App.vue'), 'utf8')
-const iRestore = appSrc.indexOf('maybeRestoreNoteDraft()')
-const iRefresh = appSrc.indexOf('refreshStoresFromNetwork().then')
+const onMountedBlock = appSrc.match(/onMounted\(async \(\) => \{([\s\S]*?)\n  \}\)/)?.[1] ?? ''
+const iRestore = onMountedBlock.indexOf('maybeRestoreNoteDraft()')
+const iRefresh = onMountedBlock.indexOf('refreshStoresFromNetwork().then')
 check(
   'W3 pages/App.vue khôi phục draft trong onMounted TRƯỚC pull',
   iRestore !== -1 && iRefresh !== -1 && iRestore < iRefresh && appSrc.includes('shouldApplyDraft'),
-  `iRestore=${iRestore}, iRefresh=${iRefresh} — draft không được áp lại (hoặc áp sau pull, thua race)`,
+  `onMounted iRestore=${iRestore}, iRefresh=${iRefresh} — draft không được áp lại (hoặc áp sau pull, thua race)`,
 )
 
 // ═════════════════════════════════════════════════════════════════════════════

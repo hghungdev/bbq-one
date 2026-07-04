@@ -50,6 +50,11 @@
     removeConflictBackup,
     type ConflictBackupEntry,
   } from '@/utils/syncConflict'
+  import {
+    clearNoteDraft,
+    readNoteDraft,
+    shouldApplyDraft,
+  } from '@/services/noteDraft.service'
 
   useCommitPendingDeletesOnClose()
 
@@ -184,6 +189,7 @@
       calendarEvents.hydrateFromCache(),
     ])
     dataReady.value = true
+    await maybeRestoreNoteDraft()
     void refreshStoresFromNetwork().then(() => {
       void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
@@ -305,6 +311,22 @@
 
   function onOverdueReminderClose(): void {
     void closeOverdueReminder()
+  }
+
+  async function maybeRestoreNoteDraft(): Promise<void> {
+    const draft = await readNoteDraft()
+    if (!draft) return
+    const body = notes.bodies.find((b) => b.id === draft.bodyId)
+    if (!shouldApplyDraft(draft, body)) {
+      await clearNoteDraft()
+      return
+    }
+    try {
+      await notes.updateBody(draft.bodyId, { content: draft.content })
+      await clearNoteDraft()
+    } catch (e) {
+      console.error('[BBQOne] Note draft restore failed:', e)
+    }
   }
 
   async function maybeShowConflictBackups(): Promise<void> {

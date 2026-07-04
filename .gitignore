@@ -5,3 +5,4 @@ dist
 !.env.example
 .env.local
 *.local
+tsconfig.app.tsbuildinfo

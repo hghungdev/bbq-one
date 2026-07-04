@@ -38,3 +38,9 @@ export const CALENDAR_OVERDUE_REMINDER_DISMISSED_SESSION_KEY =
 
 /** Undo 5s: xóa thật khi đóng popup hoặc flush sau khi context bị kill. */
 export const BBQ_PENDING_DELETE_COMMITS_KEY = 'bbqone_pending_delete_commits'
+
+/**
+ * chrome.storage.session: draft nội dung NoteEditor (1 slot) — lưới đỡ khi popup bị kill
+ * trước khi debounce-save 2s kịp chạy. Khôi phục + xóa ở lần mở popup sau.
+ */
+export const BBQ_NOTE_DRAFT_SESSION_KEY = 'bbqone_note_editor_draft'

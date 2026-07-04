@@ -5,6 +5,8 @@ import type { Editor } from '@tiptap/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import { clearNoteDraft, saveNoteDraft } from '@/services/noteDraft.service'
+import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useLangStore } from '@/stores/uiLang'
 import type { NoteBody } from '@/types'
@@ -19,6 +21,7 @@ import {
 } from '@/utils/pastePlainText'
 
 const notesStore = useNotesStore()
+const foldersStore = useFoldersStore()
 const { t } = useLangStore()
 const codeBlocks = ref<{ lang: string; code: string }[]>([])
 const copyFeedback = ref(false)
@@ -26,6 +29,7 @@ let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 let codeTimer: ReturnType<typeof setTimeout> | null = null
+let draftTimer: ReturnType<typeof setTimeout> | null = null
 
 const bodiesForEditor = computed(() => {
   const nid = notesStore.activeNoteId
@@ -55,6 +59,33 @@ function scheduleCodeExtract(): void {
   }, 400)
 }
 
+function isSecureActiveNote(): boolean {
+  const nid = notesStore.activeNoteId
+  const note = nid ? notesStore.notes.find((n) => n.id === nid) : null
+  const folder = note?.folder_id
+    ? foldersStore.folders.find((f) => f.id === note.folder_id)
+    : null
+  return !!folder?.is_secure
+}
+
+/** Throttle ~300ms: draft luôn tươi hơn debounce-save 2s, đủ rẻ để chạy mỗi keystroke. */
+function scheduleDraftWrite(): void {
+  if (draftTimer !== null) return
+  draftTimer = setTimeout(() => {
+    draftTimer = null
+    const id = notesStore.activeBodyId
+    const ed = editor.value
+    if (!id || !ed || !notesStore.isDirty) return
+    if (isSecureActiveNote()) return
+    void saveNoteDraft({
+      bodyId: id,
+      noteId: notesStore.activeNoteId ?? '',
+      content: ed.getHTML(),
+      at: new Date().toISOString(),
+    })
+  }, 300)
+}
+
 function scheduleSave(): void {
   cancelScheduledSave()
   const runBodyId = notesStore.activeBodyId
@@ -66,6 +97,7 @@ function scheduleSave(): void {
     await notesStore.updateBody(runBodyId, {
       content: ed.getHTML(),
     })
+    void clearNoteDraft()
   }, 2000)
 }
 
@@ -133,6 +165,7 @@ const editor = useEditor({
   onUpdate: () => {
     notesStore.setDirty(true)
     scheduleSave()
+    scheduleDraftWrite()
     scheduleCodeExtract()
   },
   onCreate: ({ editor: ed }) => {
@@ -150,6 +183,7 @@ watch(
       await notesStore.updateBody(oldId, {
         content: ed.getHTML(),
       })
+      void clearNoteDraft()
     }
     if (!ed) return
     const body = newId
@@ -167,6 +201,7 @@ async function flushSave(): Promise<void> {
   await notesStore.updateBody(id, {
     content: ed.getHTML(),
   })
+  void clearNoteDraft()
 }
 
 function onPopupHideFlush(): void {
@@ -233,6 +268,10 @@ onBeforeUnmount(() => {
   if (codeTimer !== null) {
     clearTimeout(codeTimer)
     codeTimer = null
+  }
+  if (draftTimer !== null) {
+    clearTimeout(draftTimer)
+    draftTimer = null
   }
   const id = notesStore.activeBodyId
   if (id && editor.value && notesStore.isDirty) {
