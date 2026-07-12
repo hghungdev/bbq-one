@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { chromeSessionStorageAdapter } from '@/utils/storage'
+import { supabaseAuthLock } from '@/utils/webLock'
 
 const SUPABASE_URL = (
   import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -25,5 +26,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: chromeSessionStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,
+    /** N6: popup + SW chung 1 Web Lock khi refresh token — hết race rotate refresh token. */
+    lock: supabaseAuthLock,
   },
 })

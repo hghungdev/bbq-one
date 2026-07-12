@@ -15,7 +15,7 @@
   import LoginModal from '@/components/auth/LoginModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useCommitPendingDeletesOnClose } from '@/composables/useCommitPendingDeletesOnClose'
-  import { flushOrphanedPendingDeleteCommits } from '@/services/pendingDeleteCommit.service'
+  import { flushOrphanedPendingDeleteCommits, listUnexpiredPendingDeletes } from '@/services/pendingDeleteCommit.service'
   import { useAppTimezoneStore } from '@/stores/appTimezone'
   import { useAuthStore } from '@/stores/auth'
   import { useFoldersStore } from '@/stores/folders'
@@ -104,6 +104,31 @@
     // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
     await runBackgroundAutoSync('pre-pull')
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+    // Row có entry pending-delete chưa hết hạn: server chưa xóa nên pull mang nó về lại —
+    // ẩn khỏi state để không "hồi sinh" trong UI (context sở hữu undo window tự quyết số phận nó).
+    await suppressUnexpiredPendingDeletes()
+  }
+
+  async function suppressUnexpiredPendingDeletes(): Promise<void> {
+    const pending = await listUnexpiredPendingDeletes()
+    if (pending.length === 0) return
+    const noteIds = new Set(pending.filter((p) => p.kind === 'note').map((p) => p.entityId))
+    const calendarIds = new Set(
+      pending.filter((p) => p.kind === 'calendar').map((p) => p.entityId),
+    )
+    if (noteIds.size > 0) {
+      notes.notes = notes.notes.filter((n) => !noteIds.has(n.id))
+      notes.bodies = notes.bodies.filter((b) => !noteIds.has(b.note_id))
+    }
+    if (calendarIds.size > 0) {
+      calendarEvents.events = calendarEvents.events.filter((e) => !calendarIds.has(e.id))
+    }
+    if (noteIds.size > 0 || calendarIds.size > 0) {
+      // N3.1: loadAll vừa persist row sắp-xóa xuống đĩa — ghi lại cache KHÔNG chứa nó,
+      // để context mới hydrate không hồi sinh note đang chờ undo. An toàn với N5 merge:
+      // row đĩa SẠCH vắng trong snapshot → drop; Undo ở context sở hữu sẽ persist lại row.
+      await Promise.all([notes.persistCache(), calendarEvents.persistCache()])
+    }
   }
 
   function onAutoSyncMessage(
@@ -180,8 +205,9 @@
     tickHeaderClock()
     headerClockTimer = setInterval(tickHeaderClock, 1000)
     await langStore.loadLang()
-    // Chốt xóa còn trong queue trước khi pull server — tránh “revert” sau khi đóng popup giữa undo 5s.
-    await flushOrphanedPendingDeleteCommits()
+    // Chốt xóa ĐÃ HẾT HẠN trước khi pull; entry chưa hết hạn có thể thuộc undo window
+    // đang sống ở dashboard-tab khác — không được force (N4).
+    await flushOrphanedPendingDeleteCommits('respect-expiry')
     // Hiện UI ngay từ cache; refresh network chạy nền (tránh treo popup khi Supabase chậm).
     await Promise.all([
       folders.hydrateFromCache(),

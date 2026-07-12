@@ -3,6 +3,7 @@ import type { Folder } from '@/types'
 import { DEFAULT_PBKDF2_ITERATIONS } from '@/utils/secureCrypto'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localFoldersService } from '@/services/localFirst/localNotes.service'
+import { fetchAllRows } from '@/utils/supabaseFetchAll'
 
 function normalizeFolder(row: Folder): Folder {
   return {
@@ -18,12 +19,14 @@ function normalizeFolder(row: Folder): Folder {
 export const foldersService = {
   async getAll(): Promise<Folder[]> {
     if (await isAuthenticated()) {
-      const { data, error } = await supabase
-        .from('folders')
-        .select('*')
-        .order('updated_at', { ascending: false })
-      if (error) throw error
-      return (data ?? []).map(normalizeFolder)
+      const data = await fetchAllRows<Folder>(() =>
+        supabase
+          .from('folders')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .order('id', { ascending: true }),
+      )
+      return data.map(normalizeFolder)
     }
 
     // Local mode: folders đã được normalize khi tạo

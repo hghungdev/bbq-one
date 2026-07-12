@@ -6,6 +6,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import { clearNoteDraft, saveNoteDraft } from '@/services/noteDraft.service'
+import { isRowMissingOnServerError } from '@/utils/syncConflict'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useLangStore } from '@/stores/uiLang'
@@ -68,6 +69,17 @@ function isSecureActiveNote(): boolean {
   return !!folder?.is_secure
 }
 
+function onAutosaveFailed(e: unknown): void {
+  // N10: KHÔNG clearNoteDraft — keystroke còn trong draft. Báo lỗi thay vì chết câm mỗi 2s.
+  console.warn('[BBQOne] Autosave failed:', e)
+  notesStore.setDirty(true)
+  notesStore.loadError = isRowMissingOnServerError(e)
+    ? 'Note was deleted on another device — your latest text is kept in the draft.'
+    : e instanceof Error
+      ? e.message
+      : 'Autosave failed'
+}
+
 /** Throttle ~300ms: draft luôn tươi hơn debounce-save 2s, đủ rẻ để chạy mỗi keystroke. */
 function scheduleDraftWrite(): void {
   if (draftTimer !== null) return
@@ -82,6 +94,7 @@ function scheduleDraftWrite(): void {
       noteId: notesStore.activeNoteId ?? '',
       content: ed.getHTML(),
       at: new Date().toISOString(),
+      baselineUpdatedAt: notesStore.activeBody?.updated_at,
     })
   }, 300)
 }
@@ -94,10 +107,14 @@ function scheduleSave(): void {
     if (!runBodyId || notesStore.activeBodyId !== runBodyId) return
     const ed = editor.value
     if (!ed) return
-    await notesStore.updateBody(runBodyId, {
-      content: ed.getHTML(),
-    })
-    void clearNoteDraft()
+    try {
+      await notesStore.updateBody(runBodyId, {
+        content: ed.getHTML(),
+      })
+      void clearNoteDraft()
+    } catch (e) {
+      onAutosaveFailed(e)
+    }
   }, 2000)
 }
 
@@ -180,10 +197,14 @@ watch(
     await nextTick()
     const ed = editor.value
     if (oldId && ed && notesStore.isDirty) {
-      await notesStore.updateBody(oldId, {
-        content: ed.getHTML(),
-      })
-      void clearNoteDraft()
+      try {
+        await notesStore.updateBody(oldId, {
+          content: ed.getHTML(),
+        })
+        void clearNoteDraft()
+      } catch (e) {
+        onAutosaveFailed(e)
+      }
     }
     if (!ed) return
     const body = newId
@@ -198,10 +219,14 @@ async function flushSave(): Promise<void> {
   const id = notesStore.activeBodyId
   const ed = editor.value
   if (!id || !ed || !notesStore.isDirty) return
-  await notesStore.updateBody(id, {
-    content: ed.getHTML(),
-  })
-  void clearNoteDraft()
+  try {
+    await notesStore.updateBody(id, {
+      content: ed.getHTML(),
+    })
+    void clearNoteDraft()
+  } catch (e) {
+    onAutosaveFailed(e)
+  }
 }
 
 function onPopupHideFlush(): void {

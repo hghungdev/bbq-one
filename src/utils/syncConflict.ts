@@ -20,6 +20,14 @@ export function isSyncConflictError(error: unknown): boolean {
   return false
 }
 
+/** PostgREST .single() trên row không tồn tại — note/body đã bị xóa trên server (máy khác). */
+export function isRowMissingOnServerError(e: unknown): boolean {
+  const code = (e as { code?: string } | null)?.code
+  if (code === 'PGRST116') return true
+  const msg = e instanceof Error ? e.message : typeof e === 'string' ? e : ''
+  return /0 rows|no rows|multiple \(or no\) rows/i.test(msg)
+}
+
 export type ServerVersionRow = {
   updated_at: string
   synced_at?: string | null
@@ -98,15 +106,19 @@ export async function listConflictBackups(): Promise<ConflictBackupEntry[]> {
   }
 }
 
+import { CONFLICT_BACKUPS_LOCK, withWebLock } from '@/utils/webLock'
+
 export async function removeConflictBackup(id: string): Promise<void> {
   try {
-    const list = await listConflictBackups()
-    const next = list.filter((e) => e.id !== id)
-    if (next.length === 0) {
-      await chrome.storage.local.remove(BBQ_CONFLICT_BACKUPS_KEY)
-      return
-    }
-    await chrome.storage.local.set({ [BBQ_CONFLICT_BACKUPS_KEY]: next })
+    await withWebLock(CONFLICT_BACKUPS_LOCK, async () => {
+      const list = await listConflictBackups()
+      const next = list.filter((e) => e.id !== id)
+      if (next.length === 0) {
+        await chrome.storage.local.remove(BBQ_CONFLICT_BACKUPS_KEY)
+        return
+      }
+      await chrome.storage.local.set({ [BBQ_CONFLICT_BACKUPS_KEY]: next })
+    })
   } catch {
     /* best-effort */
   }
@@ -118,17 +130,19 @@ export async function removeConflictBackup(id: string): Promise<void> {
  */
 export async function stashConflictBackup(kind: ConflictBackupKind, row: unknown): Promise<void> {
   try {
-    const list = await listConflictBackups()
-    const rowId = (row as { id?: unknown })?.id
-    const deduped = list.filter((e) => !(e.kind === kind && e.row?.id === rowId))
-    deduped.unshift({
-      id: crypto.randomUUID(),
-      kind,
-      row: row as Record<string, unknown>,
-      at: new Date().toISOString(),
-    })
-    await chrome.storage.local.set({
-      [BBQ_CONFLICT_BACKUPS_KEY]: deduped.slice(0, CONFLICT_BACKUPS_MAX),
+    await withWebLock(CONFLICT_BACKUPS_LOCK, async () => {
+      const list = await listConflictBackups()
+      const rowId = (row as { id?: unknown })?.id
+      const deduped = list.filter((e) => !(e.kind === kind && e.row?.id === rowId))
+      deduped.unshift({
+        id: crypto.randomUUID(),
+        kind,
+        row: row as Record<string, unknown>,
+        at: new Date().toISOString(),
+      })
+      await chrome.storage.local.set({
+        [BBQ_CONFLICT_BACKUPS_KEY]: deduped.slice(0, CONFLICT_BACKUPS_MAX),
+      })
     })
   } catch {
     /* best-effort */

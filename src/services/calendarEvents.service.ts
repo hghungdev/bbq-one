@@ -14,17 +14,20 @@ import {
   resolveExpectedServerUpdatedAt,
   throwIfSyncConflict,
 } from '@/utils/syncConflict'
+import { fetchAllRows } from '@/utils/supabaseFetchAll'
 
 export const calendarEventsService = {
   async getAll(): Promise<CalendarEvent[]> {
     if (await isAuthenticated()) {
-      const { data, error } = await supabase
-        .from('calendar_events')
-        .select('*')
-        .order('event_date', { ascending: true })
-        .order('position', { ascending: true })
-      if (error) throw error
-      return (data ?? []).map(acceptServerRow) as CalendarEvent[]
+      const data = await fetchAllRows<CalendarEvent>(() =>
+        supabase
+          .from('calendar_events')
+          .select('*')
+          .order('event_date', { ascending: true })
+          .order('position', { ascending: true })
+          .order('id', { ascending: true }),
+      )
+      return data.map(acceptServerRow) as CalendarEvent[]
     }
     const arr = await localCalendarEventsService.getAll()
     return arr

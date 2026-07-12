@@ -2,6 +2,7 @@ import { BBQ_PENDING_DELETE_COMMITS_KEY } from '@/constants/storage'
 import { bookmarksService } from '@/services/bookmarks.service'
 import { calendarEventsService } from '@/services/calendarEvents.service'
 import { notesService } from '@/services/notes.service'
+import { PENDING_DELETES_LOCK, withWebLock } from '@/utils/webLock'
 
 export type PendingDeleteKind = 'note' | 'calendar' | 'bookmark-backup'
 
@@ -17,6 +18,8 @@ export type FlushMode = 'force' | 'respect-expiry'
 
 /** Đệm sau expiresAt trước khi SW tự flush — tránh đua với chính timer commit của popup. */
 const FLUSH_EXPIRY_GRACE_MS = 1_000
+
+export const PENDING_DELETE_FLUSH_ALARM = 'bbqone-pending-delete-flush'
 
 export function isFlushPendingDeletesMessage(
   msg: unknown,
@@ -90,16 +93,20 @@ export async function registerPendingDeleteCommit(
   actionId: string,
   expiresAt: number,
 ): Promise<void> {
-  const queue = await readQueue()
-  if (!queue.some((e) => e.id === actionId)) {
-    await writeQueue([...queue, { id: actionId, expiresAt }])
-  }
+  await withWebLock(PENDING_DELETES_LOCK, async () => {
+    const queue = await readQueue()
+    if (!queue.some((e) => e.id === actionId)) {
+      await writeQueue([...queue, { id: actionId, expiresAt }])
+    }
+  })
 }
 
 export async function unregisterPendingDeleteCommit(actionId: string): Promise<void> {
-  const queue = await readQueue()
-  const next = queue.filter((e) => e.id !== actionId)
-  if (next.length !== queue.length) await writeQueue(next)
+  await withWebLock(PENDING_DELETES_LOCK, async () => {
+    const queue = await readQueue()
+    const next = queue.filter((e) => e.id !== actionId)
+    if (next.length !== queue.length) await writeQueue(next)
+  })
 }
 
 async function executePendingDelete(actionId: string): Promise<void> {
@@ -127,23 +134,53 @@ async function executePendingDelete(actionId: string): Promise<void> {
 export async function flushOrphanedPendingDeleteCommits(
   mode: FlushMode = 'force',
 ): Promise<void> {
+  await withWebLock(PENDING_DELETES_LOCK, async () => {
+    const queue = await readQueue()
+    if (queue.length === 0) return
+
+    const now = Date.now()
+    const remaining: PendingDeleteCommitEntry[] = []
+    for (const entry of queue) {
+      // Undo window còn mở → không được xóa sớm; giữ lại chờ lần flush sau.
+      if (mode === 'respect-expiry' && now < entry.expiresAt + FLUSH_EXPIRY_GRACE_MS) {
+        remaining.push(entry)
+        continue
+      }
+      try {
+        await executePendingDelete(entry.id)
+      } catch (e) {
+        console.warn('[BBQOne] Pending delete flush failed:', entry.id, e)
+        remaining.push(entry)
+      }
+    }
+    await writeQueue(remaining)
+  })
+}
+
+/**
+ * Entry chưa hết hạn (undo window có thể còn sống ở context khác) —
+ * dùng để ẩn row khỏi kết quả pull, tránh "hồi sinh" row đang chờ xóa.
+ */
+export async function listUnexpiredPendingDeletes(): Promise<
+  Array<{ kind: PendingDeleteKind; entityId: string }>
+> {
+  const queue = await readQueue()
+  const now = Date.now()
+  return queue
+    .filter((e) => now < e.expiresAt + FLUSH_EXPIRY_GRACE_MS)
+    .map((e) => parseUndoDeleteActionId(e.id))
+    .filter((p): p is { kind: PendingDeleteKind; entityId: string } => p !== null)
+}
+
+/**
+ * Sau flush respect-expiry còn entry chưa hết hạn → đặt alarm để SW tự dọn sau khi
+ * hết hạn (SW timer chết theo SW — chrome.alarms sống qua SW kill).
+ */
+export async function scheduleOrphanExpiryAlarm(): Promise<void> {
   const queue = await readQueue()
   if (queue.length === 0) return
-
-  const now = Date.now()
-  const remaining: PendingDeleteCommitEntry[] = []
-  for (const entry of queue) {
-    // Undo window còn mở → không được xóa sớm; giữ lại chờ lần flush sau.
-    if (mode === 'respect-expiry' && now < entry.expiresAt + FLUSH_EXPIRY_GRACE_MS) {
-      remaining.push(entry)
-      continue
-    }
-    try {
-      await executePendingDelete(entry.id)
-    } catch (e) {
-      console.warn('[BBQOne] Pending delete flush failed:', entry.id, e)
-      remaining.push(entry)
-    }
-  }
-  await writeQueue(remaining)
+  const maxExpiry = Math.max(...queue.map((e) => e.expiresAt))
+  // MV3 clamp alarm dưới ~30s → floor 30s; orphan bị commit trễ tối đa ~30s là chấp nhận được.
+  const when = Math.max(Date.now() + 30_000, maxExpiry + FLUSH_EXPIRY_GRACE_MS)
+  chrome.alarms.create(PENDING_DELETE_FLUSH_ALARM, { when })
 }

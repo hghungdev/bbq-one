@@ -3,18 +3,26 @@ import {
   scheduleBookmarkAutoBackup,
 } from '@/services/bookmarkAutoBackup.service'
 import { syncService } from '@/services/sync.service'
-import { initAutoSyncOnNetworkRestore } from '@/services/autoSync.service'
+import {
+  hasPendingSyncWork,
+  initAutoSyncOnNetworkRestore,
+  runBackgroundAutoSync,
+} from '@/services/autoSync.service'
 import {
   flushOrphanedPendingDeleteCommits,
   isFlushPendingDeletesMessage,
+  PENDING_DELETE_FLUSH_ALARM,
+  scheduleOrphanExpiryAlarm,
 } from '@/services/pendingDeleteCommit.service'
 import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
 import {
   isRecoverableRefreshTokenAuthError,
   recoverSupabaseAuthFromStaleSession,
 } from '@/services/supabaseAuthRecovery.service'
+import { OFFSCREEN_CLIPBOARD_LOCK, withWebLock } from '@/utils/webLock'
 
 const ALARM_NAME = 'bbqone-daily-sync'
+const AUTOSYNC_RETRY_ALARM = 'bbqone-autosync-retry'
 
 /** Gỡ kho translation/dictionary cũ sau khi update extension. */
 const LEGACY_KEYS_TO_REMOVE = [
@@ -63,6 +71,14 @@ function ensureDailyAlarm(): void {
   })
 }
 
+function ensureAutoSyncRetryAlarm(): void {
+  void chrome.alarms.get(AUTOSYNC_RETRY_ALARM, (a) => {
+    if (!a) {
+      chrome.alarms.create(AUTOSYNC_RETRY_ALARM, { periodInMinutes: 5 })
+    }
+  })
+}
+
 function wireBookmarkAutoBackup(): void {
   const onChange = (): void => {
     scheduleBookmarkAutoBackup()
@@ -75,6 +91,7 @@ function wireBookmarkAutoBackup(): void {
 
 chrome.runtime.onInstalled.addListener((details) => {
   ensureDailyAlarm()
+  ensureAutoSyncRetryAlarm()
   void bootstrapBookmarkBaseline()
   installOpenAppContextMenu()
   if (details.reason === 'install' || details.reason === 'update') {
@@ -84,11 +101,13 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.runtime.onStartup.addListener(() => {
   ensureDailyAlarm()
+  ensureAutoSyncRetryAlarm()
   void bootstrapBookmarkBaseline()
   installOpenAppContextMenu()
 })
 
 installOpenAppContextMenu()
+ensureAutoSyncRetryAlarm()
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[BBQ_AUTH_LOGGED_IN_KEY]) return
@@ -104,9 +123,20 @@ chrome.contextMenus.onClicked.addListener((info) => {
 
 wireBookmarkAutoBackup()
 initAutoSyncOnNetworkRestore()
-void flushOrphanedPendingDeleteCommits('respect-expiry')
+void flushOrphanedPendingDeleteCommits('respect-expiry').then(scheduleOrphanExpiryAlarm)
 
 chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === PENDING_DELETE_FLUSH_ALARM) {
+    void flushOrphanedPendingDeleteCommits('respect-expiry').then(scheduleOrphanExpiryAlarm)
+    return
+  }
+  if (alarm.name === AUTOSYNC_RETRY_ALARM) {
+    void (async () => {
+      // Chỉ đụng mạng khi thật sự có việc — hasPendingSyncWork đọc local, rẻ.
+      if (await hasPendingSyncWork()) await runBackgroundAutoSync('alarm-retry')
+    })()
+    return
+  }
   if (alarm.name !== ALARM_NAME) return
   void syncService.syncFromCache()
 })
@@ -129,7 +159,8 @@ chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
   void (async () => {
     try {
       if (isFlushPendingDeletesMessage(msg)) {
-        await flushOrphanedPendingDeleteCommits()
+        await flushOrphanedPendingDeleteCommits('respect-expiry')
+        await scheduleOrphanExpiryAlarm()
         sendResponse({ ok: true })
         return
       }
@@ -140,24 +171,25 @@ chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
       const { text } = msg.payload
       const offscreenUrl = chrome.runtime.getURL('offscreen.html')
 
-      const existingContexts = await chrome.runtime.getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
-        documentUrls: [offscreenUrl],
-      })
-      if (existingContexts.length === 0) {
-        await chrome.offscreen.createDocument({
-          url: offscreenUrl,
-          reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
-          justification: 'Write text to OS clipboard from extension popup.',
+      const result = await withWebLock(OFFSCREEN_CLIPBOARD_LOCK, async () => {
+        const existingContexts = await chrome.runtime.getContexts({
+          contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
+          documentUrls: [offscreenUrl],
         })
-      }
-
-      const result = (await chrome.runtime.sendMessage({
-        type: 'offscreen-copy',
-        text,
-      })) as { ok: boolean; error?: string }
-
-      void chrome.offscreen.closeDocument().catch(() => {})
+        if (existingContexts.length === 0) {
+          await chrome.offscreen.createDocument({
+            url: offscreenUrl,
+            reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
+            justification: 'Write text to OS clipboard from extension popup.',
+          })
+        }
+        const r = (await chrome.runtime.sendMessage({
+          type: 'offscreen-copy',
+          text,
+        })) as { ok: boolean; error?: string }
+        await chrome.offscreen.closeDocument().catch(() => {})
+        return r
+      })
 
       sendResponse(result)
     } catch (e) {

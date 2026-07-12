@@ -7,6 +7,7 @@ import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkBackup, BookmarkNode } from '@/types/bookmark'
 import { isNetworkError } from '@/utils/networkErrors'
+import { safeCacheWrite, stripEncryptedBackupTrees } from '@/utils/cacheWrite'
 
 export const useBookmarksStore = defineStore('bookmarks', () => {
   const liveTree = ref<BookmarkNode[]>([])
@@ -37,11 +38,10 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
   }
 
   async function persistBackupsCache(): Promise<void> {
-    try {
-      await chrome.storage.local.set({ [BOOKMARKS_CACHE_KEY]: backups.value })
-    } catch {
-      /* ignore */
-    }
+    // N8: không cache plaintext tree đã decrypt của backup mã hóa PIN.
+    await safeCacheWrite({
+      [BOOKMARKS_CACHE_KEY]: stripEncryptedBackupTrees(backups.value),
+    })
   }
 
   /** Gán lỗi thân thiện — không hiện "Failed to fetch" khi offline (banner đã giải thích). */

@@ -47,6 +47,19 @@ closes.
 **User-facing functionality**: Core data persistence — without this
 permission, no data can be saved.
 
+### `unlimitedStorage`
+
+**Purpose**: BBQOne is a local-first application — the user's complete
+notes, calendar events, and bookmark backup history are cached in
+`chrome.storage.local` so the extension works fully offline. The default
+10MB quota is insufficient for users with large note collections (a few
+thousand notes with rich-text bodies exceeds it), and hitting the quota
+would silently prevent offline edits from being persisted.
+
+**User-facing functionality**: Reliable offline persistence of all user
+data regardless of collection size. No data is collected or transmitted —
+this permission only raises the local disk cap.
+
 ### `contextMenus`
 
 **Purpose**: Add a single menu item ("Open Dashboard") to the **extension
@@ -141,6 +154,8 @@ users never trigger any requests to Supabase.
 - **No** modification of webpage content.
 - **No** ads, tracking, or analytics.
 - **No** collection of IP address, browsing history, or fingerprinting.
+- **No** web-accessible resources — websites cannot probe for the extension's
+  presence (no fingerprinting surface).
 - **No** in-page translation, no personal dictionary, no third-party
   translation/dictionary API (these features and the associated
   `api.dictionaryapi.dev` host permission were **removed in v1.2.0**).
@@ -159,7 +174,7 @@ script-src 'self' 'wasm-unsafe-eval';
 object-src 'self';
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
-connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com;
+connect-src 'self' https://*.supabase.co https://fonts.googleapis.com;
 ```
 
 - `'wasm-unsafe-eval'` is required by **Shiki** (syntax highlighter used in
@@ -184,7 +199,7 @@ via Vite + `@crxjs/vite-plugin`. The extension loads only:
 - **Google Fonts** (`fonts.googleapis.com` / `fonts.gstatic.com`) — CSS
   stylesheet and font binary files. These are not executable code under
   Chrome's definition.
-- **Supabase REST / Auth / Realtime endpoints** (`*.supabase.co`) — data
+- **Supabase REST / Auth endpoints** (`*.supabase.co`) — data
   endpoints, not code endpoints.
 
 No `eval()`, no remote `<script src="...">` injection, no dynamic module

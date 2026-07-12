@@ -44,3 +44,8 @@ export const BBQ_PENDING_DELETE_COMMITS_KEY = 'bbqone_pending_delete_commits'
  * trước khi debounce-save 2s kịp chạy. Khôi phục + xóa ở lần mở popup sau.
  */
 export const BBQ_NOTE_DRAFT_SESSION_KEY = 'bbqone_note_editor_draft'
+
+/** User id sở hữu local data hiện tại (cache + bbqone_local_*). null/absent = anonymous/chưa từng login. */
+export const BBQ_DATA_OWNER_USER_ID_KEY = 'bbqone_data_owner_user_id'
+/** Quarantine data chưa-sync của owner cũ khi user KHÁC đăng nhập: Record<userId, ForeignStash>. */
+export const BBQ_FOREIGN_STASH_KEY = 'bbqone_foreign_stash_v1'

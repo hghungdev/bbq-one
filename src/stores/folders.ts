@@ -9,6 +9,7 @@ import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
 import { isNetworkError } from '@/utils/networkErrors'
 import { scheduleAutoSync } from '@/services/autoSync.service'
+import { safeCacheWrite } from '@/utils/cacheWrite'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -30,7 +31,9 @@ export const useFoldersStore = defineStore('folders', () => {
   )
 
   async function persistCache(): Promise<void> {
-    await chrome.storage.local.set({ [FOLDERS_CACHE_KEY]: folders.value })
+    await safeCacheWrite({ [FOLDERS_CACHE_KEY]: folders.value }, (e) => {
+      loadError.value = e instanceof Error ? e.message : 'Cache write failed'
+    })
   }
 
   async function hydrateFromCache(): Promise<void> {

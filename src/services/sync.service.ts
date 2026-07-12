@@ -10,7 +10,8 @@ import { encryptField, isEncryptedEnvelope } from '@/utils/secureCrypto'
 import { calendarEventsService } from './calendarEvents.service'
 import { noteBodiesService } from './noteBodies.service'
 import { notesService } from './notes.service'
-import { isAuthenticated } from './localFirst/authMode'
+import { isAuthenticated, getCurrentUserId } from './localFirst/authMode'
+import { isPushAllowedFor } from './localFirst/dataOwner.service'
 import { isSyncConflictError, stashConflictBackup } from '@/utils/syncConflict'
 
 export function isNoteDirty(n: Note): boolean {
@@ -52,6 +53,36 @@ export function mergeFreshWithDirtyLocal<T extends { id: string }>(
     if (dirtyById.has(row.id) && !freshIds.has(row.id)) merged.push(row)
   }
   return merged
+}
+
+/**
+ * Persist read-merge-write (N5): trước khi GHI cache, trộn snapshot in-memory của context
+ * này với bản đang nằm trên đĩa (context khác có thể vừa ghi mới hơn):
+ * - row đĩa DIRTY và updated_at MỚI HƠN bản của mình → bản đĩa thắng (edit mới hơn của context khác)
+ * - row đĩa DIRTY không có trong snapshot của mình → GIỮ (edit offline của context khác;
+ *   row sạch không có trong snapshot = mình đã xóa → drop như cũ)
+ * - còn lại → snapshot của mình thắng
+ */
+export function mergeSnapshotWithStored<T extends { id: string; updated_at: string }>(
+  snapshot: T[],
+  stored: T[],
+  isDirty: (row: T) => boolean,
+): T[] {
+  if (stored.length === 0) return snapshot
+  const storedById = new Map(stored.map((r) => [r.id, r]))
+  const out = snapshot.map((mine) => {
+    const disk = storedById.get(mine.id)
+    if (disk && isDirty(disk) && new Date(disk.updated_at) > new Date(mine.updated_at)) {
+      return disk
+    }
+    return mine
+  })
+  const mineIds = new Set(snapshot.map((r) => r.id))
+  for (const disk of stored) {
+    if (mineIds.has(disk.id)) continue
+    if (isDirty(disk)) out.push(disk)
+  }
+  return out
 }
 
 function bodiesForNoteSorted(all: NoteBody[], noteId: string): NoteBody[] {
@@ -199,6 +230,13 @@ export const syncService = {
    */
   async syncFromCache(): Promise<number> {
     if (!(await isAuthenticated())) return 0
+    // N3.1: cache có thể còn dirty rows của account cũ (context cũ persist lại sau purge) —
+    // không được push/stash chúng dưới session account mới.
+    try {
+      if (!(await isPushAllowedFor(await getCurrentUserId()))) return 0
+    } catch {
+      return 0
+    }
     const {
       [NOTES_CACHE_KEY]: raw,
       [FOLDERS_CACHE_KEY]: foldersRaw,
@@ -236,12 +274,33 @@ export const syncService = {
         noteBodiesService.getAll(),
         calendarEventsService.getAll(),
       ])
+      // N5: snapshot đầu-sync đã cũ — đọc lại đĩa để không đè edit UI vừa persist trong lúc push.
+      const disk = await chrome.storage.local.get([
+        NOTES_CACHE_KEY,
+        NOTE_BODIES_CACHE_KEY,
+        CALENDAR_EVENTS_CACHE_KEY,
+      ])
+      const diskNotes = Array.isArray(disk[NOTES_CACHE_KEY]) ? (disk[NOTES_CACHE_KEY] as Note[]) : []
+      const diskBodies = Array.isArray(disk[NOTE_BODIES_CACHE_KEY])
+        ? (disk[NOTE_BODIES_CACHE_KEY] as NoteBody[])
+        : []
+      const diskCal = Array.isArray(disk[CALENDAR_EVENTS_CACHE_KEY])
+        ? (disk[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[])
+        : []
       await chrome.storage.local.set({
-        [NOTES_CACHE_KEY]: mergeFreshWithDirtyLocal(freshNotes, notes, isRowDirty),
-        [NOTE_BODIES_CACHE_KEY]: mergeFreshWithDirtyLocal(freshBodies, noteBodies, isRowDirty),
-        [CALENDAR_EVENTS_CACHE_KEY]: mergeFreshWithDirtyLocal(
-          freshCalendar,
-          calendarEvents,
+        [NOTES_CACHE_KEY]: mergeSnapshotWithStored(
+          mergeFreshWithDirtyLocal(freshNotes, notes, isRowDirty),
+          diskNotes,
+          isRowDirty,
+        ),
+        [NOTE_BODIES_CACHE_KEY]: mergeSnapshotWithStored(
+          mergeFreshWithDirtyLocal(freshBodies, noteBodies, isRowDirty),
+          diskBodies,
+          isRowDirty,
+        ),
+        [CALENDAR_EVENTS_CACHE_KEY]: mergeSnapshotWithStored(
+          mergeFreshWithDirtyLocal(freshCalendar, calendarEvents, isRowDirty),
+          diskCal,
           isRowDirty,
         ),
       })

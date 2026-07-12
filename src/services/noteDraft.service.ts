@@ -6,6 +6,12 @@ export interface NoteEditorDraft {
   content: string
   /** ISO — thời điểm keystroke cuối (client clock, ms). */
   at: string
+  /**
+   * N12: updated_at của body TẠI THỜI ĐIỂM gõ (timestamp server từ cache).
+   * Baseline khớp = body chưa đổi từ lúc gõ → draft chắc chắn mới hơn, miễn nhiễm clock skew.
+   * Optional để draft legacy (bản cũ) vẫn đọc được.
+   */
+  baselineUpdatedAt?: string
 }
 
 function isValidDraft(raw: unknown): raw is NoteEditorDraft {
@@ -16,6 +22,7 @@ function isValidDraft(raw: unknown): raw is NoteEditorDraft {
     && typeof d.noteId === 'string'
     && typeof d.content === 'string'
     && typeof d.at === 'string' && d.at.length > 0
+    && (d.baselineUpdatedAt === undefined || typeof d.baselineUpdatedAt === 'string')
   )
 }
 
@@ -55,5 +62,8 @@ export function shouldApplyDraft(
   body: { id: string; updated_at: string } | null | undefined,
 ): boolean {
   if (!body || body.id !== draft.bodyId) return false
+  // N12: body chưa đổi từ lúc gõ draft → draft là bản mới nhất, bất kể đồng hồ client lệch bao nhiêu.
+  if (draft.baselineUpdatedAt && draft.baselineUpdatedAt === body.updated_at) return true
+  // Body đã đổi (save khác / máy khác thắng) hoặc draft legacy → heuristic thời gian như cũ.
   return new Date(draft.at).getTime() > new Date(body.updated_at).getTime()
 }

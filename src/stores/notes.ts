@@ -16,9 +16,10 @@ import { isNetworkError } from '@/utils/networkErrors'
 import { isSyncConflictError, nextLocalUpdatedAt } from '@/utils/syncConflict'
 import { scheduleAutoSync } from '@/services/autoSync.service'
 import { isOnline } from '@/services/networkReachability.service'
-import { isRowDirty, mergeFreshWithDirtyLocal } from '@/services/sync.service'
+import { isRowDirty, mergeFreshWithDirtyLocal, mergeSnapshotWithStored } from '@/services/sync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
+import { safeCacheWrite } from '@/utils/cacheWrite'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -101,10 +102,25 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   async function persistCache(): Promise<void> {
-    await chrome.storage.local.set({
-      [NOTES_CACHE_KEY]: notes.value,
-      [NOTE_BODIES_CACHE_KEY]: bodies.value,
-    })
+    // N5: đọc-merge-ghi — không đè mất edit mà context khác (popup/tab/SW) vừa persist.
+    const stored = await chrome.storage.local.get([NOTES_CACHE_KEY, NOTE_BODIES_CACHE_KEY])
+    const diskNotes = Array.isArray(stored[NOTES_CACHE_KEY])
+      ? (stored[NOTES_CACHE_KEY] as Note[])
+      : []
+    const diskBodies = Array.isArray(stored[NOTE_BODIES_CACHE_KEY])
+      ? (stored[NOTE_BODIES_CACHE_KEY] as NoteBody[])
+      : []
+    notes.value = mergeSnapshotWithStored(notes.value, diskNotes, isRowDirty)
+    bodies.value = mergeSnapshotWithStored(bodies.value, diskBodies, isRowDirty)
+    await safeCacheWrite(
+      {
+        [NOTES_CACHE_KEY]: notes.value,
+        [NOTE_BODIES_CACHE_KEY]: bodies.value,
+      },
+      (e) => {
+        loadError.value = e instanceof Error ? e.message : 'Cache write failed'
+      },
+    )
   }
 
   async function hydrateFromCache(): Promise<void> {

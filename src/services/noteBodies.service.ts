@@ -9,17 +9,20 @@ import {
   resolveExpectedServerUpdatedAt,
   throwIfSyncConflict,
 } from '@/utils/syncConflict'
+import { fetchAllRows } from '@/utils/supabaseFetchAll'
 
 export const noteBodiesService = {
   async getAll(): Promise<NoteBody[]> {
     if (await isAuthenticated()) {
-      const { data, error } = await supabase
-        .from('note_bodies')
-        .select('*')
-        .order('note_id', { ascending: true })
-        .order('position', { ascending: true })
-      if (error) throw error
-      return (data ?? []).map(acceptServerRow)
+      const data = await fetchAllRows<NoteBody>(() =>
+        supabase
+          .from('note_bodies')
+          .select('*')
+          .order('note_id', { ascending: true })
+          .order('position', { ascending: true })
+          .order('id', { ascending: true }),
+      )
+      return data.map(acceptServerRow)
     }
 
     // Local mode

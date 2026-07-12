@@ -1,5 +1,6 @@
 import { supabase } from '@/services/supabase'
 import { getCurrentUserId } from './authMode'
+import { isPushAllowedFor } from './dataOwner.service'
 import { localStore } from './localStore.service'
 import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
 import type {
@@ -50,6 +51,18 @@ export async function pushLocalToCloud(
     return { ...emptyResult, cancelled: true }
   }
 
+  // N3.1: chốt chặn tại-thời-điểm-push — mọi caller (alarm, manual, post-login) đều qua đây.
+  let userId: string
+  try {
+    userId = await getCurrentUserId()
+  } catch {
+    return { ...emptyResult, skippedForeignOwner: true }
+  }
+  if (!(await isPushAllowedFor(userId))) {
+    console.warn('[BBQOne] pushLocalToCloud skipped — local data owned by another account')
+    return { ...emptyResult, skippedForeignOwner: true }
+  }
+
   if (strategy === 'use-cloud') {
     // Phase 1: clear local, giữ nguyên cloud
     await localStore.clearAllLocal()
@@ -58,7 +71,6 @@ export async function pushLocalToCloud(
 
   // strategy === 'use-local' → existing logic (last-write-wins via upsert)
   const startedAt = Date.now()
-  const userId = await getCurrentUserId()
   const result: SyncResult = {
     pushedNotes: 0,
     pushedNoteBodies: 0,

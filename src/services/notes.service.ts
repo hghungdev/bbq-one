@@ -10,16 +10,19 @@ import {
   resolveExpectedServerUpdatedAt,
   throwIfSyncConflict,
 } from '@/utils/syncConflict'
+import { fetchAllRows } from '@/utils/supabaseFetchAll'
 
 export const notesService = {
   async getAll(): Promise<Note[]> {
     if (await isAuthenticated()) {
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .order('updated_at', { ascending: false })
-      if (error) throw error
-      return (data ?? []).map(acceptServerRow)
+      const data = await fetchAllRows<Note>(() =>
+        supabase
+          .from('notes')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .order('id', { ascending: true }),
+      )
+      return data.map(acceptServerRow)
     }
 
     // Local mode

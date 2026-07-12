@@ -14,9 +14,10 @@ import { isOnline } from '@/services/networkReachability.service'
 import { isNetworkError } from '@/utils/networkErrors'
 import { isSyncConflictError, nextLocalUpdatedAt } from '@/utils/syncConflict'
 import { scheduleAutoSync } from '@/services/autoSync.service'
-import { isCalendarEventDirty, mergeFreshWithDirtyLocal } from '@/services/sync.service'
+import { isCalendarEventDirty, mergeFreshWithDirtyLocal, mergeSnapshotWithStored } from '@/services/sync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
+import { safeCacheWrite } from '@/utils/cacheWrite'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -83,7 +84,14 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   }
 
   async function persistCache(): Promise<void> {
-    await chrome.storage.local.set({ [CALENDAR_EVENTS_CACHE_KEY]: events.value })
+    const stored = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
+    const disk = Array.isArray(stored[CALENDAR_EVENTS_CACHE_KEY])
+      ? (stored[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[])
+      : []
+    events.value = mergeSnapshotWithStored(events.value, disk, isCalendarEventDirty)
+    await safeCacheWrite({ [CALENDAR_EVENTS_CACHE_KEY]: events.value }, (e) => {
+      loadError.value = e instanceof Error ? e.message : 'Cache write failed'
+    })
   }
 
   async function hydrateFromCache(): Promise<void> {
@@ -290,6 +298,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     calendarSearchMatches,
     loadAll,
     hydrateFromCache,
+    persistCache,
     createEvent,
     updateEvent,
     deleteEvent,

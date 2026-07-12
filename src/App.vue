@@ -14,10 +14,15 @@ import {
   type SyncStrategy,
   type ConflictReport,
 } from '@/services/localFirst/syncEngine.service'
+import {
+  ensureLocalDataOwnership,
+  type OwnershipCheckResult,
+} from '@/services/localFirst/dataOwner.service'
 import CalendarOverflowResolverDialog from '@/components/sync/CalendarOverflowResolverDialog.vue'
 import PostLoginSyncToast from '@/components/sync/PostLoginSyncToast.vue'
 import SyncConflictDialog from '@/components/sync/SyncConflictDialog.vue'
 import type { SyncResult } from '@/types/localFirst'
+import { BBQ_DATA_OWNER_USER_ID_KEY } from '@/constants/storage'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
@@ -30,6 +35,21 @@ const syncResult = ref<SyncResult | null>(null)
 const toastVisible = ref(false)
 
 let unsubAuth: (() => void) | null = null
+let selfOwnerChange = false
+
+function onOwnerKeyChanged(
+  changes: Record<string, chrome.storage.StorageChange>,
+  area: string,
+): void {
+  if (area !== 'local' || !changes[BBQ_DATA_OWNER_USER_ID_KEY]) return
+  const { oldValue, newValue } = changes[BBQ_DATA_OWNER_USER_ID_KEY]
+  // first-login (undefined→X) và set-lại-cùng-giá-trị: không reload.
+  if (oldValue === undefined || newValue === undefined || oldValue === newValue) return
+  if (selfOwnerChange) return // context này là nơi vừa login — runSyncFlow tự xử lý
+  // N3.1: account đổi ở context khác — toàn bộ Pinia state ở đây là của account cũ.
+  // Reload là cách duy nhất chắc chắn không persist/push lại data cũ.
+  window.location.reload()
+}
 
 /**
  * Reload store data from Supabase after a successful sync so the UI reflects
@@ -79,25 +99,45 @@ async function finishPushLocalSync(): Promise<void> {
 }
 
 async function runSyncFlow(): Promise<void> {
+  selfOwnerChange = true
   try {
-    const overflow = await detectCalendarDayOverflow()
-    if (overflow.days.length > 0) {
-      calendarOverflowReport.value = overflow
-      calendarOverflowVisible.value = true
+    // N3: xác định chủ local data TRƯỚC mọi push. Fail-safe: không xác định được → KHÔNG push.
+    let ownership: OwnershipCheckResult
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      ownership = await ensureLocalDataOwnership(user.id)
+    } catch (e) {
+      console.error('[BBQOne] Ownership check failed — skip auto-push:', e)
       return
     }
-    await finishPushLocalSync()
-  } catch (e) {
-    console.error('[BBQOne] Sync pre-flight failed:', e)
-    try {
-      const result = await pushLocalToCloud('use-local')
-      syncResult.value = result
+    if (ownership.status === 'foreign-stashed' && !ownership.restoredOwnStash) {
+      // Data local thuộc account khác — đã stash + purge. Chỉ pull data account mới.
       await reloadAfterSync()
-      toastVisible.value = true
-      setTimeout(() => (toastVisible.value = false), 5000)
-    } catch (err) {
-      console.error('[BBQOne] Sync fallback failed:', err)
+      return
     }
+    try {
+      const overflow = await detectCalendarDayOverflow()
+      if (overflow.days.length > 0) {
+        calendarOverflowReport.value = overflow
+        calendarOverflowVisible.value = true
+        return
+      }
+      await finishPushLocalSync()
+    } catch (e) {
+      console.error('[BBQOne] Sync pre-flight failed:', e)
+      try {
+        const result = await pushLocalToCloud('use-local')
+        syncResult.value = result
+        await reloadAfterSync()
+        toastVisible.value = true
+        setTimeout(() => (toastVisible.value = false), 5000)
+      } catch (err) {
+        console.error('[BBQOne] Sync fallback failed:', err)
+      }
+    }
+  } finally {
+    selfOwnerChange = false
   }
 }
 
@@ -121,6 +161,7 @@ function handleCalendarOverflowCancel(): void {
 }
 
 onMounted(() => {
+  chrome.storage.onChanged.addListener(onOwnerKeyChanged)
   const { data } = supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session) {
       void runSyncFlow()
@@ -130,6 +171,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  chrome.storage.onChanged.removeListener(onOwnerKeyChanged)
   unsubAuth?.()
 })
 </script>

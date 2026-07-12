@@ -42,6 +42,7 @@ export interface SyncResult {
   durationMs: number
   cancelled?: boolean // user chọn Cancel trong conflict dialog
   keptCloud?: boolean // user chọn "Use Cloud" → giữ cloud, clear local
+  skippedForeignOwner?: boolean // N3.1: push bị chặn vì local data thuộc account khác
 }
 
 /** Storage key constants cho chrome.storage.local */
