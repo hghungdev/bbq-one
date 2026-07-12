@@ -9,7 +9,11 @@
     "prebuild": "node scripts/sync-extension-version.mjs",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit -p tsconfig.app.json"
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json",
+    "memory:export": "node scripts/sync-claude-memory.mjs export",
+    "memory:import": "node scripts/sync-claude-memory.mjs import",
+    "memory:setup": "node scripts/sync-claude-memory.mjs setup",
+    "memory:status": "node scripts/sync-claude-memory.mjs status"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

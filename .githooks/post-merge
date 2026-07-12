@@ -1,0 +1,4 @@
+#!/bin/sh
+# Sau git pull (merge): import Claude memory từ repo về máy này.
+# Best-effort — không chặn pull.
+node scripts/sync-claude-memory.mjs import || true

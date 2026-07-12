@@ -1,0 +1,5 @@
+#!/bin/sh
+# Đồng bộ Claude memory vào commit: export local → .claude/memory rồi stage.
+# Best-effort — không bao giờ chặn commit (|| true).
+node scripts/sync-claude-memory.mjs export || true
+git add .claude/memory 2>/dev/null || true
