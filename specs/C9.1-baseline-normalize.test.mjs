@@ -128,6 +128,8 @@ function makeQuery(tableName) {
     }
   }
   q.then = (resolve, reject) => Promise.resolve().then(() => execute(tableName, ops)).then(resolve, reject)
+  // N2: service phân trang qua .range — sim dataset nhỏ, slice là đủ
+  q.range = (from, to) => Promise.resolve().then(() => execute(tableName, ops)).then((res) => (Array.isArray(res.data) ? { ...res, data: res.data.slice(from, to + 1) } : res))
   return q
 }
 
@@ -183,14 +185,15 @@ const supabaseSim = {
 }
 
 // ── load CODE THẬT ────────────────────────────────────────────────────────────
-const syncConflict = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
-const authMock = { isAuthenticated: async () => true }
+const syncConflict = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), { '@/utils/webLock': loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {}) })
+const authMock = { isAuthenticated: async () => true, getCurrentUserId: async () => 'u1' }
 
 const noteBodiesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'noteBodies.service.ts'), {
   './supabase': { supabase: supabaseSim },
   '@/services/localFirst/authMode': authMock,
   '@/services/localFirst/localNotes.service': { localNoteBodiesService: {} },
   '@/utils/syncConflict': syncConflict,
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
 })
 const notesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'notes.service.ts'), {
   './supabase': { supabase: supabaseSim },
@@ -198,6 +201,7 @@ const notesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'notes.service.
   '@/services/localFirst/authMode': authMock,
   '@/services/localFirst/localNotes.service': { localNotesService: {} },
   '@/utils/syncConflict': syncConflict,
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
 })
 const calMod = loadTsModule(path.join(ROOT, 'src', 'services', 'calendarEvents.service.ts'), {
   '@/constants/calendar': { CALENDAR_MAX_EVENTS_PER_DAY: 50 },
@@ -205,6 +209,7 @@ const calMod = loadTsModule(path.join(ROOT, 'src', 'services', 'calendarEvents.s
   '@/services/localFirst/authMode': authMock,
   '@/services/localFirst/localCalendarEvents.service': { localCalendarEventsService: {} },
   '@/utils/syncConflict': syncConflict,
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
 })
 const syncMod = loadTsModule(path.join(ROOT, 'src', 'services', 'sync.service.ts'), {
   '@/constants/storage': {
@@ -218,7 +223,9 @@ const syncMod = loadTsModule(path.join(ROOT, 'src', 'services', 'sync.service.ts
   './noteBodies.service': noteBodiesMod,
   './notes.service': notesMod,
   './localFirst/authMode': authMock,
+  './localFirst/dataOwner.service': { isPushAllowedFor: async () => true },
   '@/utils/syncConflict': syncConflict, // C9.1 sẽ import (stash/neutralize); chưa import cũng vô hại
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
 })
 
 const { notesService } = notesMod

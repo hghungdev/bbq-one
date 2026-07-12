@@ -57,7 +57,7 @@ function check(name, ok, detail) {
 console.log('PART 1 — merge-guard behavior (thực thi sync.service.ts thật, mock imports)')
 
 const stub = {}
-const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), { '@/utils/webLock': loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {}) })
 const sync = loadTsModule(SYNC_SERVICE_PATH, {
   '@/constants/storage': {
     NOTES_CACHE_KEY: 'notes_cache',
@@ -71,6 +71,7 @@ const sync = loadTsModule(SYNC_SERVICE_PATH, {
   './noteBodies.service': { noteBodiesService: stub },
   './notes.service': { notesService: stub },
   './localFirst/authMode': { isAuthenticated: async () => false },
+  './localFirst/dataOwner.service': { isPushAllowedFor: async () => true },
 })
 
 const hasMerge = typeof sync.mergeFreshWithDirtyLocal === 'function'

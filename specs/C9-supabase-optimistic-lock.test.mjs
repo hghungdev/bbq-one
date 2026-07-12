@@ -36,7 +36,7 @@ function check(name, ok, detail) {
 // ── Part 1: pure helpers ─────────────────────────────────────────────────────
 console.log('PART 1 — expectedServerUpdatedAt (syncConflict.ts thật)')
 
-const syncConflict = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+const syncConflict = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), { '@/utils/webLock': loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {}) })
 const { expectedServerUpdatedAt, isSyncConflictError, SyncConflictError, C9_OPTIMISTIC_RPC_ENABLED } =
   syncConflict
 
@@ -97,6 +97,7 @@ const notesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'notes.service.
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localNotes.service': { localNotesService: {} },
   '@/utils/syncConflict': syncConflict,
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
 })
 
 const dirtyRow = {

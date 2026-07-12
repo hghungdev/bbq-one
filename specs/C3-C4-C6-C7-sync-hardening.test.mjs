@@ -93,13 +93,14 @@ const supabaseDeleteOk = {
 }
 
 // C9 (commit 852885a) thêm import syncConflict vào services — mock bằng module THẬT để không drift
-const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), { '@/utils/webLock': loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {}) })
 
 let notesLocalDeleteCalls = []
 const notesMod = loadTsModule(path.join(ROOT, 'src', 'services', 'notes.service.ts'), {
   './supabase': { supabase: supabaseDeleteOk },
   './noteBodies.service': { noteBodiesService: {} },
   '@/utils/syncConflict': syncConflictReal,
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localNotes.service': {
     localNotesService: {
@@ -123,6 +124,7 @@ const calMod = loadTsModule(path.join(ROOT, 'src', 'services', 'calendarEvents.s
   '@/constants/calendar': { CALENDAR_MAX_EVENTS_PER_DAY: 50 },
   './supabase': { supabase: supabaseDeleteOk },
   '@/utils/syncConflict': syncConflictReal,
+  '@/utils/supabaseFetchAll': loadTsModule(path.join(ROOT, 'src', 'utils', 'supabaseFetchAll.ts'), {}),
   '@/services/localFirst/authMode': { isAuthenticated: async () => true },
   '@/services/localFirst/localCalendarEvents.service': {
     localCalendarEventsService: {
@@ -195,6 +197,7 @@ const syncEngine = loadTsModule(
     './localStore.service': { localStore: localStoreMock },
     '@/types/localFirst': { LOCAL_STORAGE_KEYS: LOCAL_KEYS },
     './conflictDetector': { detectSyncConflicts: async () => ({ totalConflicts: 0 }) },
+    './dataOwner.service': { isPushAllowedFor: async () => true },
   },
 )
 

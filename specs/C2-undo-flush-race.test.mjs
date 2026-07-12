@@ -84,10 +84,12 @@ const recordDelete = (kind) => async (id) => {
 // constants thật (để dùng đúng key BBQ_PENDING_DELETE_COMMITS_KEY của source)
 const constants = loadTsModule(CONSTANTS_PATH, {})
 const KEY = constants.BBQ_PENDING_DELETE_COMMITS_KEY
+const webLock = loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {})
 
 // service thật, mock 3 repo services
 const svc = loadTsModule(SERVICE_PATH, {
   '@/constants/storage': constants,
+  '@/utils/webLock': webLock,
   '@/services/bookmarks.service': { bookmarksService: { deleteBackup: recordDelete('bookmark-backup') } },
   '@/services/calendarEvents.service': { calendarEventsService: { delete: recordDelete('calendar') } },
   '@/services/notes.service': { notesService: { delete: recordDelete('note') } },

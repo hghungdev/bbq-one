@@ -58,7 +58,7 @@ function makeNote(id, title) {
 }
 
 function loadSyncWithMocks(notesServiceMock, noteBodiesServiceMock = { update: async () => ({}) }) {
-  const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+  const syncConflictReal = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), { '@/utils/webLock': loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {}) })
   return loadTsModule(SYNC_SERVICE_PATH, {
     '@/constants/storage': {
       NOTES_CACHE_KEY: 'notes_cache',
@@ -71,7 +71,8 @@ function loadSyncWithMocks(notesServiceMock, noteBodiesServiceMock = { update: a
     './calendarEvents.service': { calendarEventsService: {} },
     './noteBodies.service': { noteBodiesService: noteBodiesServiceMock },
     './notes.service': { notesService: notesServiceMock },
-    './localFirst/authMode': { isAuthenticated: async () => true },
+    './localFirst/authMode': { isAuthenticated: async () => true, getCurrentUserId: async () => 'u1' },
+    './localFirst/dataOwner.service': { isPushAllowedFor: async () => true },
   })
 }
 
@@ -181,7 +182,7 @@ syncP3.calendarEventsService = {
   },
 }
 // Re-load with calendar mock wired
-const syncConflictRealP3 = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), {})
+const syncConflictRealP3 = loadTsModule(path.join(ROOT, 'src', 'utils', 'syncConflict.ts'), { '@/utils/webLock': loadTsModule(path.join(ROOT, 'src', 'utils', 'webLock.ts'), {}) })
 const syncP3b = loadTsModule(SYNC_SERVICE_PATH, {
   '@/constants/storage': {
     NOTES_CACHE_KEY: 'notes_cache',
@@ -202,7 +203,8 @@ const syncP3b = loadTsModule(SYNC_SERVICE_PATH, {
   },
   './noteBodies.service': { noteBodiesService: { update: async () => ({}) } },
   './notes.service': { notesService: { update: async () => ({}) } },
-  './localFirst/authMode': { isAuthenticated: async () => true },
+  './localFirst/authMode': { isAuthenticated: async () => true, getCurrentUserId: async () => 'u1' },
+  './localFirst/dataOwner.service': { isPushAllowedFor: async () => true },
 })
 const evSynced = synced
 const evDirty = dirtyTs
