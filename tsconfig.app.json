@@ -20,5 +20,6 @@
     "resolveJsonModule": true,
     "types": ["chrome"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["src/**/*.test.ts"]
 }
