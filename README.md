@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 1.2.2
+**Version:** 1.3.2
 
 ---
 
@@ -10,6 +10,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 1.3.2](#what-changed-in-132)
 - [What changed in 1.2.2](#what-changed-in-122)
 - [What changed in 1.2.1](#what-changed-in-121)
 - [What changed in 1.2.0](#what-changed-in-120)
@@ -47,11 +48,15 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 
 ---
 
+## What changed in 1.3.2
+
+- **Icon:** Refreshed extension icons (16/32/48/128) with tighter framing for Chrome toolbar and store listing.
+- **Sync hardening:** Quota-aware local storage (`unlimitedStorage`), offline edit safety, and CWS polish from the N-series work.
+
 ## What changed in 1.2.2
 
 - **Undo delete:** Closing the extension popup during the 5s undo window **commits** the delete (no spurious revert when reopening). Pending deletes are flushed via background + storage queue.
 - **Calendar:** Subtle per-event pastel colors on the month grid (stable per event id).
-- **Permissions:** Removed unused `unlimitedStorage` (local JSON caches use `storage` only).
 
 ---
 
@@ -71,7 +76,7 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 - **Removed:** In-page translation feature, personal dictionary, and the associated content script on `<all_urls>`.
 - **Removed:** Host permission `https://api.dictionaryapi.dev/*`.
 - **Removed:** Permissions `scripting`, `activeTab`, `tabs`, `identity` (no longer needed without translation/dictionary).
-- **Remaining permissions:** `storage`, `contextMenus`, `alarms`, `clipboardWrite`, `offscreen`, `bookmarks`, `downloads`, and host `https://*.supabase.co/*`.
+- **Remaining permissions:** `storage`, `unlimitedStorage`, `contextMenus`, `alarms`, `clipboardWrite`, `offscreen`, `bookmarks`, `downloads`, and host `https://*.supabase.co/*`.
 
 See [`docs/CHROME-STORE-PERMISSIONS.md`](docs/CHROME-STORE-PERMISSIONS.md) for the full per-permission justification.
 

@@ -16,7 +16,9 @@ _(118 characters — fits the 132 limit.)_
 
 **BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a simple **calendar** — from one compact, retro-inspired popup dashboard.
 
-**Release 1.2.2 (highlights):** Delete commits when you close the popup during the 5s undo window (no spurious revert); subtle pastel colors per calendar event; removed unused `unlimitedStorage` permission.
+**Release 1.3.2 (highlights):** Refreshed extension icon; local-first sync hardening with `unlimitedStorage` for large offline caches.
+
+**Release 1.2.2 (highlights):** Delete commits when you close the popup during the 5s undo window (no spurious revert); subtle pastel colors per calendar event.
 
 **Release 1.2.1 (highlights):** Faster dashboard load (cache-first), offline edits with auto-sync when back online, calendar overdue reminder on sign-in, and header/calendar UX polish.
 

@@ -13,7 +13,7 @@ CSP cho `extension_pages` nằm trong `public/manifest.json`:
 - `script-src 'self' 'wasm-unsafe-eval'` — cho phép bundle extension + WebAssembly (Shiki highlight).
 - `style-src` — `'self'`, `'unsafe-inline'` (HTML từ Shiki), và `https://fonts.googleapis.com` (stylesheet IBM Plex Mono).
 - `font-src` — `self`, `https://fonts.gstatic.com`, `data:`.
-- `connect-src` — Supabase HTTPS/WSS + Google Fonts.
+- `connect-src` — Supabase HTTPS + Google Fonts (see current `public/manifest.json`).
 
 Sau khi đổi CSP, load lại extension từ `dist/` và smoke test login, search, editor (Shiki).
 
@@ -47,7 +47,7 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
 
 ## Sprint “Sync + Polish” — audit nhanh
 
-- **Quyền extension**: `storage` (cache notes + session Supabase), `identity` (OAuth), `alarms` (đồng bộ nền mỗi ~24h). Không thêm `downloads` — export `.txt` dùng blob + click trong popup (user gesture).
+- **Quyền extension**: khớp `public/manifest.json` — `storage` + `unlimitedStorage` (cache local-first), `alarms` (đồng bộ nền), `bookmarks` / `downloads` (backup & export), `clipboardWrite`, `offscreen`, `contextMenus`. Không dùng `identity` / content scripts.
 - **Background**: service worker chỉ gọi `syncService.syncFromCache()` (đọc `notes_cache`, push bản ghi “dirty”, rồi cố gắng `getAll()` để refresh cache khi online). Không log session ra console trong production.
 - **Dữ liệu**: anon key + RLS như trên; `synced_at` chỉ cập nhật sau khi push thành công.
 
