@@ -4,18 +4,18 @@
   "version": "1.3.2",
   "description": "Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respecting, offline-capable.",
   "icons": {
-    "16": "bbq_one-final.png",
-    "32": "bbq_one-final.png",
-    "48": "bbq_one-final.png",
-    "128": "bbq_one-final.png"
+    "16": "260713_icon_final_128x128.png",
+    "32": "260713_icon_final_128x128.png",
+    "48": "260713_icon_final_128x128.png",
+    "128": "260713_icon_final_128x128.png"
   },
   "action": {
     "default_popup": "index.html",
     "default_icon": {
-      "16": "bbq_one-final.png",
-      "32": "bbq_one-final.png",
-      "48": "bbq_one-final.png",
-      "128": "bbq_one-final.png"
+      "16": "260713_icon_final_128x128.png",
+      "32": "260713_icon_final_128x128.png",
+      "48": "260713_icon_final_128x128.png",
+      "128": "260713_icon_final_128x128.png"
     }
   },
   "background": {
