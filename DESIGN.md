@@ -22,7 +22,7 @@ BBQOne is a **local-first** productivity popup: **Calendar**, **Notes**, and **B
 **Design goals:**
 
 - **Compact & readable** — 720×600 px popup; base text 13px; dense but not cramped.
-- **One accent** — Action Blue (`#0066cc` light / `#2997ff` dark) for links, active tabs, focus rings, and primary actions.
+- **One accent** — Action Blue (`#0066cc` light / `#3b82f6` dark) for links, active tabs, focus rings, and primary actions. Dark mode intentionally avoids ice-blue (`#7dc4ff`) on deep charcoal.
 - **Light + dark** — Class strategy on `<html data-theme="light|dark">`, persisted in `chrome.storage.local`.
 - **Consistent chrome** — Same header, capsule/card surfaces, tokens, and button grammar across tabs and modals.
 - **Accessible focus** — `outline: 2px solid var(--focus-ring)` on interactive elements.
@@ -37,25 +37,25 @@ Semantic tokens live in `:root` and are **re-mapped** under `html[data-theme='da
 
 | Token | Light | Dark | Use |
 |-------|-------|------|-----|
-| `--color-primary` | `#0066cc` | `#2997ff` | Base accent |
-| `--color-primary-focus` | `#0071e3` | `#66bfff` | Focus ring, hover emphasis |
-| `--color-primary-on-dark` | `#2997ff` | `#7dc4ff` | Accent on dark surfaces |
-| `--accent` | primary | primary-on-dark | Links, active tab, caret |
-| `--accent-dashboard` | primary | primary-on-dark | Shell / login overlay accent |
+| `--color-primary` | `#0066cc` | `#3b82f6` | Base accent (dark: mid blue, not ice) |
+| `--color-primary-focus` | `#0071e3` | `#60a5fa` | Focus ring, hover emphasis |
+| `--color-primary-on-dark` | `#2997ff` | `#60a5fa` | Soft hover tint on dark surfaces |
+| `--accent` | primary | **primary** | Links, active tab, caret (dark uses mid blue) |
+| `--accent-dashboard` | primary | **primary** | Shell / login overlay accent |
 | `--focus-ring` | primary-focus | primary-focus | `:focus-visible` outline |
 
 ### Surfaces & text
 
 | Token | Light | Dark | Use |
 |-------|-------|------|-----|
-| `--bg-primary` | `#f5f5f7` (parchment) | `#1c1c1e` | Page / shell background |
-| `--bg-secondary` | `#ffffff` | `#2c2c2e` | Panels, inputs, modals |
-| `--bg-panel` | `#fafafc` | `#3a3a3c` | Buttons, icon buttons, secondary panels |
-| `--border` | `#e0e0e0` | `#48484a` | Hairlines, button borders |
-| `--text-primary` | `#1d1d1f` | `#f5f5f7` | Body copy |
-| `--text-secondary` | `#515154` | `#a1a1a6` | Labels, subheadings |
-| `--text-muted` | `#6e6e73` | `#8e8e93` | Meta, placeholders, footer hints |
-| `--bg-code` / `--text-on-code` | `#272729` / parchment | `#111113` / `#ebebf5` | Inline `code` in notes/editor |
+| `--bg-primary` | parchment | `#0f0f10` | Page / shell background (deep charcoal) |
+| `--bg-secondary` | `#ffffff` | `#1a1a1c` | Panels, inputs, modals |
+| `--bg-panel` | pearl | `#242428` | Raised surfaces, buttons, secondary panels |
+| `--border` | hairline | `#2e2e32` | Hairlines, button borders |
+| `--text-primary` | ink | `#f5f5f7` | Body copy |
+| `--text-secondary` | muted ink | `#c2c2c7` | Labels, subheadings |
+| `--text-muted` | body-muted | `#a8a8ae` | Meta, placeholders, footer hints |
+| `--bg-code` / `--text-on-code` | tile / parchment | `#09090b` / `#ebebf5` | Inline `code` in notes/editor |
 
 ### Status & feedback
 
@@ -63,18 +63,20 @@ Semantic tokens live in `:root` and are **re-mapped** under `html[data-theme='da
 |-------|-----|
 | `--danger` | Errors, destructive hover (`#cf2228` light; `#ff6b6b` dark) |
 | `--success` / `--sync-done` | Sync success, done states |
-| `--surface-danger-muted` | Danger icon-button hover background |
+| `--surface-danger-muted` | Danger / delete warn surfaces (dark: mix danger into panel — avoid muddy solid red fills) |
 | `--surface-accent-muted` | Accent icon-button background |
-| `--overlay-scrim` | Modal backdrop (light `rgba(0,0,0,0.42)`; dark `0.72`) |
+| `--overlay-scrim` | Modal backdrop (light `rgba(0,0,0,0.42)`; dark `0.78`) |
+| `--panel-ring` | Modal / header elevation shadow |
 
 ### Calendar-specific (semantic overrides in dark)
 
 | Token | Purpose |
 |-------|---------|
-| `--calendar-banner-upcoming-*` | Blue banner: events **tomorrow** (dismissible) |
-| `--calendar-banner-today-*` | Yellow banner: events **today** |
+| `--calendar-banner-upcoming-*` | Cool slate + blue rail: events **tomorrow** (dismissible) |
+| `--calendar-banner-today-*` | Cool charcoal + amber rail: events **today** (avoid olive-brown muddy fills) |
 | `--calendar-search-focus-border` / `-bg` | **Yellow** focus when jumping to a date from search |
 | `--cal-cell--today` (component) | **Blue** border for today's cell in the grid |
+| `--cal-event-N-bg` / `-border` | Month-grid event chips — light: pastel rgba; dark: soft solid mix into panel + left color rail (`calendar-events.css`) |
 
 Search focus intentionally uses **yellow**; “today” in the grid uses **blue** — do not swap these roles.
 
@@ -169,7 +171,7 @@ During **search**, editor column hides; note list expands.
 | Init | `main.ts` calls `useThemeStore().init()` before mount |
 | Toggle | `ThemeModeToggle` → `theme.toggle()` |
 
-Dark mode **redefines semantic tokens** in `global.css` (not a separate stylesheet). Calendar banner colors use **solid dark fills** in dark mode to avoid muddy rgba-on-dark.
+Dark mode **redefines semantic tokens** in `global.css` (not a separate stylesheet). Prefer a **deep charcoal elevation stack** (`#0f0f10` → `#1a1a1c` → `#242428`) and a **mid blue accent** (`#3b82f6`). Calendar banners use **solid cool fills** (not olive-brown muddy rgba). Month event chips in dark use **soft solid mixes + left color rail** (`calendar-events.css`) so tags stay readable on black cells without looking neon.
 
 ---
 
@@ -324,6 +326,7 @@ color: var(--success);
 | `RetroButton` | `src/components/ui/RetroButton.vue` | Default + `sm` variant; `sm` is capsule-style; `scale(0.97)` active |
 | `RetroInput` | `src/components/ui/RetroInput.vue` | Pill shape (`--radius-pill`); accent caret; optional `digitOnly` for PIN |
 | `IconButton` | `src/components/ui/IconButton.vue` | 32×32 pill; variants `default`, `accent`, `danger` |
+| `ListItemSettingsMenu` | `src/components/ui/ListItemSettingsMenu.vue` | 26×26 gear trigger; Teleport menu with rename / optional move / delete icons; flips up near viewport bottom |
 | `ThemeModeToggle` | `src/components/ui/ThemeModeToggle.vue` | Wraps `IconButton` + sun/moon SVG (17px) |
 | `RetroConfirm` | `src/components/ui/RetroConfirm.vue` | Destructive confirm dialog pattern |
 
@@ -343,8 +346,11 @@ Shared pattern:
 | Settings | `src/components/layout/SettingsModal.vue` |
 | Login | `src/components/auth/LoginModal.vue` |
 | Secure folder | `src/components/folders/SecureFolderModal.vue` |
+| Move note | `src/components/notes/MoveNoteModal.vue` |
 | Calendar event | `src/components/calendar/CalendarEventModal.vue` |
 | Bookmark PIN | `src/components/bookmarks/BookmarkPinModal.vue` |
+| Delete backup | `src/components/bookmarks/DeleteBackupModal.vue` |
+| Delete folder | `src/components/folders/DeleteFolderModal.vue` |
 
 **Settings modal layout:**
 
@@ -378,9 +384,12 @@ Upcoming (1-day) banner dismiss state: `chrome.storage.session` via `calendarBan
 
 | Area | Key components |
 |------|----------------|
-| Notes | `Sidebar`, `NoteList`, `NoteItem`, `NoteEditor`, `CodeBlock` |
+| Notes | `Sidebar`, `NoteList`, `NoteItem`, `NoteEditor`, `CodeBlock`, `MoveNoteModal` |
 | Folders | `FolderItem`, `SecureFolderModal`, `DeleteFolderModal` |
+| List row actions | `ListItemSettingsMenu` on `FolderItem` / `NoteItem` (gear → rename / move / delete). Folder secure actions stay on **right-click** context menu. |
 | Bookmarks | `BookmarkTab`, `BookmarkTree`, `PinKeypad`, `DeleteBackupModal` |
+
+**Move note (v1):** `notes.moveNoteToFolder(noteId, targetFolderId)` — only **non-secure → non-secure**. Store rejects secure source/target (`SECURE_FOLDER_MOVE_UNSUPPORTED`). No DB migration; uses existing `folder_id` + sync/RPC. Secure-folder moves (re-encrypt title + bodies) are out of scope for v1.
 
 Active list items use `--surface-accent-muted` + `--accent-soft-border`. Avoid active states that only change text color or border.
 
@@ -459,9 +468,10 @@ Keep legal copy in sync with `manifest.json` version and actual permissions.
 2. **Prefer** extending `RetroButton` / `IconButton` variants over new button classes.
 3. **Modals:** copy overlay + panel pattern from `SettingsModal.vue`, `CalendarEventModal.vue`, or `RetroConfirm.vue`.
 4. **Dark mode:** add overrides only in `html[data-theme='dark']` block in `global.css` when introducing new semantic colors.
-5. **Calendar colors:** if adding a new banner or focus state, define tokens in `global.css` with explicit dark-mode solid backgrounds.
-6. **Verify** at 720×600 in Chrome extension popup after visual changes.
-7. **Before release:** run `npm run type-check` and `npm run build`.
+5. **Calendar colors:** banners → solid cool fills in `global.css` dark block; month chips → `calendar-events.css` (light pastel vs dark soft-solid + left rail). Do not paste light pastel rgba onto dark cells.
+6. **List row actions:** prefer `ListItemSettingsMenu` over always-visible trash; keep double-click / F2 rename.
+7. **Verify** at 720×600 in Chrome extension popup after visual changes.
+8. **Before release:** run `npm run type-check` and `npm run build`.
 
 ### New Screen Checklist
 

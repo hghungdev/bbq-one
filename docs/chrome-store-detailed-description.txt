@@ -2,7 +2,7 @@ Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respect
 
 BBQOne is an all-in-one productivity extension built around privacy and local-first defaults. Capture notes, back up bookmarks, and plan your calendar—from the same compact, retro-inspired dashboard.
 
-Release 1.3.2: Refreshed extension icon. Local-first sync hardening keeps large note/calendar/bookmark caches offline-ready (unlimitedStorage).
+Release 1.3.2: Refreshed extension icon. Local-first sync hardening keeps large note/calendar/bookmark caches offline-ready (unlimitedStorage). Notes rows use a settings menu for rename, move between regular folders, and delete. Dark mode uses deeper surfaces and clearer calendar event chips.
 
 Release 1.2.2: Closing the popup during the 5-second undo window now finalizes the delete (no data coming back on reopen). Calendar events use soft pastel colors per item.
 
@@ -19,6 +19,7 @@ NOTES
 Rich text editing with sensible formatting for everyday writing and technical notes
 Code-friendly highlighting for many languages (see in-app editor bundle)
 Folders + full-text search
+Rename / move (regular folders) / delete from the row settings menu
 Optional encrypted secure folders (passphrase-gated content; AES-GCM, client-side envelope where applicable)
 
 BOOKMARKS

@@ -40,11 +40,12 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 
 | Area | What you get |
 |------|----------------|
-| **Notes** | Folders, rich-text editing, code-friendly blocks (Shiki highlighting), full-text search, copy-to-clipboard. |
+| **Notes** | Folders, rich-text editing, code-friendly blocks (Shiki highlighting), full-text search, copy-to-clipboard. Settings menu on rows (rename / move / delete); double-click or F2 still renames. Move between **regular** folders only (secure-folder moves deferred). |
 | **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are AES-GCM encrypted client-side before leaving your device. |
 | **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, export as HTML, and optional encryption when signed in with PIN. |
-| **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. |
+| **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. Event chips use pastel fills in light mode and softer solid chips with a left color rail in dark mode. |
 | **Cloud sync (optional)** | Sign in via Supabase Auth (email + password) to sync notes, folders, bookmarks, and calendar events across devices, protected by Row Level Security. |
+| **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
 
@@ -52,6 +53,9 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 
 - **Icon:** Refreshed extension icons (16/32/48/128) with tighter framing for Chrome toolbar and store listing.
 - **Sync hardening:** Quota-aware local storage (`unlimitedStorage`), offline edit safety, and CWS polish from the N-series work.
+- **Notes UX:** Row trash icon replaced by a **settings** menu (rename + delete); notes also get **Move to folder…** (regular folders only; current folder shown disabled). Double-click / F2 rename unchanged. Folder right-click secure menu unchanged.
+- **Dark mode polish:** Deeper charcoal surfaces, mid blue accent (`#3b82f6`) instead of ice blue, clearer delete-warning copy, and calendar event chips that stay readable on dark cells (soft solid fill + left color rail).
+- **Login:** Removed redundant `SECURE · ENCRYPTED` footer line.
 
 ## What changed in 1.2.2
 
