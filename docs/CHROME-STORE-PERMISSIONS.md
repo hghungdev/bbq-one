@@ -1,7 +1,7 @@
 # BBQOne — Chrome Web Store Permissions Justification
 
 This document explains why each permission declared in `public/manifest.json`
-is required for BBQOne **v1.3.2+**. The content below is the **source of
+is required for BBQOne **v1.3.3+**. The content below is the **source of
 truth** when filling out the Chrome Web Store submission form's "Permission
 Justification" section.
 

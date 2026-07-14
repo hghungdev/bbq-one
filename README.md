@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 1.3.2
+**Version:** 1.3.3
 
 ---
 
@@ -10,6 +10,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 1.3.3](#what-changed-in-133)
 - [What changed in 1.3.2](#what-changed-in-132)
 - [What changed in 1.2.2](#what-changed-in-122)
 - [What changed in 1.2.1](#what-changed-in-121)
@@ -49,13 +50,16 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 
 ---
 
+## What changed in 1.3.3
+
+- **Notes UX:** Settings menu on folder/note rows (rename / move between regular folders / delete). Double-click and F2 rename unchanged; folder right-click secure menu unchanged. Move is regular-folder only (secure moves deferred).
+- **Dark mode:** Deeper charcoal surfaces, mid blue accent (`#3b82f6`), clearer delete-warning copy, and calendar event chips that stay readable on dark cells (soft solid fill + left color rail).
+- **Login:** Removed redundant `SECURE · ENCRYPTED` footer line.
+
 ## What changed in 1.3.2
 
 - **Icon:** Refreshed extension icons (16/32/48/128) with tighter framing for Chrome toolbar and store listing.
 - **Sync hardening:** Quota-aware local storage (`unlimitedStorage`), offline edit safety, and CWS polish from the N-series work.
-- **Notes UX:** Row trash icon replaced by a **settings** menu (rename + delete); notes also get **Move to folder…** (regular folders only; current folder shown disabled). Double-click / F2 rename unchanged. Folder right-click secure menu unchanged.
-- **Dark mode polish:** Deeper charcoal surfaces, mid blue accent (`#3b82f6`) instead of ice blue, clearer delete-warning copy, and calendar event chips that stay readable on dark cells (soft solid fill + left color rail).
-- **Login:** Removed redundant `SECURE · ENCRYPTED` footer line.
 
 ## What changed in 1.2.2
 

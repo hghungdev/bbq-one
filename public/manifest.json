@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BBQOne",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respecting, offline-capable.",
   "icons": {
     "16": "icon-16.png",
