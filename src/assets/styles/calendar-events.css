@@ -1,6 +1,9 @@
 /*
  * Pastel tones cho calendar events — hài hòa với parchment/Apple palette,
  * không dùng hex cứng trong component (chỉ token tại đây).
+ *
+ * Light: pastel trong suốt trên nền sáng.
+ * Dark: chip đặc (mix vào panel) + border rõ — tránh “chìm” trên ô đen.
  */
 :root {
   --cal-event-0-bg: rgba(0, 102, 204, 0.11);
@@ -22,22 +25,22 @@
 }
 
 html[data-theme='dark'] {
-  --cal-event-0-bg: rgba(41, 151, 255, 0.16);
-  --cal-event-0-border: rgba(125, 196, 255, 0.32);
-  --cal-event-1-bg: rgba(52, 199, 89, 0.14);
-  --cal-event-1-border: rgba(110, 220, 140, 0.3);
-  --cal-event-2-bg: rgba(152, 132, 220, 0.15);
-  --cal-event-2-border: rgba(180, 165, 235, 0.32);
-  --cal-event-3-bg: rgba(214, 148, 96, 0.14);
-  --cal-event-3-border: rgba(230, 175, 130, 0.32);
-  --cal-event-4-bg: rgba(72, 178, 178, 0.14);
-  --cal-event-4-border: rgba(120, 210, 210, 0.3);
-  --cal-event-5-bg: rgba(210, 120, 145, 0.14);
-  --cal-event-5-border: rgba(235, 165, 185, 0.3);
-  --cal-event-6-bg: rgba(210, 178, 72, 0.14);
-  --cal-event-6-border: rgba(235, 205, 110, 0.32);
-  --cal-event-7-bg: rgba(130, 145, 165, 0.16);
-  --cal-event-7-border: rgba(170, 182, 198, 0.32);
+  --cal-event-0-bg: color-mix(in srgb, #3b82f6 22%, var(--bg-panel));
+  --cal-event-0-border: color-mix(in srgb, #60a5fa 72%, var(--border));
+  --cal-event-1-bg: color-mix(in srgb, #34c759 20%, var(--bg-panel));
+  --cal-event-1-border: color-mix(in srgb, #6ede8a 70%, var(--border));
+  --cal-event-2-bg: color-mix(in srgb, #a78bfa 22%, var(--bg-panel));
+  --cal-event-2-border: color-mix(in srgb, #c4b5fd 70%, var(--border));
+  --cal-event-3-bg: color-mix(in srgb, #f0a060 20%, var(--bg-panel));
+  --cal-event-3-border: color-mix(in srgb, #f0c090 70%, var(--border));
+  --cal-event-4-bg: color-mix(in srgb, #2dd4bf 20%, var(--bg-panel));
+  --cal-event-4-border: color-mix(in srgb, #5eead4 70%, var(--border));
+  --cal-event-5-bg: color-mix(in srgb, #f472b6 20%, var(--bg-panel));
+  --cal-event-5-border: color-mix(in srgb, #f9a8d4 70%, var(--border));
+  --cal-event-6-bg: color-mix(in srgb, #eab308 18%, var(--bg-panel));
+  --cal-event-6-border: color-mix(in srgb, #facc15 68%, var(--border));
+  --cal-event-7-bg: color-mix(in srgb, #94a3b8 20%, var(--bg-panel));
+  --cal-event-7-border: color-mix(in srgb, #cbd5e1 65%, var(--border));
 }
 
 .cal-event-tone-0 {
@@ -99,9 +102,41 @@ html[data-theme='dark'] {
   border-color: color-mix(in srgb, var(--cal-event-border) 88%, var(--accent-soft-border));
 }
 
+/* Dark: chip nổi hơn — rail trái màu + chữ sáng */
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-0,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-1,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-2,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-3,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-4,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-5,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-6,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-7 {
+  border-color: color-mix(in srgb, var(--cal-event-border) 35%, transparent);
+  border-left: 2px solid var(--cal-event-border);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-0:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-1:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-2:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-3:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-4:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-5:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-6:hover,
+html[data-theme='dark'] .cal-cell__event.cal-event-tone-7:hover {
+  background: color-mix(in srgb, var(--cal-event-bg) 88%, var(--cal-event-border));
+  border-left-color: var(--cal-event-border);
+}
+
 .cal-cell__event--done {
   opacity: 0.58;
   filter: saturate(0.72);
+}
+
+html[data-theme='dark'] .cal-cell__event--done {
+  opacity: 0.52;
+  filter: saturate(0.55);
 }
 
 /* —— Modal danh sách ngày —— */

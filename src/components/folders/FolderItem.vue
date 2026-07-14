@@ -2,7 +2,7 @@
 import { nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAppTimezoneStore } from '@/stores/appTimezone'
-import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
+import ListItemSettingsMenu from '@/components/ui/ListItemSettingsMenu.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useSecureFolderStore } from '@/stores/secureFolder'
@@ -179,9 +179,12 @@ function pickAction(
           {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at, utcOffsetHours) }}
         </div>
       </button>
-      <IconDeleteButton
-        :title="t('folder.deleteTitle')"
-        @click.stop="emit('request-delete', folder.id)"
+      <ListItemSettingsMenu
+        :settings-title="t('folder.actionsTitle')"
+        :rename-title="t('folder.renameTitle')"
+        :delete-title="t('folder.deleteTitle')"
+        @rename="emit('request-rename', folder.id)"
+        @delete="emit('request-delete', folder.id)"
       />
     </div>
 

@@ -301,6 +301,34 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
+  /**
+   * Chuyển note sang folder khác (v1: chỉ giữa folder thường).
+   * Không hỗ trợ vào/ra secure — cần re-encrypt title+bodies (v2).
+   */
+  async function moveNoteToFolder(
+    noteId: string,
+    targetFolderId: string,
+  ): Promise<void> {
+    const folders = useFoldersStore()
+    const note = notes.value.find((n) => n.id === noteId)
+    if (!note) throw new Error('Note not found')
+    if (note.folder_id === targetFolderId) return
+
+    const source = note.folder_id
+      ? folders.folders.find((f) => f.id === note.folder_id)
+      : null
+    const target = folders.folders.find((f) => f.id === targetFolderId)
+    if (!target) throw new Error('Target folder not found')
+    if (source?.is_secure || target.is_secure) {
+      throw new Error('SECURE_FOLDER_MOVE_UNSUPPORTED')
+    }
+
+    await updateNote(noteId, { folder_id: targetFolderId })
+    if (activeNoteId.value === noteId) {
+      folders.alignActiveFolderToNoteFolder(targetFolderId)
+    }
+  }
+
   async function updateBody(
     id: string,
     updates: Partial<Pick<NoteBody, 'label' | 'content'>>,
@@ -637,6 +665,7 @@ export const useNotesStore = defineStore('notes', () => {
     createNote,
     createBodyForNote,
     updateNote,
+    moveNoteToFolder,
     updateBody,
     deleteNote,
     deleteBody,

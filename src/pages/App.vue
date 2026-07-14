@@ -690,7 +690,9 @@
     background:
       linear-gradient(180deg, var(--bg-dashboard-header-wash) 0%, transparent 72%),
       var(--bg-secondary);
-    box-shadow: 0 1px 0 var(--bg-panel);
+    box-shadow:
+      0 1px 0 var(--border),
+      0 10px 28px var(--panel-ring);
   }
 
   .shell__header-row {

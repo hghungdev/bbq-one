@@ -64,11 +64,11 @@ function toggle(id: string): void {
   border-color: var(--accent-soft-border);
   background: var(--surface-accent-muted);
 }
-.bm-tree__row--folder { color: var(--accent); font-weight: 600; }
+.bm-tree__row--folder { color: var(--text-primary); font-weight: 600; }
 .bm-tree__row--link { color: var(--text-secondary); cursor: default; }
 .bm-tree__icon {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--accent);
   flex-shrink: 0;
   width: 14px;
   text-align: center;

@@ -90,6 +90,8 @@ export const en = {
 
   // ── Folder item ──
   'folder.renameHint': 'Double-click or F2 to rename — right-click: Secure folder',
+  'folder.actionsTitle': 'Folder actions',
+  'folder.renameTitle': 'Rename folder',
   'folder.deleteTitle': 'Delete folder',
   'folder.ctx.secure': 'Secure folder…',
   'folder.ctx.unlock': 'Unlock…',
@@ -116,6 +118,15 @@ export const en = {
 
   // ── Note item ──
   'note.renameHint': 'Double-click or F2 to rename the note display name',
+  'note.actionsTitle': 'Note actions',
+  'note.renameTitle': 'Rename note',
+  'note.moveTitle': 'Move to folder',
+  'note.moveModalTitle': 'Move note',
+  'note.moveModalHint': 'Choose another regular folder. The current folder is shown but cannot be selected.',
+  'note.moveCurrentFolder': 'Current',
+  'note.moveNoTargets': 'No other regular folders available.',
+  'note.moveSecureUnsupported': 'Moving into or out of secure folders is not supported yet.',
+  'note.moveTargetMissing': 'That folder no longer exists.',
   'note.deleteTitle': 'Delete note',
 
   // ── Note editor ──
@@ -291,7 +302,6 @@ export const en = {
   'login.password': 'PASSWORD:',
   'login.btn': 'LOGIN',
   'login.loading': '...',
-  'login.footer': '> SECURE · ENCRYPTED',
 
   // ── Calendar ──
   'calendar.weekday.mon': 'Monday',

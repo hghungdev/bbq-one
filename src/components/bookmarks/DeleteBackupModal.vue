@@ -165,9 +165,9 @@ function onBackdropClick(): void {
   margin: 0 0 12px;
   padding: 9px 10px;
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   line-height: 1.45;
-  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
   border-radius: var(--radius-md);
   background: var(--surface-danger-muted);
 }

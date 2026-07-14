@@ -197,7 +197,7 @@ onUnmounted(() => {
 }
 
 .retro-confirm--danger {
-  border-color: rgba(207, 34, 40, 0.28);
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
 }
 
 .retro-confirm__header {
@@ -248,7 +248,7 @@ onUnmounted(() => {
 .retro-confirm__detail {
   margin: 0;
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   line-height: 1.5;
   max-width: 320px;
 }

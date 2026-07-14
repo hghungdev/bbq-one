@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAppTimezoneStore } from '@/stores/appTimezone'
-import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
+import ListItemSettingsMenu from '@/components/ui/ListItemSettingsMenu.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { formatListUpdatedAt } from '@/utils/date'
 import {
@@ -31,6 +31,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   delete: [id: string]
+  move: [id: string]
   'request-rename': [id: string]
   'rename-done': []
 }>()
@@ -39,6 +40,12 @@ const notes = useNotesStore()
 const folders = useFoldersStore()
 const { t } = useLangStore()
 const { utcOffsetHours } = storeToRefs(useAppTimezoneStore())
+
+const canMove = computed(
+  () =>
+    !props.hideDelete &&
+    !folders.isSecureFolder(props.note.folder_id),
+)
 
 const draft = ref('')
 const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
@@ -181,10 +188,15 @@ function onRenameKeydown(e: KeyboardEvent): void {
             {{ formatListUpdatedAt(note.updated_at, utcOffsetHours) }}
           </div>
         </button>
-        <IconDeleteButton
+        <ListItemSettingsMenu
           v-if="!hideDelete"
-          :title="t('note.deleteTitle')"
-          @click.stop="emit('delete', note.id)"
+          :settings-title="t('note.actionsTitle')"
+          :rename-title="t('note.renameTitle')"
+          :move-title="canMove ? t('note.moveTitle') : undefined"
+          :delete-title="t('note.deleteTitle')"
+          @rename="emit('request-rename', note.id)"
+          @move="emit('move', note.id)"
+          @delete="emit('delete', note.id)"
         />
       </div>
     </template>

@@ -102,8 +102,6 @@ async function onSubmit(): Promise<void> {
             </RetroButton>
           </div>
         </form>
-
-        <footer class="lm-footer">{{ t('login.footer') }}</footer>
       </div>
     </div>
   </Transition>
@@ -208,18 +206,6 @@ async function onSubmit(): Promise<void> {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
-}
-
-.lm-footer {
-  margin-top: 16px;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  padding: 6px 8px;
-  text-align: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 64%, transparent);
-  letter-spacing: -0.012em;
 }
 
 .lm-config-warn {

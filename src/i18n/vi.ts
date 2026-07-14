@@ -92,6 +92,8 @@ export const vi: Record<I18nKey, string> = {
 
   // ── Folder item ──
   'folder.renameHint': 'Nhấp đôi hoặc F2 để đổi tên — chuột phải: Bảo mật thư mục',
+  'folder.actionsTitle': 'Thao tác thư mục',
+  'folder.renameTitle': 'Đổi tên thư mục',
   'folder.deleteTitle': 'Xóa thư mục',
   'folder.ctx.secure': 'Bảo mật thư mục…',
   'folder.ctx.unlock': 'Mở khóa…',
@@ -118,6 +120,15 @@ export const vi: Record<I18nKey, string> = {
 
   // ── Note item ──
   'note.renameHint': 'Nhấp đôi hoặc F2 để đổi tên ghi chú',
+  'note.actionsTitle': 'Thao tác ghi chú',
+  'note.renameTitle': 'Đổi tên ghi chú',
+  'note.moveTitle': 'Chuyển sang thư mục khác',
+  'note.moveModalTitle': 'Chuyển ghi chú',
+  'note.moveModalHint': 'Chọn thư mục thường khác. Thư mục hiện tại vẫn hiện nhưng không chọn được.',
+  'note.moveCurrentFolder': 'Hiện tại',
+  'note.moveNoTargets': 'Không còn thư mục thường nào khác.',
+  'note.moveSecureUnsupported': 'Chưa hỗ trợ chuyển vào/ra thư mục bảo mật.',
+  'note.moveTargetMissing': 'Thư mục đích không còn tồn tại.',
   'note.deleteTitle': 'Xóa ghi chú',
 
   // ── Note editor ──
@@ -293,7 +304,6 @@ export const vi: Record<I18nKey, string> = {
   'login.password': 'MẬT KHẨU:',
   'login.btn': 'ĐĂNG NHẬP',
   'login.loading': '...',
-  'login.footer': '> BẢO MẬT · MÃ HÓA',
 
   // ── Calendar ──
   'calendar.weekday.mon': 'Thứ hai',

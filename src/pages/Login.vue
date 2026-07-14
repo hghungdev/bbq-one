@@ -84,10 +84,6 @@
           </RetroButton>
         </div>
       </form>
-
-      <footer class="login__footer">
-        {{ t('login.footer') }}
-      </footer>
     </div>
   </div>
 </template>
@@ -209,17 +205,5 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
-  }
-
-  .login__footer {
-    margin-top: 20px;
-    padding: 6px 8px;
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
-    text-align: center;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--bg-panel) 64%, transparent);
-    letter-spacing: -0.012em;
   }
 </style>

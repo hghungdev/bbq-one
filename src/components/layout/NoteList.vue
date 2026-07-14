@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import NoteItem from '@/components/notes/NoteItem.vue'
+import MoveNoteModal from '@/components/notes/MoveNoteModal.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
@@ -28,6 +29,14 @@ const newNoteTitle = ref('')
 const createNoteError = ref<string | null>(null)
 const confirmOpen = ref(false)
 const pendingDeleteId = ref<string | null>(null)
+const moveOpen = ref(false)
+const moveNoteId = ref<string | null>(null)
+const moveError = ref<string | null>(null)
+
+const moveCurrentFolderId = computed(() => {
+  if (!moveNoteId.value) return null
+  return notes.notes.find((n) => n.id === moveNoteId.value)?.folder_id ?? null
+})
 
 const folderLocked = computed(() => {
   const id = folders.activeFolderId
@@ -136,6 +145,43 @@ async function confirmDelete(): Promise<void> {
 function onCancelDelete(): void {
   pendingDeleteId.value = null
 }
+
+function requestMove(id: string): void {
+  moveNoteId.value = id
+  moveError.value = null
+  moveOpen.value = true
+}
+
+function closeMoveModal(): void {
+  if (busy.value) return
+  moveOpen.value = false
+  moveNoteId.value = null
+  moveError.value = null
+}
+
+async function onMovePick(folderId: string): Promise<void> {
+  const id = moveNoteId.value
+  if (!id || busy.value) return
+  busy.value = true
+  moveError.value = null
+  try {
+    await notes.moveNoteToFolder(id, folderId)
+    moveOpen.value = false
+    moveNoteId.value = null
+  } catch (e) {
+    if (e instanceof Error && e.message === 'SECURE_FOLDER_MOVE_UNSUPPORTED') {
+      moveError.value = t('note.moveSecureUnsupported')
+    } else if (e instanceof Error && e.message === 'Target folder not found') {
+      moveError.value = t('note.moveTargetMissing')
+    } else {
+      moveError.value =
+        e instanceof Error ? e.message : t('common.operationFailed')
+    }
+    console.error(e)
+  } finally {
+    busy.value = false
+  }
+}
 </script>
 
 <template>
@@ -159,6 +205,7 @@ function onCancelDelete(): void {
         :hide-delete="!!notes.searchQuery.trim()"
         :highlight-query="highlightQuery"
         @delete="requestDelete"
+        @move="requestMove"
         @request-rename="emit('update:renamingNoteId', $event)"
         @rename-done="emit('update:renamingNoteId', null)"
       />
@@ -221,6 +268,16 @@ function onCancelDelete(): void {
       :message="t('notes.deleteConfirmDetail')"
       @confirm="confirmDelete"
       @cancel="onCancelDelete"
+    />
+
+    <MoveNoteModal
+      :open="moveOpen"
+      :note-id="moveNoteId"
+      :current-folder-id="moveCurrentFolderId"
+      :busy="busy"
+      :error="moveError"
+      @close="closeMoveModal"
+      @pick="onMovePick"
     />
   </div>
 </template>
