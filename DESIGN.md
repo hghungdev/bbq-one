@@ -8,7 +8,7 @@ Design reference for the **BBQOne Chrome extension** (Manifest V3). The UI is **
 |------|------|
 | `src/assets/styles/global.css` | Semantic CSS variables, light/dark overrides, popup shell constraints |
 | `src/assets/styles/retro.css` | Shared utilities (scrollbar, selection, loading dots, `cursor-blink`) |
-| `src/pages/App.vue` | Dashboard shell, header, tab layout |
+| `src/pages/App.vue` | Dashboard shell, header,  tab layout |
 | `src/components/ui/*` | Reusable controls (`RetroButton`, `RetroInput`, `IconButton`, …) |
 
 When tokens change, update **`global.css` first**, then this document.
