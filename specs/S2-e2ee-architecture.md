@@ -191,9 +191,10 @@ bị đụng tới.
 create table if not exists user_crypto (
   user_id              uuid primary key references auth.users(id) on delete cascade,
 
-  -- tham số KDF: lưu trong DB để nâng cấp được mà không phá dữ liệu cũ
-  kdf                  text        not null default 'argon2id',
-  kdf_params           jsonb       not null default '{"m":65536,"t":3,"p":1}'::jsonb,
+  -- tham số KDF: lưu trong DB để nâng cấp được mà không phá dữ liệu cũ.
+  -- Phase 2 ship PBKDF2 600k (§13-Q4); S4 đổi sang argon2id bằng UPDATE + re-wrap DEK.
+  kdf                  text        not null default 'pbkdf2-sha256',
+  kdf_params           jsonb       not null default '{"iterations":600000}'::jsonb,
   kdf_salt             text        not null,            -- base64, 16B CSPRNG
 
   -- DEK được bọc 2 lần: bằng passphrase, và bằng recovery key
@@ -255,8 +256,9 @@ trước khi recovery key (§6) đã chạy trong production.**
 Với E2EE thật, **quên passphrase = mất sạch dữ liệu**. Không admin nào reset được. Ship E2EE mà
 không có recovery = ship một quả bom hẹn giờ cho support.
 
-- Sinh 128-bit CSPRNG lúc setup, hiển thị **một lần duy nhất**, dạng nhóm 4 ký tự base32
-  (`XXXX-XXXX-…`) để chép tay được.
+- Sinh **160-bit** CSPRNG lúc setup (nâng từ 128-bit: 160/5 = đúng **32 ký tự base32** = 8 nhóm
+  4 ký tự `XXXX-XXXX-…` chẵn đẹp để chép tay, entropy dư — 128-bit lẻ 26 ký tự, nhóm xấu),
+  hiển thị **một lần duy nhất**.
 - `RKEK = HKDF-SHA256(recovery_key, info="bbq:recovery:v2")` → wrap DEK → `wrapped_dek_recovery`.
 - Bắt user xác nhận đã lưu (gõ lại một phần) trước khi cho qua.
 - Buộc hiện lại cảnh báo nếu `wrapped_dek_recovery IS NULL`.
@@ -441,13 +443,15 @@ Phase 2, kể cả khi chưa dùng tới.
 | Phase | Nội dung | Phụ thuộc | Ước lượng |
 |---|---|---|---|
 | **S1** | Bịt rò rỉ plaintext xuống cache local | — | 1 spec, nhỏ ✅ *(đã có spec+test)* |
-| **S2** | `user_crypto` + DEK/KEK + recovery key + envelope v2 + đọc-hai-chiều | S1 GREEN | Lớn — nên tách 2 spec |
+| **S2A** | Envelope v2 + đọc-hai-chiều (`secureCrypto.ts` — reader đi trước writer) | S1 GREEN ✅ | Nhỏ *(spec+test đã có)* |
+| **S2B** | `user_crypto` + DEK/KEK + recovery key (`accountCrypto.ts` + service + migration 015) | S2A | TB *(spec+test đã có)* |
+| **S2C** | UI enable/unlock-once + ghi v2 + backfill nền (Phase 2c/2d/2e) | S2B | Lớn — thiết kế sau S2B GREEN |
 | **S3** | Mở rộng phạm vi: `folders.name`, calendar title/description (**DROP 2 CHECK**), gộp bookmark PIN về DEK chung | S2 | TB |
 | **S4** | Argon2id (sau khi benchmark); nếu hoãn thì **tối thiểu** nâng PBKDF2 lên 600k | S2 | Nhỏ + đo đạc |
 | **S5** | Blind index cho search + tag; gộp N15 | S3 | Lớn, tùy corpus |
 | **S6** | *(tùy chọn)* Hợp nhất 1 password kiểu Bitwarden (§5 PA 2) | S2 + recovery đã chạy production | Lớn, rủi ro auth |
 
-**Đường tối thiểu để đạt mục tiêu bảo mật: S1 → S2 → S3.** S4/S5/S6 là tối ưu hóa.
+**Đường tối thiểu để đạt mục tiêu bảo mật: S1 → S2A → S2B → S2C → S3.** S4/S5/S6 là tối ưu hóa.
 
 ---
 
@@ -461,3 +465,28 @@ Phase 2, kể cả khi chưa dùng tới.
 3. **Account đang tồn tại:** có ép migrate không, hay để opt-in? *Khuyến nghị: opt-in kèm banner,
    ép sau 2 release.*
 4. **Argon2id trong SW:** cần số benchmark thật trước khi chốt tham số §3.3.
+
+### §13 — ĐÃ CHỐT (2026-07-20, leader quyết theo ủy quyền của Sir)
+
+1. **Phạm vi: account-level, opt-in.** "Encrypted account" là một chế độ user chủ động bật;
+   khi bật → mã hóa **toàn bộ** notes/bodies (S3 mở rộng folders.name + calendar), unlock
+   **một lần** lúc mở app. Không mở rộng mô hình per-folder key cho dữ liệu mới; secure folder
+   v1 tiếp tục chạy và migrate về DEK chung ở S3. Lý do: mã hóa chọn lọc tự tố cáo đúng thứ
+   đáng đọc nhất; nhưng bắt buộc passphrase với mọi user là đổi căn cước sản phẩm — opt-in
+   giữ được cả hai.
+2. **Local mode: KHÔNG mã hóa ở Phase 1–4.** Chưa có account → không có chỗ neo `wrapped_dek`,
+   recovery story tệ. Ghi giới hạn vào `SECURITY.md` ở phase UI (S2C).
+3. **Account cũ: opt-in + banner** (nhắc khi bật rồi mà `wrapped_dek_recovery IS NULL`, và
+   banner giới thiệu cho account chưa bật). **KHÔNG ép migrate** — lệch có chủ đích khỏi
+   khuyến nghị gốc "ép sau 2 release": E2EE kèm nghĩa vụ tự giữ recovery key phải là lựa chọn;
+   ép = bom support + churn. Xem lại sau khi có số adoption thật.
+4. **Argon2id chỉ chặn S4, không chặn S2.** S2 dùng **PBKDF2-SHA256 600k** cho KEK (mức OWASP
+   hiện hành); `kdf`/`kdf_params` nằm trong DB nên S4 nâng lên Argon2id = UPDATE row + re-wrap
+   DEK (O(1)), không đụng dữ liệu. Benchmark 3 context vẫn bắt buộc trước S4.
+
+**Hệ quả kỹ thuật cho thứ tự spec:** S2 tách làm **S2A (envelope v2 + đọc-hai-chiều) TRƯỚC**,
+rồi **S2B (`user_crypto` + DEK/KEK + recovery)** — đảo so với dự kiến ban đầu vì (1) chính
+`wrapped_dek` lưu bằng format v2 → parser/formatter phải có mặt trước; (2) nguyên tắc migration
+"**reader đi trước writer, vĩnh viễn**" — không chuỗi v2 nào được phép tồn tại trong hệ trước
+khi mọi reader nhận diện được nó. S2C (UI enable/unlock + ghi v2 + backfill) thiết kế sau khi
+S2B GREEN.
