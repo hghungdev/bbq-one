@@ -13,6 +13,7 @@
   import CalendarOverdueReminderDialog from '@/components/calendar/CalendarOverdueReminderDialog.vue'
   import ConflictBackupsDialog from '@/components/sync/ConflictBackupsDialog.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
+  import AccountUnlockModal from '@/components/account/AccountUnlockModal.vue'
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useCommitPendingDeletesOnClose } from '@/composables/useCommitPendingDeletesOnClose'
   import { flushOrphanedPendingDeleteCommits, listUnexpiredPendingDeletes } from '@/services/pendingDeleteCommit.service'
@@ -21,6 +22,7 @@
   import { useFoldersStore } from '@/stores/folders'
   import { useNotesStore } from '@/stores/notes'
   import { useSecureFolderStore } from '@/stores/secureFolder'
+  import { useAccountCryptoStore } from '@/stores/accountCrypto'
   import { useSyncStore } from '@/stores/sync'
   import { useLangStore } from '@/stores/uiLang'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
@@ -65,6 +67,7 @@
   const folders = useFoldersStore()
   const notes = useNotesStore()
   const secure = useSecureFolderStore()
+  const account = useAccountCryptoStore()
   const sync = useSyncStore()
   const langStore = useLangStore()
   const { t } = langStore
@@ -216,6 +219,12 @@
     ])
     dataReady.value = true
     await maybeRestoreNoteDraft()
+    if (isAuthenticated.value) {
+      await account.refreshStatus()
+      if (account.isEnabled() && !account.isUnlocked()) {
+        account.unlockModalOpen = true
+      }
+    }
     void refreshStoresFromNetwork().then(() => {
       void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
@@ -252,6 +261,7 @@
 
   async function onLogout(): Promise<void> {
     secure.lockAll()
+    account.lock()
     await auth.logout()
     // Sau khi logout: ở lại dashboard ở local mode, reload data từ local storage
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
@@ -259,6 +269,14 @@
 
   function onGoLogin(): void {
     showLoginModal.value = true
+  }
+
+  async function onAccountUnlocked(): Promise<void> {
+    await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+  }
+
+  function onAccountUnlockClose(): void {
+    account.unlockModalOpen = false
   }
 
   async function onLoginSuccess(): Promise<void> {
@@ -630,6 +648,12 @@
 
     <!-- Login popup: hiện ngay trên dashboard thay vì navigate sang trang riêng -->
     <LoginModal v-if="showLoginModal" @close="showLoginModal = false" @success="onLoginSuccess" />
+
+    <AccountUnlockModal
+      :open="account.unlockModalOpen"
+      @close="onAccountUnlockClose"
+      @done="onAccountUnlocked"
+    />
 
     <CalendarOverdueReminderDialog
       :visible="showOverdueReminder"

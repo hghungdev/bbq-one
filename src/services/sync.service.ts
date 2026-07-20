@@ -6,7 +6,7 @@ import {
 import { CALENDAR_EVENTS_CACHE_KEY } from '@/constants/calendar'
 import type { Folder, Note, NoteBody } from '@/types'
 import type { CalendarEvent } from '@/types/calendar'
-import { encryptField, isEncryptedEnvelope } from '@/utils/secureCrypto'
+import { encryptField, encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
 import { calendarEventsService } from './calendarEvents.service'
 import { noteBodiesService } from './noteBodies.service'
 import { notesService } from './notes.service'
@@ -99,6 +99,8 @@ export const syncService = {
     noteBodies: NoteBody[],
     folders: Folder[],
     getKey: (folderId: string) => CryptoKey | null,
+    /** S2C1: null/undefined = account off; key=null = bật-nhưng-locked (skip plaintext). */
+    account?: { key: CryptoKey | null; kid: string } | null,
   ): Promise<number> {
     const byId = new Map(folders.map((f) => [f.id, f]))
     const dirtyBodyNoteIds = new Set(
@@ -120,6 +122,14 @@ export const syncService = {
         if ((titlePlain || anyBodyPlain) && !key) {
           continue
         }
+      } else if (account) {
+        const titlePlain = !isEncryptedEnvelope(n.title)
+        const anyBodyPlain = bodies.some(
+          (b) => !isEncryptedEnvelope(b.label) || !isEncryptedEnvelope(b.content),
+        )
+        if ((titlePlain || anyBodyPlain) && !account.key) {
+          continue
+        }
       }
 
       if (isNoteDirty(n)) {
@@ -127,6 +137,8 @@ export const syncService = {
           let title = n.title
           if (folder?.is_secure && key) {
             if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
+          } else if (account?.key && !isEncryptedEnvelope(title)) {
+            title = await encryptFieldV2(title, account.key, account.kid)
           }
           const savedNote = await notesService.update(
             n.id,
@@ -161,6 +173,11 @@ export const syncService = {
             if (!isEncryptedEnvelope(label)) label = await encryptField(label, key)
             if (!isEncryptedEnvelope(content)) {
               content = await encryptField(content, key)
+            }
+          } else if (account?.key) {
+            if (!isEncryptedEnvelope(label)) label = await encryptFieldV2(label, account.key, account.kid)
+            if (!isEncryptedEnvelope(content)) {
+              content = await encryptFieldV2(content, account.key, account.kid)
             }
           }
           const savedBody = await noteBodiesService.update(

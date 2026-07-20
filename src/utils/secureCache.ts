@@ -1,4 +1,4 @@
-import { encryptField, isEncryptedEnvelope } from '@/utils/secureCrypto'
+import { encryptField, encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
 
 /** Hình dạng tối thiểu cần để niêm phong — khớp Note/NoteBody, không phụ thuộc `@/types`. */
 export interface SealableNote {
@@ -43,8 +43,12 @@ export async function sealSecureRowsForCache<
   bodies: B[]
   isSecureFolder: (folderId: string | null) => boolean
   getKey: (folderId: string) => CryptoKey | null
+  /** S2C1: account-mode UNLOCKED → seal mọi row plaintext NGOÀI secure folder bằng v2.
+   *  null/undefined = mode off HOẶC locked → row ngoài secure folder đi qua như cũ
+   *  (trạng thái legacy pre-backfill — xem spec). */
+  account?: { key: CryptoKey; kid: string } | null
 }): Promise<SealResult<N, B>> {
-  const { notes, bodies, isSecureFolder, getKey } = input
+  const { notes, bodies, isSecureFolder, getKey, account } = input
 
   const folderOfNote = new Map<string, string | null>()
   for (const n of notes) folderOfNote.set(n.id, n.folder_id)
@@ -56,7 +60,11 @@ export async function sealSecureRowsForCache<
   for (const n of notes) {
     const folderId = n.folder_id
     if (!folderId || !isSecureFolder(folderId)) {
-      outNotes.push(n)
+      if (account && !isEncryptedEnvelope(n.title)) {
+        outNotes.push({ ...n, title: await encryptFieldV2(n.title, account.key, account.kid) })
+      } else {
+        outNotes.push(n)
+      }
       continue
     }
     if (isEncryptedEnvelope(n.title)) {
@@ -80,6 +88,18 @@ export async function sealSecureRowsForCache<
     }
     const folderId = folderOfNote.get(b.note_id) ?? null
     if (!folderId || !isSecureFolder(folderId)) {
+      if (account) {
+        const lPlain = !isEncryptedEnvelope(b.label)
+        const cPlain = !isEncryptedEnvelope(b.content)
+        if (lPlain || cPlain) {
+          outBodies.push({
+            ...b,
+            label: lPlain ? await encryptFieldV2(b.label, account.key, account.kid) : b.label,
+            content: cPlain ? await encryptFieldV2(b.content, account.key, account.kid) : b.content,
+          })
+          continue
+        }
+      }
       outBodies.push(b)
       continue
     }

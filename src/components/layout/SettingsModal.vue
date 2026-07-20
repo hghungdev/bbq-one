@@ -5,8 +5,10 @@ import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
+import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
 import { useAppTimezoneStore } from '@/stores/appTimezone'
 import { useAuthStore } from '@/stores/auth'
+import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
 import { formatUtcOffsetLabel, UTC_OFFSET_OPTIONS } from '@/utils/appDateTime'
@@ -17,6 +19,7 @@ import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
 const emit = defineEmits<{ close: [] }>()
 
 const auth = useAuthStore()
+const accountCrypto = useAccountCryptoStore()
 const bookmarkPin = useBookmarkPinStore()
 const appTimezone = useAppTimezoneStore()
 const { utcOffsetHours } = storeToRefs(appTimezone)
@@ -60,6 +63,8 @@ const acctPwConfirm = ref('')
 const acctPwBusy = ref(false)
 const acctPwError = ref<string | null>(null)
 const acctPwOk = ref(false)
+
+const showAccountSetup = ref(false)
 
 const acctPwIssueKeys = computed(() => {
   if (acctPwNew.value.length === 0) return []
@@ -234,6 +239,9 @@ watch([bmPinSetupNew, bmPinSetupConfirm], () => {
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown, true)
   void bookmarkPin.loadCryptoState()
+  if (auth.isAuthenticated) {
+    void accountCrypto.refreshStatus()
+  }
 })
 
 onUnmounted(() => {
@@ -377,6 +385,45 @@ onUnmounted(() => {
               {{ t('settings.pwSubmit') }}
             </RetroButton>
           </div>
+        </SettingsAccordionSection>
+
+        <SettingsAccordionSection
+          v-if="auth.isAuthenticated"
+          :title="t('account.settingsTitle')"
+          :default-open="false"
+        >
+          <template v-if="!accountCrypto.isEnabled()">
+            <p class="settings-hint settings-hint--sub">
+              {{ t('account.setupIntro') }}
+            </p>
+            <div class="settings-row settings-row--pin">
+              <RetroButton
+                variant="sm"
+                type="button"
+                @click="showAccountSetup = true"
+              >
+                {{ t('account.enableCta') }}
+              </RetroButton>
+            </div>
+          </template>
+          <template v-else>
+            <p class="settings-hint settings-hint--sub">
+              {{
+                accountCrypto.isUnlocked()
+                  ? t('account.statusUnlocked')
+                  : t('account.statusLocked')
+              }}
+            </p>
+            <div v-if="!accountCrypto.isUnlocked()" class="settings-row settings-row--pin">
+              <RetroButton
+                variant="sm"
+                type="button"
+                @click="accountCrypto.unlockModalOpen = true"
+              >
+                {{ t('account.unlock') }}
+              </RetroButton>
+            </div>
+          </template>
         </SettingsAccordionSection>
 
         <!-- Chưa đặt PIN: Setup tùy chọn -->
@@ -543,6 +590,11 @@ onUnmounted(() => {
       </RetroButton>
     </div>
   </div>
+  <AccountEncryptionSetupModal
+    :open="showAccountSetup"
+    @close="showAccountSetup = false"
+    @done="showAccountSetup = false"
+  />
 </template>
 
 <style scoped>

@@ -15,8 +15,10 @@ import {
 } from '@/utils/text'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
+import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useLangStore } from '@/stores/uiLang'
 import type { Note } from '@/types'
+import { isEncryptedEnvelope } from '@/utils/secureCrypto'
 
 const props = defineProps<{
   note: Note
@@ -41,6 +43,8 @@ const folders = useFoldersStore()
 const { t } = useLangStore()
 const { utcOffsetHours } = storeToRefs(useAppTimezoneStore())
 
+const rowLocked = computed(() => isEncryptedEnvelope(props.note.title))
+
 const canMove = computed(
   () =>
     !props.hideDelete &&
@@ -52,9 +56,10 @@ const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
 
 const bodies = computed(() => notes.bodiesForNote(props.note.id))
 
-const label = computed(() =>
-  noteListLabel(props.note, bodies.value, t('notes.untitled')),
-)
+const label = computed(() => {
+  if (rowLocked.value) return t('account.lockedNote')
+  return noteListLabel(props.note, bodies.value, t('notes.untitled'))
+})
 
 const titleHtml = computed(() =>
   highlightQueryHtml(label.value, props.highlightQuery ?? ''),
@@ -98,6 +103,10 @@ watch(
 
 function onMainClick(): void {
   if (props.renaming) return
+  if (rowLocked.value) {
+    useAccountCryptoStore().unlockModalOpen = true
+    return
+  }
   notes.selectNote(props.note.id)
 }
 

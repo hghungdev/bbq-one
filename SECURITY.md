@@ -71,3 +71,15 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   thành công đầu tiên sau khi cập nhật — mở app online một lần là đủ. Giới hạn nền tảng:
   `chrome.storage.local` chạy trên LevelDB — giá trị đã bị đè có thể còn nằm trong file `.ldb`
   cũ tới khi compaction; extension API không có cách xóa forensic.
+
+## Encrypted account (S2C1)
+
+- Bật (opt-in) qua ceremony: passphrase (≥10, PBKDF2-SHA256 600k) + recovery key 160-bit hiện
+  MỘT lần; commit = một upsert `user_crypto` duy nhất (atomic).
+- `K_content` (HKDF từ DEK) chỉ trong RAM, chết theo cửa sổ. Ghi chú ngoài secure folder được
+  encrypt v2 trước khi lên server và trước khi xuống `chrome.storage.local` (qua seal S1).
+- Quên passphrase: recovery key mở DEK và BẮT BUỘC đặt passphrase mới (re-wrap, 1 UPDATE);
+  recovery key cũ vẫn hiệu lực cho tới khi regenerate (S2C2).
+- Trạng thái chuyển tiếp (tới khi backfill S2C2 xong): ghi chú cũ chưa từng sửa lại vẫn là
+  plaintext trên server — không tệ hơn hiện trạng, thu hẹp dần. Row đã mã hóa không bao giờ
+  hiển thị dạng `bbq:2:…` trần (mask ở NoteItem).

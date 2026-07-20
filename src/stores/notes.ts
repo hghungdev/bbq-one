@@ -9,8 +9,9 @@ import {
 } from '@/services/localFirst/localNotes.service'
 import { useFoldersStore } from '@/stores/folders'
 import { useSecureFolderStore } from '@/stores/secureFolder'
+import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import type { Note, NoteBody } from '@/types'
-import { decryptField, encryptField } from '@/utils/secureCrypto'
+import { decryptField, encryptField, encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
 import { withTimeout } from '@/utils/withTimeout'
 import { isNetworkError } from '@/utils/networkErrors'
 import { isSyncConflictError, nextLocalUpdatedAt } from '@/utils/syncConflict'
@@ -23,6 +24,15 @@ import { safeCacheWrite } from '@/utils/cacheWrite'
 import { sealSecureRowsForCache } from '@/utils/secureCache'
 
 const NETWORK_LOAD_MS = 12_000
+
+/** S2C1: row NGOÀI secure folder + account bật → phải có K_content mới được mutate. */
+function requireAccountKey(): { key: CryptoKey; kid: string } | null {
+  const account = useAccountCryptoStore()
+  if (!account.isEnabled()) return null
+  const key = account.getContentKey()
+  if (!key) throw new Error('Account locked')
+  return { key, kid: account.getDekId() }
+}
 
 export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])
@@ -72,14 +82,13 @@ export const useNotesStore = defineStore('notes', () => {
     }
     searchLoading.value = true
     try {
-      const folderStore = useFoldersStore()
       const fromApi = await notesService.searchFullText(q)
       const fromStore = filterNotesBySubstring(notes.value, bodies.value, q)
       const byId = new Map<string, Note>()
       for (const n of fromApi) byId.set(n.id, n)
       for (const n of fromStore) byId.set(n.id, n)
       searchResults.value = [...byId.values()]
-        .filter((n) => !folderStore.isSecureFolder(n.folder_id))
+        .filter((n) => !isEncryptedEnvelope(n.title))
         .sort(
           (a, b) =>
             new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
@@ -118,6 +127,8 @@ export const useNotesStore = defineStore('notes', () => {
     // → decrypt lại cho folder đang unlock, nếu không UI hiện chuỗi `retronote:1:…`.
     const secure = useSecureFolderStore()
     await secure.decryptLoadedSecureRows()
+    const account = useAccountCryptoStore()
+    await account.decryptLoadedAccountRows()
 
     // S1: RAM giữ plaintext để hiển thị; ĐĨA chỉ được nhận envelope.
     const folders = useFoldersStore()
@@ -126,6 +137,9 @@ export const useNotesStore = defineStore('notes', () => {
       bodies: bodies.value,
       isSecureFolder: folders.isSecureFolder,
       getKey: secure.getKey,
+      account: account.isUnlocked()
+        ? { key: account.getContentKey()!, kid: account.getDekId() }
+        : null,
     })
 
     await safeCacheWrite(
@@ -161,6 +175,7 @@ export const useNotesStore = defineStore('notes', () => {
       // S1: đĩa chỉ còn envelope — decrypt-overlay ngay cho folder đang unlock.
       // No-op khi chưa unlock (sessionKeys rỗng). PHẢI đứng TRƯỚC early-return offline.
       await useSecureFolderStore().decryptLoadedSecureRows()
+      await useAccountCryptoStore().decryptLoadedAccountRows()
       if (!isOnline()) return
       const [freshNotes, freshBodies] = await withTimeout(
         Promise.all([notesService.getAll(), noteBodiesService.getAll()]),
@@ -187,6 +202,7 @@ export const useNotesStore = defineStore('notes', () => {
       }
       // S1: cache-reload trong catch cũng nạp envelope từ đĩa → overlay lại.
       await useSecureFolderStore().decryptLoadedSecureRows()
+      await useAccountCryptoStore().decryptLoadedAccountRows()
     }
   }
 
@@ -206,6 +222,12 @@ export const useNotesStore = defineStore('notes', () => {
       title = await encryptField('', key)
       bodyLabel = await encryptField('', key)
       bodyContent = await encryptField('', key)
+    }
+    const acct = folder?.is_secure ? null : requireAccountKey()
+    if (acct) {
+      title = await encryptFieldV2(title, acct.key, acct.kid)
+      bodyLabel = await encryptFieldV2('', acct.key, acct.kid)
+      bodyContent = await encryptFieldV2('', acct.key, acct.kid)
     }
     let note: Note
     let bodyRow: NoteBody
@@ -251,6 +273,9 @@ export const useNotesStore = defineStore('notes', () => {
         label: await decryptField(bodyRow.label, key),
         content: await decryptField(bodyRow.content, key),
       }
+    } else if (acct) {
+      storedNote = { ...note, title: initialTitle.trim() }
+      storedBody = { ...bodyRow, label: '', content: '' }
     }
     notes.value = [storedNote, ...notes.value]
     bodies.value = [storedBody, ...bodies.value]
@@ -288,6 +313,14 @@ export const useNotesStore = defineStore('notes', () => {
       }
     }
 
+    let acctUpd: { key: CryptoKey; kid: string } | null = null
+    if (!folder?.is_secure) {
+      acctUpd = requireAccountKey()
+      if (acctUpd && payload.title !== undefined) {
+        payload.title = await encryptFieldV2(payload.title, acctUpd.key, acctUpd.kid)
+      }
+    }
+
     try {
       const data = await notesService.update(id, payload, {
         row: prev,
@@ -305,6 +338,8 @@ export const useNotesStore = defineStore('notes', () => {
         } else {
           notes.value[idx] = merged
         }
+      } else if (acctUpd) {
+        notes.value[idx] = { ...merged, title: updates.title ?? prev.title }
       } else {
         notes.value[idx] = merged
       }
@@ -376,6 +411,19 @@ export const useNotesStore = defineStore('notes', () => {
       }
     }
 
+    let acctUpd: { key: CryptoKey; kid: string } | null = null
+    if (!folder?.is_secure) {
+      acctUpd = requireAccountKey()
+      if (acctUpd) {
+        if (payload.label !== undefined) {
+          payload.label = await encryptFieldV2(payload.label, acctUpd.key, acctUpd.kid)
+        }
+        if (payload.content !== undefined) {
+          payload.content = await encryptFieldV2(payload.content, acctUpd.key, acctUpd.kid)
+        }
+      }
+    }
+
     try {
       const data = await noteBodiesService.update(id, payload, {
         row: prev,
@@ -393,6 +441,12 @@ export const useNotesStore = defineStore('notes', () => {
           }
         } else {
           bodies.value[idx] = merged
+        }
+      } else if (acctUpd) {
+        bodies.value[idx] = {
+          ...merged,
+          label: updates.label ?? prev.label,
+          content: updates.content ?? prev.content,
         }
       } else {
         bodies.value[idx] = merged
@@ -439,6 +493,11 @@ export const useNotesStore = defineStore('notes', () => {
       label = await encryptField('', key)
       content = await encryptField('', key)
     }
+    const acct = folder?.is_secure ? null : requireAccountKey()
+    if (acct) {
+      label = await encryptFieldV2('', acct.key, acct.kid)
+      content = await encryptFieldV2('', acct.key, acct.kid)
+    }
     let row: NoteBody
     let createdOffline = false
     try {
@@ -464,6 +523,8 @@ export const useNotesStore = defineStore('notes', () => {
         label: await decryptField(row.label, key),
         content: await decryptField(row.content, key),
       }
+    } else if (acct) {
+      stored = { ...row, label: '', content: '' }
     }
     bodies.value = [...bodies.value, stored]
     activeBodyId.value = stored.id

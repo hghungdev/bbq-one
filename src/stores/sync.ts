@@ -6,6 +6,7 @@ import { isOnline } from '@/services/networkReachability.service'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
+import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { hasLocalFirstPending } from '@/services/autoSync.service'
 import { pushLocalToCloud } from '@/services/localFirst/syncEngine.service'
@@ -70,11 +71,15 @@ export const useSyncStore = defineStore('sync', () => {
           throw new Error(`Sync incomplete: ${pushResult.errors.length} item(s) failed`)
         }
       }
+      const account = useAccountCryptoStore()
       await syncService.syncDirtyNotesFromList(
         notes.notes,
         notes.bodies,
         folders.folders,
         (id) => secure.getKey(id),
+        account.isEnabled()
+          ? { key: account.getContentKey(), kid: account.getDekId() }
+          : null,
       )
       // N7b: calendar cũng phải sync tay được — trước đây chỉ notes.
       await syncService.syncDirtyCalendarEventsFromList(calendarEvents.events)
