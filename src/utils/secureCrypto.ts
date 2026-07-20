@@ -11,6 +11,49 @@ export const SECURE_VERIFIER_PLAINTEXT = 'retronote:unlock'
 /** Bọc ciphertext title/content; cùng lý do giữ literal `retronote:1:` như trên. */
 const ENVELOPE_PREFIX = 'retronote:1:'
 
+/** S2A: envelope v2 — có version/alg/kid để rotate khóa & đổi cipher (ADR §8). */
+export const ENVELOPE_V2_PREFIX = 'bbq:2:'
+export const ENVELOPE_V2_ALG = 'A256GCM'
+
+export interface EnvelopeV2 {
+  alg: string
+  kid: string
+  ivB64: string
+  ctB64: string
+}
+
+const V2_ALG_RE = /^[A-Z0-9]{4,16}$/
+const V2_KID_RE = /^[a-z0-9_-]{1,32}$/
+const V2_IV_RE = /^[A-Za-z0-9+/]{16,32}={0,2}$/
+const V2_CT_RE = /^[A-Za-z0-9+/]+={0,2}$/
+
+/**
+ * Parse strict: đúng 6 segment + regex từng phần. Trả null nếu không phải v2.
+ * Strict để plaintext user gõ dạng `bbq:2:...` gần đúng KHÔNG bị coi là ciphertext.
+ */
+export function parseEnvelopeV2(value: string): EnvelopeV2 | null {
+  if (!value.startsWith(ENVELOPE_V2_PREFIX)) return null
+  const parts = value.split(':')
+  if (parts.length !== 6) return null
+  const [, , alg, kid, ivB64, ctB64] = parts
+  if (!V2_ALG_RE.test(alg)) return null
+  if (!V2_KID_RE.test(kid)) return null
+  if (!V2_IV_RE.test(ivB64)) return null
+  if (!V2_CT_RE.test(ctB64)) return null
+  return { alg, kid, ivB64, ctB64 }
+}
+
+export function formatEnvelopeV2(
+  alg: string,
+  kid: string,
+  ivB64: string,
+  ctB64: string,
+): string {
+  if (!V2_ALG_RE.test(alg)) throw new Error('Invalid envelope alg')
+  if (!V2_KID_RE.test(kid)) throw new Error('Invalid envelope kid')
+  return `${ENVELOPE_V2_PREFIX}${alg}:${kid}:${ivB64}:${ctB64}`
+}
+
 /** Salt PBKDF2: 16 byte CSPRNG (128-bit entropy). */
 export const SALT_BYTES = 16
 
@@ -29,7 +72,7 @@ export function saltFromBase64(b64: string): Uint8Array {
 }
 
 export function isEncryptedEnvelope(value: string): boolean {
-  return value.startsWith(ENVELOPE_PREFIX)
+  return value.startsWith(ENVELOPE_PREFIX) || parseEnvelopeV2(value) !== null
 }
 
 export async function deriveKeyFromPassword(
@@ -69,7 +112,36 @@ export async function encryptField(plaintext: string, key: CryptoKey): Promise<s
   return `${ENVELOPE_PREFIX}${bytesToBase64(iv)}:${bytesToBase64(new Uint8Array(ciphertext))}`
 }
 
+/** S2A: encrypt → envelope v2. Data path vẫn ghi v1 cho tới S2C. */
+export async function encryptFieldV2(
+  plaintext: string,
+  key: CryptoKey,
+  kid: string,
+): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const encoded = new TextEncoder().encode(plaintext)
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
+  return formatEnvelopeV2(
+    ENVELOPE_V2_ALG,
+    kid,
+    bytesToBase64(iv),
+    bytesToBase64(new Uint8Array(ciphertext)),
+  )
+}
+
 export async function decryptField(envelope: string, key: CryptoKey): Promise<string> {
+  const v2 = parseEnvelopeV2(envelope)
+  if (v2) {
+    if (v2.alg !== ENVELOPE_V2_ALG) {
+      throw new Error('Unsupported envelope algorithm')
+    }
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: base64ToBytes(v2.ivB64) },
+      key,
+      base64ToBytes(v2.ctB64),
+    )
+    return new TextDecoder().decode(decrypted)
+  }
   if (!isEncryptedEnvelope(envelope)) {
     throw new Error('Invalid encrypted payload')
   }
