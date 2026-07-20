@@ -19,13 +19,15 @@ bắt đầu S2).
 
 - **S1** `S1-secure-cache-leak` — ✅ GREEN 17/17, verify tay 6/6 (Sir xác nhận 2026-07-20).
   Commits: `9dddd5e` docs → `449db9c` fix (red→green chứng minh bằng thứ tự commit).
+- **S2A** `S2A-envelope-v2-read` — ✅ GREEN 19/19. Commit `dc20459`.
+- **S2B** `S2B-user-crypto-dek-kek` — ✅ GREEN 19/19. Commit `d345c11`.
+  Migration `015_user_crypto.sql` đã áp lên Supabase thật (Sir xác nhận 2026-07-20).
 
 ## Chờ implement
 
 | Thứ tự | Spec | Nội dung | Test hiện tại |
 |--------|------|----------|---------------|
-| **1** | `S2A-envelope-v2-read` | Envelope v2 `bbq:2:<alg>:<kid>:<iv>:<ct>` + đọc-hai-chiều trong `secureCrypto.ts`. **Reader đi trước writer** — chưa gì ghi v2, zero đổi hành vi dữ liệu hiện có. Parser strict 6-segment chống near-miss. | 🔴 **RED (3 fail)** |
-| **2** | `S2B-user-crypto-dek-kek` | Hạ tầng DEK/KEK: `accountCrypto.ts` (wrap/unwrap DEK, verifier, recovery key 160-bit base32, HKDF domain separation) + `userCrypto.service.ts` + migration `015_user_crypto.sql`. **Chặn bởi S2A GREEN.** Phase 2a — cấm wire store/UI (harness W3 enforce). | 🔴 **RED (3 fail)** |
+| **1** | `S2C1-account-encryption-core` | Encrypted account core: store `accountCrypto.ts` (ceremony 1-upsert, unlock, recovery re-wrap, overlay v2), adapter seal S1 + push guard, write-path ghi v2, search lọc row-đang-khóa, 2 modal UI + i18n. **Chặn bởi S2B GREEN** (đã xong). | 🔴 **RED (16 fail / 3 pass)** |
 
 ## Baseline lúc tạo roadmap (2026-07-20)
 
@@ -41,26 +43,35 @@ bắt đầu S2).
   được **dry-run GREEN** trên tree tạm rồi revert — xem mục dưới.
 - **Baseline S2 (2026-07-20, sau khi S1 đóng):** S2A RED 3 fail (exports v2 chưa có; riêng T1
   v1-compat chạy WebCrypto THẬT và PASS sẵn — guard chống regression writer v1); S2B RED 3 fail
-  (T0/W1/W2 — 3 file chưa tồn tại; **W3 chặn-overreach PASS sẵn và PHẢI GIỮ NGUYÊN sau GREEN**).
-  Cả hai đã **dry-run GREEN** trên tree tạm: S2A + S2B PASS, vue-tsc 0, 22/22 harness →
-  revert về RED. Spec chắc chắn GREEN được đúng như viết.
+  (T0/W1/W2 — 3 file chưa tồn tại). Cả hai đã **dry-run GREEN** trên tree tạm rồi revert. Đã
+  implement + đóng: `dc20459` (S2A), `d345c11` (S2B).
+- **Baseline S2C1 (2026-07-20):** RED 16 fail / 3 pass. Ba check PASS sẵn là **guard chống hồi
+  quy**, phải giữ xanh suốt: `T-B1` (seal với `account=null` = hành vi S1 nguyên vẹn), `T-C3`
+  (account off = push như cũ), `T-C4` (folder secure vẫn dùng folder key v1, account không chen
+  vào). Đã **dry-run GREEN**: S2C1 29/29, vue-tsc 0, **23/23 harness** → revert về RED.
+  Dry-run bắt được 2 lỗi đã sửa sẵn vào spec/harness trước khi giao: (a) `RetroInput` bắt buộc
+  prop `id`; (b) W3 của S2B là guard theo-phase, S2C1 chính thức chuyển nó sang ranh giới tầng.
 
-## Nghiệm thu mỗi spec S2A/S2B
+## Nghiệm thu S2C1
 
-1. `node specs/<ID>.test.mjs` GREEN **và** đủ 22 harness: `for f in specs/*.test.mjs; do node "$f"; done`
+1. `node specs/S2C1-account-encryption-core.test.mjs` GREEN (29 check) **và** đủ **23** harness:
+   `for f in specs/*.test.mjs; do node "$f"; done`
 2. `npx vue-tsc --noEmit -p tsconfig.app.json` sạch.
-3. Làm **tuần tự theo thứ tự**: Cursor `fix(S2A): …` GREEN xong mới bắt đầu S2B
-   (S2B import parser v2 từ S2A). Commit docs đã có sẵn từ trước.
-4. **Verify tay:** S2A không có. S2B có 1 bước — Sir chạy
-   `supabase/migrations/015_user_crypto.sql` trong Supabase SQL Editor, kiểm
-   `select * from user_crypto` = 0 row + RLS bật (an toàn chạy bất kỳ lúc nào —
-   client chưa đụng bảng cho tới S2C).
+3. **Verify tay: 6 bước** ở cuối `S2C1-account-encryption-core.spec.md` — quan trọng nhất là
+   bước 2 (chuỗi mồi `S2C1PROBE-XYZZY` KHÔNG còn trong `chrome.storage.local`), bước 3
+   (Supabase Table Editor thấy `bbq:2:…`), bước 5 (recovery → ép đặt passphrase mới, pass CŨ
+   chết) và bước 6 (secure folder v1 hành vi y hệt trước S2C1).
+4. Commit: `fix(S2C1): …` (docs đã commit sẵn).
+
+> ⚠ **Lưu ý cho người review S2C1:** spec có **thay đổi 9/10 đụng harness S2B** (W3 chuyển từ
+> "chưa store nào wire" sang ranh giới tầng) — thay đổi này **đã làm sẵn trong commit docs**,
+> Cursor không cần và không được sửa thêm bất kỳ harness nào.
 
 ## Chờ thiết kế (chưa có spec — ĐỪNG tự làm)
 
 | Phase | Nội dung | Chặn bởi |
 |---|---|---|
-| **S2C** | UI enable/unlock-once + ghi v2 (data path) + backfill nền + banner recovery | S2B GREEN (§13 đã chốt 2026-07-20 — xem ADR) |
+| **S2C2** | Backfill nền (lô 25, popup/dashboard, resume + progress) + banner recovery-thiếu + đổi passphrase + regenerate recovery key + nút "Khóa ngay" | S2C1 GREEN |
 | **S3** | `folders.name`, calendar title/description (**DROP 2 CHECK** — tên thật trên DB live: `calendar_events_title_check` [013 re-create] + `calendar_events_description_check` [012]), gộp bookmark PIN về DEK chung | S2 |
 | **S4** | Argon2id — hoặc tối thiểu PBKDF2 310k → 600k | Benchmark MV3 SW |
 | **S5** | Blind index cho search/tag (gộp **N15** từ `ROADMAP-N.md`) | S3 |

@@ -227,17 +227,34 @@ check('W2 service tồn tại: from(user_crypto) + auth.getUser + onConflict use
     !svc.includes('service_role'),
   svc === null ? 'file chưa tồn tại' : 'thiếu pattern bắt buộc hoặc dính service_role')
 
-console.log('\nW3 — chặn over-reach: Phase 2a KHÔNG store nào được wire')
-const storeDir = path.join(ROOT, 'src', 'stores')
-const wired = fs
-  .readdirSync(storeDir)
-  .filter((f) => f.endsWith('.ts'))
-  .filter((f) => {
-    const s = fs.readFileSync(path.join(storeDir, f), 'utf8')
-    return s.includes('accountCrypto') || s.includes('userCrypto.service')
-  })
-check('W3 src/stores/ không import accountCrypto / userCrypto.service (UI là S2C)',
-  wired.length === 0, `store bị wire sớm: ${JSON.stringify(wired)}`)
+console.log('\nW3 — ranh giới tầng: util crypto thuần + service có OWNER duy nhất')
+// Lịch sử (2026-07-20): bản S2B gốc assert "Phase 2a chưa store nào được wire". S2C1 lấy chính
+// wiring làm deliverable nên ràng buộc đó được GỠ CÓ CHỦ ĐÍCH (ghi trong spec S2C1, thay đổi
+// 10/10) — KHÔNG phải nới test cho dễ xanh. Bản thay thế đúng ở CẢ trước lẫn sau S2C1 và vẫn
+// bắt được over-reach thật: crypto util không được kéo store/service; service chỉ có 1 owner.
+const acctUtilSrc = fs.readFileSync(ACCT_PATH, 'utf8')
+const utilPure = !acctUtilSrc.includes('@/stores/') && !acctUtilSrc.includes('@/services/')
+
+function walkSrc(dir) {
+  const out = []
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name)
+    if (e.isDirectory()) out.push(...walkSrc(p))
+    else if (/\.(ts|vue)$/.test(e.name)) out.push(p)
+  }
+  return out
+}
+const OWNER = ['src/services/userCrypto.service.ts', 'src/stores/accountCrypto.ts']
+const strayImporters = walkSrc(path.join(ROOT, 'src'))
+  .filter((p) => fs.readFileSync(p, 'utf8').includes('userCrypto.service'))
+  .map((p) => path.relative(ROOT, p).replace(/\\/g, '/'))
+  .filter((p) => !OWNER.includes(p))
+
+check(
+  'W3 accountCrypto.ts thuần util (không import store/service) + userCrypto.service chỉ do stores/accountCrypto.ts dùng',
+  utilPure && strayImporters.length === 0,
+  `utilPure=${utilPure} importer lạ=${JSON.stringify(strayImporters)} — service phải có đúng 1 owner`,
+)
 
 // ═════════════════════════════════════════════════════════════════════════════
 console.log('\n──────────────────────────────────────────────')
