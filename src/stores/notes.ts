@@ -20,6 +20,7 @@ import { isRowDirty, mergeFreshWithDirtyLocal, mergeSnapshotWithStored } from '@
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 import { safeCacheWrite } from '@/utils/cacheWrite'
+import { sealSecureRowsForCache } from '@/utils/secureCache'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -112,10 +113,25 @@ export const useNotesStore = defineStore('notes', () => {
       : []
     notes.value = mergeSnapshotWithStored(notes.value, diskNotes, isRowDirty)
     bodies.value = mergeSnapshotWithStored(bodies.value, diskBodies, isRowDirty)
+
+    // S1: merge có thể kéo row CIPHERTEXT từ đĩa vào RAM (context khác vừa ghi bản niêm phong)
+    // → decrypt lại cho folder đang unlock, nếu không UI hiện chuỗi `retronote:1:…`.
+    const secure = useSecureFolderStore()
+    await secure.decryptLoadedSecureRows()
+
+    // S1: RAM giữ plaintext để hiển thị; ĐĨA chỉ được nhận envelope.
+    const folders = useFoldersStore()
+    const sealed = await sealSecureRowsForCache({
+      notes: notes.value,
+      bodies: bodies.value,
+      isSecureFolder: folders.isSecureFolder,
+      getKey: secure.getKey,
+    })
+
     await safeCacheWrite(
       {
-        [NOTES_CACHE_KEY]: notes.value,
-        [NOTE_BODIES_CACHE_KEY]: bodies.value,
+        [NOTES_CACHE_KEY]: sealed.notes,
+        [NOTE_BODIES_CACHE_KEY]: sealed.bodies,
       },
       (e) => {
         loadError.value = e instanceof Error ? e.message : 'Cache write failed'
@@ -142,6 +158,9 @@ export const useNotesStore = defineStore('notes', () => {
     loadError.value = null
     try {
       await hydrateFromCache()
+      // S1: đĩa chỉ còn envelope — decrypt-overlay ngay cho folder đang unlock.
+      // No-op khi chưa unlock (sessionKeys rỗng). PHẢI đứng TRƯỚC early-return offline.
+      await useSecureFolderStore().decryptLoadedSecureRows()
       if (!isOnline()) return
       const [freshNotes, freshBodies] = await withTimeout(
         Promise.all([notesService.getAll(), noteBodiesService.getAll()]),
@@ -152,7 +171,6 @@ export const useNotesStore = defineStore('notes', () => {
       notes.value = mergeFreshWithDirtyLocal(freshNotes, notes.value, isRowDirty)
       bodies.value = mergeFreshWithDirtyLocal(freshBodies, bodies.value, isRowDirty)
       await persistCache()
-      await useSecureFolderStore().refreshDecryptedNotesAfterLoad()
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load notes failed'
       const cached = await chrome.storage.local.get([
@@ -167,6 +185,8 @@ export const useNotesStore = defineStore('notes', () => {
       if (Array.isArray(rawBodies) && rawBodies.length > 0) {
         bodies.value = rawBodies
       }
+      // S1: cache-reload trong catch cũng nạp envelope từ đĩa → overlay lại.
+      await useSecureFolderStore().decryptLoadedSecureRows()
     }
   }
 

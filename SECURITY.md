@@ -57,3 +57,17 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
 2. Tắt mạng (DevTools → Network → Offline hoặc tắt Wi‑Fi), sửa note và lưu (Ctrl+S) — trạng thái footer: **UNSAVED** khi đang gõ, sau lưu cache local vẫn nhất quán.
 3. Bật lại mạng, bấm **[ SYNC ]** — kỳ vọng **SYNCING...** rồi **SYNCED**, note khớp trên Supabase (hoặc tab khác sau refresh).
 4. (Tuỳ chọn) Đợi alarm ~24h hoặc tạm đổi `periodInMinutes` trong dev để kiểm tra SW — kỳ vọng không crash và cache cập nhật khi online.
+
+## Secure folder — invariant lưu trữ (S1)
+
+- `chrome.storage.local` **không bao giờ** chứa plaintext của note thuộc secure folder.
+  State in-memory giữ plaintext để hiển thị sau khi unlock; `persistCache()` niêm phong lại
+  (`sealSecureRowsForCache`) trước mỗi lần ghi đĩa.
+- CryptoKey chỉ sống trong RAM (Pinia) và chết khi popup đóng — cache trên đĩa phải ở dạng
+  envelope để invariant đó có ý nghĩa.
+- Đường push lên cloud đã được guard riêng tại `sync.service.ts:114-123` (không push plaintext
+  khi thiếu key). Hai lớp này độc lập, đừng gộp.
+- Plaintext tồn dư từ bản ≤ 1.3.3 (ghi trước khi có invariant) bị ghi đè ở lần `persistCache()`
+  thành công đầu tiên sau khi cập nhật — mở app online một lần là đủ. Giới hạn nền tảng:
+  `chrome.storage.local` chạy trên LevelDB — giá trị đã bị đè có thể còn nằm trong file `.ldb`
+  cũ tới khi compaction; extension API không có cách xóa forensic.

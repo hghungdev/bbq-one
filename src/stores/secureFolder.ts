@@ -90,7 +90,11 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     setKey(folderId, key)
   }
 
-  async function refreshDecryptedNotesAfterLoad(): Promise<void> {
+  /**
+   * S1: decrypt in-place mọi row envelope thuộc folder ĐANG unlock.
+   * KHÔNG ghi cache — `persistCache()` gọi hàm này sau merge, gọi ngược lại sẽ thành đệ quy.
+   */
+  async function decryptLoadedSecureRows(): Promise<void> {
     if (sessionKeys.value.size === 0) return
     const notes = useNotesStore()
     const folders = useFoldersStore()
@@ -121,7 +125,6 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
         notes.bodies[j] = { ...b, label, content }
       }
     }
-    await notes.persistCache()
   }
 
   async function unlockFolder(folderId: string, password: string): Promise<void> {
@@ -327,6 +330,6 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     lockAll,
     enableSecureFolder,
     changePassphrase,
-    refreshDecryptedNotesAfterLoad,
+    decryptLoadedSecureRows,
   }
 })
