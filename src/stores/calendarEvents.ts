@@ -4,6 +4,7 @@ import { CALENDAR_EVENTS_CACHE_KEY, CALENDAR_MAX_EVENTS_PER_DAY } from '@/consta
 import { calendarEventsService } from '@/services/calendarEvents.service'
 import { localCalendarEventsService } from '@/services/localFirst/localCalendarEvents.service'
 import { normalizeLocalDateKey } from '@/utils/calendarDate'
+import { recurrenceDates, type RecurrenceFreq } from '@/utils/calendarRecurrence'
 import type {
   CalendarEvent,
   CalendarEventCreateInput,
@@ -162,6 +163,35 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     return row
   }
 
+  /**
+   * U3: tạo sự kiện lặp lại = tạo sẵn từng lần lặp qua createEvent (offline / local-first như cũ).
+   * Ngày đã đủ CALENDAR_MAX_EVENTS_PER_DAY → bỏ qua, báo lại trong `skipped`. Lỗi khác → dừng và
+   * ném như tạo đơn lẻ (các lần đã tạo giữ nguyên).
+   */
+  async function createRecurringEvents(
+    input: CalendarEventCreateInput,
+    rule: { freq: RecurrenceFreq; count: number },
+  ): Promise<{ created: CalendarEvent[]; skipped: string[] }> {
+    const created: CalendarEvent[] = []
+    const skipped: string[] = []
+    for (const dateKey of recurrenceDates(input.event_date, rule.freq, rule.count)) {
+      if (eventsForDate(dateKey).length >= CALENDAR_MAX_EVENTS_PER_DAY) {
+        skipped.push(dateKey)
+        continue
+      }
+      try {
+        created.push(await createEvent({ ...input, event_date: dateKey }))
+      } catch (e) {
+        if (e instanceof Error && e.message === 'MAX_EVENTS_PER_DAY') {
+          skipped.push(dateKey)
+          continue
+        }
+        throw e
+      }
+    }
+    return { created, skipped }
+  }
+
   async function updateEvent(id: string, updates: CalendarEventUpdateInput): Promise<void> {
     const idx = events.value.findIndex((e) => e.id === id)
     if (idx < 0) return
@@ -300,6 +330,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     hydrateFromCache,
     persistCache,
     createEvent,
+    createRecurringEvents,
     updateEvent,
     deleteEvent,
     toggleDone,

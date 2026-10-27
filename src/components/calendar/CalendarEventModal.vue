@@ -10,8 +10,15 @@ import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import type { CalendarEvent } from '@/types/calendar'
-import { formatCalendarBannerDate, isPastLocalDay } from '@/utils/calendarDate'
+import type { I18nKey } from '@/i18n/en'
+import { formatCalendarBannerDate, isPastLocalDay, parseLocalDate } from '@/utils/calendarDate'
 import { calendarEventToneClass } from '@/utils/calendarEventTone'
+import {
+  RECURRENCE_DEFAULT_COUNT,
+  RECURRENCE_MAX_COUNT,
+  recurrenceDates,
+  type RecurrenceFreq,
+} from '@/utils/calendarRecurrence'
 
 const store = useCalendarEventsStore()
 const langStore = useLangStore()
@@ -25,6 +32,20 @@ const validationError = ref<string | null>(null)
 const busy = ref(false)
 const confirmOpen = ref(false)
 const pendingDeleteId = ref<string | null>(null)
+
+/** U3: lặp lại — chỉ khi tạo mới. Mỗi lần lặp là một sự kiện riêng. */
+const REPEAT_OPTIONS: RecurrenceFreq[] = ['none', 'weekly', 'monthly', 'yearly']
+const REPEAT_LABEL: Record<RecurrenceFreq, I18nKey> = {
+  none: 'calendar.repeat.none',
+  weekly: 'calendar.repeat.weekly',
+  monthly: 'calendar.repeat.monthly',
+  yearly: 'calendar.repeat.yearly',
+}
+const PREVIEW_DATES_SHOWN = 5
+const repeatFreq = ref<RecurrenceFreq>('none')
+const repeatCount = ref(RECURRENCE_DEFAULT_COUNT.weekly)
+/** Báo sau khi lưu (vd ngày bị bỏ qua vì đã đủ) — sống qua cancelForm. */
+const resultInfo = ref<string | null>(null)
 
 const activeDateKey = computed(() => store.activeDate ?? '')
 
@@ -42,6 +63,53 @@ const dayEvents = computed(() => {
 const dayIsFull = computed(() => dayEvents.value.length >= CALENDAR_MAX_EVENTS_PER_DAY)
 
 const showForm = computed(() => isCreating.value || store.activeEventId !== null)
+
+const repeatMax = computed(() =>
+  repeatFreq.value === 'none' ? 1 : RECURRENCE_MAX_COUNT[repeatFreq.value],
+)
+
+const repeatDates = computed(() => {
+  if (repeatFreq.value === 'none' || !activeDateKey.value) return []
+  return recurrenceDates(activeDateKey.value, repeatFreq.value, repeatCount.value)
+})
+
+const repeatFullDays = computed(() =>
+  repeatDates.value.filter((k) => store.eventsForDate(k).length >= CALENDAR_MAX_EVENTS_PER_DAY),
+)
+
+/** Ngày ngắn cho xem trước — chỉ ghi năm khi khác năm của ngày bắt đầu. */
+function shortDate(key: string): string {
+  const d = parseLocalDate(key)
+  const withYear = d.getFullYear() !== parseLocalDate(activeDateKey.value).getFullYear()
+  return lang.value === 'vi'
+    ? d.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        ...(withYear ? { year: 'numeric' as const } : {}),
+      })
+    : d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        ...(withYear ? { year: 'numeric' as const } : {}),
+      })
+}
+
+const repeatPreview = computed(() => {
+  const dates = repeatDates.value
+  if (dates.length === 0) return ''
+  const shown = dates.slice(0, PREVIEW_DATES_SHOWN).map(shortDate).join(', ')
+  const tail = dates.length > PREVIEW_DATES_SHOWN ? ` … → ${shortDate(dates[dates.length - 1])}` : ''
+  return t('calendar.repeat.preview', { n: dates.length, dates: shown + tail })
+})
+
+watch(repeatFreq, (f) => {
+  if (f !== 'none') repeatCount.value = RECURRENCE_DEFAULT_COUNT[f]
+})
+
+function onRepeatCountChange(): void {
+  const n = Math.floor(Number(repeatCount.value))
+  repeatCount.value = Math.min(Math.max(Number.isFinite(n) ? n : 2, 2), repeatMax.value)
+}
 
 const modalHeading = computed(() => {
   if (showForm.value) {
@@ -74,6 +142,7 @@ watch(
   () => store.activeDate,
   () => {
     validationError.value = null
+    resultInfo.value = null
     isCreating.value = false
   },
 )
@@ -103,12 +172,15 @@ function startCreate(): void {
   isCreating.value = true
   formTitle.value = ''
   validationError.value = null
+  resultInfo.value = null
+  repeatFreq.value = 'none'
 }
 
 function startEdit(ev: CalendarEvent): void {
   store.openModalForEdit(ev.id)
   isCreating.value = false
   validationError.value = null
+  resultInfo.value = null
 }
 
 function cancelForm(): void {
@@ -170,11 +242,24 @@ async function saveForm(): Promise<void> {
     const title = formTitle.value.trim()
     if (isCreating.value) {
       if (isPastActiveDate.value || dayIsFull.value) return
-      await store.createEvent({
-        event_date: activeDateKey.value,
-        title,
-        description: '',
-      })
+      if (repeatFreq.value === 'none') {
+        await store.createEvent({
+          event_date: activeDateKey.value,
+          title,
+          description: '',
+        })
+      } else {
+        const { skipped } = await store.createRecurringEvents(
+          { event_date: activeDateKey.value, title, description: '' },
+          { freq: repeatFreq.value, count: repeatCount.value },
+        )
+        if (skipped.length > 0) {
+          resultInfo.value = t('calendar.repeat.resultSkipped', {
+            dates: skipped.map(shortDate).join(', '),
+            max: CALENDAR_MAX_EVENTS_PER_DAY,
+          })
+        }
+      }
       cancelForm()
     } else if (store.activeEventId) {
       await store.updateEvent(store.activeEventId, { title })
@@ -229,6 +314,9 @@ async function saveForm(): Promise<void> {
 
         <p v-if="validationError" class="cal-modal__error" role="alert">
           {{ validationError }}
+        </p>
+        <p v-if="resultInfo && !showForm" class="cal-modal__past-hint" role="status">
+          {{ resultInfo }}
         </p>
 
         <template v-if="!showForm">
@@ -296,6 +384,42 @@ async function saveForm(): Promise<void> {
               @update:model-value="formTitle = $event"
             />
           </label>
+          <div v-if="isCreating" class="cal-modal__field">
+            <label class="cal-modal__label" :for="`${headingId}-repeat`">
+              {{ t('calendar.modal.field.repeat') }}
+            </label>
+            <div class="cal-modal__repeat-row">
+              <select
+                :id="`${headingId}-repeat`"
+                v-model="repeatFreq"
+                class="cal-modal__select"
+                :disabled="busy"
+              >
+                <option v-for="f in REPEAT_OPTIONS" :key="f" :value="f">
+                  {{ t(REPEAT_LABEL[f]) }}
+                </option>
+              </select>
+              <template v-if="repeatFreq !== 'none'">
+                <label class="cal-modal__label" :for="`${headingId}-repeat-count`">
+                  {{ t('calendar.repeat.count') }}
+                </label>
+                <input
+                  :id="`${headingId}-repeat-count`"
+                  v-model.number="repeatCount"
+                  type="number"
+                  class="cal-modal__count"
+                  :min="2"
+                  :max="repeatMax"
+                  :disabled="busy"
+                  @change="onRepeatCountChange"
+                />
+              </template>
+            </div>
+            <p v-if="repeatPreview" class="cal-modal__repeat-preview">{{ repeatPreview }}</p>
+            <p v-if="repeatFullDays.length > 0" class="cal-modal__repeat-warn">
+              {{ t('calendar.repeat.previewSkip', { n: repeatFullDays.length, max: CALENDAR_MAX_EVENTS_PER_DAY }) }}
+            </p>
+          </div>
           <div class="cal-modal__form-actions">
             <RetroButton variant="sm" type="button" :disabled="busy" @click="cancelForm">
               {{ t('calendar.modal.btn.cancel') }}
@@ -502,6 +626,51 @@ async function saveForm(): Promise<void> {
 .cal-modal__label {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
+}
+
+.cal-modal__repeat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-modal__select,
+.cal-modal__count {
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-pill);
+}
+
+.cal-modal__select {
+  flex: 1 1 140px;
+  cursor: pointer;
+}
+
+.cal-modal__count {
+  width: 72px;
+}
+
+.cal-modal__select:focus-visible,
+.cal-modal__count:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.cal-modal__repeat-preview,
+.cal-modal__repeat-warn {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.cal-modal__repeat-warn {
+  color: var(--danger);
 }
 
 .cal-modal__form-actions {
