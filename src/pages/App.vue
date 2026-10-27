@@ -53,7 +53,11 @@
     type ConflictBackupEntry,
   } from '@/utils/syncConflict'
   import { decryptField, isEncryptedEnvelope, parseEnvelopeV2 } from '@/utils/secureCrypto'
-  import { ACCOUNT_DEK_SESSION_KEY, clearAccountSession } from '@/utils/accountSession'
+  import {
+    ACCOUNT_DEK_SESSION_KEY,
+    ACCOUNT_STATUS_SESSION_KEY,
+    clearAccountSession,
+  } from '@/utils/accountSession'
   import {
     clearNoteDraft,
     readNoteDraft,
@@ -89,11 +93,15 @@
   let stopAutoSyncListener: (() => void) | null = null
   let stopNetworkListener: (() => void) | null = null
 
+  /** S2C1.5: trạng thái mã hóa cũ hơn mức này → hỏi lại server khi refresh. */
+  const ACCOUNT_STATUS_MAX_AGE_MS = 5 * 60_000
+
   async function refreshStoresFromNetwork(): Promise<void> {
     if (!isOnline()) return
-    // Mount lúc offline thì chưa biết account có mã hóa không (hoặc chỉ biết qua bản session) —
-    // hỏi lại server trước khi push.
-    if (!account.fetched || account.stale) await refreshAccountCryptoStatus()
+    // Mount lúc offline thì chưa biết account có mã hóa không (hoặc chỉ biết qua bản session), hoặc
+    // trạng thái đã cũ (bật mã hóa ở máy khác) — hỏi lại server trước khi push.
+    const statusOld = account.statusAgeMs() > ACCOUNT_STATUS_MAX_AGE_MS
+    if (!account.fetched || account.stale || statusOld) await refreshAccountCryptoStatus()
     // Chốt delete còn treo (offline-delete đã hết undo window) trước khi pull — tránh row hiện lại tạm thời.
     await flushOrphanedPendingDeleteCommits('respect-expiry')
     // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
@@ -205,11 +213,13 @@
       calendarEvents.hydrateFromCache(),
     ])
     dataReady.value = true
-    await maybeRestoreNoteDraft()
     chrome.storage.onChanged.addListener(onAccountSessionChanged)
     // Không có ai đăng nhập → không được còn trạng thái/DEK account trong session.
     if (auth.initialized && !isAuthenticated.value) await clearAccountSession()
     await refreshAccountCryptoStatus()
+    // S2C1.5: draft là plaintext — chỉ áp SAU khi biết account có mã hóa không (và đã restore /
+    // mở khóa nếu có). Còn khóa → updateBody từ chối, draft giữ nguyên, áp lại sau khi mở khóa.
+    await maybeRestoreNoteDraft()
     void refreshStoresFromNetwork().then(() => {
       void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
@@ -237,9 +247,14 @@
       // Login qua LoginModal không remount trang — phải tự nạp trạng thái mã hóa của account mới.
       void refreshAccountCryptoStatus()
     } else {
-      // Session mất ngoài onLogout (token thu hồi, logout ở context khác).
-      account.lock()
-      account.clearStatus()
+      // Session mất ngoài onLogout (token thu hồi, logout ở máy khác / context khác).
+      // S2C1.5: khóa ĐÚNG quy trình (seal + nạp lại RAM) trước khi quên trạng thái — chỉ bỏ key
+      // thì RAM còn plaintext và persist kế tiếp (local mode) ghi rõ xuống đĩa.
+      void (async () => {
+        await lockAccountNow({ clearSession: false })
+        account.lock()
+        account.clearStatus()
+      })()
     }
   })
 
@@ -275,7 +290,14 @@
     changes: Record<string, chrome.storage.StorageChange>,
     area: string,
   ): void {
-    if (area !== 'session' || !(ACCOUNT_DEK_SESSION_KEY in changes)) return
+    if (area !== 'session') return
+    // S2C1.5: bật / tắt mã hóa ở context khác (popup ↔ tab) → hỏi lại ngay, đừng đợi tới lần
+    // refresh sau mà đẩy plaintext. Chỉ phản ứng khi khác trạng thái đang giữ (không lặp vòng).
+    if (ACCOUNT_STATUS_SESSION_KEY in changes) {
+      const next = changes[ACCOUNT_STATUS_SESSION_KEY].newValue as { row?: unknown } | undefined
+      if (next && !!next.row !== account.isEnabled()) void refreshAccountCryptoStatus()
+    }
+    if (!(ACCOUNT_DEK_SESSION_KEY in changes)) return
     const removed = changes[ACCOUNT_DEK_SESSION_KEY].newValue === undefined
     if (removed) {
       if (account.isUnlocked()) void lockAccountNow({ clearSession: false })
@@ -298,12 +320,16 @@
     }
     notes.selectNote(null)
     await account.lockNow(opts)
+    // S2C1.5: lockNow nạp lại RAM từ đĩa — secure folder đang mở phải overlay lại (v1 key riêng).
+    await secure.decryptLoadedSecureRows()
   }
 
   /** Anonymous: chưa đăng nhập */
   const isAnonymous = computed(() => !isAuthenticated.value)
 
   async function onLogout(): Promise<void> {
+    // S2C1.5: seal + nạp lại RAM khi còn key, rồi mới quên trạng thái (xem watch(isAuthenticated)).
+    await lockAccountNow({ clearSession: false })
     secure.lockAll()
     account.lock()
     account.clearStatus()
@@ -318,6 +344,8 @@
 
   async function onAccountUnlocked(): Promise<void> {
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+    // S2C1.5: draft bị từ chối lúc còn khóa → giờ áp được (mã hóa v2).
+    await maybeRestoreNoteDraft()
     // S2C1.4: row plaintext bị giữ lại lúc khóa → giờ có key, đẩy lên dạng v2.
     scheduleAutoSync('account-unlocked')
     // Backup đang hiện dạng "đã mã hóa" → giờ có key, mở lại từ storage.

@@ -45,14 +45,21 @@ export async function fetchUserCryptoRow(): Promise<UserCryptoRow | null> {
   return (await fetchUserCryptoStatus())?.row ?? null
 }
 
-export async function upsertUserCryptoRow(row: UserCryptoRow): Promise<void> {
+/**
+ * `mustNotExist` (S2C1.5 — ceremony bật mã hóa): INSERT, row đã có → lỗi "Already enabled" thay
+ * vì đè `wrapped_dek` cũ (đè = mọi ghi chú v2 không giải mã được nữa). Re-wrap (recovery) upsert.
+ */
+export async function upsertUserCryptoRow(
+  row: UserCryptoRow,
+  opts: { mustNotExist?: boolean } = {},
+): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
-  const { error } = await supabase.from('user_crypto').upsert(
-    { user_id: user.id, ...row },
-    { onConflict: 'user_id' },
-  )
-  if (error) throw new Error(error.message)
+  const payload = { user_id: user.id, ...row }
+  const { error } = opts.mustNotExist
+    ? await supabase.from('user_crypto').insert(payload)
+    : await supabase.from('user_crypto').upsert(payload, { onConflict: 'user_id' })
+  if (error) throw new Error(error.code === '23505' ? 'Already enabled' : error.message)
 }

@@ -74,7 +74,9 @@ export const useSyncStore = defineStore('sync', () => {
       const account = useAccountCryptoStore()
       // S2C1.4: chưa biết account có mã hóa không (hoặc chỉ biết qua bản session) → hỏi lại;
       // vẫn không biết → fail-closed: bỏ qua row plaintext thay vì đẩy dạng rõ lên server.
-      if (!account.fetched || account.stale) await account.refreshStatus().catch(() => {})
+      if (!account.fetched || account.stale || account.statusAgeMs() > 60_000) {
+        await account.refreshStatus().catch(() => {})
+      }
       await syncService.syncDirtyNotesFromList(
         notes.notes,
         notes.bodies,

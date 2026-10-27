@@ -278,6 +278,15 @@ const notesMock = {
   hydrateFromCache: async () => {
     notesLog.push(`hydrate(unlocked=${storeCtx?.isUnlocked()})`)
   },
+  // S2C1.5: lockNow đi qua lượt độc quyền của notes store — mock giữ đúng trình tự thật.
+  sealThenReloadExclusive: async (dropKey) => {
+    try {
+      await notesMock.persistCache()
+    } finally {
+      await dropKey()
+      await notesMock.hydrateFromCache()
+    }
+  },
 }
 
 let Store = null

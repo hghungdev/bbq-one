@@ -10,6 +10,7 @@ import {
 import { useFoldersStore } from '@/stores/folders'
 import { useSecureFolderStore } from '@/stores/secureFolder'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
+import { useAuthStore } from '@/stores/auth'
 import type { Note, NoteBody } from '@/types'
 import { decryptField, encryptField, encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
 import { withTimeout } from '@/utils/withTimeout'
@@ -28,6 +29,11 @@ const NETWORK_LOAD_MS = 12_000
 /** S2C1: row NGOÀI secure folder + account bật → phải có K_content mới được mutate. */
 function requireAccountKey(): { key: CryptoKey; kid: string } | null {
   const account = useAccountCryptoStore()
+  // S2C1.5: đã đăng nhập mà CHƯA biết account có mã hóa không (vd vừa mở popup, đang hỏi server)
+  // → không cho ghi. Ghi lúc này = plaintext lên server / đĩa nếu hóa ra account đã bật.
+  if (!account.fetched && useAuthStore().isAuthenticated) {
+    throw new Error('Account encryption status not checked yet')
+  }
   if (!account.isEnabled()) return null
   const key = account.getContentKey()
   if (!key) throw new Error('Account locked')
@@ -113,7 +119,23 @@ export const useNotesStore = defineStore('notes', () => {
     filterTag.value = tag
   }
 
-  async function persistCache(): Promise<void> {
+  /**
+   * S2C1.5: persistCache chạy TUẦN TỰ. lockNow (seal → bỏ key → nạp lại RAM từ đĩa) đi qua cùng
+   * hàng đợi (sealThenReloadExclusive) — không lượt persist nào chen giữa để ghi RAM plaintext
+   * xuống đĩa lúc key vừa bị bỏ.
+   */
+  let persistQueue: Promise<unknown> = Promise.resolve()
+  function runPersistExclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const run = persistQueue.then(fn, fn)
+    persistQueue = run.catch(() => {})
+    return run
+  }
+
+  /** `alreadyExclusive`: CHỈ sealThenReloadExclusive (đang giữ hàng đợi) — tránh tự chờ chính mình. */
+  async function persistCache(alreadyExclusive = false): Promise<void> {
+    if (alreadyExclusive !== true) {
+      return runPersistExclusive(() => persistCache(true))
+    }
     // N5: đọc-merge-ghi — không đè mất edit mà context khác (popup/tab/SW) vừa persist.
     const stored = await chrome.storage.local.get([NOTES_CACHE_KEY, NOTE_BODIES_CACHE_KEY])
     const diskNotes = Array.isArray(stored[NOTES_CACHE_KEY])
@@ -130,6 +152,9 @@ export const useNotesStore = defineStore('notes', () => {
     const secure = useSecureFolderStore()
     await secure.decryptLoadedSecureRows()
     const account = useAccountCryptoStore()
+    // S2C1.5: chụp key MỘT lần cho cả overlay lẫn seal — key bị bỏ giữa chừng (logout) thì vẫn
+    // seal bằng chính key đã dùng để giải mã, không để row vừa giải mã đi xuống đĩa dạng rõ.
+    const accountKey = account.getContentKey()
     await account.decryptLoadedAccountRows()
 
     // S1: RAM giữ plaintext để hiển thị; ĐĨA chỉ được nhận envelope.
@@ -139,9 +164,7 @@ export const useNotesStore = defineStore('notes', () => {
       bodies: bodies.value,
       isSecureFolder: folders.isSecureFolder,
       getKey: secure.getKey,
-      account: account.isUnlocked()
-        ? { key: account.getContentKey()!, kid: account.getDekId() }
-        : null,
+      account: accountKey ? { key: accountKey, kid: account.getDekId() } : null,
     })
 
     await safeCacheWrite(
@@ -153,6 +176,22 @@ export const useNotesStore = defineStore('notes', () => {
         loadError.value = e instanceof Error ? e.message : 'Cache write failed'
       },
     )
+  }
+
+  /**
+   * S2C1.5 — lockNow: trong MỘT lượt độc quyền với persistCache: seal đĩa bằng key còn sống →
+   * `dropKey()` → nạp lại RAM từ đĩa (chỉ còn envelope). `finally`: persist lỗi cũng không được
+   * chặn việc khóa.
+   */
+  async function sealThenReloadExclusive(dropKey: () => void | Promise<void>): Promise<void> {
+    await runPersistExclusive(async () => {
+      try {
+        await persistCache(true)
+      } finally {
+        await dropKey()
+        await hydrateFromCache()
+      }
+    })
   }
 
   async function hydrateFromCache(): Promise<void> {
@@ -589,6 +628,27 @@ export const useNotesStore = defineStore('notes', () => {
     const noteBodies = bodies.value
       .map((body, index) => ({ body: { ...body }, index }))
       .filter(({ body }) => body.note_id === id)
+    const account = useAccountCryptoStore()
+    account.markActivity()
+    // S2C1.5: Undo / commit-thất-bại có thể chạy SAU khi đã khóa (Khóa ngay / tự khóa trong 5 s)
+    // — giữ thêm bản đã seal; lúc khóa RAM (rồi đĩa) chỉ được nhận envelope.
+    const accountKey = account.getContentKey()
+    const sealedSnap = await sealSecureRowsForCache({
+      notes: [note],
+      bodies: noteBodies.map(({ body }) => body),
+      isSecureFolder: folders.isSecureFolder,
+      getKey: useSecureFolderStore().getKey,
+      account: accountKey ? { key: accountKey, kid: account.getDekId() } : null,
+    })
+    const restoringWhileLocked = (): boolean => account.isEnabled() && !account.isUnlocked()
+    const snapshotForRestore = (): { n: Note; bs: { body: NoteBody; index: number }[] } => {
+      if (!restoringWhileLocked()) return { n: note, bs: noteBodies }
+      const sealedBodies = new Map(sealedSnap.bodies.map((b) => [b.id, b]))
+      return {
+        n: sealedSnap.notes[0] ?? note,
+        bs: noteBodies.map(({ body, index }) => ({ body: sealedBodies.get(body.id) ?? body, index })),
+      }
+    }
     const searchResultIndex = searchResults.value.findIndex((n) => n.id === id)
     const wasInSearchResults = searchResultIndex !== -1
     const prevSearchQuery = searchQuery.value
@@ -613,15 +673,19 @@ export const useNotesStore = defineStore('notes', () => {
         folder: folder?.name ?? t('undo.noFolder'),
       }),
       undo: async () => {
-        restoreNoteSnapshot(note, noteIndex, noteBodies)
+        const { n, bs } = snapshotForRestore()
+        restoreNoteSnapshot(n, noteIndex, bs)
         if (wasInSearchResults && searchQuery.value === prevSearchQuery) {
-          restoreSearchResultSnapshot(note, searchResultIndex)
+          restoreSearchResultSnapshot(n, searchResultIndex)
         }
-        if (activeNoteId.value === null && prevActiveNoteId === id) {
-          activeNoteId.value = prevActiveNoteId
-        }
-        if (activeBodyId.value === null && prevActiveBodyId) {
-          activeBodyId.value = prevActiveBodyId
+        // Đã khóa thì không mở lại ghi chú trong editor (chỉ còn envelope).
+        if (!restoringWhileLocked()) {
+          if (activeNoteId.value === null && prevActiveNoteId === id) {
+            activeNoteId.value = prevActiveNoteId
+          }
+          if (activeBodyId.value === null && prevActiveBodyId) {
+            activeBodyId.value = prevActiveBodyId
+          }
         }
         await persistCache()
       },
@@ -633,15 +697,18 @@ export const useNotesStore = defineStore('notes', () => {
             loadError.value = e instanceof Error ? e.message : 'Delete note failed'
             throw e
           }
-          restoreNoteSnapshot(note, noteIndex, noteBodies)
+          const { n, bs } = snapshotForRestore()
+          restoreNoteSnapshot(n, noteIndex, bs)
           if (wasInSearchResults && searchQuery.value === prevSearchQuery) {
-            restoreSearchResultSnapshot(note, searchResultIndex)
+            restoreSearchResultSnapshot(n, searchResultIndex)
           }
-          if (activeNoteId.value === null && prevActiveNoteId === id) {
-            activeNoteId.value = prevActiveNoteId
-          }
-          if (activeBodyId.value === null && prevActiveBodyId) {
-            activeBodyId.value = prevActiveBodyId
+          if (!restoringWhileLocked()) {
+            if (activeNoteId.value === null && prevActiveNoteId === id) {
+              activeNoteId.value = prevActiveNoteId
+            }
+            if (activeBodyId.value === null && prevActiveBodyId) {
+              activeBodyId.value = prevActiveBodyId
+            }
           }
           loadError.value = e instanceof Error ? e.message : 'Delete note failed'
           await persistCache()
@@ -756,5 +823,6 @@ export const useNotesStore = defineStore('notes', () => {
     selectBody,
     setDirty,
     persistCache,
+    sealThenReloadExclusive,
   }
 })

@@ -60,6 +60,10 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   /** Tăng mỗi lần clearStatus() — refreshStatus đang bay của session cũ không được ghi đè. */
   let statusEpoch = 0
   let lastActivityAt = 0
+  /** Lần cuối trạng thái được SERVER xác nhận (ms) — statusAgeMs. */
+  let fetchedAt = 0
+  /** Row không giải mã được (T4 / khác DEK) — chỉ log một lần mỗi row. */
+  const undecryptable = new Set<string>()
 
   function isEnabled(): boolean {
     return row.value !== null
@@ -85,22 +89,38 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
       const cached = await readAccountStatus()
       if (epoch !== statusEpoch) return
       if (!cached) throw e
-      applyStatus(cached.userId, cached.row)
+      if (!(await applyStatus(cached.userId, cached.row, epoch))) return
       stale.value = true
       return
     }
     if (epoch !== statusEpoch) return
-    applyStatus(next?.userId ?? null, next?.row ?? null)
+    if (!(await applyStatus(next?.userId ?? null, next?.row ?? null, epoch))) return
     stale.value = false
+    fetchedAt = Date.now()
     if (next) await writeAccountStatus(next.userId, next.row)
   }
 
-  function applyStatus(uid: string | null, r: UserCryptoRow | null): void {
-    // Key đang cầm thuộc account / DEK khác → bỏ, không mã hóa dữ liệu account này bằng DEK kia.
-    if (contentKey.value && (uid !== userId.value || r?.dek_id !== row.value?.dek_id)) lock()
+  /** false = clearStatus chen vào trong lúc khóa → bỏ kết quả. */
+  async function applyStatus(
+    uid: string | null,
+    r: UserCryptoRow | null,
+    epoch: number,
+  ): Promise<boolean> {
+    // Key đang cầm thuộc account / DEK khác → khóa ĐÚNG quy trình (seal + nạp lại RAM) rồi mới áp;
+    // chỉ bỏ key thì RAM còn plaintext, persist kế tiếp ghi rõ xuống đĩa (S2C1.5).
+    if (contentKey.value && (uid !== userId.value || r?.dek_id !== row.value?.dek_id)) {
+      await lockNow()
+      if (epoch !== statusEpoch) return false
+    }
     userId.value = uid
     row.value = r
     fetched.value = true
+    return true
+  }
+
+  /** S2C1.5: tuổi của trạng thái do server xác nhận; chưa biết / chỉ có bản session → Infinity. */
+  function statusAgeMs(): number {
+    return fetched.value && !stale.value ? Date.now() - fetchedAt : Infinity
   }
 
   /** Ghi status + DEK vào chrome.storage.session — chỉ khi biết user (refreshStatus đã chạy). */
@@ -118,6 +138,11 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     opts: EnableOptions = {},
   ): Promise<{ recoveryDisplay: string }> {
     if (row.value) throw new Error('Already enabled')
+    // S2C1.5: chưa xác nhận được với server là account CHƯA bật → không được tạo DEK mới (đè
+    // wrapped_dek cũ = mọi ghi chú v2 không giải mã được nữa).
+    if (!fetched.value || stale.value) {
+      throw new Error('Encryption status not confirmed — check your connection and try again')
+    }
     if (passphrase.length < 10) {
       throw new Error('Passphrase must be at least 10 characters')
     }
@@ -138,7 +163,8 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
       wrapped_dek_recovery: await wrapDek(dek, rkek, 'k1'),
       verifier: await makeVerifier(kek),
     }
-    await upsertUserCryptoRow(next)
+    // Insert-only: account đã có row (bật ở máy khác) → lỗi, KHÔNG đè.
+    await upsertUserCryptoRow(next, { mustNotExist: true })
     row.value = next
     dekBytes.value = dek
     contentKey.value = await deriveContentKey(dek)
@@ -205,9 +231,17 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     if (!r || !uid) return false
     const s = await readSessionDek()
     if (!s || s.userId !== uid || s.dekId !== r.dek_id) return false
+    const key = await deriveContentKey(s.dek)
+    // S2C1.5: context khác có thể vừa khóa (xóa DEK) trong lúc derive → đọc lại rồi mới gán. Phần
+    // gán chạy đồng bộ ngay sau await cuối — onChanged (khóa) không chen vào giữa được.
+    const again = await readSessionDek()
+    if (!again || again.userId !== uid || again.dekId !== r.dek_id || !sameBytes(again.dek, s.dek)) {
+      return false
+    }
+    if (contentKey.value) return true
     if (row.value !== r || userId.value !== uid) return false
     dekBytes.value = s.dek
-    contentKey.value = await deriveContentKey(s.dek)
+    contentKey.value = key
     markActivity()
     return true
   }
@@ -234,11 +268,12 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
    */
   async function lockNow(opts: { clearSession?: boolean } = {}): Promise<void> {
     if (!contentKey.value) return
-    const notes = useNotesStore()
-    await notes.persistCache()
-    lock()
-    if (opts.clearSession !== false) await clearSessionDek()
-    await notes.hydrateFromCache()
+    // S2C1.5: một lượt độc quyền với persistCache (không persist nào chen giữa); khóa trong
+    // `finally` — row hỏng / persist lỗi không được giữ account ở trạng thái mở khóa.
+    await useNotesStore().sealThenReloadExclusive(async () => {
+      lock()
+      if (opts.clearSession !== false) await clearSessionDek()
+    })
   }
 
   /**
@@ -252,6 +287,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     userId.value = null
     fetched.value = false
     stale.value = false
+    fetchedAt = 0
     unlockModalOpen.value = false
     // S2C1.3: bản session (status + DEK) dùng chung mọi context — xóa luôn.
     void clearAccountSession()
@@ -266,11 +302,24 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   async function decryptLoadedAccountRows(): Promise<void> {
     const key = contentKey.value
     if (!key) return
+    // S2C1.5: từng row một — row hỏng (T4) / khác DEK giữ nguyên envelope (UI che "đã mã hóa"),
+    // không được làm hỏng persistCache hay lockNow của cả kho.
+    const open = async (memoId: string, env: string): Promise<string> => {
+      try {
+        return await openSealedField(key, memoId, env)
+      } catch {
+        if (!undecryptable.has(memoId)) {
+          undecryptable.add(memoId)
+          console.warn('[BBQOne] Cannot decrypt', memoId, '— kept encrypted')
+        }
+        return env
+      }
+    }
     const notes = useNotesStore()
     for (let i = 0; i < notes.notes.length; i++) {
       const n = notes.notes[i]
       if (!parseEnvelopeV2(n.title)) continue
-      notes.notes[i] = { ...n, title: await openSealedField(key, sealMemoId.noteTitle(n.id), n.title) }
+      notes.notes[i] = { ...n, title: await open(sealMemoId.noteTitle(n.id), n.title) }
     }
     for (let j = 0; j < notes.bodies.length; j++) {
       const b = notes.bodies[j]
@@ -279,10 +328,8 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
       if (!labelV2 && !contentV2) continue
       notes.bodies[j] = {
         ...b,
-        label: labelV2 ? await openSealedField(key, sealMemoId.bodyLabel(b.id), b.label) : b.label,
-        content: contentV2
-          ? await openSealedField(key, sealMemoId.bodyContent(b.id), b.content)
-          : b.content,
+        label: labelV2 ? await open(sealMemoId.bodyLabel(b.id), b.label) : b.label,
+        content: contentV2 ? await open(sealMemoId.bodyContent(b.id), b.content) : b.content,
       }
     }
   }
@@ -290,6 +337,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   return {
     fetched,
     stale,
+    statusAgeMs,
     unlockModalOpen,
     isEnabled,
     isUnlocked,
@@ -307,6 +355,12 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     decryptLoadedAccountRows,
   }
 })
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+  return true
+}
 
 /** Dựng lại display từ bytes ceremony đã sinh trước (base32 8 nhóm 4). */
 function rebuildRecovery(bytes: Uint8Array): { display: string; bytes: Uint8Array } {

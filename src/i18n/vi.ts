@@ -174,6 +174,7 @@ export const vi: Record<I18nKey, string> = {
   'account.backToPassphrase': 'Quay lại passphrase',
   'account.lockedNote': 'Ghi chú được mã hóa · mở khóa để xem',
   'account.statusUnlocked': 'Đang mở khóa — tự khóa sau 30 phút không dùng hoặc khi đóng trình duyệt',
+  'account.statusUnknown': 'Chưa kiểm tra được trạng thái mã hóa với máy chủ — kiểm tra kết nối rồi mở lại Settings.',
   'account.lockNow': 'Khóa ngay',
   'account.statusLocked': 'Đang khóa',
   'account.recoveryRewrapHint':
@@ -202,7 +203,7 @@ export const vi: Record<I18nKey, string> = {
   'settings.languageDesc': 'Ngôn ngữ hiển thị giao diện ứng dụng.',
   'settings.timezone': 'MÚI GIỜ (UTC)',
   'settings.timezoneDesc':
-    'Đồng hồ trên header và ngày cập nhật folder/note. Mặc định UTC+0.',
+    'Múi giờ dùng cho ngày cập nhật folder/note. Mặc định UTC+0.',
   'settings.timezoneOffset': 'Lệch UTC',
   'settings.utcOffsetCurrent': 'Đang chọn: {label}',
   'settings.langEN': 'English (EN)',

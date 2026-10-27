@@ -87,6 +87,10 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   trên server) được cache trong `chrome.storage.session`, không cache xuống `chrome.storage.local`
   → mất mạng vẫn mở khóa được, còn người đọc được ổ đĩa không có gì để dò passphrase.
 - Conflict backup (`bbqone_conflict_backups`) lưu bản đã mã hóa (S2C1.2).
+- **Fail-closed (S2C1.5):** đã đăng nhập mà chưa biết account có bật mã hóa không → app không cho
+  ghi ghi chú (kể cả khôi phục draft) cho tới khi biết; mọi đường khóa (Khóa ngay, tự khóa, logout,
+  mất session) seal đĩa rồi nạp lại RAM trong một lượt độc quyền; chỉ bật mã hóa được khi server
+  xác nhận account chưa bật (insert-only — không bao giờ đè `wrapped_dek` đã có).
 - Quên passphrase: recovery key mở DEK và BẮT BUỘC đặt passphrase mới (re-wrap, 1 UPDATE);
   recovery key cũ vẫn hiệu lực cho tới khi regenerate (S2C2).
 - Trạng thái chuyển tiếp (tới khi backfill S2C2 xong): ghi chú cũ chưa từng sửa lại vẫn là

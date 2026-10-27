@@ -172,6 +172,7 @@ export const en = {
   'account.backToPassphrase': 'Back to passphrase',
   'account.lockedNote': 'Encrypted note · unlock to view',
   'account.statusUnlocked': 'Unlocked — locks after 30 minutes idle or when the browser closes',
+  'account.statusUnknown': 'Could not check encryption status with the server — check your connection and reopen Settings.',
   'account.lockNow': 'Lock now',
   'account.statusLocked': 'Locked',
   'account.recoveryRewrapHint':
@@ -200,7 +201,7 @@ export const en = {
   'settings.languageDesc': 'UI display language.',
   'settings.timezone': 'TIMEZONE (UTC)',
   'settings.timezoneDesc':
-    'App clock in the header and folder/note dates. Default is UTC+0.',
+    'Timezone used for folder/note dates. Default is UTC+0.',
   'settings.timezoneOffset': 'UTC offset',
   'settings.utcOffsetCurrent': 'Current: {label}',
   'settings.langEN': 'English (EN)',

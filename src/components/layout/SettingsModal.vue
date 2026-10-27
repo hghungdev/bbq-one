@@ -393,7 +393,14 @@ onUnmounted(() => {
           :title="t('account.settingsTitle')"
           :default-open="false"
         >
-          <template v-if="!accountCrypto.isEnabled()">
+          <!-- S2C1.5: chưa xác nhận với server → KHÔNG cho bật (có thể đè DEK đã có). -->
+          <p
+            v-if="!accountCrypto.isEnabled() && (!accountCrypto.fetched || accountCrypto.stale)"
+            class="settings-hint settings-hint--sub"
+          >
+            {{ t('account.statusUnknown') }}
+          </p>
+          <template v-else-if="!accountCrypto.isEnabled()">
             <p class="settings-hint settings-hint--sub">
               {{ t('account.setupIntro') }}
             </p>
