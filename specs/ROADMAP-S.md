@@ -23,6 +23,13 @@ bắt đầu S2).
 - **S2B** `S2B-user-crypto-dek-kek` — ✅ GREEN 19/19. Commit `d345c11`.
   Migration `015_user_crypto.sql` đã áp lên Supabase thật (Sir xác nhận 2026-07-20).
 
+## Fix sau S2C1
+
+- **S2C1.1** `S2C1.1-account-status-lifecycle` — re-check 2026-10-27: trạng thái encrypted-account
+  không theo session (logout giữ row → local mode bị `Account locked`; login qua LoginModal không
+  nạp row → ghi plaintext; offline coi như "chưa bật"; lỗi mạng làm sập `onMounted`). ✅ GREEN
+  15/15 (RED 8 trên `c2201db`). Còn 3 bước verify tay + **FLAG offline** chờ chọn hướng thiết kế.
+
 ## Chờ implement
 
 | Thứ tự | Spec | Nội dung | Test hiện tại |
