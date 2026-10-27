@@ -15,6 +15,7 @@ import CalendarMonthNav from '@/components/calendar/CalendarMonthNav.vue'
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue'
 import CalendarEventModal from '@/components/calendar/CalendarEventModal.vue'
 import CalendarSearchPanel from '@/components/calendar/CalendarSearchPanel.vue'
+import CalendarInlineSearch from '@/components/calendar/CalendarInlineSearch.vue'
 import type { CalendarEvent } from '@/types/calendar'
 
 const store = useCalendarEventsStore()
@@ -328,7 +329,11 @@ function jumpToEvent(ev: CalendarEvent): void {
       @prev="gotoPrev"
       @next="gotoNext"
       @today="gotoToday"
-    />
+    >
+      <template #actions>
+        <CalendarInlineSearch />
+      </template>
+    </CalendarMonthNav>
     <CalendarSearchPanel @pick="jumpToEvent" />
     <div class="calendar-tab__weekdays">
       <div v-for="w in weekdayLabels" :key="w" class="calendar-tab__weekday">{{ w }}</div>

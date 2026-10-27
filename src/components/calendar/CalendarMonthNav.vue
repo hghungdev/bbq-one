@@ -58,9 +58,13 @@ watch(
     >
       ▶
     </RetroButton>
-    <RetroButton variant="sm" type="button" class="cal-month-nav__today" @click="emit('today')">
-      {{ t('calendar.nav.today') }}
-    </RetroButton>
+    <div class="cal-month-nav__end">
+      <!-- U2: CalendarTab đặt ô tìm kiếm (CalendarInlineSearch) vào đây. -->
+      <slot name="actions" />
+      <RetroButton variant="sm" type="button" class="cal-month-nav__today" @click="emit('today')">
+        {{ t('calendar.nav.today') }}
+      </RetroButton>
+    </div>
   </div>
 </template>
 
@@ -154,8 +158,15 @@ watch(
   border-radius: var(--radius-pill);
 }
 
-.cal-month-nav__today {
+.cal-month-nav__end {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cal-month-nav__today {
   min-width: 100px;
 }
 </style>

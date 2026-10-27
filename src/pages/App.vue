@@ -17,7 +17,6 @@
   import { useColumnResize } from '@/composables/useColumnResize'
   import { useCommitPendingDeletesOnClose } from '@/composables/useCommitPendingDeletesOnClose'
   import { flushOrphanedPendingDeleteCommits, listUnexpiredPendingDeletes } from '@/services/pendingDeleteCommit.service'
-  import { useAppTimezoneStore } from '@/stores/appTimezone'
   import { useAuthStore } from '@/stores/auth'
   import { useFoldersStore } from '@/stores/folders'
   import { useNotesStore } from '@/stores/notes'
@@ -34,7 +33,6 @@
   import UndoToast from '@/components/ui/UndoToast.vue'
   import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
-  import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
   import { todayLocalKey } from '@/utils/calendarDate'
   import {
     hasLocalFirstPending,
@@ -66,8 +64,6 @@
 
   const auth = useAuthStore()
   const { isAuthenticated } = storeToRefs(auth)
-  const appTimezone = useAppTimezoneStore()
-  const { utcOffsetHours } = storeToRefs(appTimezone)
   const folders = useFoldersStore()
   const notes = useNotesStore()
   const secure = useSecureFolderStore()
@@ -90,17 +86,6 @@
   const conflictBackups = ref<ConflictBackupEntry[]>([])
   const showConflictBackups = ref(false)
 
-  const headerClock = ref(formatAppDateTime(new Date(), utcOffsetHours.value))
-  const headerClockTooltip = computed(
-    () => `${headerClock.value} (${formatUtcOffsetLabel(utcOffsetHours.value)})`,
-  )
-  const headerClockAria = computed(() =>
-    t('app.aria.clock', {
-      time: headerClock.value,
-      offset: formatUtcOffsetLabel(utcOffsetHours.value),
-    }),
-  )
-  let headerClockTimer: ReturnType<typeof setInterval> | null = null
   let stopAutoSyncListener: (() => void) | null = null
   let stopNetworkListener: (() => void) | null = null
 
@@ -154,10 +139,6 @@
     })
   }
 
-  function tickHeaderClock(): void {
-    headerClock.value = formatAppDateTime(new Date(), utcOffsetHours.value)
-  }
-
   const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null)
   const noteEditorRef = ref<InstanceType<typeof NoteEditor> | null>(null)
 
@@ -196,7 +177,8 @@
     }
     if (e.ctrlKey && e.key.toLowerCase() === 'f') {
       e.preventDefault()
-      searchBarRef.value?.focusInput()
+      if (activeTab.value === 'calendar') calendarEvents.requestSearchFocus()
+      else searchBarRef.value?.focusInput()
     }
     if (e.ctrlKey && e.key.toLowerCase() === 'n') {
       e.preventDefault()
@@ -212,8 +194,6 @@
 
   onMounted(async () => {
     window.addEventListener('keydown', onGlobalKeydown, true)
-    tickHeaderClock()
-    headerClockTimer = setInterval(tickHeaderClock, 1000)
     await langStore.loadLang()
     // Chốt xóa ĐÃ HẾT HẠN trước khi pull; entry chưa hết hạn có thể thuộc undo window
     // đang sống ở dashboard-tab khác — không được force (N4).
@@ -244,15 +224,10 @@
 
   onUnmounted(() => {
     window.removeEventListener('keydown', onGlobalKeydown, true)
-    if (headerClockTimer) clearInterval(headerClockTimer)
     stopAutoSyncListener?.()
     stopNetworkListener?.()
     chrome.runtime.onMessage.removeListener(onAutoSyncMessage)
     chrome.storage.onChanged.removeListener(onAccountSessionChanged)
-  })
-
-  watch(utcOffsetHours, () => {
-    tickHeaderClock()
   })
 
   watch(isAuthenticated, (authed) => {
@@ -598,32 +573,6 @@
         <span class="shell__sep" aria-hidden="true"></span>
         <div class="shell__header-right">
           <ThemeModeToggle class="shell__theme-toggle" />
-          <IconButton
-            class="shell__clock-btn"
-            variant="default"
-            type="button"
-            :label="headerClockAria"
-            :title="headerClockTooltip"
-          >
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-              />
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 7v5l3 2"
-              />
-            </svg>
-          </IconButton>
           <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
           <CloudSyncStatusBadge
             v-if="!isAnonymous"
@@ -710,11 +659,11 @@
         v-if="dataReady"
         @open-calendar="onOpenCalendarFromTodayBanner"
       />
+      <!-- U2: tab Calendar tìm kiếm trong hàng điều hướng tháng (CalendarInlineSearch). -->
       <SearchBar
+        v-if="activeTab !== 'calendar'"
         ref="searchBarRef"
-        :search-mode="
-          activeTab === 'bookmarks' ? 'bookmarks' : activeTab === 'calendar' ? 'calendar' : 'notes'
-        "
+        :search-mode="activeTab === 'bookmarks' ? 'bookmarks' : 'notes'"
       />
     </header>
 
@@ -924,10 +873,6 @@
     color: var(--accent);
     letter-spacing: -0.035em;
     white-space: nowrap;
-  }
-
-  .shell__clock-btn {
-    cursor: default;
   }
 
   .shell__sep {

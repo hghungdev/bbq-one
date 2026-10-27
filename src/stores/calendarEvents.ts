@@ -33,6 +33,8 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   const searchQuery = ref('')
   /** Ô được focus khi chọn kết quả search — không bật modal. */
   const gridFocusDateKey = ref<string | null>(null)
+  /** U2: Ctrl+F ở tab Calendar → CalendarInlineSearch mở + focus (tăng để kích watch). */
+  const searchFocusRequest = ref(0)
 
   function withNormalizedDates(list: CalendarEvent[]): CalendarEvent[] {
     return list.map((e) => ({ ...e, event_date: normalizeLocalDateKey(e.event_date) }))
@@ -77,6 +79,10 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
 
   function setSearchQuery(q: string): void {
     searchQuery.value = q
+  }
+
+  function requestSearchFocus(): void {
+    searchFocusRequest.value++
   }
 
   function clearCalendarSearch(): void {
@@ -324,6 +330,8 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     eventsMatchingSearchForDate,
     searchQuery,
     setSearchQuery,
+    searchFocusRequest,
+    requestSearchFocus,
     clearCalendarSearch,
     calendarSearchMatches,
     loadAll,
