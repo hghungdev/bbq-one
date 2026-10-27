@@ -52,6 +52,7 @@
     removeConflictBackup,
     type ConflictBackupEntry,
   } from '@/utils/syncConflict'
+  import { decryptField, isEncryptedEnvelope, parseEnvelopeV2 } from '@/utils/secureCrypto'
   import {
     clearNoteDraft,
     readNoteDraft,
@@ -294,6 +295,10 @@
 
   async function onAccountUnlocked(): Promise<void> {
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+    // Backup đang hiện dạng "đã mã hóa" → giờ có key, mở lại từ storage.
+    if (conflictBackups.value.length > 0) {
+      conflictBackups.value = await openConflictBackupsForView(await listConflictBackups())
+    }
   }
 
   function onAccountUnlockClose(): void {
@@ -396,8 +401,45 @@
 
   async function maybeShowConflictBackups(): Promise<void> {
     if (!isAuthenticated.value) return
-    conflictBackups.value = await listConflictBackups()
+    conflictBackups.value = await openConflictBackupsForView(await listConflictBackups())
     if (conflictBackups.value.length > 0) showConflictBackups.value = true
+  }
+
+  /**
+   * S2C1.2: backup lưu bản đã mã hóa. Account mở khóa → giải mã field v2 để hiển thị/khôi phục
+   * (chỉ trong RAM). Field không mở được (khóa, secure folder v1) giữ nguyên envelope →
+   * dialog che đi và entry không được Restore.
+   */
+  async function openConflictBackupsForView(
+    list: ConflictBackupEntry[],
+  ): Promise<ConflictBackupEntry[]> {
+    const key = account.getContentKey()
+    if (!key) return list
+    const out: ConflictBackupEntry[] = []
+    for (const entry of list) {
+      if (entry.kind === 'calendar') {
+        out.push(entry)
+        continue
+      }
+      const row = { ...entry.row }
+      for (const field of ['title', 'label', 'content'] as const) {
+        const value = row[field]
+        if (typeof value !== 'string' || !parseEnvelopeV2(value)) continue
+        try {
+          row[field] = await decryptField(value, key)
+        } catch {
+          /* key khác / hỏng → giữ envelope, entry thành không-Restore-được */
+        }
+      }
+      out.push({ ...entry, row })
+    }
+    return out
+  }
+
+  function hasEnvelopeField(row: Record<string, unknown>): boolean {
+    return ['title', 'label', 'content'].some(
+      (f) => typeof row[f] === 'string' && isEncryptedEnvelope(row[f] as string),
+    )
   }
 
   const restorableBackupIds = computed(() => {
@@ -409,6 +451,8 @@
         if (calendarEvents.events.some((ev) => ev.id === rowId)) ids.add(e.id)
         continue
       }
+      // Restore một envelope = mã hóa chồng → hỏng ghi chú. Mở khóa xong mới Restore được.
+      if (hasEnvelopeField(e.row)) continue
       const noteId = e.kind === 'note' ? rowId : String(e.row.note_id ?? '')
       const note = notes.notes.find((n) => n.id === noteId)
       if (!note) continue
@@ -422,6 +466,7 @@
 
   async function onConflictBackupRestore(entry: ConflictBackupEntry): Promise<void> {
     const rowId = String(entry.row.id ?? '')
+    if (entry.kind !== 'calendar' && hasEnvelopeField(entry.row)) return
     try {
       if (entry.kind === 'note') {
         await notes.updateNote(rowId, {

@@ -115,6 +115,10 @@ try {
     vue: vueMock,
     '@/utils/accountCrypto': acctUtils,
     '@/utils/secureCrypto': secureCrypto,
+    // S2C1.2: store import thêm secureCache (overlay có nhớ) — nạp module THẬT.
+    '@/utils/secureCache': loadTsModule(path.join(ROOT, 'src', 'utils', 'secureCache.ts'), {
+      '@/utils/secureCrypto': secureCrypto,
+    }),
     '@/services/userCrypto.service': svcMock,
     '@/stores/notes': { useNotesStore: () => notesState },
   })

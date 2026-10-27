@@ -1,4 +1,51 @@
-import { encryptField, encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
+import { decryptField, encryptField, encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
+
+/**
+ * S2C1.2: nhớ bản mã đã biết theo (key, row, field) — chỉ RAM, GC dọn khi key bị bỏ.
+ * persistCache chạy mỗi autosave; không nhớ thì mỗi lần lưu mã hóa lại MỌI row (~70 µs/lệnh
+ * WebCrypto → 2.000 note ≈ 0,86 s). Nhớ theo row chứ không theo plaintext: hai row trùng nội
+ * dung vẫn ra hai bản mã khác nhau.
+ */
+const sealMemo = new WeakMap<CryptoKey, Map<string, { plain: string; env: string }>>()
+
+function memoFor(key: CryptoKey): Map<string, { plain: string; env: string }> {
+  let memo = sealMemo.get(key)
+  if (!memo) {
+    memo = new Map()
+    sealMemo.set(key, memo)
+  }
+  return memo
+}
+
+export const sealMemoId = {
+  noteTitle: (id: string): string => `n:${id}:title`,
+  bodyLabel: (id: string): string => `b:${id}:label`,
+  bodyContent: (id: string): string => `b:${id}:content`,
+}
+
+async function sealField(
+  key: CryptoKey,
+  memoId: string,
+  plain: string,
+  encrypt: () => Promise<string>,
+): Promise<string> {
+  const memo = memoFor(key)
+  const known = memo.get(memoId)
+  if (known && known.plain === plain) return known.env
+  const env = await encrypt()
+  memo.set(memoId, { plain, env })
+  return env
+}
+
+/** Mở envelope có nhớ — envelope đã biết thì không giải mã lại; lần seal sau dùng lại nó. */
+export async function openSealedField(key: CryptoKey, memoId: string, env: string): Promise<string> {
+  const memo = memoFor(key)
+  const known = memo.get(memoId)
+  if (known && known.env === env) return known.plain
+  const plain = await decryptField(env, key)
+  memo.set(memoId, { plain, env })
+  return plain
+}
 
 /** Hình dạng tối thiểu cần để niêm phong — khớp Note/NoteBody, không phụ thuộc `@/types`. */
 export interface SealableNote {
@@ -61,7 +108,10 @@ export async function sealSecureRowsForCache<
     const folderId = n.folder_id
     if (!folderId || !isSecureFolder(folderId)) {
       if (account && !isEncryptedEnvelope(n.title)) {
-        outNotes.push({ ...n, title: await encryptFieldV2(n.title, account.key, account.kid) })
+        const title = await sealField(account.key, sealMemoId.noteTitle(n.id), n.title, () =>
+          encryptFieldV2(n.title, account.key, account.kid),
+        )
+        outNotes.push({ ...n, title })
       } else {
         outNotes.push(n)
       }
@@ -77,7 +127,10 @@ export async function sealSecureRowsForCache<
       dropped++
       continue
     }
-    outNotes.push({ ...n, title: await encryptField(n.title, key) })
+    const title = await sealField(key, sealMemoId.noteTitle(n.id), n.title, () =>
+      encryptField(n.title, key),
+    )
+    outNotes.push({ ...n, title })
   }
 
   const outBodies: B[] = []
@@ -94,8 +147,16 @@ export async function sealSecureRowsForCache<
         if (lPlain || cPlain) {
           outBodies.push({
             ...b,
-            label: lPlain ? await encryptFieldV2(b.label, account.key, account.kid) : b.label,
-            content: cPlain ? await encryptFieldV2(b.content, account.key, account.kid) : b.content,
+            label: lPlain
+              ? await sealField(account.key, sealMemoId.bodyLabel(b.id), b.label, () =>
+                  encryptFieldV2(b.label, account.key, account.kid),
+                )
+              : b.label,
+            content: cPlain
+              ? await sealField(account.key, sealMemoId.bodyContent(b.id), b.content, () =>
+                  encryptFieldV2(b.content, account.key, account.kid),
+                )
+              : b.content,
           })
           continue
         }
@@ -116,8 +177,14 @@ export async function sealSecureRowsForCache<
     }
     outBodies.push({
       ...b,
-      label: labelPlain ? await encryptField(b.label, key) : b.label,
-      content: contentPlain ? await encryptField(b.content, key) : b.content,
+      label: labelPlain
+        ? await sealField(key, sealMemoId.bodyLabel(b.id), b.label, () => encryptField(b.label, key))
+        : b.label,
+      content: contentPlain
+        ? await sealField(key, sealMemoId.bodyContent(b.id), b.content, () =>
+            encryptField(b.content, key),
+          )
+        : b.content,
     })
   }
 

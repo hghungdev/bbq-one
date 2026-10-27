@@ -372,18 +372,24 @@ check(
   showBody.replace(/\s+/g, ' ').slice(0, 160),
 )
 
+// Chặn envelope trực tiếp, hoặc qua helper hasEnvelopeField (helper phải dùng isEncryptedEnvelope).
+const helperBody = extractFn(appSrc, 'hasEnvelopeField') ?? ''
+const blocksEnvelope = (src) =>
+  src.includes('isEncryptedEnvelope') ||
+  (src.includes('hasEnvelopeField(') && helperBody.includes('isEncryptedEnvelope'))
+
 const restorableStart = appSrc.indexOf('const restorableBackupIds')
 const restorableBlock = appSrc.slice(restorableStart, appSrc.indexOf('})', restorableStart) + 2)
 check(
   'W3 restorableBackupIds loại entry còn envelope (không Restore chuỗi bbq:2:/retronote:1:)',
-  restorableBlock.includes('isEncryptedEnvelope'),
+  blocksEnvelope(restorableBlock),
   'Restore một envelope = mã hóa chồng → hỏng ghi chú',
 )
 
 const restoreBody = extractFn(appSrc, 'onConflictBackupRestore') ?? ''
 check(
   'W4 onConflictBackupRestore tự chặn envelope (phòng vệ lớp 2)',
-  restoreBody.includes('isEncryptedEnvelope'),
+  blocksEnvelope(restoreBody),
   restoreBody.replace(/\s+/g, ' ').slice(0, 160),
 )
 

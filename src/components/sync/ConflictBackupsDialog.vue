@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import IconButton from '@/components/ui/IconButton.vue'
 import type { ConflictBackupEntry } from '@/utils/syncConflict'
+import { isEncryptedEnvelope } from '@/utils/secureCrypto'
 
 defineProps<{
   entries: ConflictBackupEntry[]
@@ -25,6 +26,8 @@ function snippet(entry: ConflictBackupEntry): string {
   const raw = String(
     entry.row.title ?? entry.row.label ?? entry.row.content ?? entry.row.id ?? '',
   )
+  // S2C1.2: backup lưu bản mã hóa — chưa mở được thì không in chuỗi envelope ra UI.
+  if (isEncryptedEnvelope(raw)) return '[ ENCRYPTED — UNLOCK TO VIEW ]'
   return raw.length > 80 ? `${raw.slice(0, 80)}…` : raw
 }
 </script>

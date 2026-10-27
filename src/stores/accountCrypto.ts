@@ -21,7 +21,8 @@ import {
   upsertUserCryptoRow,
   type UserCryptoRow,
 } from '@/services/userCrypto.service'
-import { decryptField, parseEnvelopeV2, saltFromBase64, saltToBase64 } from '@/utils/secureCrypto'
+import { parseEnvelopeV2, saltFromBase64, saltToBase64 } from '@/utils/secureCrypto'
+import { openSealedField, sealMemoId } from '@/utils/secureCache'
 import { useNotesStore } from '@/stores/notes'
 
 export interface EnableOptions {
@@ -166,6 +167,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
    * Overlay v2: decrypt in-place mọi row envelope v2 khi account unlocked.
    * KHÔNG ghi cache (persistCache gọi hàm này — gọi ngược = đệ quy).
    * Row v1 (secure folder) là việc của decryptLoadedSecureRows — hai tập row rời nhau tới S3.
+   * S2C1.2: qua openSealedField — envelope đã biết (vừa seal / đã mở) không giải mã lại.
    */
   async function decryptLoadedAccountRows(): Promise<void> {
     const key = contentKey.value
@@ -174,7 +176,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     for (let i = 0; i < notes.notes.length; i++) {
       const n = notes.notes[i]
       if (!parseEnvelopeV2(n.title)) continue
-      notes.notes[i] = { ...n, title: await decryptField(n.title, key) }
+      notes.notes[i] = { ...n, title: await openSealedField(key, sealMemoId.noteTitle(n.id), n.title) }
     }
     for (let j = 0; j < notes.bodies.length; j++) {
       const b = notes.bodies[j]
@@ -183,8 +185,10 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
       if (!labelV2 && !contentV2) continue
       notes.bodies[j] = {
         ...b,
-        label: labelV2 ? await decryptField(b.label, key) : b.label,
-        content: contentV2 ? await decryptField(b.content, key) : b.content,
+        label: labelV2 ? await openSealedField(key, sealMemoId.bodyLabel(b.id), b.label) : b.label,
+        content: contentV2
+          ? await openSealedField(key, sealMemoId.bodyContent(b.id), b.content)
+          : b.content,
       }
     }
   }

@@ -133,8 +133,8 @@ export const syncService = {
       }
 
       if (isNoteDirty(n)) {
+        let title = n.title
         try {
-          let title = n.title
           if (folder?.is_secure && key) {
             if (!isEncryptedEnvelope(title)) title = await encryptField(title, key)
           } else if (account?.key && !isEncryptedEnvelope(title)) {
@@ -155,7 +155,8 @@ export const syncService = {
           count++
         } catch (e) {
           if (isSyncConflictError(e)) {
-            await stashConflictBackup('note', n)
+            // S2C1.2: backup xuống chrome.storage.local — lưu bản đã mã hóa, không lưu row RAM.
+            await stashConflictBackup('note', { ...n, title })
             n.synced_at = n.updated_at
             count++
           } else {
@@ -166,9 +167,9 @@ export const syncService = {
 
       for (const b of bodies) {
         if (!isRowDirty(b)) continue
+        let label = b.label
+        let content = b.content
         try {
-          let label = b.label
-          let content = b.content
           if (folder?.is_secure && key) {
             if (!isEncryptedEnvelope(label)) label = await encryptField(label, key)
             if (!isEncryptedEnvelope(content)) {
@@ -194,7 +195,7 @@ export const syncService = {
           count++
         } catch (e) {
           if (isSyncConflictError(e)) {
-            await stashConflictBackup('note_body', b)
+            await stashConflictBackup('note_body', { ...b, label, content })
             b.synced_at = b.updated_at
             count++
             continue
