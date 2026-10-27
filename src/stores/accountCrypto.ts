@@ -41,6 +41,8 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   const contentKey = shallowRef<CryptoKey | null>(null)
   /** UI: NoteItem/Settings mở modal unlock qua cờ này. */
   const unlockModalOpen = ref(false)
+  /** Tăng mỗi lần clearStatus() — refreshStatus đang bay của session cũ không được ghi đè. */
+  let statusEpoch = 0
 
   function isEnabled(): boolean {
     return row.value !== null
@@ -56,7 +58,10 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   }
 
   async function refreshStatus(): Promise<void> {
-    row.value = await fetchUserCryptoRow()
+    const epoch = statusEpoch
+    const next = await fetchUserCryptoRow()
+    if (epoch !== statusEpoch) return
+    row.value = next
     fetched.value = true
   }
 
@@ -146,6 +151,18 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   }
 
   /**
+   * Logout / đổi account: quên row user_crypto của session cũ. Nếu giữ, local mode bị
+   * requireAccountKey chặn mọi thao tác ("Account locked") và account kế tiếp bị áp nhầm
+   * verifier của account trước. Gọi SAU lock().
+   */
+  function clearStatus(): void {
+    statusEpoch++
+    row.value = null
+    fetched.value = false
+    unlockModalOpen.value = false
+  }
+
+  /**
    * Overlay v2: decrypt in-place mọi row envelope v2 khi account unlocked.
    * KHÔNG ghi cache (persistCache gọi hàm này — gọi ngược = đệ quy).
    * Row v1 (secure folder) là việc của decryptLoadedSecureRows — hai tập row rời nhau tới S3.
@@ -184,6 +201,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     unlock,
     unlockWithRecoveryAndRewrap,
     lock,
+    clearStatus,
     decryptLoadedAccountRows,
   }
 })

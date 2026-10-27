@@ -102,6 +102,8 @@
 
   async function refreshStoresFromNetwork(): Promise<void> {
     if (!isOnline()) return
+    // Mount lúc offline thì chưa biết account có mã hóa không — kiểm tra lại trước khi push.
+    if (!account.fetched) await refreshAccountCryptoStatus()
     // Chốt delete còn treo (offline-delete đã hết undo window) trước khi pull — tránh row hiện lại tạm thời.
     await flushOrphanedPendingDeleteCommits('respect-expiry')
     // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
@@ -219,12 +221,7 @@
     ])
     dataReady.value = true
     await maybeRestoreNoteDraft()
-    if (isAuthenticated.value) {
-      await account.refreshStatus()
-      if (account.isEnabled() && !account.isUnlocked()) {
-        account.unlockModalOpen = true
-      }
-    }
+    await refreshAccountCryptoStatus()
     void refreshStoresFromNetwork().then(() => {
       void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
@@ -253,8 +250,31 @@
     if (authed) {
       void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
+      // Login qua LoginModal không remount trang — phải tự nạp trạng thái mã hóa của account mới.
+      void refreshAccountCryptoStatus()
+    } else {
+      // Session mất ngoài onLogout (token thu hồi, logout ở context khác).
+      account.lock()
+      account.clearStatus()
     }
   })
+
+  /**
+   * S2C1: trạng thái encrypted-account phải khớp session hiện tại. Lỗi mạng KHÔNG được làm
+   * sập phần còn lại của onMounted — để fetched=false, refreshStoresFromNetwork thử lại.
+   */
+  async function refreshAccountCryptoStatus(): Promise<void> {
+    if (!isAuthenticated.value) return
+    try {
+      await account.refreshStatus()
+    } catch (e) {
+      console.warn('[BBQOne] Account encryption status check failed:', e)
+      return
+    }
+    if (account.isEnabled() && !account.isUnlocked()) {
+      account.unlockModalOpen = true
+    }
+  }
 
   /** Anonymous: chưa đăng nhập */
   const isAnonymous = computed(() => !isAuthenticated.value)
@@ -262,6 +282,7 @@
   async function onLogout(): Promise<void> {
     secure.lockAll()
     account.lock()
+    account.clearStatus()
     await auth.logout()
     // Sau khi logout: ở lại dashboard ở local mode, reload data từ local storage
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])

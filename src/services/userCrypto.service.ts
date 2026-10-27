@@ -10,12 +10,20 @@ export interface UserCryptoRow {
   verifier: string
 }
 
-/** null = user chưa bật encrypted account. */
+/** null = user chưa bật encrypted account. Không kiểm tra được (mạng, token) → throw. */
 export async function fetchUserCryptoRow(): Promise<UserCryptoRow | null> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) {
+    // Chỉ "không có session" mới là null hợp lệ. Lỗi mạng mà trả null → caller tưởng account
+    // chưa bật mã hóa → ghi/push plaintext.
+    if (authError && authError.name !== 'AuthSessionMissingError') {
+      throw new Error(authError.message)
+    }
+    return null
+  }
   const { data, error } = await supabase
     .from('user_crypto')
     .select('kdf, kdf_params, kdf_salt, dek_id, wrapped_dek, wrapped_dek_recovery, verifier')

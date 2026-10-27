@@ -240,7 +240,8 @@ onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown, true)
   void bookmarkPin.loadCryptoState()
   if (auth.isAuthenticated) {
-    void accountCrypto.refreshStatus()
+    // Lỗi mạng: giữ trạng thái đang có, không để unhandled rejection.
+    accountCrypto.refreshStatus().catch(() => {})
   }
 })
 
