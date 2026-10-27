@@ -267,10 +267,13 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
    * `clearSession: false` khi DEK session đã bị xóa từ nơi khác (context khác khóa / alarm).
    */
   async function lockNow(opts: { clearSession?: boolean } = {}): Promise<void> {
-    if (!contentKey.value) return
+    const key = contentKey.value
+    if (!key) return
     // S2C1.5: một lượt độc quyền với persistCache (không persist nào chen giữa); khóa trong
     // `finally` — row hỏng / persist lỗi không được giữ account ở trạng thái mở khóa.
     await useNotesStore().sealThenReloadExclusive(async () => {
+      // S2C1.6: chỉ bỏ ĐÚNG key lúc bắt đầu — đã khóa rồi mở lại (key mới) trong lúc chờ thì giữ.
+      if (contentKey.value !== key) return
       lock()
       if (opts.clearSession !== false) await clearSessionDek()
     })
@@ -316,21 +319,24 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
       }
     }
     const notes = useNotesStore()
+    // S2C1.6: lockNow chạy xong giữa chừng (key đổi) → DỪNG, không gán bản rõ vào RAM đã khóa.
+    const stillOpen = (): boolean => contentKey.value === key
     for (let i = 0; i < notes.notes.length; i++) {
       const n = notes.notes[i]
       if (!parseEnvelopeV2(n.title)) continue
-      notes.notes[i] = { ...n, title: await open(sealMemoId.noteTitle(n.id), n.title) }
+      const title = await open(sealMemoId.noteTitle(n.id), n.title)
+      if (!stillOpen()) return
+      if (notes.notes[i]?.id === n.id) notes.notes[i] = { ...n, title }
     }
     for (let j = 0; j < notes.bodies.length; j++) {
       const b = notes.bodies[j]
       const labelV2 = parseEnvelopeV2(b.label) !== null
       const contentV2 = parseEnvelopeV2(b.content) !== null
       if (!labelV2 && !contentV2) continue
-      notes.bodies[j] = {
-        ...b,
-        label: labelV2 ? await open(sealMemoId.bodyLabel(b.id), b.label) : b.label,
-        content: contentV2 ? await open(sealMemoId.bodyContent(b.id), b.content) : b.content,
-      }
+      const label = labelV2 ? await open(sealMemoId.bodyLabel(b.id), b.label) : b.label
+      const content = contentV2 ? await open(sealMemoId.bodyContent(b.id), b.content) : b.content
+      if (!stillOpen()) return
+      if (notes.bodies[j]?.id === b.id) notes.bodies[j] = { ...b, label, content }
     }
   }
 

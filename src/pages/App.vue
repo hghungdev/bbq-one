@@ -31,11 +31,12 @@
   import IconButton from '@/components/ui/IconButton.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
   import UndoToast from '@/components/ui/UndoToast.vue'
+  import { useUndoToastStore } from '@/stores/undoToast'
   import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
   import { todayLocalKey } from '@/utils/calendarDate'
   import {
-    hasLocalFirstPending,
+    hasPendingSyncWork,
     initAutoSyncOnNetworkRestore,
     isAutoSyncCompleteMessage,
     runBackgroundAutoSync,
@@ -91,6 +92,7 @@
   const showConflictBackups = ref(false)
 
   let stopAutoSyncListener: (() => void) | null = null
+  let accountStatusTimer: ReturnType<typeof setInterval> | null = null
   let stopNetworkListener: (() => void) | null = null
 
   /** S2C1.5: trạng thái mã hóa cũ hơn mức này → hỏi lại server khi refresh. */
@@ -220,6 +222,13 @@
     // S2C1.5: draft là plaintext — chỉ áp SAU khi biết account có mã hóa không (và đã restore /
     // mở khóa nếu có). Còn khóa → updateBody từ chối, draft giữ nguyên, áp lại sau khi mở khóa.
     await maybeRestoreNoteDraft()
+    // S2C1.6: popup/tab mở lâu — hỏi lại trạng thái mã hóa định kỳ (bật ở máy khác; lần kiểm tra
+    // trước lỗi → ghi đang giữ ở máy sẽ được đẩy khi biết trạng thái).
+    accountStatusTimer = setInterval(() => {
+      if (isOnline() && isAuthenticated.value && account.statusAgeMs() > ACCOUNT_STATUS_MAX_AGE_MS) {
+        void refreshAccountCryptoStatus()
+      }
+    }, 60_000)
     void refreshStoresFromNetwork().then(() => {
       void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
@@ -238,6 +247,7 @@
     stopNetworkListener?.()
     chrome.runtime.onMessage.removeListener(onAutoSyncMessage)
     chrome.storage.onChanged.removeListener(onAccountSessionChanged)
+    if (accountStatusTimer) clearInterval(accountStatusTimer)
   })
 
   watch(isAuthenticated, (authed) => {
@@ -248,12 +258,12 @@
       void refreshAccountCryptoStatus()
     } else {
       // Session mất ngoài onLogout (token thu hồi, logout ở máy khác / context khác).
-      // S2C1.5: khóa ĐÚNG quy trình (seal + nạp lại RAM) trước khi quên trạng thái — chỉ bỏ key
-      // thì RAM còn plaintext và persist kế tiếp (local mode) ghi rõ xuống đĩa.
+      // S2C1.5: khóa ĐÚNG quy trình (seal + nạp lại RAM) TRƯỚC khi quên trạng thái — còn key thì
+      // flush editor / persist đều mã hóa. S2C1.6: chỉ quên khi chưa ai đăng nhập lại (clearStatus
+      // muộn không được xóa trạng thái của phiên mới); lockAccountNow không bao giờ ném.
       void (async () => {
         await lockAccountNow({ clearSession: false })
-        account.lock()
-        account.clearStatus()
+        if (!isAuthenticated.value) account.clearStatus()
       })()
     }
   })
@@ -270,13 +280,17 @@
       console.warn('[BBQOne] Account encryption status check failed:', e)
       return
     }
-    // S2C1.4: lúc trạng thái còn chưa biết, push giữ lại ghi chú local-first — giờ biết rồi thì đẩy.
-    if (await hasLocalFirstPending()) scheduleAutoSync('account-status')
+    // S2C1.4/1.6: lúc trạng thái còn chưa biết, ghi được giữ lại ở máy (local-first + dirty row) —
+    // giờ biết rồi thì đẩy (có key → v2; khóa → vẫn giữ).
+    if (await hasPendingSyncWork()) scheduleAutoSync('account-status')
+    // Draft bị bỏ qua lúc chưa biết trạng thái — giờ áp được nếu không cần mở khóa.
+    if (!account.isEnabled()) void maybeRestoreNoteDraft()
     if (!account.isEnabled() || account.isUnlocked()) return
     // S2C1.3: mở lại popup trong phiên → DEK còn trong chrome.storage.session, không hỏi lại.
     if (await account.restoreFromSession()) {
       await account.decryptLoadedAccountRows()
       scheduleAutoSync('account-unlocked')
+      void maybeRestoreNoteDraft()
       return
     }
     account.unlockModalOpen = true
@@ -319,15 +333,30 @@
       /* draft vẫn nằm trong chrome.storage.session (C8.1) */
     }
     notes.selectNote(null)
-    await account.lockNow(opts)
+    // S2C1.6: không bao giờ ném — logout / mất session phải đi tiếp dù khóa gặp lỗi (lockNow vẫn
+    // bỏ key trong `finally`).
+    try {
+      await account.lockNow(opts)
+    } catch (e) {
+      console.error('[BBQOne] Account lock failed:', e)
+    }
     // S2C1.5: lockNow nạp lại RAM từ đĩa — secure folder đang mở phải overlay lại (v1 key riêng).
-    await secure.decryptLoadedSecureRows()
+    try {
+      await secure.decryptLoadedSecureRows()
+    } catch (e) {
+      console.warn('[BBQOne] Secure folder re-open after lock failed:', e)
+    }
   }
 
   /** Anonymous: chưa đăng nhập */
   const isAnonymous = computed(() => !isAuthenticated.value)
 
   async function onLogout(): Promise<void> {
+    // S2C1.6: chốt các xóa đang chờ Undo khi còn đăng nhập — Undo sau logout sẽ khôi phục ghi chú
+    // của account vào local mode.
+    await useUndoToastStore().commitAllPending().catch((e: unknown) => {
+      console.warn('[BBQOne] Commit pending deletes before logout failed:', e)
+    })
     // S2C1.5: seal + nạp lại RAM khi còn key, rồi mới quên trạng thái (xem watch(isAuthenticated)).
     await lockAccountNow({ clearSession: false })
     secure.lockAll()
@@ -436,7 +465,21 @@
     void closeOverdueReminder()
   }
 
+  let draftRestoring = false
   async function maybeRestoreNoteDraft(): Promise<void> {
+    // S2C1.6: draft là plaintext — chưa biết account có mã hóa không thì CHƯA áp (áp lúc này sẽ ghi
+    // rõ xuống đĩa). Giữ nguyên draft; áp khi biết trạng thái / mở khóa.
+    if (isAuthenticated.value && !account.fetched) return
+    if (draftRestoring) return
+    draftRestoring = true
+    try {
+      await restoreNoteDraftNow()
+    } finally {
+      draftRestoring = false
+    }
+  }
+
+  async function restoreNoteDraftNow(): Promise<void> {
     const draft = await readNoteDraft()
     if (!draft) return
     const body = notes.bodies.find((b) => b.id === draft.bodyId)

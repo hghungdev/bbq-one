@@ -26,14 +26,25 @@ import { sealSecureRowsForCache } from '@/utils/secureCache'
 
 const NETWORK_LOAD_MS = 12_000
 
+/**
+ * S2C1.6: đã đăng nhập mà CHƯA biết account có mã hóa không → ghi được nhưng GIỮ LẠI ở máy (không
+ * gọi server; tạo mới → local-first). Đường push fail-closed khi chưa biết (S2C1.4) nên không gì
+ * lên server dạng rõ; biết rồi mới đẩy (có key → v2). S2C1.5 chặn hẳn → user KHÔNG bật mã hóa mất
+ * quyền sửa mỗi khi lần kiểm tra trạng thái lỗi.
+ */
+const HOLD_LOCAL = new Error('Encryption status unknown — change kept on this device')
+function holdWritesLocal(): boolean {
+  return !useAccountCryptoStore().fetched && useAuthStore().isAuthenticated
+}
+
+/** S2C1.6: key lúc bắt đầu mutation còn là key hiện tại? lockNow chạy xong giữa chừng → không. */
+function keyStillHeld(key: CryptoKey): boolean {
+  return useAccountCryptoStore().getContentKey() === key
+}
+
 /** S2C1: row NGOÀI secure folder + account bật → phải có K_content mới được mutate. */
 function requireAccountKey(): { key: CryptoKey; kid: string } | null {
   const account = useAccountCryptoStore()
-  // S2C1.5: đã đăng nhập mà CHƯA biết account có mã hóa không (vd vừa mở popup, đang hỏi server)
-  // → không cho ghi. Ghi lúc này = plaintext lên server / đĩa nếu hóa ra account đã bật.
-  if (!account.fetched && useAuthStore().isAuthenticated) {
-    throw new Error('Account encryption status not checked yet')
-  }
   if (!account.isEnabled()) return null
   const key = account.getContentKey()
   if (!key) throw new Error('Account locked')
@@ -270,10 +281,12 @@ export const useNotesStore = defineStore('notes', () => {
       bodyLabel = await encryptFieldV2('', acct.key, acct.kid)
       bodyContent = await encryptFieldV2('', acct.key, acct.kid)
     }
+    const holdLocal = !folder?.is_secure && holdWritesLocal()
     let note: Note
     let bodyRow: NoteBody
     let createdOffline = false
     try {
+      if (holdLocal) throw HOLD_LOCAL
       note = await notesService.create({
         title,
         folder_id: folderId,
@@ -287,7 +300,7 @@ export const useNotesStore = defineStore('notes', () => {
     } catch (e) {
       // Offline / network fail: ghi vào LocalFirst storage để autoSync push sau.
       // KHÔNG mất dữ liệu user vừa tạo.
-      if (isOnline() && !isNetworkError(e)) throw e
+      if (e !== HOLD_LOCAL && isOnline() && !isNetworkError(e)) throw e
       const localNote = await localNotesService.create({
         title,
         folder_id: folderId,
@@ -314,14 +327,17 @@ export const useNotesStore = defineStore('notes', () => {
         label: await decryptField(bodyRow.label, key),
         content: await decryptField(bodyRow.content, key),
       }
-    } else if (acct) {
+    } else if (acct && keyStillHeld(acct.key)) {
+      // S2C1.6: chỉ khi còn đúng key — lockNow chạy xong lúc chờ mạng thì giữ bản mã hóa.
       storedNote = { ...note, title: initialTitle.trim() }
       storedBody = { ...bodyRow, label: '', content: '' }
     }
     notes.value = [storedNote, ...notes.value]
     bodies.value = [storedBody, ...bodies.value]
-    activeNoteId.value = storedNote.id
-    activeBodyId.value = storedBody.id
+    if (!acct || keyStillHeld(acct.key)) {
+      activeNoteId.value = storedNote.id
+      activeBodyId.value = storedBody.id
+    }
     isDirty.value = createdOffline
     await persistCache()
     if (createdOffline) scheduleAutoSync('note-create-offline')
@@ -361,36 +377,52 @@ export const useNotesStore = defineStore('notes', () => {
         payload.title = await encryptFieldV2(payload.title, acctUpd.key, acctUpd.kid)
       }
     }
+    const holdLocal = !folder?.is_secure && holdWritesLocal()
 
     try {
+      if (holdLocal) throw HOLD_LOCAL
       const data = await notesService.update(id, payload, {
         row: prev,
         retryOnConflictWithServerState: true,
       })
       const merged: Note = { ...prev, ...data }
+      // RAM có thể đã được nạp lại trong lúc chờ (lockNow / loadAll) — tìm lại theo id.
+      const at = notes.value.findIndex((n) => n.id === id)
 
-      if (folder?.is_secure) {
+      if (at === -1) {
+        // row đã rời RAM (xóa / nạp lại) — server đã cập nhật, không gán gì thêm
+      } else if (folder?.is_secure) {
         const k = secure.getKey(folderId!)
         if (k) {
-          notes.value[idx] = {
+          notes.value[at] = {
             ...merged,
             title: await decryptField(data.title, k),
           }
         } else {
-          notes.value[idx] = merged
+          notes.value[at] = merged
         }
       } else if (acctUpd) {
-        notes.value[idx] = { ...merged, title: updates.title ?? prev.title }
+        // S2C1.6: hết key giữa chừng → RAM chỉ được nhận envelope (payload / row hiện tại).
+        notes.value[at] = keyStillHeld(acctUpd.key)
+          ? { ...merged, title: updates.title ?? prev.title }
+          : { ...merged, title: payload.title ?? notes.value[at].title }
       } else {
-        notes.value[idx] = merged
+        notes.value[at] = merged
       }
       isDirty.value = false
       await persistCache()
     } catch (e) {
-      if (isSyncConflictError(e)) throw e
-      if (isOnline() && !isNetworkError(e)) throw e
+      if (e !== HOLD_LOCAL) {
+        if (isSyncConflictError(e)) throw e
+        if (isOnline() && !isNetworkError(e)) throw e
+      }
       const ts = nextLocalUpdatedAt(prev)
-      notes.value[idx] = { ...prev, ...updates, updated_at: ts }
+      const at = notes.value.findIndex((n) => n.id === id)
+      if (at === -1) return
+      notes.value[at] =
+        acctUpd && !keyStillHeld(acctUpd.key)
+          ? { ...notes.value[at], ...payload, updated_at: ts }
+          : { ...prev, ...updates, updated_at: ts }
       isDirty.value = true
       await persistCache()
       scheduleAutoSync('note-offline')
@@ -465,45 +497,73 @@ export const useNotesStore = defineStore('notes', () => {
       }
     }
 
+    const holdLocal = !folder?.is_secure && holdWritesLocal()
+
     try {
+      if (holdLocal) throw HOLD_LOCAL
       const data = await noteBodiesService.update(id, payload, {
         row: prev,
         retryOnConflictWithServerState: true,
       })
       const merged: NoteBody = { ...prev, ...data }
+      // RAM có thể đã được nạp lại trong lúc chờ (lockNow / loadAll) — tìm lại theo id.
+      const at = bodies.value.findIndex((b) => b.id === id)
 
-      if (folder?.is_secure) {
+      if (at === -1) {
+        // row đã rời RAM (xóa / nạp lại) — server đã cập nhật, không gán gì thêm
+      } else if (folder?.is_secure) {
         const k = secure.getKey(folderId!)
         if (k) {
-          bodies.value[idx] = {
+          bodies.value[at] = {
             ...merged,
             label: await decryptField(data.label, k),
             content: await decryptField(data.content, k),
           }
         } else {
-          bodies.value[idx] = merged
+          bodies.value[at] = merged
         }
       } else if (acctUpd) {
-        bodies.value[idx] = {
-          ...merged,
-          label: updates.label ?? prev.label,
-          content: updates.content ?? prev.content,
-        }
+        const cur = bodies.value[at]
+        // S2C1.6: hết key giữa chừng → RAM chỉ được nhận envelope (payload / row hiện tại).
+        bodies.value[at] = keyStillHeld(acctUpd.key)
+          ? {
+              ...merged,
+              label: updates.label ?? prev.label,
+              content: updates.content ?? prev.content,
+            }
+          : {
+              ...merged,
+              label: payload.label ?? cur.label,
+              content: payload.content ?? cur.content,
+            }
       } else {
-        bodies.value[idx] = merged
+        bodies.value[at] = merged
       }
       isDirty.value = false
       await persistCache()
     } catch (e) {
-      if (isSyncConflictError(e)) throw e
-      if (isOnline() && !isNetworkError(e)) throw e
-      const ts = nextLocalUpdatedAt(prev)
-      bodies.value[idx] = {
-        ...prev,
-        label: updates.label ?? prev.label,
-        content: updates.content ?? prev.content,
-        updated_at: ts,
+      if (e !== HOLD_LOCAL) {
+        if (isSyncConflictError(e)) throw e
+        if (isOnline() && !isNetworkError(e)) throw e
       }
+      const ts = nextLocalUpdatedAt(prev)
+      const at = bodies.value.findIndex((b) => b.id === id)
+      if (at === -1) return
+      const cur = bodies.value[at]
+      bodies.value[at] =
+        acctUpd && !keyStillHeld(acctUpd.key)
+          ? {
+              ...cur,
+              label: payload.label ?? cur.label,
+              content: payload.content ?? cur.content,
+              updated_at: ts,
+            }
+          : {
+              ...prev,
+              label: updates.label ?? prev.label,
+              content: updates.content ?? prev.content,
+              updated_at: ts,
+            }
       const noteIdx = notes.value.findIndex((n) => n.id === prev.note_id)
       if (noteIdx !== -1) {
         notes.value[noteIdx] = { ...notes.value[noteIdx], updated_at: ts }
@@ -539,16 +599,18 @@ export const useNotesStore = defineStore('notes', () => {
       label = await encryptFieldV2('', acct.key, acct.kid)
       content = await encryptFieldV2('', acct.key, acct.kid)
     }
+    const holdLocal = !folder?.is_secure && holdWritesLocal()
     let row: NoteBody
     let createdOffline = false
     try {
+      if (holdLocal) throw HOLD_LOCAL
       row = await noteBodiesService.create(noteId, {
         label,
         content,
         position,
       })
     } catch (e) {
-      if (isOnline() && !isNetworkError(e)) throw e
+      if (e !== HOLD_LOCAL && isOnline() && !isNetworkError(e)) throw e
       const localBody = await localNoteBodiesService.create(noteId, {
         label,
         content,
@@ -564,11 +626,11 @@ export const useNotesStore = defineStore('notes', () => {
         label: await decryptField(row.label, key),
         content: await decryptField(row.content, key),
       }
-    } else if (acct) {
+    } else if (acct && keyStillHeld(acct.key)) {
       stored = { ...row, label: '', content: '' }
     }
     bodies.value = [...bodies.value, stored]
-    activeBodyId.value = stored.id
+    if (!acct || keyStillHeld(acct.key)) activeBodyId.value = stored.id
     await persistCache()
     if (createdOffline) scheduleAutoSync('body-create-offline')
     return stored
@@ -640,7 +702,9 @@ export const useNotesStore = defineStore('notes', () => {
       getKey: useSecureFolderStore().getKey,
       account: accountKey ? { key: accountKey, kid: account.getDekId() } : null,
     })
-    const restoringWhileLocked = (): boolean => account.isEnabled() && !account.isUnlocked()
+    // S2C1.6: so theo KEY (không theo isEnabled — logout / mất session làm isEnabled() false).
+    const restoringWhileLocked = (): boolean =>
+      accountKey !== null && account.getContentKey() !== accountKey
     const snapshotForRestore = (): { n: Note; bs: { body: NoteBody; index: number }[] } => {
       if (!restoringWhileLocked()) return { n: note, bs: noteBodies }
       const sealedBodies = new Map(sealedSnap.bodies.map((b) => [b.id, b]))

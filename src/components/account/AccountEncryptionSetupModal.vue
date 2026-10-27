@@ -110,6 +110,10 @@ async function enable(): Promise<void> {
     emit('close')
   } catch (e) {
     error.value = e instanceof Error ? e.message : t('common.operationFailed')
+    // S2C1.6: đã bật ở máy khác → làm mới trạng thái (context này đang tưởng chưa bật).
+    if (e instanceof Error && e.message === 'Already enabled') {
+      await account.refreshStatus().catch(() => {})
+    }
   } finally {
     busy.value = false
   }
