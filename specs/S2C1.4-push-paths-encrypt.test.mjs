@@ -348,7 +348,8 @@ check(
 )
 check(
   'W4 biết trạng thái xong + còn local-first pending → scheduleAutoSync',
-  /hasLocalFirstPending\(\)\)\s*scheduleAutoSync\(/.test(extractFn(appSrc, 'refreshAccountCryptoStatus') ?? ''),
+  // S2C1.6: hasPendingSyncWork (gồm cả local-first lẫn dirty row) cũng đạt.
+  /(hasLocalFirstPending|hasPendingSyncWork)\(\)\)\s*scheduleAutoSync\(/.test(extractFn(appSrc, 'refreshAccountCryptoStatus') ?? ''),
   'push lúc login (trạng thái chưa biết) giữ lại ghi chú, không ai đẩy lại',
 )
 

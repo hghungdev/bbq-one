@@ -293,10 +293,13 @@ console.log('\nR1 — #1 ghi TRƯỚC khi biết trạng thái mã hóa (draft r
   const before = serverWrites.length
   const r = await attempt(() => fresh.updateBody(bodyId, { content: 'DRAFT-SECRET' }))
   const sent = JSON.stringify(serverWrites.slice(before))
+  // S2C1.6 (review lần 2): CHẶN ghi làm user không bật mã hóa mất quyền sửa khi Supabase trục trặc
+  // → đổi thành GIỮ LẠI ở máy (không lên server). Draft (plaintext) thì App.vue không áp khi chưa
+  // biết trạng thái — xem S2C1.6 W1.
   check(
-    'R1.1 đăng nhập + chưa biết trạng thái → updateBody bị từ chối, không gì lên server / xuống đĩa',
-    !r.ok && !sent.includes('DRAFT-SECRET') && !diskHas('DRAFT-SECRET'),
-    `ok=${r.ok} sent=${sent.slice(0, 80)} disk=${diskHas('DRAFT-SECRET')}`,
+    'R1.1 đăng nhập + chưa biết trạng thái → KHÔNG gửi lên server (giữ lại ở máy)',
+    !sent.includes('DRAFT-SECRET'),
+    `ok=${r.ok} sent=${sent.slice(0, 80)}`,
   )
 }
 {
@@ -495,10 +498,12 @@ check(
 const watchStart = appSrc.indexOf('watch(isAuthenticated,')
 const watchBlock = appSrc.slice(watchStart, appSrc.indexOf('\n  })', watchStart))
 const logoutBody = extractFn(appSrc, 'onLogout') ?? ''
+// S2C1.6: ở nhánh mất session, clearStatus đồng bộ TRƯỚC rồi mới lockAccountNow (lockNow chỉ cần
+// key, vẫn còn) — tránh clearStatus muộn xóa trạng thái của lần đăng nhập mới. onLogout giữ thứ tự cũ.
 check(
-  'W2 mất session (watch) + onLogout: lockAccountNow TRƯỚC clearStatus',
+  'W2 mất session (watch) gọi cả lockAccountNow + clearStatus; onLogout: lockAccountNow TRƯỚC clearStatus',
   watchBlock.includes('lockAccountNow(') &&
-    watchBlock.indexOf('lockAccountNow(') < watchBlock.indexOf('clearStatus()') &&
+    watchBlock.includes('clearStatus()') &&
     logoutBody.includes('lockAccountNow(') &&
     logoutBody.indexOf('lockAccountNow(') < logoutBody.indexOf('clearStatus()'),
   `watch=${watchBlock.replace(/\s+/g, ' ').slice(0, 120)}`,
