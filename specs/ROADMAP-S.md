@@ -88,9 +88,10 @@ xong **trước S2C2 (backfill)**. Mỗi bước = 1 cặp spec + test, commit `
 
 | S2C1.5 | `7c2e24f` → `ead5cf2` | ✅ 25/25 (RED 21 trên `f3ec132`) | vá 8 lỗi từ **review độc lập** đợt S2C1.2–1.4 (2 lỗi cao: draft lên server plaintext khi mở popup; mất session / persist chen giữa lúc khóa ghi plaintext xuống đĩa) |
 | S2C1.6 | `47a1ba0` → `81ef518` | ✅ 17/17 (RED 16 trên `8366db7`) | vá lỗi từ **review độc lập lần 2** (nhắm S2C1.5): bỏ chặn-ghi (làm user không bật mã hóa mất quyền sửa) → giữ lại ở máy; thao tác/overlay đang chờ lúc khóa; Undo sau logout. Commit fix ghi nhầm "21/21" — số đúng 17/17 |
+| S2C1.7 | `647b428` → `c16f143` | ✅ 19/19 (RED 9 trên `81ef518`) | vá lỗi từ **review độc lập lần 3** (nhắm S2C1.6; review xác nhận mọi đường push fail-closed): `auth.init()` quá hạn lúc online → store tưởng chưa đăng nhập → bản rõ lên server (TB, đã tái hiện); modal mở khóa tự bật lại theo timer; body / folder xóa xong bị push tạo lại |
 
-Toàn bộ 31 harness PASS, `vue-tsc` 0, build OK. **Chờ Sir verify tay** theo mục "Nghiệm thu" của
-từng spec (S2C1.1 a–c, S2C1.2 a–b, S2C1.3 a–e, S2C1.4 a–b, S2C1.5, S2C1.6). FLAG offline của S2C1.1 đã
+Toàn bộ 32 harness PASS, `vue-tsc` 0, build OK. **Chờ Sir verify tay** theo mục "Nghiệm thu" của
+từng spec (S2C1.1 a–c, S2C1.2 a–b, S2C1.3 a–e, S2C1.4 a–b, S2C1.5, S2C1.6, S2C1.7). FLAG offline của S2C1.1 đã
 đóng bởi S2C1.3 (cache trong `chrome.storage.session`).
 
 **Giới hạn đã biết (chấp nhận, ghi lại):** bật mã hóa ở **máy khác** → máy đang mở chỉ biết khi
