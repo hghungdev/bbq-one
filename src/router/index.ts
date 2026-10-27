@@ -51,7 +51,10 @@ router.beforeEach(async (to, _from, next) => {
       try {
         await withTimeout(auth.init(), AUTH_INIT_MS, 'Auth init timed out')
       } catch {
-        /* Popup vẫn mở — auth.init() tiếp tục nền; finally luôn set initialized */
+        // Popup vẫn mở — auth.init() tiếp tục nền và thay bằng session thật khi xong.
+        // S2C1.7: trong lúc chờ dùng cờ đăng nhập đã cache như nhánh offline. Để store "chưa đăng
+        // nhập" thì service (tự hỏi getSession) vẫn ghi lên cloud mà cổng mã hóa không chặn.
+        await auth.hydrateOfflineLoggedIn(await readCachedLoggedIn())
       }
     }
   }

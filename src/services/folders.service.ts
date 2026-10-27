@@ -87,6 +87,8 @@ export const foldersService = {
     if (await isAuthenticated()) {
       const { error } = await supabase.from('folders').delete().eq('id', id)
       if (error) throw error
+      // Folder tạo lúc offline còn trong store local-first — không xóa thì push tạo lại.
+      await localFoldersService.delete(id)
       return
     }
     await localFoldersService.delete(id)

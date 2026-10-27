@@ -91,7 +91,9 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   không → thay đổi được **giữ lại trên máy**, không gửi server (mọi đường push fail-closed); draft
   chưa được áp. Biết trạng thái rồi mới đẩy (có key → mã hóa). Giới hạn: nếu account **đã bật** mà
   lần kiểm tra lỗi, sửa trong lúc đó nằm trên đĩa dạng rõ tới lần mở khóa kế tiếp — đổi lại user
-  không bật mã hóa không bao giờ mất quyền sửa khi Supabase trục trặc.
+  không bật mã hóa không bao giờ mất quyền sửa khi Supabase trục trặc. "Đã đăng nhập" ở đây tính
+  cả lúc `auth.init()` còn treo (S2C1.7): router dùng cờ đăng nhập đã cache như khi offline, để
+  store không coi là "chưa đăng nhập" trong khi service đã có session.
 - **Khóa (S2C1.5/1.6):** mọi đường khóa (Khóa ngay, tự khóa, logout, mất session) seal đĩa rồi nạp
   lại RAM trong một lượt độc quyền với việc ghi cache; thao tác đang chờ mạng lúc khóa chỉ được để
   lại bản mã hóa. Chỉ bật mã hóa được khi server xác nhận account chưa bật (insert-only — không bao

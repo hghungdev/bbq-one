@@ -103,7 +103,7 @@
     // Mount lúc offline thì chưa biết account có mã hóa không (hoặc chỉ biết qua bản session), hoặc
     // trạng thái đã cũ (bật mã hóa ở máy khác) — hỏi lại server trước khi push.
     const statusOld = account.statusAgeMs() > ACCOUNT_STATUS_MAX_AGE_MS
-    if (!account.fetched || account.stale || statusOld) await refreshAccountCryptoStatus()
+    if (!account.fetched || account.stale || statusOld) await refreshAccountCryptoStatus(false)
     // Chốt delete còn treo (offline-delete đã hết undo window) trước khi pull — tránh row hiện lại tạm thời.
     await flushOrphanedPendingDeleteCommits('respect-expiry')
     // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
@@ -226,7 +226,7 @@
     // trước lỗi → ghi đang giữ ở máy sẽ được đẩy khi biết trạng thái).
     accountStatusTimer = setInterval(() => {
       if (isOnline() && isAuthenticated.value && account.statusAgeMs() > ACCOUNT_STATUS_MAX_AGE_MS) {
-        void refreshAccountCryptoStatus()
+        void refreshAccountCryptoStatus(false)
       }
     }, 60_000)
     void refreshStoresFromNetwork().then(() => {
@@ -271,9 +271,12 @@
   /**
    * S2C1: trạng thái encrypted-account phải khớp session hiện tại. Lỗi mạng KHÔNG được làm
    * sập phần còn lại của onMounted — để fetched=false, refreshStoresFromNetwork thử lại.
+   * S2C1.7: `promptUnlock=false` (hỏi lại định kỳ / sau auto-sync) chỉ nhắc mở khóa khi lần này
+   * mới biết account bật mã hóa — không mở lại modal user đã đóng.
    */
-  async function refreshAccountCryptoStatus(): Promise<void> {
+  async function refreshAccountCryptoStatus(promptUnlock = true): Promise<void> {
     if (!isAuthenticated.value) return
+    const knewEnabled = account.isEnabled()
     try {
       await account.refreshStatus()
     } catch (e) {
@@ -293,7 +296,7 @@
       void maybeRestoreNoteDraft()
       return
     }
-    account.unlockModalOpen = true
+    if (promptUnlock || !knewEnabled) account.unlockModalOpen = true
   }
 
   /**

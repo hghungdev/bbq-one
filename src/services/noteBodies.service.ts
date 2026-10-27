@@ -131,6 +131,8 @@ export const noteBodiesService = {
     if (await isAuthenticated()) {
       const { error } = await supabase.from('note_bodies').delete().eq('id', id)
       if (error) throw error
+      // Body tạo lúc offline / giữ ở máy còn trong store local-first — không xóa thì push đẩy lại.
+      await localNoteBodiesService.delete(id)
       return
     }
     await localNoteBodiesService.delete(id)
