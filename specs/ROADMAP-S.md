@@ -86,9 +86,15 @@ xong **trước S2C2 (backfill)**. Mỗi bước = 1 cặp spec + test, commit `
 | S2C1.3 | `e98f59a` → `3be1edf` | ✅ 35/35 (RED 11 trên `347b7a0`) | commit fix ghi nhầm "30/30" — số đúng là 35 |
 | S2C1.4 | `229a443` → `23ebf85` | ✅ 14/14 (RED 11 trên `3be1edf`) | test in ra plaintext thật bị đẩy lên server trên code cũ |
 
-Toàn bộ 29 harness PASS, `vue-tsc` 0, build OK. **Chờ Sir verify tay** theo mục "Nghiệm thu" của
-từng spec (S2C1.1 a–c, S2C1.2 a–b, S2C1.3 a–e, S2C1.4 a–b). FLAG offline của S2C1.1 đã đóng bởi
-S2C1.3 (cache trong `chrome.storage.session`).
+| S2C1.5 | `7c2e24f` → `ead5cf2` | ✅ 25/25 (RED 21 trên `f3ec132`) | vá 8 lỗi từ **review độc lập** đợt S2C1.2–1.4 (2 lỗi cao: draft lên server plaintext khi mở popup; mất session / persist chen giữa lúc khóa ghi plaintext xuống đĩa) |
+
+Toàn bộ 30 harness PASS, `vue-tsc` 0, build OK. **Chờ Sir verify tay** theo mục "Nghiệm thu" của
+từng spec (S2C1.1 a–c, S2C1.2 a–b, S2C1.3 a–e, S2C1.4 a–b, S2C1.5). FLAG offline của S2C1.1 đã
+đóng bởi S2C1.3 (cache trong `chrome.storage.session`).
+
+**Giới hạn đã biết (chấp nhận, ghi lại):** bật mã hóa ở **máy khác** → máy đang mở chỉ biết khi
+trạng thái được hỏi lại (≤ 5 phút khi có mạng, hoặc lần mở popup sau); trong khoảng đó ghi chú
+sửa ở máy này lên server dạng rõ như ghi chú legacy — backfill S2C2 sẽ mã hóa lại.
 
 ### Ngoài phạm vi đợt này
 
