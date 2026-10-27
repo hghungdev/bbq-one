@@ -78,6 +78,18 @@ xong **trước S2C2 (backfill)**. Mỗi bước = 1 cặp spec + test, commit `
 - `stores/sync.ts`: trạng thái chưa biết → fail-closed. Mở khóa xong → kích hoạt auto-sync để đẩy
   phần đang chờ.
 
+### Trạng thái (2026-10-27, cuối ngày)
+
+| Bước | Commit (docs → fix) | Test | Ghi chú |
+|---|---|---|---|
+| S2C1.2 | `f2845a4` → `347b7a0` | ✅ 22/22 (RED 14 trên `ed96f6d`) | Chromium, 2.000 note: autosave 0,86 s → ~6 ms |
+| S2C1.3 | `e98f59a` → `3be1edf` | ✅ 35/35 (RED 11 trên `347b7a0`) | commit fix ghi nhầm "30/30" — số đúng là 35 |
+| S2C1.4 | `229a443` → `23ebf85` | ✅ 14/14 (RED 11 trên `3be1edf`) | test in ra plaintext thật bị đẩy lên server trên code cũ |
+
+Toàn bộ 29 harness PASS, `vue-tsc` 0, build OK. **Chờ Sir verify tay** theo mục "Nghiệm thu" của
+từng spec (S2C1.1 a–c, S2C1.2 a–b, S2C1.3 a–e, S2C1.4 a–b). FLAG offline của S2C1.1 đã đóng bởi
+S2C1.3 (cache trong `chrome.storage.session`).
+
 ### Ngoài phạm vi đợt này
 
 S2C2 (backfill, banner recovery, đổi passphrase, regenerate recovery key) — làm sau khi Sir

@@ -66,3 +66,12 @@ cần sau khi dùng thử.
 ## Thứ tự
 
 U3 → U2 → U1 (U2/U1 đụng `pages/App.vue` — làm sau khi review bảo mật đợt S2C1.x xong).
+
+## Trạng thái (2026-10-27)
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra trên Chromium (extension thật, local mode) |
+|---|---|---|---|
+| U3 | `eb7c39c` → `474e569` | ✅ 20/20 (RED 6 trên `23ebf85`) | "Họp tuần" hằng tuần × 4 → 4 thứ Ba liên tiếp |
+| U1 + U2 | `8a4a9ef` → `791b86a` | ✅ 12/12 (RED 11 trên `474e569`) | header hết đồng hồ; tab Calendar hết hàng search; 🔍 lọc đúng; Esc / Ctrl+F đúng; tab Notes giữ SearchBar |
+
+Chờ Sir verify tay theo mục "Nghiệm thu" của hai spec.
