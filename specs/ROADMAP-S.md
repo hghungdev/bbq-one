@@ -30,6 +30,59 @@ bắt đầu S2).
   nạp row → ghi plaintext; offline coi như "chưa bật"; lỗi mạng làm sập `onMounted`). ✅ GREEN
   15/15 (RED 8 trên `c2201db`). Còn 3 bước verify tay + **FLAG offline** chờ chọn hướng thiết kế.
 
+## Plan đợt S2C1.2 → S2C1.4 (2026-10-27, Sir chốt thứ tự)
+
+Nguồn: review hướng S2 ngày 2026-10-27 (benchmark Chromium 153 trên code thật). Lõi crypto
+(AES-GCM, DEK/KEK, HKDF, recovery, envelope v2) **giữ nguyên**. Đợt này sửa cách áp dụng, phải
+xong **trước S2C2 (backfill)**. Mỗi bước = 1 cặp spec + test, commit `docs` (RED) rồi `fix` (GREEN).
+
+### Quyết định đã chốt
+
+| # | Quyết định | Lý do |
+|---|---|---|
+| Q1 | **D5 đổi:** sau khi mở khóa, DEK giữ trong `chrome.storage.session`, tự khóa sau **30 phút không dùng**, mất khi đóng trình duyệt / logout / bấm "Khóa ngay". | UI chính là popup — D5 cũ bắt gõ passphrase mỗi lần mở popup, và SW không bao giờ có key. `chrome.storage.session` chỉ ở RAM (không xuống đĩa → T2 không đổi); repo đã tin nó cho refresh token Supabase và khóa bookmark PIN. |
+| Q2 | **Hướng 1 (mở khóa offline) dùng `chrome.storage.session`, KHÔNG dùng `chrome.storage.local`.** | Session Supabase cũng nằm ở `chrome.storage.session` → mọi trạng thái "đang đăng nhập" đều có trình duyệt đang mở. Cache row `user_crypto` cùng chỗ là đủ để unlock offline, mà không đưa `wrapped_dek` xuống đĩa (tránh rủi ro dò passphrase offline từ đĩa). |
+| Q3 | Đường push không biết trạng thái mã hóa → **fail-closed**: giữ row plaintext ở local (không mất), đẩy sau khi biết trạng thái/mở khóa. | Thà chậm đồng bộ còn hơn đẩy plaintext lên server. |
+
+### S2C1.2 — hiệu năng seal + vá rò rỉ conflict backup
+
+- `utils/secureCache.ts`: nhớ bản mã theo (key, row, field) trong RAM — row không đổi dùng lại
+  envelope cũ → mỗi lần `persistCache` chỉ mã hóa row vừa sửa (đo: 2.000 note 0,86 s → vài ms).
+  Export hàm mở envelope có nhớ cho overlay.
+- `stores/accountCrypto.ts` `decryptLoadedAccountRows`: dùng hàm mở có nhớ (pull về envelope cũ
+  → không giải mã lại).
+- `services/sync.service.ts`: conflict backup lưu **payload đã mã hóa** (cái vừa định push), không
+  lưu row RAM plaintext. Vá cả secure folder (lỗ có từ trước S1).
+- `pages/App.vue`: dialog conflict backup giải mã v2 khi account mở khóa để hiển thị/khôi phục;
+  field còn là envelope → hiện nhãn "đã mã hóa", **không cho Restore** (tránh mã hóa chồng).
+
+### S2C1.3 — khóa theo phiên trình duyệt + mở khóa offline
+
+- `utils/accountSession.ts` (mới): đọc/ghi `chrome.storage.session` — trạng thái
+  `{userId, row}` và DEK `{userId, dekId, dek, expiresAt}`; gia hạn khi dùng; alarm dọn khi hết
+  hạn; `resolveAccountForPush(userId)` cho đường push (S2C1.4).
+- `stores/accountCrypto.ts`: `refreshStatus` ghi trạng thái vào session; lỗi mạng → dùng bản
+  session (unlock offline). `unlock`/`enable`/recovery → ghi DEK vào session.
+  `restoreFromSession()` mở khóa im lặng. `lockNow()` = seal đĩa bằng key → bỏ key → nạp lại RAM
+  từ đĩa (RAM không còn plaintext). `clearStatus()` xóa luôn dữ liệu session.
+- `pages/App.vue`: mount → refresh → restore; kiểm tra hết hạn mỗi phút; nghe
+  `chrome.storage.onChanged` (session) để khóa/mở khóa đồng bộ giữa popup và tab.
+- Settings: nút **"Khóa ngay"**. `background.ts`: alarm dọn DEK hết hạn. `SECURITY.md` cập nhật D5.
+
+### S2C1.4 — đường push của SW / local-first mã hóa hoặc fail-closed
+
+- `syncFromCache(resolveAccount?)`: mọi caller (`autoSync.service`, `background.ts`) truyền
+  `resolveAccountForPush` → có key thì push v2, khóa/chưa biết thì bỏ qua row plaintext.
+- `pushLocalToCloud`: ghi chú tạo ở local mode, đẩy lên account đã bật → mã hóa v2 trước khi
+  upsert; khóa/chưa biết → giữ lại trong local, không báo lỗi.
+- `stores/sync.ts`: trạng thái chưa biết → fail-closed. Mở khóa xong → kích hoạt auto-sync để đẩy
+  phần đang chờ.
+
+### Ngoài phạm vi đợt này
+
+S2C2 (backfill, banner recovery, đổi passphrase, regenerate recovery key) — làm sau khi Sir
+verify tay đợt này. S3/S4/S5 giữ nguyên lộ trình.
+
 ## Chờ implement
 
 | Thứ tự | Spec | Nội dung | Test hiện tại |
