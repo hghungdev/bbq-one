@@ -246,12 +246,18 @@ export const syncService = {
    * Service worker: đọc cache, push dirty (bỏ qua note secure plaintext nếu không có key).
    * Chỉ chạy khi đã đăng nhập — anonymous mode không có cloud để push lên.
    */
-  async syncFromCache(): Promise<number> {
+  async syncFromCache(
+    /** S2C1.4: ngữ cảnh mã hóa account cho push — mọi caller thật truyền `resolveAccountForPush`
+     *  (utils/accountSession). Bỏ trống = account tắt (hành vi trước S2C1.4). */
+    resolveAccount?: (userId: string) => Promise<{ key: CryptoKey | null; kid: string } | null>,
+  ): Promise<number> {
     if (!(await isAuthenticated())) return 0
     // N3.1: cache có thể còn dirty rows của account cũ (context cũ persist lại sau purge) —
     // không được push/stash chúng dưới session account mới.
+    let userId: string
     try {
-      if (!(await isPushAllowedFor(await getCurrentUserId()))) return 0
+      userId = await getCurrentUserId()
+      if (!(await isPushAllowedFor(userId))) return 0
     } catch {
       return 0
     }
@@ -273,11 +279,16 @@ export const syncService = {
 
     let count = 0
     if (notes.length > 0) {
+      // Không xác định được trạng thái → fail-closed: bỏ qua row plaintext, row đã mã hóa vẫn push.
+      const account = resolveAccount
+        ? await resolveAccount(userId).catch(() => ({ key: null, kid: 'k1' }))
+        : null
       count += await this.syncDirtyNotesFromList(
         notes,
         noteBodies,
         folders,
         () => null,
+        account,
       )
     }
     if (calendarEvents.length > 0) {

@@ -72,14 +72,19 @@ export const useSyncStore = defineStore('sync', () => {
         }
       }
       const account = useAccountCryptoStore()
+      // S2C1.4: chưa biết account có mã hóa không (hoặc chỉ biết qua bản session) → hỏi lại;
+      // vẫn không biết → fail-closed: bỏ qua row plaintext thay vì đẩy dạng rõ lên server.
+      if (!account.fetched || account.stale) await account.refreshStatus().catch(() => {})
       await syncService.syncDirtyNotesFromList(
         notes.notes,
         notes.bodies,
         folders.folders,
         (id) => secure.getKey(id),
-        account.isEnabled()
-          ? { key: account.getContentKey(), kid: account.getDekId() }
-          : null,
+        !account.fetched
+          ? { key: null, kid: account.getDekId() }
+          : account.isEnabled()
+            ? { key: account.getContentKey(), kid: account.getDekId() }
+            : null,
       )
       // N7b: calendar cũng phải sync tay được — trước đây chỉ notes.
       await syncService.syncDirtyCalendarEventsFromList(calendarEvents.events)

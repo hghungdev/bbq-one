@@ -37,9 +37,11 @@
   import { formatAppDateTime, formatUtcOffsetLabel } from '@/utils/appDateTime'
   import { todayLocalKey } from '@/utils/calendarDate'
   import {
+    hasLocalFirstPending,
     initAutoSyncOnNetworkRestore,
     isAutoSyncCompleteMessage,
     runBackgroundAutoSync,
+    scheduleAutoSync,
   } from '@/services/autoSync.service'
   import { isOnline, onNetworkStatusChange } from '@/services/networkReachability.service'
   import {
@@ -278,10 +280,13 @@
       console.warn('[BBQOne] Account encryption status check failed:', e)
       return
     }
+    // S2C1.4: lúc trạng thái còn chưa biết, push giữ lại ghi chú local-first — giờ biết rồi thì đẩy.
+    if (await hasLocalFirstPending()) scheduleAutoSync('account-status')
     if (!account.isEnabled() || account.isUnlocked()) return
     // S2C1.3: mở lại popup trong phiên → DEK còn trong chrome.storage.session, không hỏi lại.
     if (await account.restoreFromSession()) {
       await account.decryptLoadedAccountRows()
+      scheduleAutoSync('account-unlocked')
       return
     }
     account.unlockModalOpen = true
@@ -338,6 +343,8 @@
 
   async function onAccountUnlocked(): Promise<void> {
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
+    // S2C1.4: row plaintext bị giữ lại lúc khóa → giờ có key, đẩy lên dạng v2.
+    scheduleAutoSync('account-unlocked')
     // Backup đang hiện dạng "đã mã hóa" → giờ có key, mở lại từ storage.
     if (conflictBackups.value.length > 0) {
       conflictBackups.value = await openConflictBackupsForView(await listConflictBackups())

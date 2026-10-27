@@ -148,6 +148,8 @@ function loadAutoSyncInstance() {
     },
     '@/constants/storage': constants,
     '@/constants/calendar': { CALENDAR_EVENTS_CACHE_KEY: CAL_KEY },
+    // S2C1.4: autoSync truyền resolveAccountForPush cho syncFromCache — account tắt.
+    '@/utils/accountSession': { resolveAccountForPush: async () => null },
   }
   if (webLockMod) mocks['@/utils/webLock'] = webLockMod
   return loadTsModule(path.join(ROOT, 'src', 'services', 'autoSync.service.ts'), mocks)

@@ -20,7 +20,11 @@ import {
   recoverSupabaseAuthFromStaleSession,
 } from '@/services/supabaseAuthRecovery.service'
 import { OFFSCREEN_CLIPBOARD_LOCK, withWebLock } from '@/utils/webLock'
-import { ACCOUNT_AUTOLOCK_ALARM, purgeExpiredSessionDek } from '@/utils/accountSession'
+import {
+  ACCOUNT_AUTOLOCK_ALARM,
+  purgeExpiredSessionDek,
+  resolveAccountForPush,
+} from '@/utils/accountSession'
 
 const ALARM_NAME = 'bbqone-daily-sync'
 const AUTOSYNC_RETRY_ALARM = 'bbqone-autosync-retry'
@@ -144,7 +148,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     return
   }
   if (alarm.name !== ALARM_NAME) return
-  void syncService.syncFromCache()
+  void syncService.syncFromCache(resolveAccountForPush)
 })
 
 interface CopyToOsClipboardMessage {

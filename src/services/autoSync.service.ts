@@ -11,6 +11,7 @@ import {
 import { NOTE_BODIES_CACHE_KEY, NOTES_CACHE_KEY } from '@/constants/storage'
 import { CALENDAR_EVENTS_CACHE_KEY } from '@/constants/calendar'
 import { SYNC_LOCK, withWebLock } from '@/utils/webLock'
+import { resolveAccountForPush } from '@/utils/accountSession'
 
 /** Debounce sau sự kiện online — tránh sync liên tục khi mạng chập chờn. */
 const ONLINE_DEBOUNCE_MS = 4_000
@@ -108,7 +109,7 @@ export async function runBackgroundAutoSync(reason: string): Promise<number> {
           console.warn('[BBQOne] pushLocalToCloud failed:', reason, e)
         }
       }
-      const count = await syncService.syncFromCache()
+      const count = await syncService.syncFromCache(resolveAccountForPush)
       total += count
       if (total > 0) {
         try {

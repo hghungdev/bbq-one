@@ -198,6 +198,9 @@ const syncEngine = loadTsModule(
     '@/types/localFirst': { LOCAL_STORAGE_KEYS: LOCAL_KEYS },
     './conflictDetector': { detectSyncConflicts: async () => ({ totalConflicts: 0 }) },
     './dataOwner.service': { isPushAllowedFor: async () => true },
+    // S2C1.4: syncEngine import secureCrypto + accountSession — account tắt (resolve → null).
+    '@/utils/secureCrypto': loadTsModule(path.join(ROOT, 'src', 'utils', 'secureCrypto.ts'), {}),
+    '@/utils/accountSession': { resolveAccountForPush: async () => null },
   },
 )
 

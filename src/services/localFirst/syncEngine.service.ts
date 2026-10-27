@@ -13,8 +13,30 @@ import type {
 } from '@/types/localFirst'
 import { detectSyncConflicts } from './conflictDetector'
 import type { ConflictReport } from './conflictDetector'
+import { encryptFieldV2, isEncryptedEnvelope } from '@/utils/secureCrypto'
+import { resolveAccountForPush, type AccountPushContext } from '@/utils/accountSession'
 
 export type SyncStrategy = 'use-local' | 'use-cloud' | 'cancel'
+
+/**
+ * S2C1.4: account bật mã hóa → field plaintext phải thành v2 trước khi upsert.
+ * Trả null = account bật nhưng khóa / chưa biết trạng thái → GIỮ LẠI ở local, lần sau đẩy.
+ * Field đã là envelope (v1 secure folder / v2) và row thuộc secure folder → nguyên vẹn.
+ */
+async function sealLocalRowForAccount<T extends Record<string, unknown>>(
+  row: T,
+  fields: string[],
+  account: AccountPushContext | null,
+  inSecureFolder: boolean,
+): Promise<T | null> {
+  if (!account || inSecureFolder) return row
+  const plain = fields.filter((f) => typeof row[f] === 'string' && !isEncryptedEnvelope(row[f] as string))
+  if (plain.length === 0) return row
+  if (!account.key) return null
+  const out: Record<string, unknown> = { ...row }
+  for (const f of plain) out[f] = await encryptFieldV2(row[f] as string, account.key, account.kid)
+  return out as T
+}
 
 export { type ConflictReport }
 
@@ -71,6 +93,10 @@ export async function pushLocalToCloud(
 
   // strategy === 'use-local' → existing logic (last-write-wins via upsert)
   const startedAt = Date.now()
+  // S2C1.4: lỗi đọc trạng thái → fail-closed (giữ ghi chú plaintext ở local).
+  const account = await resolveAccountForPush(userId).catch(
+    (): AccountPushContext => ({ key: null, kid: 'k1' }),
+  )
   const result: SyncResult = {
     pushedNotes: 0,
     pushedNoteBodies: 0,
@@ -113,7 +139,11 @@ export async function pushLocalToCloud(
   }
 
   // 2. Notes
+  const secureFolderIds = new Set(folders.filter((f) => f.is_secure).map((f) => f.id))
   const notes = await localStore.getArray<LocalNote>(LOCAL_STORAGE_KEYS.notes)
+  const folderOfLocalNote = new Map(notes.map((n) => [n.id, n.folder_id]))
+  /** Note bị giữ lại (account khóa) — body của nó cũng phải chờ (FK note_id). */
+  const heldNoteIds = new Set<string>()
   for (const note of notes) {
     if (note.__synced) {
       syncedNoteIds.add(note.id)
@@ -121,9 +151,20 @@ export async function pushLocalToCloud(
     }
     try {
       const { __synced: _s, ...rest } = note
+      const sealed = await sealLocalRowForAccount(
+        rest,
+        ['title'],
+        account,
+        secureFolderIds.has(rest.folder_id ?? ''),
+      )
+      if (!sealed) {
+        heldNoteIds.add(note.id)
+        result.heldForEncryption = (result.heldForEncryption ?? 0) + 1
+        continue
+      }
       const { error } = await supabase
         .from('notes')
-        .upsert({ ...rest, user_id: userId }, { onConflict: 'id' })
+        .upsert({ ...sealed, user_id: userId }, { onConflict: 'id' })
       if (error) throw error
       result.pushedNotes++
       syncedNoteIds.add(note.id)
@@ -143,11 +184,25 @@ export async function pushLocalToCloud(
       syncedBodyIds.add(body.id)
       continue
     }
+    if (heldNoteIds.has(body.note_id)) {
+      result.heldForEncryption = (result.heldForEncryption ?? 0) + 1
+      continue
+    }
     try {
       const { __synced: _s, ...rest } = body
+      const sealed = await sealLocalRowForAccount(
+        rest,
+        ['label', 'content'],
+        account,
+        secureFolderIds.has(folderOfLocalNote.get(rest.note_id) ?? ''),
+      )
+      if (!sealed) {
+        result.heldForEncryption = (result.heldForEncryption ?? 0) + 1
+        continue
+      }
       const { error } = await supabase
         .from('note_bodies')
-        .upsert({ ...rest, user_id: userId }, { onConflict: 'id' })
+        .upsert({ ...sealed, user_id: userId }, { onConflict: 'id' })
       if (error) throw error
       result.pushedNoteBodies++
       syncedBodyIds.add(body.id)

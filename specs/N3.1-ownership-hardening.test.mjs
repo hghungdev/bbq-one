@@ -145,6 +145,9 @@ console.log('\nT2 — pushLocalToCloud (CODE THẬT syncEngine): đường alarm
       '@/types/localFirst': typesLocalFirst,
       './conflictDetector': conflictDetector,
       './dataOwner.service': dataOwner, // sau fix syncEngine sẽ import — cung cấp bản thật
+      // S2C1.4: syncEngine import secureCrypto + accountSession — account tắt (resolve → null).
+      '@/utils/secureCrypto': loadTsModule(path.join(ROOT, 'src', 'utils', 'secureCrypto.ts'), {}),
+      '@/utils/accountSession': { resolveAccountForPush: async () => null },
     },
   )
   const t0 = Date.now()
