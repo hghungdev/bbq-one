@@ -31,6 +31,8 @@ function requireAccountKey(): { key: CryptoKey; kid: string } | null {
   if (!account.isEnabled()) return null
   const key = account.getContentKey()
   if (!key) throw new Error('Account locked')
+  // S2C1.3: ghi = có thao tác → gia hạn tự khóa 30'.
+  account.markActivity()
   return { key, kid: account.getDekId() }
 }
 

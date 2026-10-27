@@ -229,9 +229,20 @@ try {
     '@/utils/secureCache': cacheMod,
     '@/services/userCrypto.service': {
       fetchUserCryptoRow: async () => (svc.row ? { ...svc.row } : null),
+      fetchUserCryptoStatus: async () => ({ userId: 'u1', row: svc.row ? { ...svc.row } : null }),
       upsertUserCryptoRow: async (r) => {
         svc.row = { ...r }
       },
+    },
+    // S2C1.3: store import accountSession (chrome.storage.session) — no-op, harness này không có chrome.
+    '@/utils/accountSession': {
+      writeAccountStatus: async () => {},
+      readAccountStatus: async () => null,
+      writeSessionDek: async () => {},
+      readSessionDek: async () => null,
+      touchSessionDek: async () => {},
+      clearSessionDek: async () => {},
+      clearAccountSession: async () => {},
     },
     '@/stores/notes': { useNotesStore: () => notesState },
   })

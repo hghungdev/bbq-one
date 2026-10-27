@@ -16,7 +16,7 @@ import { getExtensionVersion } from '@/utils/extensionVersion'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
 import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; 'lock-account': [] }>()
 
 const auth = useAuthStore()
 const accountCrypto = useAccountCryptoStore()
@@ -422,6 +422,11 @@ onUnmounted(() => {
                 @click="accountCrypto.unlockModalOpen = true"
               >
                 {{ t('account.unlock') }}
+              </RetroButton>
+            </div>
+            <div v-else class="settings-row settings-row--pin">
+              <RetroButton variant="sm" type="button" @click="emit('lock-account')">
+                {{ t('account.lockNow') }}
               </RetroButton>
             </div>
           </template>

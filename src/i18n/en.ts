@@ -172,7 +172,8 @@ export const en = {
   'account.forgot': 'Forgot passphrase? Use recovery key',
   'account.backToPassphrase': 'Back to passphrase',
   'account.lockedNote': 'Encrypted note · unlock to view',
-  'account.statusUnlocked': 'Unlocked — locks when this window closes',
+  'account.statusUnlocked': 'Unlocked — locks after 30 minutes idle or when the browser closes',
+  'account.lockNow': 'Lock now',
   'account.statusLocked': 'Locked',
   'account.recoveryRewrapHint':
     'Unlocking with the recovery key requires setting a new passphrase.',

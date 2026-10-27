@@ -174,7 +174,8 @@ export const vi: Record<I18nKey, string> = {
   'account.forgot': 'Quên passphrase? Dùng Recovery key',
   'account.backToPassphrase': 'Quay lại passphrase',
   'account.lockedNote': 'Ghi chú được mã hóa · mở khóa để xem',
-  'account.statusUnlocked': 'Đang mở khóa — khóa lại khi đóng cửa sổ',
+  'account.statusUnlocked': 'Đang mở khóa — tự khóa sau 30 phút không dùng hoặc khi đóng trình duyệt',
+  'account.lockNow': 'Khóa ngay',
   'account.statusLocked': 'Đang khóa',
   'account.recoveryRewrapHint':
     'Mở bằng Recovery key sẽ yêu cầu đặt passphrase mới ngay.',

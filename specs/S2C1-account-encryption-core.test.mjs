@@ -99,6 +99,8 @@ const piniaMock = { defineStore: (_name, setup) => setup }
 const svc = { row: null, upserts: 0 }
 const svcMock = {
   fetchUserCryptoRow: async () => (svc.row ? { ...svc.row } : null),
+  // S2C1.3: store gọi fetchUserCryptoStatus (row + user id).
+  fetchUserCryptoStatus: async () => ({ userId: 'u1', row: svc.row ? { ...svc.row } : null }),
   upsertUserCryptoRow: async (r) => {
     svc.upserts++
     svc.row = { ...r }
@@ -119,6 +121,16 @@ try {
     '@/utils/secureCache': loadTsModule(path.join(ROOT, 'src', 'utils', 'secureCache.ts'), {
       '@/utils/secureCrypto': secureCrypto,
     }),
+    // S2C1.3: store import accountSession (chrome.storage.session) — no-op, harness này không có chrome.
+    '@/utils/accountSession': {
+      writeAccountStatus: async () => {},
+      readAccountStatus: async () => null,
+      writeSessionDek: async () => {},
+      readSessionDek: async () => null,
+      touchSessionDek: async () => {},
+      clearSessionDek: async () => {},
+      clearAccountSession: async () => {},
+    },
     '@/services/userCrypto.service': svcMock,
     '@/stores/notes': { useNotesStore: () => notesState },
   })

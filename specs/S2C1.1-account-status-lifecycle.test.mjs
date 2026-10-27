@@ -156,6 +156,11 @@ const svcMock = {
     if (svc.gate) await svc.gate
     return svc.row ? { ...svc.row } : null
   },
+  // S2C1.3: store gọi fetchUserCryptoStatus (row + user id).
+  fetchUserCryptoStatus: async () => {
+    if (svc.gate) await svc.gate
+    return { userId: 'u1', row: svc.row ? { ...svc.row } : null }
+  },
   upsertUserCryptoRow: async (r) => {
     svc.row = { ...r }
   },
@@ -169,6 +174,16 @@ const S = loadTsModule(path.join(ROOT, 'src', 'stores', 'accountCrypto.ts'), {
   '@/utils/secureCache': loadTsModule(path.join(ROOT, 'src', 'utils', 'secureCache.ts'), {
     '@/utils/secureCrypto': secureCrypto,
   }),
+  // S2C1.3: store import accountSession (chrome.storage.session) — no-op, harness này không có chrome.
+  '@/utils/accountSession': {
+    writeAccountStatus: async () => {},
+    readAccountStatus: async () => null,
+    writeSessionDek: async () => {},
+    readSessionDek: async () => null,
+    touchSessionDek: async () => {},
+    clearSessionDek: async () => {},
+    clearAccountSession: async () => {},
+  },
   '@/services/userCrypto.service': svcMock,
   '@/stores/notes': { useNotesStore: () => ({ notes: [], bodies: [] }) },
 }).useAccountCryptoStore

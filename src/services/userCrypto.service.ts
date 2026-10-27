@@ -10,8 +10,15 @@ export interface UserCryptoRow {
   verifier: string
 }
 
-/** null = user chưa bật encrypted account. Không kiểm tra được (mạng, token) → throw. */
-export async function fetchUserCryptoRow(): Promise<UserCryptoRow | null> {
+/**
+ * S2C1.3: trạng thái kèm user id (store cache nó theo user vào chrome.storage.session).
+ * null = chưa đăng nhập; `row: null` = user chưa bật encrypted account.
+ * Không kiểm tra được (mạng, token) → throw.
+ */
+export async function fetchUserCryptoStatus(): Promise<{
+  userId: string
+  row: UserCryptoRow | null
+} | null> {
   const {
     data: { user },
     error: authError,
@@ -30,8 +37,12 @@ export async function fetchUserCryptoRow(): Promise<UserCryptoRow | null> {
     .eq('user_id', user.id)
     .maybeSingle()
   if (error) throw new Error(error.message)
-  if (!data) return null
-  return data as UserCryptoRow
+  return { userId: user.id, row: data ? (data as UserCryptoRow) : null }
+}
+
+/** null = user chưa bật encrypted account. Không kiểm tra được (mạng, token) → throw. */
+export async function fetchUserCryptoRow(): Promise<UserCryptoRow | null> {
+  return (await fetchUserCryptoStatus())?.row ?? null
 }
 
 export async function upsertUserCryptoRow(row: UserCryptoRow): Promise<void> {

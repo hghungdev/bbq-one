@@ -17,12 +17,21 @@ import {
   wrapDek,
 } from '@/utils/accountCrypto'
 import {
-  fetchUserCryptoRow,
+  fetchUserCryptoStatus,
   upsertUserCryptoRow,
   type UserCryptoRow,
 } from '@/services/userCrypto.service'
 import { parseEnvelopeV2, saltFromBase64, saltToBase64 } from '@/utils/secureCrypto'
 import { openSealedField, sealMemoId } from '@/utils/secureCache'
+import {
+  clearAccountSession,
+  clearSessionDek,
+  readAccountStatus,
+  readSessionDek,
+  touchSessionDek,
+  writeAccountStatus,
+  writeSessionDek,
+} from '@/utils/accountSession'
 import { useNotesStore } from '@/stores/notes'
 
 export interface EnableOptions {
@@ -32,18 +41,25 @@ export interface EnableOptions {
 }
 
 /**
- * S2C1: khóa account-level. DEK/K_content CHỈ trong RAM — chết theo cửa sổ (D5).
+ * S2C1: khóa account-level. DEK/K_content không bao giờ xuống đĩa.
+ * S2C1.3 (D5 đổi): DEK giữ trong chrome.storage.session (RAM trình duyệt) tới khi tự khóa sau
+ * 30' không thao tác / đóng trình duyệt / logout / "Khóa ngay" — xem utils/accountSession.ts.
  * Store KHÔNG tự gọi notes.loadAll() sau unlock — component gọi (tránh vòng lặp store↔store).
  */
 export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   const row = shallowRef<UserCryptoRow | null>(null)
+  /** User sở hữu `row` — session DEK chỉ được dùng khi khớp. */
+  const userId = shallowRef<string | null>(null)
   const fetched = ref(false)
+  /** S2C1.3: trạng thái lấy từ bản session (offline) — có mạng lại thì phải hỏi server. */
+  const stale = ref(false)
   const dekBytes = shallowRef<Uint8Array | null>(null)
   const contentKey = shallowRef<CryptoKey | null>(null)
   /** UI: NoteItem/Settings mở modal unlock qua cờ này. */
   const unlockModalOpen = ref(false)
   /** Tăng mỗi lần clearStatus() — refreshStatus đang bay của session cũ không được ghi đè. */
   let statusEpoch = 0
+  let lastActivityAt = 0
 
   function isEnabled(): boolean {
     return row.value !== null
@@ -60,10 +76,40 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
 
   async function refreshStatus(): Promise<void> {
     const epoch = statusEpoch
-    const next = await fetchUserCryptoRow()
+    let next: { userId: string; row: UserCryptoRow | null } | null
+    try {
+      next = await fetchUserCryptoStatus()
+    } catch (e) {
+      // S2C1.3: offline / lỗi mạng → bản đã kiểm tra trong phiên trình duyệt này (RAM, không phải
+      // đĩa). Logout xóa nó (clearStatus), và login cần mạng nên không lẫn sang account khác.
+      const cached = await readAccountStatus()
+      if (epoch !== statusEpoch) return
+      if (!cached) throw e
+      applyStatus(cached.userId, cached.row)
+      stale.value = true
+      return
+    }
     if (epoch !== statusEpoch) return
-    row.value = next
+    applyStatus(next?.userId ?? null, next?.row ?? null)
+    stale.value = false
+    if (next) await writeAccountStatus(next.userId, next.row)
+  }
+
+  function applyStatus(uid: string | null, r: UserCryptoRow | null): void {
+    // Key đang cầm thuộc account / DEK khác → bỏ, không mã hóa dữ liệu account này bằng DEK kia.
+    if (contentKey.value && (uid !== userId.value || r?.dek_id !== row.value?.dek_id)) lock()
+    userId.value = uid
+    row.value = r
     fetched.value = true
+  }
+
+  /** Ghi status + DEK vào chrome.storage.session — chỉ khi biết user (refreshStatus đã chạy). */
+  async function persistSession(r: UserCryptoRow, dek: Uint8Array): Promise<void> {
+    const uid = userId.value
+    if (!uid) return
+    await writeAccountStatus(uid, r)
+    await writeSessionDek(uid, r.dek_id, dek)
+    lastActivityAt = Date.now()
   }
 
   /** Bước cuối ceremony — MỘT upsert duy nhất. Thoát trước đó = chưa bật gì. */
@@ -96,6 +142,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     row.value = next
     dekBytes.value = dek
     contentKey.value = await deriveContentKey(dek)
+    await persistSession(next, dek)
     return { recoveryDisplay: recovery.display }
   }
 
@@ -113,6 +160,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     const dek = await unwrapDek(r.wrapped_dek, kek)
     dekBytes.value = dek
     contentKey.value = await deriveContentKey(dek)
+    await persistSession(r, dek)
   }
 
   /** Recovery = BẮT BUỘC đặt passphrase mới ngay (D-approved). wrapped_dek_recovery GIỮ NGUYÊN. */
@@ -143,12 +191,54 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     row.value = next
     dekBytes.value = dek
     contentKey.value = await deriveContentKey(dek)
+    await persistSession(next, dek)
   }
 
-  /** D5: bình thường khóa chết theo cửa sổ; lock() chỉ dùng cho logout (lockAll flow). */
+  /**
+   * S2C1.3: mở lại popup trong phiên (DEK còn hạn trong chrome.storage.session) → mở khóa
+   * không hỏi passphrase. Chỉ khi DEK thuộc đúng user + đúng dek_id của row hiện tại.
+   */
+  async function restoreFromSession(): Promise<boolean> {
+    if (contentKey.value) return true
+    const r = row.value
+    const uid = userId.value
+    if (!r || !uid) return false
+    const s = await readSessionDek()
+    if (!s || s.userId !== uid || s.dekId !== r.dek_id) return false
+    if (row.value !== r || userId.value !== uid) return false
+    dekBytes.value = s.dek
+    contentKey.value = await deriveContentKey(s.dek)
+    markActivity()
+    return true
+  }
+
+  /** Có thao tác (mở popup, ghi) → gia hạn tự khóa. Tối đa 1 lần ghi session mỗi phút. */
+  function markActivity(): void {
+    if (!contentKey.value) return
+    const now = Date.now()
+    if (now - lastActivityAt < 60_000) return
+    lastActivityAt = now
+    void touchSessionDek()
+  }
+
+  /** Chỉ bỏ key trong RAM (logout / đổi account). Khóa theo yêu cầu user dùng lockNow(). */
   function lock(): void {
     dekBytes.value = null
     contentKey.value = null
+  }
+
+  /**
+   * "Khóa ngay" / hết hạn tự khóa. Thứ tự bắt buộc: seal đĩa bằng key còn sống → bỏ key → nạp
+   * lại RAM từ đĩa (chỉ còn envelope). Bỏ key trước thì persistCache kế tiếp ghi plaintext.
+   * `clearSession: false` khi DEK session đã bị xóa từ nơi khác (context khác khóa / alarm).
+   */
+  async function lockNow(opts: { clearSession?: boolean } = {}): Promise<void> {
+    if (!contentKey.value) return
+    const notes = useNotesStore()
+    await notes.persistCache()
+    lock()
+    if (opts.clearSession !== false) await clearSessionDek()
+    await notes.hydrateFromCache()
   }
 
   /**
@@ -159,8 +249,12 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
   function clearStatus(): void {
     statusEpoch++
     row.value = null
+    userId.value = null
     fetched.value = false
+    stale.value = false
     unlockModalOpen.value = false
+    // S2C1.3: bản session (status + DEK) dùng chung mọi context — xóa luôn.
+    void clearAccountSession()
   }
 
   /**
@@ -195,6 +289,7 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
 
   return {
     fetched,
+    stale,
     unlockModalOpen,
     isEnabled,
     isUnlocked,
@@ -204,7 +299,10 @@ export const useAccountCryptoStore = defineStore('accountCrypto', () => {
     enableAccountEncryption,
     unlock,
     unlockWithRecoveryAndRewrap,
+    restoreFromSession,
+    markActivity,
     lock,
+    lockNow,
     clearStatus,
     decryptLoadedAccountRows,
   }

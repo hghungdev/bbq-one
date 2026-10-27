@@ -53,6 +53,7 @@
     type ConflictBackupEntry,
   } from '@/utils/syncConflict'
   import { decryptField, isEncryptedEnvelope, parseEnvelopeV2 } from '@/utils/secureCrypto'
+  import { ACCOUNT_DEK_SESSION_KEY, clearAccountSession } from '@/utils/accountSession'
   import {
     clearNoteDraft,
     readNoteDraft,
@@ -103,8 +104,9 @@
 
   async function refreshStoresFromNetwork(): Promise<void> {
     if (!isOnline()) return
-    // Mount lúc offline thì chưa biết account có mã hóa không — kiểm tra lại trước khi push.
-    if (!account.fetched) await refreshAccountCryptoStatus()
+    // Mount lúc offline thì chưa biết account có mã hóa không (hoặc chỉ biết qua bản session) —
+    // hỏi lại server trước khi push.
+    if (!account.fetched || account.stale) await refreshAccountCryptoStatus()
     // Chốt delete còn treo (offline-delete đã hết undo window) trước khi pull — tránh row hiện lại tạm thời.
     await flushOrphanedPendingDeleteCommits('respect-expiry')
     // Push dirty rows + entry local-first LÊN cloud trước, rồi mới pull — tránh pull đè offline edits.
@@ -222,6 +224,9 @@
     ])
     dataReady.value = true
     await maybeRestoreNoteDraft()
+    chrome.storage.onChanged.addListener(onAccountSessionChanged)
+    // Không có ai đăng nhập → không được còn trạng thái/DEK account trong session.
+    if (auth.initialized && !isAuthenticated.value) await clearAccountSession()
     await refreshAccountCryptoStatus()
     void refreshStoresFromNetwork().then(() => {
       void maybeShowOverdueReminder()
@@ -241,6 +246,7 @@
     stopAutoSyncListener?.()
     stopNetworkListener?.()
     chrome.runtime.onMessage.removeListener(onAutoSyncMessage)
+    chrome.storage.onChanged.removeListener(onAccountSessionChanged)
   })
 
   watch(utcOffsetHours, () => {
@@ -272,9 +278,46 @@
       console.warn('[BBQOne] Account encryption status check failed:', e)
       return
     }
-    if (account.isEnabled() && !account.isUnlocked()) {
-      account.unlockModalOpen = true
+    if (!account.isEnabled() || account.isUnlocked()) return
+    // S2C1.3: mở lại popup trong phiên → DEK còn trong chrome.storage.session, không hỏi lại.
+    if (await account.restoreFromSession()) {
+      await account.decryptLoadedAccountRows()
+      return
     }
+    account.unlockModalOpen = true
+  }
+
+  /**
+   * S2C1.3: popup và tab dùng chung DEK trong chrome.storage.session — một nơi khóa (hoặc hết
+   * hạn tự khóa) thì mọi nơi khóa; một nơi mở khóa thì nơi khác mở theo.
+   */
+  function onAccountSessionChanged(
+    changes: Record<string, chrome.storage.StorageChange>,
+    area: string,
+  ): void {
+    if (area !== 'session' || !(ACCOUNT_DEK_SESSION_KEY in changes)) return
+    const removed = changes[ACCOUNT_DEK_SESSION_KEY].newValue === undefined
+    if (removed) {
+      if (account.isUnlocked()) void lockAccountNow({ clearSession: false })
+      return
+    }
+    if (!account.isEnabled() || account.isUnlocked()) return
+    void account.restoreFromSession().then(async (ok) => {
+      if (!ok) return
+      account.unlockModalOpen = false
+      await onAccountUnlocked()
+    })
+  }
+
+  /** "Khóa ngay" / hết hạn: lưu edit đang chờ (còn key) → đóng ghi chú → khóa. */
+  async function lockAccountNow(opts: { clearSession?: boolean } = {}): Promise<void> {
+    try {
+      await noteEditorRef.value?.flushSave()
+    } catch {
+      /* draft vẫn nằm trong chrome.storage.session (C8.1) */
+    }
+    notes.selectNote(null)
+    await account.lockNow(opts)
   }
 
   /** Anonymous: chưa đăng nhập */
@@ -710,7 +753,11 @@
     </template>
     <DashboardSkeleton v-else class="shell__loading-skel" />
 
-    <SettingsModal v-if="showSettings" @close="showSettings = false" />
+    <SettingsModal
+      v-if="showSettings"
+      @close="showSettings = false"
+      @lock-account="lockAccountNow()"
+    />
 
     <!-- Login popup: hiện ngay trên dashboard thay vì navigate sang trang riêng -->
     <LoginModal v-if="showLoginModal" @close="showLoginModal = false" @success="onLoginSuccess" />

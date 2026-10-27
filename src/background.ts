@@ -20,6 +20,7 @@ import {
   recoverSupabaseAuthFromStaleSession,
 } from '@/services/supabaseAuthRecovery.service'
 import { OFFSCREEN_CLIPBOARD_LOCK, withWebLock } from '@/utils/webLock'
+import { ACCOUNT_AUTOLOCK_ALARM, purgeExpiredSessionDek } from '@/utils/accountSession'
 
 const ALARM_NAME = 'bbqone-daily-sync'
 const AUTOSYNC_RETRY_ALARM = 'bbqone-autosync-retry'
@@ -126,6 +127,11 @@ initAutoSyncOnNetworkRestore()
 void flushOrphanedPendingDeleteCommits('respect-expiry').then(scheduleOrphanExpiryAlarm)
 
 chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ACCOUNT_AUTOLOCK_ALARM) {
+    // S2C1.3: DEK account hết hạn → xóa khỏi chrome.storage.session; popup/tab đang mở tự khóa.
+    void purgeExpiredSessionDek()
+    return
+  }
   if (alarm.name === PENDING_DELETE_FLUSH_ALARM) {
     void flushOrphanedPendingDeleteCommits('respect-expiry').then(scheduleOrphanExpiryAlarm)
     return
