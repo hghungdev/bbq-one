@@ -27,7 +27,8 @@ check(
 )
 check(
   'U10.2 không đọc trạng thái "đã ẩn" cũ (ai từng bấm Ẩn vẫn thấy Ngày mai)',
-  !chip.includes('getDismissedUpcomingBannerDateKey') && /buildAgenda\([\s\S]{0,200}null,?\s*\)/.test(chip),
+  // U12: thêm tham số quá hạn SAU `null` → chỉ đòi `null` ở vị trí ngày-mai-đã-ẩn.
+  !chip.includes('getDismissedUpcomingBannerDateKey') && /buildAgenda\([\s\S]{0,200}null,/.test(chip),
   'còn đọc trạng thái ẩn',
 )
 check('U10.3 vẫn mở lịch đúng ngày', /emit\('open-calendar',\s*dateKey\)/.test(chip), 'mất "Mở lịch"')

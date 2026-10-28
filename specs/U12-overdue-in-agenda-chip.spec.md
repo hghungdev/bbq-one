@@ -12,7 +12,8 @@ Sự kiện đã qua chưa xong → `CalendarOverdueReminderDialog` **tự bật
 ## Sửa
 
 ```
-[● Hôm nay  HSBC T1279, OT…  · ● 5 quá hạn · Mai 3 ▾]     (chỉ có quá hạn: [● Quá hạn  5 việc chưa xong ▾])
+[● Hôm nay  HSBC T1279, OT…  · ● 5 quá hạn ▾]     (chỉ có quá hạn: [● Quá hạn  5 việc chưa xong ▾])
+  ↑ chip tối đa MỘT đoạn phụ: quá hạn thay cho "Mai n" (ngày mai vẫn đủ trong bảng)
 ┌ Upcoming ──────────────────────────────────────┐
 │ ● QUÁ HẠN · 5 việc chưa xong    Đánh dấu xong  │  → mở hộp thoại chọn hàng loạt (U7)
 │   Shinhan · 20/10                              │  → bấm: mở lịch đúng ngày
@@ -43,6 +44,8 @@ Sự kiện đã qua chưa xong → `CalendarOverdueReminderDialog` **tự bật
   re-check reminder": mục đích là nhắc quá hạn dựa trên dữ liệu mới nhất, kể cả khi đăng nhập muộn. Chip
   là `computed` theo `calendar.events` nên tự cập nhật sau mỗi lần tải / đăng nhập → đổi thành "không
   còn tự bật hộp thoại; chip đọc quá hạn từ store".
+- **U10.2** regex "`buildAgenda(…, null)`": `null` không còn là tham số cuối (thêm danh sách quá hạn
+  phía sau) → chỉ đòi `null` ở vị trí "ngày mai đã ẩn".
 
 ## Nghiệm thu
 

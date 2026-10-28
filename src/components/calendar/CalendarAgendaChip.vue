@@ -2,6 +2,7 @@
   import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
+  import { listOverdueIncompleteEvents } from '@/services/calendarOverdueReminder.service'
   import { useLangStore } from '@/stores/uiLang'
   import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
   import { agendaChip, buildAgenda, type AgendaDay } from '@/utils/calendarAgenda'
@@ -9,9 +10,11 @@
   /**
    * U6: lịch hôm nay / ngày mai gọn trong MỘT chip trên header (thay 2 banner xếp chồng). Bấm → bảng
    * chi tiết; không chạy chữ, không tự ẩn — có sự kiện thì luôn thấy, hết sự kiện thì chip biến mất.
+   * U12: nhóm thứ hai "Quá hạn" (thay hộp thoại tự bật) — đứng đầu bảng, "Đánh dấu xong" mở hộp thoại.
    */
   const emit = defineEmits<{
     'open-calendar': [dateKey: string]
+    'review-overdue': []
   }>()
 
   const calendar = useCalendarEventsStore()
@@ -29,9 +32,17 @@
   const panelRef = ref<HTMLElement | null>(null)
   const panelId = 'bbqone-agenda-panel'
 
+  /** U12: computed theo store — đánh dấu xong / tải lại / đăng nhập muộn đều tự cập nhật. */
+  const overdueEvents = computed(() => listOverdueIncompleteEvents(calendar.events))
   // U10: tạm bỏ "Ẩn" ngày mai — không đọc trạng thái ẩn cũ (ai từng bấm Ẩn vẫn thấy Ngày mai).
   const agenda = computed(() =>
-    buildAgenda((key) => calendar.eventsForDate(key), todayKey.value, tomorrowKey.value, null),
+    buildAgenda(
+      (key) => calendar.eventsForDate(key),
+      todayKey.value,
+      tomorrowKey.value,
+      null,
+      overdueEvents.value,
+    ),
   )
   const chip = computed(() => agendaChip(agenda.value))
 
@@ -43,10 +54,30 @@
   })
 
   const separator = computed(() => t('calendar.agenda.listSeparator'))
-  const chipLabel = computed(() =>
-    chip.value?.tone === 'tomorrow' ? t('calendar.agenda.tomorrow') : t('calendar.agenda.today'),
+  const chipLabel = computed(() => {
+    if (chip.value?.tone === 'overdue') return t('calendar.agenda.overdue')
+    return chip.value?.tone === 'tomorrow' ? t('calendar.agenda.tomorrow') : t('calendar.agenda.today')
+  })
+  const chipTitles = computed(() => {
+    if (!chip.value) return ''
+    if (chip.value.tone === 'overdue') return t('calendar.agenda.overdueCount', { n: chip.value.overdueCount })
+    return chip.value.titles.join(separator.value)
+  })
+  /** Đoạn "· 5 quá hạn" cạnh chữ chính (khi chữ chính là hôm nay / ngày mai). */
+  const overdueShort = computed(() =>
+    chip.value && chip.value.tone !== 'overdue' && chip.value.overdueCount > 0
+      ? t('calendar.agenda.overdueShort', { n: chip.value.overdueCount })
+      : '',
   )
-  const chipTitles = computed(() => chip.value?.titles.join(separator.value) ?? '')
+
+  /** Ngày ngắn cho dòng quá hạn: 20/10 · Oct 20. */
+  function shortDate(dateKey: string): string {
+    const [y, m, d] = dateKey.split('-').map(Number)
+    const dt = new Date(y, m - 1, d)
+    return lang.value === 'vi'
+      ? dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+      : dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
 
   function dayLabel(tone: 'today' | 'tomorrow'): string {
     return tone === 'today' ? t('calendar.agenda.today') : t('calendar.agenda.tomorrow')
@@ -110,6 +141,11 @@
     closePanel(false)
     emit('open-calendar', dateKey)
   }
+
+  function reviewOverdue(): void {
+    closePanel(false)
+    emit('review-overdue')
+  }
 </script>
 
 <template>
@@ -128,14 +164,24 @@
       aria-haspopup="dialog"
       :aria-expanded="open"
       :aria-controls="panelId"
-      :aria-label="t('calendar.agenda.chipAria', { label: chipLabel, list: chipTitles })"
-      :title="`${chipLabel}: ${chipTitles}`"
+      :aria-label="
+        t('calendar.agenda.chipAria', {
+          label: chipLabel,
+          list: overdueShort ? `${chipTitles} · ${overdueShort}` : chipTitles,
+        })
+      "
+      :title="overdueShort ? `${chipLabel}: ${chipTitles} · ${overdueShort}` : `${chipLabel}: ${chipTitles}`"
       @click="toggle"
     >
       <span class="agenda-chip__dot" :class="`agenda-chip__dot--${chip.tone}`" aria-hidden="true" />
       <span class="agenda-chip__label">{{ chipLabel }}</span>
       <span class="agenda-chip__titles">{{ chipTitles }}</span>
-      <span v-if="chip.tomorrowCount > 0" class="agenda-chip__more">
+      <span v-if="overdueShort" class="agenda-chip__more agenda-chip__more--overdue">
+        <span class="agenda-chip__dot agenda-chip__dot--overdue" aria-hidden="true" />
+        {{ overdueShort }}
+      </span>
+      <!-- Chip không dài thêm: tối đa MỘT đoạn phụ — quá hạn (gấp hơn) thay cho "Mai n". -->
+      <span v-else-if="chip.tomorrowCount > 0" class="agenda-chip__more">
         <span class="agenda-chip__dot agenda-chip__dot--tomorrow" aria-hidden="true" />
         {{ t('calendar.agenda.tomorrowCount', { n: chip.tomorrowCount }) }}
       </span>
@@ -168,6 +214,39 @@
       tabindex="-1"
     >
       <p class="agenda-chip__panel-title">{{ t('calendar.agenda.panelTitle') }}</p>
+      <!-- U12: nhóm "Quá hạn" đứng đầu (gấp nhất). -->
+      <section v-if="agenda.overdue" class="agenda-chip__day agenda-chip__day--overdue">
+        <div class="agenda-chip__day-head">
+          <span class="agenda-chip__dot agenda-chip__dot--overdue" aria-hidden="true" />
+          <span class="agenda-chip__day-label">
+            {{ t('calendar.agenda.overdue')
+            }}<span class="agenda-chip__day-date">
+              · {{ t('calendar.agenda.overdueCount', { n: agenda.overdue.count }) }}</span
+            >
+          </span>
+          <button type="button" class="agenda-chip__link agenda-chip__link--accent" @click="reviewOverdue">
+            {{ t('calendar.agenda.reviewOverdue') }}
+          </button>
+        </div>
+        <ul class="agenda-chip__items">
+          <li v-for="item in agenda.overdue.items" :key="item.id">
+            <button type="button" class="agenda-chip__item" @click="openDay(item.dateKey)">
+              <span
+                class="agenda-chip__swatch"
+                :style="item.color ? { background: item.color } : undefined"
+                aria-hidden="true"
+              />
+              <span class="agenda-chip__item-title">{{ item.title }}</span>
+              <span class="agenda-chip__item-date">{{ shortDate(item.dateKey) }}</span>
+            </button>
+          </li>
+          <li v-if="agenda.overdue.count > agenda.overdue.items.length">
+            <button type="button" class="agenda-chip__item agenda-chip__item--more" @click="reviewOverdue">
+              {{ t('calendar.agenda.overdueMore', { n: agenda.overdue.count - agenda.overdue.items.length }) }}
+            </button>
+          </li>
+        </ul>
+      </section>
       <section v-for="d in days" :key="d.tone" class="agenda-chip__day">
         <div class="agenda-chip__day-head">
           <span class="agenda-chip__dot" :class="`agenda-chip__dot--${d.tone}`" aria-hidden="true" />
@@ -241,6 +320,12 @@
     --chip-border: var(--calendar-banner-today-border);
   }
 
+  .agenda-chip--overdue {
+    --chip-bg: color-mix(in srgb, var(--danger) 10%, var(--bg-panel));
+    --chip-bg-hover: color-mix(in srgb, var(--danger) 16%, var(--bg-panel));
+    --chip-border: var(--danger);
+  }
+
   .agenda-chip--tomorrow {
     --chip-bg: var(--calendar-banner-upcoming-bg);
     --chip-bg-hover: var(--calendar-banner-upcoming-bg-hover);
@@ -271,6 +356,33 @@
 
   .agenda-chip__dot--tomorrow {
     background: var(--calendar-banner-upcoming-border);
+  }
+
+  .agenda-chip__dot--overdue {
+    background: var(--danger);
+  }
+
+  .agenda-chip__more--overdue {
+    color: var(--danger);
+    font-weight: 600;
+  }
+
+  .agenda-chip__item-date {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding-left: 8px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+  }
+
+  .agenda-chip__item--more {
+    padding-left: 19px;
+    color: var(--text-muted);
+  }
+
+  .agenda-chip__item--more:hover {
+    color: var(--accent);
   }
 
   .agenda-chip__label {

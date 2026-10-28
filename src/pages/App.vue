@@ -42,11 +42,7 @@
     scheduleAutoSync,
   } from '@/services/autoSync.service'
   import { isOnline, onNetworkStatusChange } from '@/services/networkReachability.service'
-  import {
-    dismissOverdueReminder,
-    groupOverdueIncompleteEvents,
-    isOverdueReminderDismissed,
-  } from '@/services/calendarOverdueReminder.service'
+  import { groupOverdueIncompleteEvents } from '@/services/calendarOverdueReminder.service'
   import {
     listConflictBackups,
     removeConflictBackup,
@@ -231,7 +227,6 @@
       }
     }, 60_000)
     void refreshStoresFromNetwork().then(() => {
-      void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
     })
     stopAutoSyncListener = initAutoSyncOnNetworkRestore()
@@ -253,7 +248,6 @@
 
   watch(isAuthenticated, (authed) => {
     if (authed) {
-      void maybeShowOverdueReminder()
       void maybeShowConflictBackups()
       // Login qua LoginModal không remount trang — phải tự nạp trạng thái mã hóa của account mới.
       void refreshAccountCryptoStatus()
@@ -395,7 +389,6 @@
     showLoginModal.value = false
     // Reload data từ cloud sau khi đăng nhập thành công
     await Promise.all([folders.loadAll(), notes.loadAll(), calendarEvents.loadAll()])
-    await maybeShowOverdueReminder()
   }
 
   const syncBusy = computed(() => sync.status === 'syncing')
@@ -445,28 +438,17 @@
     groupOverdueIncompleteEvents(calendarEvents.events),
   )
 
-  async function maybeShowOverdueReminder(): Promise<void> {
-    if (!dataReady.value || !isAuthenticated.value) return
-    if (showOverdueReminder.value) return
-    if (await isOverdueReminderDismissed()) return
-    if (overdueGroups.value.length === 0) return
-    showOverdueReminder.value = true
-  }
-
-  async function closeOverdueReminder(): Promise<void> {
-    showOverdueReminder.value = false
-    await dismissOverdueReminder()
-  }
-
+  // U12: hộp thoại quá hạn KHÔNG tự bật nữa — mở từ chip lịch ("Đánh dấu xong"). Đóng / xác nhận chỉ
+  // ẩn hộp thoại; chip vẫn đếm phần còn lại (computed theo calendar.events).
   async function onOverdueReminderConfirm(checkedIds: string[]): Promise<void> {
     if (checkedIds.length > 0) {
       await calendarEvents.markEventsDone(checkedIds)
     }
-    await closeOverdueReminder()
+    showOverdueReminder.value = false
   }
 
   function onOverdueReminderClose(): void {
-    void closeOverdueReminder()
+    showOverdueReminder.value = false
   }
 
   let draftRestoring = false
@@ -652,7 +634,11 @@
         </div>
         <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
         <div class="shell__header-mid">
-          <CalendarAgendaChip v-if="dataReady" @open-calendar="onOpenCalendarFromAgenda" />
+          <CalendarAgendaChip
+            v-if="dataReady"
+            @open-calendar="onOpenCalendarFromAgenda"
+            @review-overdue="showOverdueReminder = true"
+          />
         </div>
         <div class="shell__header-right">
           <ThemeModeToggle class="shell__theme-toggle" />

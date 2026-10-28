@@ -26,13 +26,6 @@ export const BBQ_UI_THEME_KEY = 'bbqone_ui_theme'
 export const CALENDAR_UPCOMING_BANNER_DISMISSED_SESSION_KEY =
   'bbqone_calendar_upcoming_banner_dismissed'
 
-/**
- * chrome.storage.session: user đã đóng popup nhắc event quá hạn trong phiên đăng nhập.
- * Xóa khi SIGNED_IN — hiện lại sau lần đăng nhập tiếp theo.
- */
-export const CALENDAR_OVERDUE_REMINDER_DISMISSED_SESSION_KEY =
-  'bbqone_calendar_overdue_reminder_dismissed'
-
 /** Undo 5s: xóa thật khi đóng popup hoặc flush sau khi context bị kill. */
 export const BBQ_PENDING_DELETE_COMMITS_KEY = 'bbqone_pending_delete_commits'
 
