@@ -140,32 +140,6 @@ html[data-theme='dark'] .cal-cell__event--done {
   filter: saturate(0.55);
 }
 
-/* —— Modal danh sách ngày —— */
-.cal-modal__row.cal-event-tone-0,
-.cal-modal__row.cal-event-tone-1,
-.cal-modal__row.cal-event-tone-2,
-.cal-modal__row.cal-event-tone-3,
-.cal-modal__row.cal-event-tone-4,
-.cal-modal__row.cal-event-tone-5,
-.cal-modal__row.cal-event-tone-6,
-.cal-modal__row.cal-event-tone-7 {
-  border-left: 3px solid var(--cal-event-rail);
-  background: color-mix(in srgb, var(--cal-event-bg) 55%, var(--bg-panel));
-}
-
-.cal-modal__row.cal-event-tone-0:hover,
-.cal-modal__row.cal-event-tone-1:hover,
-.cal-modal__row.cal-event-tone-2:hover,
-.cal-modal__row.cal-event-tone-3:hover,
-.cal-modal__row.cal-event-tone-4:hover,
-.cal-modal__row.cal-event-tone-5:hover,
-.cal-modal__row.cal-event-tone-6:hover,
-.cal-modal__row.cal-event-tone-7:hover {
-  border-color: color-mix(in srgb, var(--cal-event-border) 70%, transparent);
-  border-left-color: var(--cal-event-rail);
-  background: color-mix(in srgb, var(--cal-event-bg) 72%, var(--bg-panel));
-}
-
 /* —— Kết quả search —— */
 .cal-search-panel__row.cal-event-tone-0,
 .cal-search-panel__row.cal-event-tone-1,

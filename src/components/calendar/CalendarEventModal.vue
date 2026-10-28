@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, useId } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, useId } from 'vue'
 import { storeToRefs } from 'pinia'
 import { CALENDAR_MAX_EVENTS_PER_DAY, CALENDAR_TITLE_MAX } from '@/constants/calendar'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { useLangStore } from '@/stores/uiLang'
-import IconButton from '@/components/ui/IconButton.vue'
-import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import type { CalendarEvent } from '@/types/calendar'
 import type { I18nKey } from '@/i18n/en'
-import { formatCalendarBannerDate, isPastLocalDay, parseLocalDate } from '@/utils/calendarDate'
+import { isPastLocalDay, parseLocalDate } from '@/utils/calendarDate'
 import { calendarEventToneClass } from '@/utils/calendarEventTone'
 import {
   RECURRENCE_DEFAULT_COUNT,
   RECURRENCE_MAX_COUNT,
+  compactDateList,
   recurrenceDates,
   type RecurrenceFreq,
 } from '@/utils/calendarRecurrence'
@@ -32,8 +31,10 @@ const validationError = ref<string | null>(null)
 const busy = ref(false)
 const confirmOpen = ref(false)
 const pendingDeleteId = ref<string | null>(null)
+const titleInputRef = ref<InstanceType<typeof RetroInput> | null>(null)
+const repeatGroupRef = ref<HTMLElement | null>(null)
 
-/** U3: lặp lại — chỉ khi tạo mới. Mỗi lần lặp là một sự kiện riêng. */
+/** U3: lặp lại — chỉ khi tạo mới. Mỗi lần lặp là một sự kiện riêng. U13: chọn bằng segmented control. */
 const REPEAT_OPTIONS: RecurrenceFreq[] = ['none', 'weekly', 'monthly', 'yearly']
 const REPEAT_LABEL: Record<RecurrenceFreq, I18nKey> = {
   none: 'calendar.repeat.none',
@@ -41,7 +42,6 @@ const REPEAT_LABEL: Record<RecurrenceFreq, I18nKey> = {
   monthly: 'calendar.repeat.monthly',
   yearly: 'calendar.repeat.yearly',
 }
-const PREVIEW_DATES_SHOWN = 5
 const repeatFreq = ref<RecurrenceFreq>('none')
 const repeatCount = ref(RECURRENCE_DEFAULT_COUNT.weekly)
 /** Báo sau khi lưu (vd ngày bị bỏ qua vì đã đủ) — sống qua cancelForm. */
@@ -76,6 +76,38 @@ const repeatDates = computed(() => {
 const repeatFullDays = computed(() =>
   repeatDates.value.filter((k) => store.eventsForDate(k).length >= CALENDAR_MAX_EVENTS_PER_DAY),
 )
+const fullDaySet = computed(() => new Set(repeatFullDays.value))
+
+/** U13: xem trước = chip ngày (dài → "+n" + ngày cuối), thay câu dài bị cắt. */
+const previewCompact = computed(() => compactDateList(repeatDates.value))
+
+/** Số sự kiện thật sự tạo (ngày đã đủ bị bỏ qua) — hiện trên nút chính. */
+const createCount = computed(() => repeatDates.value.length - repeatFullDays.value.length)
+
+const repeatUntil = computed(() => {
+  const dates = repeatDates.value
+  if (dates.length === 0) return ''
+  return parseLocalDate(dates[dates.length - 1]).toLocaleDateString(locale(), {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+})
+
+function locale(): string {
+  return lang.value === 'vi' ? 'vi-VN' : 'en-US'
+}
+
+/** "Thứ Ba, 3 tháng 11, 2026" — tiêu đề danh sách ngày + dòng phụ của form. */
+function longDate(key: string): string {
+  if (!key) return ''
+  return parseLocalDate(key).toLocaleDateString(locale(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
 
 /** Ngày ngắn cho xem trước — chỉ ghi năm khi khác năm của ngày bắt đầu. */
 function shortDate(key: string): string {
@@ -94,21 +126,38 @@ function shortDate(key: string): string {
       })
 }
 
-const repeatPreview = computed(() => {
-  const dates = repeatDates.value
-  if (dates.length === 0) return ''
-  const shown = dates.slice(0, PREVIEW_DATES_SHOWN).map(shortDate).join(', ')
-  const tail = dates.length > PREVIEW_DATES_SHOWN ? ` … → ${shortDate(dates[dates.length - 1])}` : ''
-  return t('calendar.repeat.preview', { n: dates.length, dates: shown + tail })
-})
-
 watch(repeatFreq, (f) => {
   if (f !== 'none') repeatCount.value = RECURRENCE_DEFAULT_COUNT[f]
 })
 
+function clampRepeatCount(value: number): number {
+  const n = Math.floor(Number(value))
+  return Math.min(Math.max(Number.isFinite(n) ? n : 2, 2), repeatMax.value)
+}
+
 function onRepeatCountChange(): void {
-  const n = Math.floor(Number(repeatCount.value))
-  repeatCount.value = Math.min(Math.max(Number.isFinite(n) ? n : 2, 2), repeatMax.value)
+  repeatCount.value = clampRepeatCount(repeatCount.value)
+}
+
+function stepRepeat(delta: number): void {
+  repeatCount.value = clampRepeatCount(repeatCount.value + delta)
+}
+
+/** Radiogroup: ← → / ↑ ↓ / Home / End đổi tần suất và dời focus theo (roving tabindex). */
+function onRepeatKeydown(e: KeyboardEvent): void {
+  const n = REPEAT_OPTIONS.length
+  const i = REPEAT_OPTIONS.indexOf(repeatFreq.value)
+  let next: number
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % n
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + n) % n
+  else if (e.key === 'Home') next = 0
+  else if (e.key === 'End') next = n - 1
+  else return
+  e.preventDefault()
+  repeatFreq.value = REPEAT_OPTIONS[next]
+  void nextTick(() => {
+    repeatGroupRef.value?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus()
+  })
 }
 
 const modalHeading = computed(() => {
@@ -117,9 +166,16 @@ const modalHeading = computed(() => {
       ? t('calendar.modal.title.edit')
       : t('calendar.modal.title.create')
   }
-  return t('calendar.modal.title.list', {
-    date: formatCalendarBannerDate(activeDateKey.value, lang.value),
-  })
+  return longDate(activeDateKey.value)
+})
+
+/** Mở form (tạo / sửa) → gõ tiêu đề ngay, không phải bấm vào ô. */
+function focusTitleSoon(): void {
+  void nextTick(() => titleInputRef.value?.focus())
+}
+
+watch(showForm, (open) => {
+  if (open) focusTitleSoon()
 })
 
 watch(
@@ -160,6 +216,7 @@ function onKeydown(e: KeyboardEvent): void {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
+  if (showForm.value) focusTitleSoon()
 })
 
 onUnmounted(() => {
@@ -224,6 +281,10 @@ async function confirmDelete(): Promise<void> {
   } catch (e) {
     console.error(e)
   }
+}
+
+function requestDeleteActive(e: Event): void {
+  if (store.activeEventId) requestDelete(store.activeEventId, e)
 }
 
 function onCancelDelete(): void {
@@ -293,11 +354,17 @@ async function saveForm(): Promise<void> {
         :aria-labelledby="headingId"
         @click.stop
       >
+        <!-- U13 (ADN popover): một tấm phẳng — tiêu đề đậm + dòng ngày phụ, ✕ trong suốt. -->
         <header class="cal-modal__header">
-          <h2 :id="headingId" class="cal-modal__title">{{ modalHeading }}</h2>
-          <IconButton
-            variant="default"
-            :label="t('common.close')"
+          <div class="cal-modal__heading">
+            <h2 :id="headingId" class="cal-modal__title">{{ modalHeading }}</h2>
+            <p v-if="showForm && activeDateKey" class="cal-modal__subtitle">{{ longDate(activeDateKey) }}</p>
+          </div>
+          <button
+            type="button"
+            class="ds-icon-action"
+            :aria-label="t('common.close')"
+            :title="t('common.close')"
             @click="store.closeModal"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -309,45 +376,39 @@ async function saveForm(): Promise<void> {
                 d="M6 6l12 12M18 6L6 18"
               />
             </svg>
-          </IconButton>
+          </button>
         </header>
 
-        <p v-if="validationError" class="cal-modal__error" role="alert">
-          {{ validationError }}
-        </p>
-        <p v-if="resultInfo && !showForm" class="cal-modal__past-hint" role="status">
-          {{ resultInfo }}
-        </p>
-
-        <template v-if="!showForm">
-          <div v-if="!isPastActiveDate && !dayIsFull" class="cal-modal__toolbar">
-            <IconButton
-              variant="accent"
-              :label="t('calendar.modal.aria.add')"
+        <div v-if="!showForm" class="cal-modal__body">
+          <SectionHeader
+            :label="t('calendar.modal.section.events')"
+            :meta="`${dayEvents.length}/${CALENDAR_MAX_EVENTS_PER_DAY}`"
+          >
+            <button
+              v-if="!isPastActiveDate && !dayIsFull"
+              type="button"
+              class="ds-text-action"
               :disabled="busy"
               @click="startCreate"
             >
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  d="M12 5v14M5 12h14"
-                />
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
               </svg>
-            </IconButton>
-            <span class="cal-modal__toolbar-label">{{ t('calendar.modal.aria.add') }}</span>
-          </div>
-          <p v-else-if="isPastActiveDate" class="cal-modal__past-hint">{{ t('calendar.modal.pastDayNoAdd') }}</p>
-          <p v-else-if="dayIsFull" class="cal-modal__past-hint">{{ t('calendar.modal.dayFull', { max: CALENDAR_MAX_EVENTS_PER_DAY }) }}</p>
+              {{ t('calendar.modal.aria.add') }}
+            </button>
+          </SectionHeader>
+          <p v-if="resultInfo" class="cal-modal__hint" role="status">{{ resultInfo }}</p>
+          <p v-if="isPastActiveDate" class="cal-modal__hint">{{ t('calendar.modal.pastDayNoAdd') }}</p>
+          <p v-else-if="dayIsFull" class="cal-modal__hint">
+            {{ t('calendar.modal.dayFull', { max: CALENDAR_MAX_EVENTS_PER_DAY }) }}
+          </p>
           <p v-if="!dayEvents.length" class="cal-modal__empty">{{ t('calendar.modal.empty') }}</p>
           <ul v-else class="cal-modal__list">
             <li
               v-for="ev in dayEvents"
               :key="ev.id"
-              class="cal-modal__row"
-              :class="calendarEventToneClass(ev.id)"
+              class="cal-modal__row ds-row"
+              :class="[calendarEventToneClass(ev.id), { 'cal-modal__row--done': ev.is_done }]"
             >
               <input
                 type="checkbox"
@@ -357,76 +418,193 @@ async function saveForm(): Promise<void> {
                 @change="onToggleDone(ev.id, $event)"
                 @click.stop
               />
-              <button
-                type="button"
-                class="cal-modal__row-title"
-                :class="{ 'cal-modal__row-title--done': ev.is_done }"
-                @click.stop="startEdit(ev)"
-              >
+              <span class="cal-modal__swatch" aria-hidden="true" />
+              <button type="button" class="cal-modal__row-title" @click.stop="startEdit(ev)">
                 {{ ev.title }}
               </button>
-              <IconDeleteButton
+              <button
+                type="button"
+                class="ds-icon-action cal-modal__row-del"
+                :aria-label="t('calendar.modal.aria.delete')"
                 :title="t('calendar.modal.aria.delete')"
                 @click="requestDelete(ev.id, $event)"
-              />
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4 7h16M9 7V5h6v2M7 7l1 12h8l1-12M10 11v5M14 11v5"
+                  />
+                </svg>
+              </button>
             </li>
           </ul>
-        </template>
+        </div>
 
-        <form v-else class="cal-modal__form" @submit.prevent="saveForm">
-          <label class="cal-modal__field">
-            <span class="cal-modal__label">{{ t('calendar.modal.field.title') }}</span>
+        <form v-else class="cal-form" @submit.prevent="saveForm">
+          <div class="cal-form__group">
+            <div class="cal-form__label-row">
+              <label class="ds-label" :for="`${headingId}-title`">{{ t('calendar.modal.field.title') }}</label>
+              <span class="ds-label__meta cal-form__counter" aria-hidden="true">
+                {{ formTitle.length }}/{{ CALENDAR_TITLE_MAX }}
+              </span>
+            </div>
             <RetroInput
               :id="`${headingId}-title`"
+              ref="titleInputRef"
+              class="cal-form__input"
               :model-value="formTitle"
               :maxlength="CALENDAR_TITLE_MAX"
               :placeholder="t('calendar.modal.field.titlePlaceholder')"
+              autocomplete="off"
               @update:model-value="formTitle = $event"
             />
-          </label>
-          <div v-if="isCreating" class="cal-modal__field">
-            <label class="cal-modal__label" :for="`${headingId}-repeat`">
-              {{ t('calendar.modal.field.repeat') }}
-            </label>
-            <div class="cal-modal__repeat-row">
-              <select
-                :id="`${headingId}-repeat`"
-                v-model="repeatFreq"
-                class="cal-modal__select"
-                :disabled="busy"
-              >
-                <option v-for="f in REPEAT_OPTIONS" :key="f" :value="f">
-                  {{ t(REPEAT_LABEL[f]) }}
-                </option>
-              </select>
-              <template v-if="repeatFreq !== 'none'">
-                <label class="cal-modal__label" :for="`${headingId}-repeat-count`">
-                  {{ t('calendar.repeat.count') }}
-                </label>
-                <input
-                  :id="`${headingId}-repeat-count`"
-                  v-model.number="repeatCount"
-                  type="number"
-                  class="cal-modal__count"
-                  :min="2"
-                  :max="repeatMax"
-                  :disabled="busy"
-                  @change="onRepeatCountChange"
-                />
-              </template>
-            </div>
-            <p v-if="repeatPreview" class="cal-modal__repeat-preview">{{ repeatPreview }}</p>
-            <p v-if="repeatFullDays.length > 0" class="cal-modal__repeat-warn">
-              {{ t('calendar.repeat.previewSkip', { n: repeatFullDays.length, max: CALENDAR_MAX_EVENTS_PER_DAY }) }}
-            </p>
+            <p v-if="validationError" class="cal-form__error" role="alert">{{ validationError }}</p>
           </div>
-          <div class="cal-modal__form-actions">
-            <RetroButton variant="sm" type="button" :disabled="busy" @click="cancelForm">
+
+          <div v-if="isCreating" class="cal-form__group">
+            <span :id="`${headingId}-repeat`" class="ds-label">{{ t('calendar.modal.field.repeat') }}</span>
+            <div
+              ref="repeatGroupRef"
+              class="cal-form__segmented"
+              role="radiogroup"
+              :aria-labelledby="`${headingId}-repeat`"
+              @keydown="onRepeatKeydown"
+            >
+              <button
+                v-for="f in REPEAT_OPTIONS"
+                :key="f"
+                type="button"
+                role="radio"
+                class="cal-form__segment"
+                :class="{ 'cal-form__segment--on': repeatFreq === f }"
+                :aria-checked="repeatFreq === f"
+                :tabindex="repeatFreq === f ? 0 : -1"
+                :disabled="busy"
+                @click="repeatFreq = f"
+              >
+                {{ t(REPEAT_LABEL[f]) }}
+              </button>
+            </div>
+
+            <template v-if="repeatFreq !== 'none'">
+              <div class="cal-form__count-row">
+                <label class="ds-label" :for="`${headingId}-repeat-count`">{{ t('calendar.repeat.count') }}</label>
+                <div class="cal-form__stepper">
+                  <button
+                    type="button"
+                    class="cal-form__step"
+                    :aria-label="t('calendar.repeat.decrease')"
+                    :title="t('calendar.repeat.decrease')"
+                    :disabled="busy || repeatCount <= 2"
+                    @click="stepRepeat(-1)"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 12h12" />
+                    </svg>
+                  </button>
+                  <input
+                    :id="`${headingId}-repeat-count`"
+                    v-model.number="repeatCount"
+                    type="number"
+                    class="cal-form__count"
+                    :min="2"
+                    :max="repeatMax"
+                    :disabled="busy"
+                    @change="onRepeatCountChange"
+                  />
+                  <button
+                    type="button"
+                    class="cal-form__step"
+                    :aria-label="t('calendar.repeat.increase')"
+                    :title="t('calendar.repeat.increase')"
+                    :disabled="busy || repeatCount >= repeatMax"
+                    @click="stepRepeat(1)"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 6v12M6 12h12" />
+                    </svg>
+                  </button>
+                </div>
+                <span class="cal-form__until">{{ t('calendar.repeat.until', { date: repeatUntil }) }}</span>
+              </div>
+
+              <div class="cal-form__preview">
+                <p class="ds-label cal-form__preview-label">
+                  {{ t('calendar.repeat.preview')
+                  }}<span class="ds-label__meta"> · {{ t('calendar.repeat.previewCount', { n: createCount }) }}</span>
+                </p>
+                <ul class="cal-form__chips">
+                  <li
+                    v-for="k in previewCompact.shown"
+                    :key="k"
+                    class="cal-form__chip"
+                    :class="{ 'cal-form__chip--skip': fullDaySet.has(k) }"
+                    :title="fullDaySet.has(k) ? t('calendar.repeat.skipChip', { max: CALENDAR_MAX_EVENTS_PER_DAY }) : longDate(k)"
+                  >
+                    {{ shortDate(k) }}
+                  </li>
+                  <li
+                    v-if="previewCompact.hidden > 0"
+                    class="cal-form__chip cal-form__chip--more"
+                    :title="t('calendar.repeat.moreDates', { n: previewCompact.hidden })"
+                  >
+                    +{{ previewCompact.hidden }}
+                  </li>
+                  <li
+                    v-if="previewCompact.last"
+                    class="cal-form__chip"
+                    :class="{ 'cal-form__chip--skip': fullDaySet.has(previewCompact.last) }"
+                    :title="
+                      fullDaySet.has(previewCompact.last)
+                        ? t('calendar.repeat.skipChip', { max: CALENDAR_MAX_EVENTS_PER_DAY })
+                        : longDate(previewCompact.last)
+                    "
+                  >
+                    {{ shortDate(previewCompact.last) }}
+                  </li>
+                </ul>
+                <p v-if="repeatFullDays.length > 0" class="cal-form__warn">
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.9"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 4l9 16H3zM12 10v4M12 17h.01"
+                    />
+                  </svg>
+                  {{ t('calendar.repeat.previewSkip', { n: repeatFullDays.length, max: CALENDAR_MAX_EVENTS_PER_DAY }) }}
+                </p>
+              </div>
+            </template>
+          </div>
+
+          <div class="cal-form__actions">
+            <button
+              v-if="!isCreating && store.activeEventId"
+              type="button"
+              class="ds-text-action ds-text-action--danger"
+              :disabled="busy"
+              @click="requestDeleteActive"
+            >
+              {{ t('calendar.modal.btn.delete') }}
+            </button>
+            <span class="cal-form__spacer" />
+            <button type="button" class="ds-text-action ds-text-action--muted" :disabled="busy" @click="cancelForm">
               {{ t('calendar.modal.btn.cancel') }}
-            </RetroButton>
-            <RetroButton variant="sm" type="submit" primary :disabled="busy">
-              {{ t('calendar.modal.btn.save') }}
-            </RetroButton>
+            </button>
+            <button type="submit" class="ds-primary" :disabled="busy">
+              {{
+                isCreating && repeatFreq !== 'none'
+                  ? t('calendar.repeat.saveN', { n: createCount })
+                  : t('calendar.modal.btn.save')
+              }}
+            </button>
           </div>
         </form>
       </div>
@@ -455,232 +633,406 @@ async function saveForm(): Promise<void> {
   padding: 16px;
 }
 
+/* Một tấm phẳng như bảng "Lịch sắp tới" — viền duy nhất của hộp thoại. */
 .cal-modal {
   width: 100%;
-  max-width: 420px;
-  max-height: min(90vh, 520px);
+  max-width: 440px;
+  max-height: min(92vh, 560px);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background:
-    radial-gradient(
-      ellipse 110% 80% at 50% 0%,
-      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
-      transparent 58%
-    ),
-    var(--bg-secondary);
-  box-shadow: 0 18px 54px var(--panel-ring);
+  background: var(--bg-panel);
+  box-shadow: 0 18px 48px var(--panel-ring);
   overflow: hidden;
 }
 
 .cal-modal__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin: 10px 10px 0;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 0;
+  padding: 16px 12px 6px 20px;
   flex-shrink: 0;
-  background: transparent;
-  box-shadow: none;
+}
+
+.cal-modal__heading {
+  min-width: 0;
 }
 
 .cal-modal__title {
   margin: 0;
-  font-size: var(--font-size-base);
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text-primary);
   line-height: 1.35;
-  letter-spacing: 0;
+  color: var(--text-primary);
 }
 
-.cal-modal__error {
-  margin: 10px 10px 0;
-  padding: 8px 10px;
-  font-size: var(--font-size-xs);
-  color: var(--danger);
-  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
-  border-radius: var(--radius-md);
-  background: var(--surface-danger-muted);
-}
-
-.cal-modal__toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px;
-  padding: 8px 10px;
-  flex-shrink: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
-}
-
-.cal-modal__toolbar-label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
-.cal-modal__past-hint {
-  margin: 0;
-  margin: 10px;
-  padding: 8px 10px;
-  font-size: var(--font-size-sm);
+.cal-modal__subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
   color: var(--text-muted);
+}
+
+/* —— Danh sách ngày —— */
+.cal-modal__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 4px 10px 12px;
+  overflow-y: auto;
+}
+
+.cal-modal__hint,
+.cal-modal__empty {
+  margin: 2px 10px 8px;
+  font-size: 12px;
   line-height: 1.45;
-  flex-shrink: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
+  color: var(--text-muted);
 }
 
 .cal-modal__empty {
-  margin: 0;
-  margin: 10px;
-  padding: 20px 12px;
-  text-align: center;
+  margin-top: 6px;
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
 }
 
 .cal-modal__list {
   list-style: none;
   margin: 0;
-  padding: 10px;
-  overflow-y: auto;
-  min-height: 0;
-  flex: 1 1 auto;
+  padding: 0;
 }
 
 .cal-modal__row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease;
-}
-
-.cal-modal__row:hover {
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
+  padding: 4px 4px 4px 10px;
 }
 
 .cal-modal__check {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
+  margin: 0;
   accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Vạch màu của sự kiện (tone theo id — cùng màu với lưới tháng). */
+.cal-modal__swatch {
+  flex: 0 0 auto;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--cal-event-rail);
 }
 
 .cal-modal__row-title {
   flex: 1 1 auto;
   min-width: 0;
-  text-align: left;
+  padding: 6px 0;
   border: none;
   background: transparent;
   color: var(--text-primary);
+  font: inherit;
   font-size: var(--font-size-sm);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
-  padding: 8px 4px;
-  border-radius: var(--radius-md);
 }
 
-.cal-modal__row-title:hover {
-  color: var(--accent);
+.cal-modal__row-title:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
-.cal-modal__row-title--done {
+.cal-modal__row--done .cal-modal__row-title {
   color: var(--text-muted);
   text-decoration: line-through;
 }
 
-.cal-modal__form {
+.cal-modal__row--done .cal-modal__swatch {
+  opacity: 0.45;
+}
+
+/* 🗑 chỉ hiện khi rê chuột / focus trong dòng. */
+.cal-modal__row-del {
+  opacity: 0;
+}
+
+.cal-modal__row:hover .cal-modal__row-del,
+.cal-modal__row:focus-within .cal-modal__row-del {
+  opacity: 1;
+}
+
+.cal-modal__row .cal-modal__row-del:hover:not(:disabled) {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+}
+
+@media (hover: none) {
+  .cal-modal__row-del {
+    opacity: 1;
+  }
+}
+
+/* —— Form tạo / sửa —— */
+.cal-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 10px 10px;
-  overflow-y: auto;
+  gap: 18px;
   min-height: 0;
+  padding: 10px 20px 16px;
+  overflow-y: auto;
 }
 
-.cal-modal__field {
+.cal-form__group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 62%, transparent);
-}
-
-.cal-modal__label {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-}
-
-.cal-modal__repeat-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   gap: 8px;
 }
 
-.cal-modal__select,
-.cal-modal__count {
-  padding: 8px 12px;
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-pill);
+.cal-form__label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.cal-modal__select {
-  flex: 1 1 140px;
-  cursor: pointer;
+.cal-form__counter {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
-.cal-modal__count {
-  width: 72px;
+/* Ô phẳng: nền xám nhạt, không viền; focus = nền tấm + vòng nhấn (giống ô tìm). */
+.cal-form__input {
+  padding: 10px 12px;
+  border-color: transparent;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  font-size: 14px;
+  transition:
+    background 0.12s linear,
+    box-shadow 0.12s linear;
 }
 
-.cal-modal__select:focus-visible,
-.cal-modal__count:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+.cal-form__input:focus,
+.cal-form__input:focus-visible {
+  outline: none;
+  border-color: transparent;
+  background: var(--bg-panel);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-.cal-modal__repeat-preview,
-.cal-modal__repeat-warn {
+.cal-form__error {
   margin: 0;
-  font-size: var(--font-size-xs);
-  line-height: 1.4;
-  color: var(--text-muted);
-}
-
-.cal-modal__repeat-warn {
+  font-size: 12px;
   color: var(--danger);
 }
 
-.cal-modal__form-actions {
+/* Segmented control: rãnh xám, ô đang chọn nổi lên. */
+.cal-form__segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.cal-form__segment {
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background 0.12s linear,
+    color 0.12s linear;
+}
+
+.cal-form__segment:hover:not(:disabled):not(.cal-form__segment--on) {
+  color: var(--text-primary);
+}
+
+.cal-form__segment--on {
+  background: var(--bg-panel);
+  color: var(--accent);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme='dark'] .cal-form__segment--on {
+  background: color-mix(in srgb, var(--text-primary) 14%, var(--bg-panel));
+}
+
+.cal-form__segment:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.cal-form__count-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.cal-form__stepper {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.cal-form__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.12s linear;
+}
+
+.cal-form__step:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
+.cal-form__step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cal-form__step:focus-visible,
+.cal-form__count:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.cal-form__count {
+  width: 34px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.cal-form__count::-webkit-inner-spin-button,
+.cal-form__count::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cal-form__until {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-form__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.cal-form__preview-label {
+  margin: 0;
+}
+
+/* Chip ngày: tự xuống dòng nguyên chip — không còn câu dài bị cắt giữa ngày. */
+.cal-form__chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 0;
-  padding: 6px;
-  border: 1px solid var(--border);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-form__chip {
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  background: var(--surface-accent-muted);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cal-form__chip--more {
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  color: var(--text-muted);
+}
+
+.cal-form__chip--skip {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.cal-form__warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+
+.cal-form__warn svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.cal-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.cal-form__spacer {
+  flex: 1 1 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-form__input,
+  .cal-form__segment,
+  .cal-form__step {
+    transition: none;
+  }
 }
 </style>

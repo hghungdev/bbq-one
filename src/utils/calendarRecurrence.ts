@@ -56,3 +56,21 @@ export function recurrenceDates(startKey: string, freq: RecurrenceFreq, count: n
   }
   return out
 }
+
+/** U13: xem trước gọn cho hộp thoại — `shown` + chip "+hidden" + `last` (null = đã hiện hết). */
+export interface CompactDateList {
+  shown: string[]
+  hidden: number
+  last: string | null
+}
+
+/** ≤ `max` ngày → hiện hết; dài hơn → (max − 2) ngày đầu, "+n", ngày cuối — vẫn đúng `max` chip. */
+export function compactDateList(dates: string[], max = 8): CompactDateList {
+  if (dates.length <= max) return { shown: dates.slice(), hidden: 0, last: null }
+  const head = Math.max(max - 2, 1)
+  return {
+    shown: dates.slice(0, head),
+    hidden: dates.length - head - 1,
+    last: dates[dates.length - 1],
+  }
+}
