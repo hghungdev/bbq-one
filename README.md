@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 1.3.3
+**Version:** 2.0.0
 
 ---
 
@@ -10,6 +10,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.0.0](#what-changed-in-200)
 - [What changed in 1.3.3](#what-changed-in-133)
 - [What changed in 1.3.2](#what-changed-in-132)
 - [What changed in 1.2.2](#what-changed-in-122)
@@ -43,12 +44,21 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 |------|----------------|
 | **Notes** | Folders, rich-text editing, code-friendly blocks (Shiki highlighting), full-text search, copy-to-clipboard. Settings menu on rows (rename / move / delete); double-click or F2 still renames. Move between **regular** folders only (secure-folder moves deferred). |
 | **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are AES-GCM encrypted client-side before leaving your device. |
-| **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, export as HTML, and optional encryption when signed in with PIN. |
+| **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, and export as HTML; backups sync to your account when signed in. |
 | **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. Event chips use pastel fills in light mode and softer solid chips with a left color rail in dark mode. |
 | **Cloud sync (optional)** | Sign in via Supabase Auth (email + password) to sync notes, folders, bookmarks, and calendar events across devices, protected by Row Level Security. |
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.0.0
+
+- **New layout:** vertical navigation rail (icons; ☰ opens labels as an overlay; Settings + account at the bottom). The header now holds the brand, a wider calendar chip, theme and sync.
+- **Calendar:** redesigned event dialog (segmented repeat, occurrences stepper, date chips), tap a title to mark done (✎ edits), overdue items can be ticked one by one in the Upcoming panel, chip shows whole titles + "+n".
+- **Google Calendar link:** one-way private iCalendar link per account (Settings › Google Calendar).
+- **One icon language:** a single icon set — delete is always 🗑, close is ✕; flat "popover" styling everywhere; input dialogs drop the redundant Cancel button (✕ / Esc close them).
+- **Bookmarks:** the bookmark PIN was removed; the tab opens directly and auto-backup is never blocked.
+- **Fixes:** Esc closes confirm dialogs; cached folders / events no longer saved as objects; English / Vietnamese copy cleaned up (no more "[ X ]" labels).
 
 ## What changed in 1.3.3
 
@@ -94,7 +104,8 @@ See [`docs/CHROME-STORE-PERMISSIONS.md`](docs/CHROME-STORE-PERMISSIONS.md) for t
 
 - **Anonymous / not signed in (default):** notes, bookmark snapshots, and calendar events are stored **locally** in `chrome.storage.local`. No account is required for core workflows. No network requests are made.
 - **Signed in:** data syncs to **your** configured Supabase project; access is gated per user by Row Level Security (`auth.uid() = user_id`).
-- **Encrypted surfaces:** Secure Folder notes and PIN-protected bookmark snapshots are encrypted client-side (AES-GCM) before upload. Regular notes, folders, and calendar events are stored as plaintext under your account (isolated by RLS, not end-to-end encrypted).
+- **Encrypted surfaces:** Secure Folder notes (and notes of accounts that turned on account encryption) are encrypted client-side (AES-GCM) before upload. Other notes, folders, bookmark backups, and calendar events are stored as plaintext under your account (isolated by RLS, not end-to-end encrypted). Calendar events stay unencrypted on purpose so the optional Google Calendar link can work.
+- **Google Calendar link (optional):** a private, one-way iCalendar link (Settings › Google Calendar). Anyone with the link can read your calendar; create a new link or turn it off anytime.
 - **No content scripts.** BBQOne does not inject scripts into the pages you visit.
 - **No tracking, no analytics, no ads.**
 

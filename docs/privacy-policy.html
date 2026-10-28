@@ -190,7 +190,7 @@
   <main>
     <article class="content">
       <h1>Privacy Policy</h1>
-      <p class="meta">Last updated: July 2026 — applies to extension version 1.3.3 and later.</p>
+      <p class="meta">Last updated: October 2026 — applies to extension version 2.0.0 and later.</p>
 
       <p>
         BBQOne is a Chrome extension for personal <strong>notes</strong>,
@@ -223,9 +223,11 @@
 
       <p>
         In addition, BBQOne uses <code>chrome.storage.session</code> to hold the
-        Supabase sign-in token (when you choose to sign in) and short-lived
-        in-memory keys used by Secure Folders. <code>chrome.storage.session</code>
-        data is automatically cleared by Chrome when you close the browser.
+        Supabase sign-in token (when you choose to sign in), short-lived keys used
+        by Secure Folders, and — only for accounts that have account encryption
+        turned on — the unlocked note key, which is discarded after 30 minutes of
+        inactivity. <code>chrome.storage.session</code> data is kept in memory and
+        is automatically cleared by Chrome when you close the browser.
       </p>
 
       <h3>What we do not track</h3>
@@ -274,21 +276,58 @@
           device.
         </li>
         <li>
-          <strong>Bookmark snapshots</strong> — optionally protected by a PIN
-          (client-side AES-GCM). When the PIN is set, the bookmark payload is
-          encrypted before upload.
+          <strong>Account encryption (accounts that turned it on in an earlier
+          version)</strong> — note titles and contents are encrypted on your device
+          with <strong>AES-GCM</strong> before upload, using a key protected by your
+          passphrase and recovery key; neither leaves your device. The option to
+          turn this on is temporarily not offered in Settings while we review it;
+          accounts that already use it keep working as before.
         </li>
         <li>
-          <strong>Regular notes, folders, and calendar events</strong> — stored
-          as plaintext under your user account, isolated from other users by RLS.
-          Encryption-at-rest at the database layer is provided by Supabase's
-          infrastructure but is not end-to-end.
+          <strong>Other notes, folders, bookmark backups, and calendar events</strong>
+          — stored as plaintext under your user account, isolated from other users
+          by RLS. Encryption-at-rest at the database layer is provided by Supabase's
+          infrastructure but is not end-to-end. (The former bookmark PIN was
+          removed in version 2.0.0.) Calendar events are intentionally not
+          end-to-end encrypted so that the optional Google Calendar link below can
+          work.
         </li>
       </ul>
 
       <p>
         All network transmission to Supabase uses <strong>HTTPS (TLS)</strong>.
       </p>
+
+      <h3>Optional Google Calendar link</h3>
+      <p>
+        In <em>Settings › Google Calendar</em> you can create a private link to
+        your BBQOne calendar and add it to Google Calendar
+        (<em>Add calendar › From URL</em>). This is <strong>one-way</strong>:
+        Google Calendar only reads it.
+      </p>
+      <ul>
+        <li>
+          Creating the link stores a random secret token for your account in
+          Supabase. The link is served by a Supabase Edge Function and returns your
+          calendar events (title, description, date/time, done status) from about
+          90 days ago to about 400 days ahead, in iCalendar format.
+        </li>
+        <li>
+          <strong>Anyone who has the link can read your calendar.</strong> Keep it
+          private, and do not tick &quot;Make the calendar publicly accessible&quot; in
+          Google Calendar.
+        </li>
+        <li>
+          After you add the link, Google&apos;s servers fetch it on Google&apos;s own
+          schedule, and Google&apos;s terms and privacy policy apply to the copy
+          held by Google. BBQOne records only when the link was last fetched.
+        </li>
+        <li>
+          You can create a new link (the old one stops working immediately) or
+          turn the link off at any time. Supabase may keep standard request logs,
+          including the link path, for operating the service.
+        </li>
+      </ul>
 
       <h3>Authentication credentials</h3>
       <p>
@@ -330,8 +369,8 @@
         <strong>Cloud mode (opt-in):</strong> Data is stored in the Supabase
         backend configured for this build. Transmission uses HTTPS (TLS).
         Database access is gated by Row Level Security — your
-        <code>auth.uid()</code> must match row ownership. Sensitive surfaces
-        (Secure Folder notes, PIN-protected bookmark snapshots) are additionally
+        <code>auth.uid()</code> must match row ownership. Secure Folder notes (and
+        notes of accounts with account encryption turned on) are additionally
         encrypted client-side with AES-GCM before upload.
       </p>
 
@@ -343,6 +382,8 @@
         <li>Export your Chrome bookmark tree as an HTML file from the Bookmarks
           tab (file saved on your device using <code>chrome.downloads</code>)</li>
         <li>Sign out from cloud sync (the extension continues to work locally)</li>
+        <li>Turn off or regenerate your Google Calendar link in Settings, and
+          remove the calendar from Google Calendar</li>
         <li>Uninstall the extension to remove local extension data from this
           browser profile</li>
         <li>Delete or export your cloud data using your Supabase project /
@@ -357,6 +398,11 @@
         <li>
           <strong>Supabase</strong> (<code>*.supabase.co</code>) —
           Authentication and optional data sync. Triggered only after you sign in.
+        </li>
+        <li>
+          <strong>Google Calendar</strong> — only if you add your Google Calendar
+          link: Google&apos;s servers (not the extension) fetch the link from
+          Supabase. Google&apos;s terms and privacy policy apply.
         </li>
         <li>
           <strong>Google Fonts</strong>

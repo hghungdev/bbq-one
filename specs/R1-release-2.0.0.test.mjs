@@ -30,7 +30,8 @@ check(
 const readme = read('README.md')
 check(
   'R1.2 README: Version 2.0.0 + "What changed in 2.0.0"; không còn mô tả Bookmark PIN',
-  readme.includes(`**Version:** ${V}`) && /## What changed in 2\.0\.0/.test(readme) && !/PIN/.test(readme),
+  readme.includes(`**Version:** ${V}`) && /## What changed in 2\.0\.0/.test(readme) &&
+    !/PIN-protected|signed in with PIN/.test(readme),
   'README chưa cập nhật',
 )
 check('R1.3 DESIGN.md token: version 2.0.0', /\nversion: 2\.0\.0\n/.test(read('DESIGN.md')), 'DESIGN.md')
