@@ -403,18 +403,18 @@ async function saveForm(): Promise<void> {
               class="cal-modal__row ds-row"
               :class="[calendarEventToneClass(ev.id), { 'cal-modal__row--done': ev.is_done }]"
             >
-              <input
-                type="checkbox"
-                class="cal-modal__check"
-                :checked="ev.is_done"
-                :aria-label="t('calendar.modal.aria.toggleDone')"
-                @change="onToggleDone(ev.id, $event)"
-                @click.stop
-              />
-              <span class="cal-modal__swatch" aria-hidden="true" />
-              <button type="button" class="cal-modal__row-title" @click.stop="startEdit(ev)">
-                {{ ev.title }}
-              </button>
+              <!-- U17: ô tick + vạch màu + tên là MỘT label — bấm tên = đánh dấu xong; sửa chỉ qua ✎. -->
+              <label class="cal-modal__row-main" :title="t('calendar.modal.aria.toggleDone')">
+                <input
+                  type="checkbox"
+                  class="cal-modal__check"
+                  :checked="ev.is_done"
+                  @change="onToggleDone(ev.id, $event)"
+                  @click.stop
+                />
+                <span class="cal-modal__swatch" aria-hidden="true" />
+                <span class="cal-modal__row-title">{{ ev.title }}</span>
+              </label>
               <!-- U15: ✎ / 🗑 như menu ⚙ của thư mục, ghi chú — hiện khi rê chuột / focus. -->
               <button
                 type="button"
@@ -711,23 +711,27 @@ async function saveForm(): Promise<void> {
   background: var(--cal-event-rail);
 }
 
-.cal-modal__row-title {
+.cal-modal__row-main {
+  display: flex;
   flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
   padding: 6px 0;
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   cursor: pointer;
 }
 
-.cal-modal__row-title:focus-visible {
+.cal-modal__row-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-modal__row-main:has(.cal-modal__check:focus-visible) {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
   border-radius: var(--radius-sm);

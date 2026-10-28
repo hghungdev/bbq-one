@@ -79,7 +79,8 @@ console.log('T — bộ icon (CODE THẬT)')
 
 const NAMES = [
   'trash', 'close', 'plus', 'pencil', 'move', 'copy', 'restore', 'download', 'refresh', 'upload-cloud',
-  'lock', 'unlock', 'key', 'shield', 'check', 'search', 'settings', 'log-in', 'log-out',
+  // U17 (đổi có chủ đích): 'log-in' → 'user' (⇤ trông như ⇥ Đăng xuất).
+  'lock', 'unlock', 'key', 'shield', 'check', 'search', 'settings', 'user', 'log-out',
   'link', 'chevron-left', 'chevron-right', 'chevron-down',
 ]
 let icons = null
@@ -203,11 +204,11 @@ check(
 const settings = read('src', 'components', 'layout', 'SettingsModal.vue')
 const app = read('src', 'pages', 'App.vue')
 check(
-  'M5 Settings "🔓 Mở khóa" / "🔒 Khóa ngay"; recovery "⧉ Sao chép"; header ⇤ đăng nhập / ⇥ đăng xuất / ⚙',
+  'M5 Settings "🔓 Mở khóa" / "🔒 Khóa ngay"; recovery "⧉ Sao chép"; header 👤 đăng nhập (U17) / ⇥ đăng xuất / ⚙',
   /name="unlock"/.test(settings) &&
     /name="lock"/.test(settings) &&
     /name="copy"/.test(read('src', 'components', 'account', 'AccountEncryptionSetupModal.vue')) &&
-    ['log-in', 'log-out', 'settings'].every((n) => app.includes(`name="${n}"`)),
+    ['user', 'log-out', 'settings'].every((n) => app.includes(`name="${n}"`)),
   'chưa thống nhất',
 )
 check(

@@ -678,7 +678,8 @@
             :title="t('app.aria.loginTitle')"
             @click="onGoLogin"
           >
-            <AppIcon name="log-in" :size="17" />
+            <!-- U17: 👤 thay ⇤ — ⇤ chỉ là ảnh lật của ⇥ "Đăng xuất", nhìn như một. -->
+            <AppIcon name="user" :size="17" />
           </IconButton>
           <IconButton
             v-else
