@@ -216,9 +216,20 @@ nhánh cũ (`0ef22ee`), không mất gì. Đổi assertion có chủ đích: U5.
 
 | Mục | Commit (docs → feat) | Test | Kiểm tra trên Chromium |
 |---|---|---|---|
-| U12 "Quá hạn" vào chip lịch, bỏ hộp thoại tự bật | `d0e711f` → `293503b` | ✅ 8/8 | chip "· 5 quá hạn"; bảng có mục QUÁ HẠN + "Đánh dấu xong"; không tự bật hộp thoại khi mở popup |
+| U12 "Quá hạn" vào chip lịch, bỏ hộp thoại tự bật | `d0e711f` → `293503b` | ✅ 8/8 | chip "· 5 quá hạn"; bảng có mục QUÁ HẠN + "Đánh dấu xong" (U14 đổi "Xem tất cả"); không tự bật hộp thoại khi mở popup |
 | S3a gỡ hẳn Bookmark PIN | `ddaa214` → `2aca5d7` | ✅ 10/10 (RED 8) | đăng nhập (session giả, offline): tab Bookmark mở thẳng; Settings chỉ còn Ngôn ngữ / Mật khẩu / Encrypted account |
 
 Đính chính: commit `293503b` ghi "41 harness PASS" — đúng là **40** (U12 là harness thứ 40); sau S3a: 41.
 Đổi assertion có chủ đích: C7a/C7b, U10.2 (U12 — bỏ cờ "ẩn nhắc quá hạn").
 **Việc của Sir sau S3a:** khi mọi máy đã lên bản mới → chạy `supabase/migrations/016_drop_bookmark_crypto.sql`.
+
+## Đợt 5 (2026-10-28) — U13, U14 (nhánh `claude/ui-adn-redesign`)
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra trên Chromium |
+|---|---|---|---|
+| U13 hộp thoại sự kiện theo ADN ("Layout popup xấu quá") | `dde689f` → `199990e` | ✅ 15/15 (RED 11) | segmented Lặp lại + ← →; stepper khóa ở 2 / 24; chip ngày, ngày đủ 3 sự kiện gạch đỏ; "Tạo 3 sự kiện" → bỏ qua đúng 1 ngày; mở form focus ô tiêu đề; Sửa có "Xóa"; light + dark |
+| U14 ✓ từng việc quá hạn ("xử lý từng record hay hết?") | `7719b6f` → `a93af25` | ✅ 9/9 (RED 6) | ✓ dòng 2 → chỉ việc đó xong, chip 5 → 4; bấm lại hoàn tác; đóng/mở → dòng xong rút đi; "Xem tất cả" → hộp thoại 0 mục chọn |
+
+Kèm: gỡ prop `digitOnly` của `RetroInput` (chỉ PIN dùng — sót từ S3a). 43 harness PASS.
+Đổi chữ có chủ đích: `calendar.repeat.none` "Không lặp lại" → "Một lần" (vừa ô segmented);
+`calendar.agenda.reviewOverdue` "Đánh dấu xong" → "Xem tất cả" (hết hiểu nhầm "đánh dấu tất cả").
