@@ -200,3 +200,14 @@ Todoist) — đụng giới hạn 3 sự kiện / ngày nên cần thiết kế 
 
 Đổi assertion có chủ đích (ghi trong spec từng mục): U2.1, U2.3–U2.5 (U5), U1.3 (U8), U9.4.
 Chờ Sir verify tay theo mục "Nghiệm thu" của từng spec.
+
+## Đợt 3 (2026-10-28) — U10, U11 "ADN popover"
+
+| Mục | Nhánh | Commit (docs → feat) | Test | Kiểm tra trên Chromium |
+|---|---|---|---|---|
+| U10 bỏ "Ẩn" ngày mai | `claude/dazzling-wright-m0fqb2` | `3a7acfa` → `0ef22ee` | ✅ 4/4 (RED 3) | bảng chỉ còn "Mở lịch" |
+| U11-A Ghi chú | **`claude/ui-adn-redesign`** | `3bccd29` → `1727d81` | ✅ | ô "tìm tất cả" ở đầu cột Thư mục; kết quả "RESULTS · n · all folders" |
+| U11-B/C/D Lịch / Bookmark / Settings + 14 hộp thoại | **`claude/ui-adn-redesign`** | → `3f559c1` | ✅ U11 15/15 | light + dark mọi tab, Settings, Overdue, sự kiện, đăng nhập, tạo thư mục |
+
+U11 nằm trên nhánh riêng theo yêu cầu: ưng → gộp vào `claude/dazzling-wright-m0fqb2`; không → giữ
+nhánh cũ (`0ef22ee`), không mất gì. Đổi assertion có chủ đích: U5.8 (ô tìm ghi chú sang Sidebar).
