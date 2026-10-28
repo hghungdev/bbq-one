@@ -16,19 +16,11 @@ Justification" section.
 
 ## Single Purpose
 
-BBQOne's single purpose is **personal knowledge capture and daily planning
-during web browsing**. Users have one place to:
+Paste into **Single purpose description** (each block below is paste-ready for its form field, ≤ 1,000 characters):
 
-- Save **notes** (rich text with code-block support).
-- Back up and search their Chrome **bookmarks** (with optional client-side
-  AES-GCM encrypted secure folders).
-- Track **calendar** events (with a banner that surfaces "today" and
-  "tomorrow" plans on the dashboard).
-
-All three surfaces are unified by a single search bar, a single local-first
-storage layer (`chrome.storage.local`), and a single design system. The
-extension runs entirely inside the popup / extension pages — it does **not**
-inject scripts into the pages users visit.
+```text
+BBQOne is a local-first personal productivity dashboard: notes, Chrome bookmark backups, and a calendar in one extension popup. Users write notes (rich text, code blocks, and optional passphrase-protected secure folders with client-side AES-GCM encryption), snapshot, search, restore and export their Chrome bookmarks, and plan events in a month calendar. Data is stored in chrome.storage.local by default; signing in is optional and only syncs the same data to the user's account. The extension runs entirely inside its popup and extension pages and does not inject scripts into the pages users visit.
+```
 
 ---
 
@@ -36,91 +28,51 @@ inject scripts into the pages users visit.
 
 ### `storage`
 
-**Purpose**: Persist user-created data (notes, folders, bookmarks, calendar
-events, UI preferences such as theme and language) locally in
-`chrome.storage.local`. This is the foundation of BBQOne's local-first
-architecture — by default no data leaves the user's device.
-`chrome.storage.session` is additionally used to hold the Supabase auth
-session token, so the session is cleared automatically when the browser
-closes.
-
-**User-facing functionality**: Core data persistence — without this
-permission, no data can be saved.
+```text
+Persist user-created data (notes, folders, bookmark backups, calendar events) and preferences (theme, language) in chrome.storage.local. This is the basis of BBQOne's local-first design: by default no data leaves the user's device. chrome.storage.session (in memory, cleared when the browser closes) holds only short-lived state: the sign-in session token, a safety copy of the note draft being edited (so an unsaved edit survives the popup closing), and, for accounts that turned on note encryption, the unlocked key until it auto-locks. Without this permission no data can be saved.
+```
 
 ### `unlimitedStorage`
 
-**Purpose**: BBQOne is a local-first application — the user's complete
-notes, calendar events, and bookmark backup history are cached in
-`chrome.storage.local` so the extension works fully offline. The default
-10MB quota is insufficient for users with large note collections (a few
-thousand notes with rich-text bodies exceeds it), and hitting the quota
-would silently prevent offline edits from being persisted.
-
-**User-facing functionality**: Reliable offline persistence of all user
-data regardless of collection size. No data is collected or transmitted —
-this permission only raises the local disk cap.
+```text
+BBQOne is local-first: the user's notes, calendar events and bookmark backup history are cached in chrome.storage.local so the extension works fully offline. The default ~10 MB quota is too small for large collections (a few thousand notes with rich-text bodies exceed it), and hitting the quota would silently stop offline edits from being saved. This permission only raises the local disk limit; no data is collected or transmitted.
+```
 
 ### `contextMenus`
 
-**Purpose**: Add a single menu item ("Open Dashboard") to the **extension
-action icon's** right-click menu (`contexts: ['action']`). This menu does
-**not** appear in the right-click menu of pages the user visits.
-
-**User-facing functionality**: A keyboard-free way to open the BBQOne popup
-dashboard.
+```text
+Adds one item, "Open Dashboard", to the right-click menu of the extension's own toolbar icon (contexts: ["action"]) so users can open the BBQOne dashboard from there. Nothing is added to the right-click menus of web pages.
+```
 
 ### `alarms`
 
-**Purpose**: Schedule a periodic background sync (once every 24 hours) for
-users who have opted into Supabase cloud sync. The alarm keeps the local
-cache fresh relative to the user's cloud account without requiring manual
-action.
-
-**User-facing functionality**: Daily auto-sync of cloud data when
-authenticated. Anonymous (non-signed-in) users generate no alarm activity
-and no network requests.
+```text
+BBQOne uses chrome.alarms for background housekeeping only: (1) a 24-hour sync refresh for signed-in users; (2) a 5-minute retry that uploads changes made while offline; it does work only when there are pending changes and the user is signed in; (3) a one-shot alarm that finalizes a delete when its Undo window ends, so the delete still completes if the popup was closed; (4) for accounts that turned on note encryption, a one-shot auto-lock that clears the unlocked key from session memory after 30 minutes. For users who are not signed in, the sync alarms make no network requests.
+```
 
 ### `clipboardWrite`
 
-**Purpose**: Power the "Copy note" button in the note editor — users can
-copy the plain-text content of a note to the clipboard with a single click.
-The extension only writes user-initiated content to the clipboard and
-**never reads from the clipboard**.
-
-**User-facing functionality**: One-click copy of note content.
+```text
+Powers the copy buttons the user clicks: "Copy note" in the note editor (copies the note's plain text) and the copy button next to the private Google Calendar link in Settings. The extension writes only the text the user chose to copy, only on click, and never reads from the clipboard.
+```
 
 ### `offscreen`
 
-**Purpose**: Provide a Manifest V3 fallback for clipboard write operations
-from contexts where the direct Clipboard API is not available (for example
-when the write is triggered from the service worker via
-`chrome.runtime.sendMessage`). The offscreen document is created on demand,
-performs a single clipboard write, and is immediately closed (see
-`src/background.ts` and `src/offscreen.ts`).
-
-**User-facing functionality**: Reliable "Copy note" behavior across all
-extension surfaces (popup, service worker).
+```text
+Fallback for the copy buttons above. The popup first copies with navigator.clipboard.writeText; if that fails (for example when the popup has lost focus), it asks the extension's service worker, which opens an offscreen document with reason CLIPBOARD, writes the text, and closes the document immediately. The offscreen document is used for nothing else.
+```
 
 ### `bookmarks`
 
-**Purpose**: Read the user's Chrome bookmark tree to display, search, and
-back it up inside the BBQOne dashboard. The extension also listens to
-bookmark `onCreated` / `onRemoved` / `onChanged` / `onMoved` events to keep
-its backup snapshot fresh.
-
-**User-facing functionality**: Core bookmark feature — viewing, searching,
-and backing up Chrome bookmarks. Users may additionally store sensitive
-snapshots inside encrypted secure folders (client-side AES-GCM encryption).
+```text
+Reads the user's Chrome bookmark tree to show, search and back it up in the Bookmarks tab, and listens to bookmarks.onCreated / onRemoved / onChanged / onMoved to keep the automatic backup snapshot up to date. Bookmarks are changed only when the user clicks Restore on a backup and confirms it; the bookmark tree is then rebuilt from that snapshot. Bookmark backups stay in chrome.storage.local unless the user signs in to sync them.
+```
 
 ### `downloads`
 
-**Purpose**: Power the **"Export Bookmarks as HTML"** feature in the
-Bookmarks tab. The extension generates a standard Netscape Bookmark HTML
-file in memory (via `Blob`) and calls `chrome.downloads.download(...)` to
-save it. The download is always user-initiated.
-
-**User-facing functionality**: Backup / migration of the user's bookmarks
-into another browser.
+```text
+Powers "Export as HTML" in the Bookmarks tab: the extension builds a standard Netscape bookmark HTML file in memory and saves it with chrome.downloads.download, so users can keep a backup or import it into another browser. Downloads happen only when the user clicks Export.
+```
 
 ---
 
@@ -128,23 +80,18 @@ into another browser.
 
 ### `https://*.supabase.co/*`
 
-**Purpose**: The single host permission `https://*.supabase.co/*` is used
-**only** when the user explicitly opts into cloud sync by signing in via the
-Settings panel. It is required to:
+```text
+https://*.supabase.co/* is used only after the user chooses to sign in. It is needed to:
+1. Sign in with Supabase Auth (email + password; no OAuth, no chrome.identity).
+2. Sync the user's notes, folders, bookmark backups and calendar events with BBQOne's Supabase backend. Each account's rows are isolated by Row Level Security (auth.uid() = user_id); notes in secure folders are encrypted on the device before upload.
+3. Create, replace or turn off the optional private Google Calendar link (stored in the same backend). Google Calendar fetches that link from the server; the extension never contacts Google.
+4. Run the daily background refresh (chrome.alarms).
+Users who are not signed in never send requests to Supabase. There are no content scripts. Apart from Supabase, the only network request is loading the Inter font from Google Fonts for the extension pages.
+```
 
-1. **Authenticate** the user via Supabase Auth (email + password sign-in —
-   no OAuth redirect, no `chrome.identity`).
-2. **Sync** the user's notes, folders, bookmarks (optionally encrypted), and
-   calendar events to and from their Supabase project, protected
-   server-side by **Row Level Security** (`auth.uid() = user_id`).
-3. Maintain a **daily background refresh** triggered by `chrome.alarms`.
-
-**Activation**: Only used when the user is signed in. Anonymous (default)
-users never trigger any requests to Supabase.
-
-> The wildcard `*.supabase.co` is used because the destination project URL
-> is read from build-time environment variables — not because the extension
-> reaches into multiple unrelated Supabase projects at runtime.
+> The wildcard `*.supabase.co` is used because the project URL is set at build time (`VITE_SUPABASE_URL`); at
+> runtime the extension talks to that one project only. Optional hardening for a later release: narrow it to the exact
+> project host (`https://<project-ref>.supabase.co/*`) — a narrower host pattern usually means a lighter review.
 
 ---
 
@@ -213,7 +160,9 @@ BBQOne follows a **privacy-first, local-first** philosophy:
 
 - All core data stays on the user's device by default.
 - The only remote host is `*.supabase.co`, and only when the user
-  explicitly signs in for optional cloud sync.
+  explicitly signs in for optional cloud sync (including the optional
+  Google Calendar link, which Google fetches from the server — not from
+  the extension).
 - No content scripts on third-party sites.
 - No tracking, no analytics, no advertising.
 - All permissions are scoped to features that are actually present in the
