@@ -29,7 +29,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   const activeDate = ref<string | null>(null)
   /** Event currently being edited (null when creating). */
   const activeEventId = ref<string | null>(null)
-  /** Lọc theo title — đồng bộ SearchBar khi tab CALENDAR. */
+  /** Lọc theo title — ô 🔍 trong hàng điều hướng tháng (CalendarInlineSearch). */
   const searchQuery = ref('')
   /** Ô được focus khi chọn kết quả search — không bật modal. */
   const gridFocusDateKey = ref<string | null>(null)

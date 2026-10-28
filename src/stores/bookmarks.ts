@@ -16,8 +16,10 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const lastBackupAt = ref<string | null>(null)
-  /** Chuỗi lọc tree (đồng bộ với SearchBar khi tab BOOKMARK). */
+  /** Chuỗi lọc tree (ô 🔍 trên thanh công cụ tab Bookmark). */
   const searchQuery = ref('')
+  /** U5: Ctrl+F ở tab Bookmark → InlineSearch mở + focus (tăng để kích watch). */
+  const searchFocusRequest = ref(0)
 
   const selectedBackup = computed(
     () => backups.value.find(b => b.id === selectedBackupId.value) ?? null
@@ -184,6 +186,10 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
     searchQuery.value = ''
   }
 
+  function requestSearchFocus(): void {
+    searchFocusRequest.value++
+  }
+
   /** Xóa mọi bookmark trên trình duyệt (folder gốc Chromium giữ nguyên). */
   async function deleteAllFromBrowser(): Promise<void> {
     loading.value = true
@@ -200,8 +206,8 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
 
   return {
     liveTree, backups, selectedBackupId, selectedBackup,
-    loading, error, lastBackupAt, searchQuery,
+    loading, error, lastBackupAt, searchQuery, searchFocusRequest,
     loadLive, loadBackups, backup, restore, deleteBackup, exportHTML,
-    setSearchQuery, clearBookmarkSearch, deleteAllFromBrowser,
+    setSearchQuery, clearBookmarkSearch, requestSearchFocus, deleteAllFromBrowser,
   }
 })

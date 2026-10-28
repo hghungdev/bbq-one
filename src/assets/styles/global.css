@@ -98,7 +98,9 @@
   --radius-pill: 9999px;
   --radius-control: var(--radius-md);
 
-  --popup-min-width: 720px;
+  /* U4: popup Chrome co giãn theo nội dung (tối đa 800 × 600) — cố định để chuyển tab / gõ tìm
+     không làm popup đổi bề rộng. */
+  --popup-width: 800px;
 }
 
 *,
@@ -111,8 +113,7 @@ html {
   height: 600px;
   max-height: 600px;
   overflow: hidden;
-  min-width: var(--popup-min-width);
-  width: 100%;
+  width: var(--popup-width);
 }
 
 html,

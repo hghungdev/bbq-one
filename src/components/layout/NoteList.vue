@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import NoteItem from '@/components/notes/NoteItem.vue'
 import MoveNoteModal from '@/components/notes/MoveNoteModal.vue'
 import IconButton from '@/components/ui/IconButton.vue'
+import InlineSearch from '@/components/ui/InlineSearch.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { useFoldersStore } from '@/stores/folders'
@@ -186,13 +187,30 @@ async function onMovePick(folderId: string): Promise<void> {
 
 <template>
   <div class="note-list">
+    <!-- U5: tìm ghi chú thu vào nút 🔍 ở đầu cột (thay SearchBar toàn chiều ngang trên header). -->
     <div class="note-list__head">
-      <template v-if="notes.searchQuery.trim()">
-        {{ t('notes.searchHits', { n: displayedNotes.length }) }}
-      </template>
-      <template v-else>
-        {{ t('notes.header') }}
-      </template>
+      <InlineSearch
+        compact
+        input-id="bbqone-notes-search"
+        :query="notes.searchQuery"
+        :focus-request="notes.searchFocusRequest"
+        :placeholder="t('search.placeholderNotes')"
+        :input-label="t('search.ariaNotes')"
+        :open-label="t('search.openNotes')"
+        :close-label="t('search.close')"
+        @search="(q) => notes.runSearch(q)"
+        @clear="notes.clearSearch()"
+      >
+        <template #collapsed>
+          <span class="note-list__head-title">{{ t('notes.header') }}</span>
+        </template>
+        <template #suffix>
+          <span v-if="notes.searchLoading" class="note-list__hits">…</span>
+          <span v-else-if="notes.searchQuery.trim()" class="note-list__hits" aria-live="polite">
+            {{ t('notes.searchHits', { n: displayedNotes.length }) }}
+          </span>
+        </template>
+      </InlineSearch>
     </div>
     <div class="note-list__body">
       <NoteItem
@@ -294,8 +312,12 @@ async function onMovePick(folderId: string): Promise<void> {
 }
 
 .note-list__head {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   margin: 8px 8px 4px;
-  padding: 7px 10px;
+  /* Nút 🔍 / ✕ 24 px + padding 3 px = đúng chiều cao pill "Folders" (chữ 13 px + padding 7 px). */
+  padding: 3px 4px 3px 10px;
   font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--text-primary);
@@ -304,6 +326,25 @@ async function onMovePick(folderId: string): Promise<void> {
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+}
+
+/* Chỉ khi focus ở Ô NHẬP (nút 🔍 / ✕ đã có vòng focus riêng). */
+.note-list__head:has(input:focus-visible) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.note-list__head-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-list__hits {
+  flex: 0 0 auto;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .note-list__body {

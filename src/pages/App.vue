@@ -1,15 +1,14 @@
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
   import { storeToRefs } from 'pinia'
   import NoteEditor from '@/components/notes/NoteEditor.vue'
   import NoteList from '@/components/layout/NoteList.vue'
-  import SearchBar from '@/components/layout/SearchBar.vue'
   import SettingsModal from '@/components/layout/SettingsModal.vue'
   import Sidebar from '@/components/layout/Sidebar.vue'
   import RetroButton from '@/components/ui/RetroButton.vue'
   import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
   import CalendarTab from '@/components/calendar/CalendarTab.vue'
-  import CalendarTodayBanner from '@/components/calendar/CalendarTodayBanner.vue'
+  import CalendarAgendaChip from '@/components/calendar/CalendarAgendaChip.vue'
   import CalendarOverdueReminderDialog from '@/components/calendar/CalendarOverdueReminderDialog.vue'
   import ConflictBackupsDialog from '@/components/sync/ConflictBackupsDialog.vue'
   import LoginModal from '@/components/auth/LoginModal.vue'
@@ -25,6 +24,7 @@
   import { useSyncStore } from '@/stores/sync'
   import { useLangStore } from '@/stores/uiLang'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
+  import { useBookmarksStore } from '@/stores/bookmarks'
   import CloudSyncStatusBadge from '@/components/sync/CloudSyncStatusBadge.vue'
   import type { CloudSyncVariant } from '@/components/sync/CloudSyncStatusBadge.vue'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
@@ -34,7 +34,6 @@
   import { useUndoToastStore } from '@/stores/undoToast'
   import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
-  import { todayLocalKey } from '@/utils/calendarDate'
   import {
     hasPendingSyncWork,
     initAutoSyncOnNetworkRestore,
@@ -77,6 +76,7 @@
   const langStore = useLangStore()
   const { t } = langStore
   const calendarEvents = useCalendarEventsStore()
+  const bookmarks = useBookmarksStore()
   const dataReady = ref(false)
   const networkOnline = ref(isOnline())
   const showSettings = ref(false)
@@ -149,7 +149,6 @@
     })
   }
 
-  const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null)
   const noteEditorRef = ref<InstanceType<typeof NoteEditor> | null>(null)
 
   const loadErrorLine = computed(() => {
@@ -187,8 +186,10 @@
     }
     if (e.ctrlKey && e.key.toLowerCase() === 'f') {
       e.preventDefault()
+      // U5: mỗi tab có ô 🔍 riêng trong thanh công cụ của nó.
       if (activeTab.value === 'calendar') calendarEvents.requestSearchFocus()
-      else searchBarRef.value?.focusInput()
+      else if (activeTab.value === 'bookmarks') bookmarks.requestSearchFocus()
+      else notes.requestSearchFocus()
     }
     if (e.ctrlKey && e.key.toLowerCase() === 'n') {
       e.preventDefault()
@@ -598,9 +599,14 @@
     if (conflictBackups.value.length === 0) showConflictBackups.value = false
   }
 
-  function onOpenCalendarFromTodayBanner(): void {
+  /** U6: bấm chip lịch / một sự kiện trong bảng → tab Lịch, nhảy đúng ngày đó. */
+  async function onOpenCalendarFromAgenda(dateKey: string): Promise<void> {
+    // Bỏ ô đang focus trước → bấm lại cùng ngày vẫn cuộn tới; chờ CalendarTab mount (đang ở tab khác)
+    // để watch(gridFocusDateKey) của nó bắt được thay đổi.
+    calendarEvents.gridFocusDateKey = null
     activeTab.value = 'calendar'
-    calendarEvents.focusCalendarCellFromSearch(todayLocalKey())
+    await nextTick()
+    calendarEvents.focusCalendarCellFromSearch(dateKey)
   }
 </script>
 
@@ -644,7 +650,10 @@
             </RetroButton>
           </nav>
         </div>
-        <span class="shell__sep" aria-hidden="true"></span>
+        <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
+        <div class="shell__header-mid">
+          <CalendarAgendaChip v-if="dataReady" @open-calendar="onOpenCalendarFromAgenda" />
+        </div>
         <div class="shell__header-right">
           <ThemeModeToggle class="shell__theme-toggle" />
           <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
@@ -729,16 +738,6 @@
           </IconButton>
         </div>
       </div>
-      <CalendarTodayBanner
-        v-if="dataReady"
-        @open-calendar="onOpenCalendarFromTodayBanner"
-      />
-      <!-- U2: tab Calendar tìm kiếm trong hàng điều hướng tháng (CalendarInlineSearch). -->
-      <SearchBar
-        v-if="activeTab !== 'calendar'"
-        ref="searchBarRef"
-        :search-mode="activeTab === 'bookmarks' ? 'bookmarks' : 'notes'"
-      />
     </header>
 
     <OfflineBanner />
@@ -820,7 +819,7 @@
   .shell {
     display: flex;
     flex-direction: column;
-    /* Độ rộng tối thiểu popup: global.css (--popup-min-width); lưới có overflow-x khi hẹp hơn 3 cột */
+    /* Bề rộng popup cố định: global.css (--popup-width); lưới có overflow-x khi hẹp hơn 3 cột */
     min-width: 0;
     min-height: 0;
     flex: 1 1 auto;
@@ -949,13 +948,13 @@
     white-space: nowrap;
   }
 
-  .shell__sep {
+  /* Khoảng giữa nhóm tab và nhóm icon — chứa chip lịch (canh phải, sát nhóm icon). Không overflow:
+     hidden — bảng chi tiết của chip phải tràn xuống dưới header. */
+  .shell__header-mid {
+    display: flex;
+    justify-content: flex-end;
     flex: 1 1 32px;
     min-width: 0;
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .shell__theme-toggle {

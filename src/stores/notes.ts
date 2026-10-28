@@ -65,6 +65,8 @@ export const useNotesStore = defineStore('notes', () => {
   const searchQuery = ref('')
   const searchResults = ref<Note[]>([])
   const searchLoading = ref(false)
+  /** U5: Ctrl+F ở tab Notes → InlineSearch đầu cột mở + focus (tăng để kích watch). */
+  const searchFocusRequest = ref(0)
 
   const activeNote = computed(
     () => notes.value.find((n) => n.id === activeNoteId.value) ?? null,
@@ -120,6 +122,10 @@ export const useNotesStore = defineStore('notes', () => {
   function clearSearch(): void {
     searchQuery.value = ''
     searchResults.value = []
+  }
+
+  function requestSearchFocus(): void {
+    searchFocusRequest.value++
   }
 
   function setFilterTag(tag: string | null): void {
@@ -869,10 +875,12 @@ export const useNotesStore = defineStore('notes', () => {
     searchQuery,
     searchResults,
     searchLoading,
+    searchFocusRequest,
     bodiesForNote,
     notesForFolder,
     runSearch,
     clearSearch,
+    requestSearchFocus,
     setFilterTag,
     loadAll,
     hydrateFromCache,

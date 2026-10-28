@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import InlineSearch from '@/components/ui/InlineSearch.vue'
 import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
 import IconRestoreButton from '@/components/ui/IconRestoreButton.vue'
 import DeleteBackupModal from '@/components/bookmarks/DeleteBackupModal.vue'
@@ -216,6 +217,19 @@ async function onRefreshLive(): Promise<void> {
       <span v-if="bm.lastBackupAt" class="bm-tab__hint">
         {{ t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') }) }}
       </span>
+      <!-- U5: tìm bookmark thu vào nút 🔍 cuối thanh công cụ (giống Calendar). -->
+      <InlineSearch
+        class="bm-tab__search"
+        input-id="bbqone-bookmark-search"
+        :query="bm.searchQuery"
+        :focus-request="bm.searchFocusRequest"
+        :placeholder="t('search.placeholderBookmarks')"
+        :input-label="t('search.ariaBookmarks')"
+        :open-label="t('search.openBookmarks')"
+        :close-label="t('search.close')"
+        @search="(q) => bm.setSearchQuery(q)"
+        @clear="bm.clearBookmarkSearch()"
+      />
     </div>
 
     <p v-if="bm.error" class="bm-tab__error">{{ t('common.error') }} {{ bm.error }}</p>
@@ -433,7 +447,7 @@ async function onRefreshLive(): Promise<void> {
 }
 .bm-tab__toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
   margin: 10px 12px 8px;
@@ -445,9 +459,21 @@ async function onRefreshLive(): Promise<void> {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.bm-tab__toolbar > :deep(.retro-btn) {
+  flex-shrink: 0;
+}
 .bm-tab__hint {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
+}
+.bm-tab__search {
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 .bm-tab__error {
   margin: 0;

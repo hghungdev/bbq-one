@@ -13,7 +13,7 @@
 ## U5 — `InlineSearch` dùng chung
 
 - `components/ui/InlineSearch.vue`: props `query` (query hiện tại của store), `focusRequest`,
-  `placeholder`, `ariaLabel`, `openLabel`, `closeLabel`, `inputId`, `compact?`; emit `search(q)`
+  `placeholder`, `inputLabel`, `openLabel`, `closeLabel`, `inputId`, `compact?`; emit `search(q)`
   (debounce 300 ms, bỏ qua nếu trùng query sau trim) và `clear()`. Slot `collapsed` (hiện cạnh 🔍 khi
   thu gọn — vd tiêu đề cột) và `suffix` (cạnh ô nhập khi mở — vd số kết quả).
   - Mặc định thu gọn; còn query → mở sẵn. 🔍 → mở + focus. ✕ / Esc → xóa query + thu gọn + trả focus
