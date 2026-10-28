@@ -208,7 +208,10 @@ check(
   /name="unlock"/.test(settings) &&
     /name="lock"/.test(settings) &&
     /name="copy"/.test(read('src', 'components', 'account', 'AccountEncryptionSetupModal.vue')) &&
-    ['user', 'log-out', 'settings'].every((n) => app.includes(`name="${n}"`)),
+    // U22 (đổi có chủ đích): 👤 / ⇥ chuyển vào AccountMenu.vue (header, kiểu Gmail).
+    ['user', 'log-out', 'settings'].every((n) =>
+      (app + read('src', 'components', 'layout', 'AccountMenu.vue')).includes(`name="${n}"`),
+    ),
   'chưa thống nhất',
 )
 check(

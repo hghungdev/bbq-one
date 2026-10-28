@@ -22,13 +22,22 @@ console.log('1 — icon đăng nhập')
 const app = read('src', 'pages', 'App.vue')
 const icons = read('src', 'components', 'ui', 'icons.ts')
 // U20 (đổi có chủ đích): nút đăng nhập chuyển xuống đáy thanh dọc — <button>, không còn IconButton.
-const loginBtn = (/<(?:IconButton|button)\s+v-if="isAnonymous"[\s\S]*?<\/(?:IconButton|button)>/.exec(app) ?? [''])[0]
+// U22 (đổi có chủ đích): đăng nhập / đăng xuất lên header — nằm trong AccountMenu.vue (kiểu Gmail).
+const account = (() => {
+  try {
+    return read('src', 'components', 'layout', 'AccountMenu.vue')
+  } catch {
+    return ''
+  }
+})()
+const loginBtn = (/<button\b[^>]*v-if="!signedIn"[\s\S]*?<\/button>/.exec(account) ?? [''])[0]
 check(
   'U17.1 chưa đăng nhập: icon người (user), không còn ⇤ log-in (ảnh lật của ⇥ đăng xuất)',
-  /name="user"/.test(loginBtn) && !/name="log-in"/.test(app) && /\buser: \[/.test(icons) && !/'log-in'/.test(icons),
+  /name="user"/.test(loginBtn) && !/name="log-in"/.test(app + account) && /\buser: \[/.test(icons) &&
+    !/'log-in'/.test(icons),
   loginBtn.replace(/\s+/g, ' ').slice(0, 160) || 'không thấy nút đăng nhập',
 )
-check('U17.2 đã đăng nhập: vẫn ⇥ log-out', /name="log-out"/.test(app), 'mất icon đăng xuất')
+check('U17.2 đã đăng nhập: vẫn ⇥ log-out', /name="log-out"/.test(account), 'mất icon đăng xuất')
 
 console.log('\n2 — dòng sự kiện trong danh sách ngày')
 const modal = read('src', 'components', 'calendar', 'CalendarEventModal.vue')

@@ -40,10 +40,12 @@ check(
     /<AppIcon :name="tab\.icon"/.test(rail),
   'tablist dọc / icon / tên chưa đủ',
 )
+// U22 (đổi có chủ đích): 👤 / ⇥ tài khoản lên header (AccountMenu, kiểu Gmail) — đáy thanh chỉ còn ⚙.
 check(
-  'U20.3 ⚙ Cài đặt + 👤 / ⇥ tài khoản ở đáy thanh; header không còn tab, ⚙, đăng nhập / xuất',
-  /shell__rail-bottom[\s\S]*name="settings"[\s\S]*name="user"[\s\S]*name="log-out"/.test(rail) &&
-    !/role="tab"/.test(header) && !/name="settings"|name="user"|name="log-out"/.test(header) && /<CalendarAgendaChip/.test(header),
+  'U20.3 ⚙ Cài đặt ở đáy thanh; header không còn tab, ⚙; tài khoản ở header (U22 — AccountMenu)',
+  /shell__rail-bottom[\s\S]*name="settings"/.test(rail) && !/name="user"|name="log-out"/.test(rail) &&
+    !/role="tab"/.test(header) && !/name="settings"/.test(header) && /<AccountMenu\b/.test(header) &&
+    /<CalendarAgendaChip/.test(header),
   'chưa chuyển xuống đáy / header còn sót',
 )
 check(
