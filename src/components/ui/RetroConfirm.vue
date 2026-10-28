@@ -43,6 +43,18 @@ function onKeydown(e: KeyboardEvent): void {
   }
 }
 
+/**
+ * C12: phím trong panel không lan xuống hộp thoại bên dưới (vd Esc của hộp Sửa sự kiện trên window) —
+ * vì vậy Esc phải được xử lý NGAY TẠI ĐÂY, trình nghe trên window không bao giờ nhận được nó.
+ */
+function onPanelKeydown(e: KeyboardEvent): void {
+  e.stopPropagation()
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    dismiss()
+  }
+}
+
 watch(
   () => props.open,
   (open) => {
@@ -78,7 +90,7 @@ onUnmounted(() => {
           aria-modal="true"
           :aria-labelledby="variant === 'danger' ? 'retro-confirm-title' : undefined"
           tabindex="-1"
-          @keydown.stop
+          @keydown="onPanelKeydown"
         >
           <template v-if="variant === 'danger'">
             <header class="retro-confirm__header">
