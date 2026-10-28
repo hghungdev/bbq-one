@@ -86,6 +86,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* U21: nút icon phẳng (không viền / nền); ☁ màu nhấn + bong bóng số đủ nổi. */
 .sync-pending-badge {
   position: relative;
   display: inline-flex;
@@ -93,22 +94,19 @@ onUnmounted(() => {
   justify-content: center;
   flex: 0 0 auto;
   width: 32px;
-  height: 28px;
+  height: 32px;
   padding: 0;
   margin: 0;
-  border: 1px solid var(--accent-soft-border);
+  border: none;
   border-radius: var(--radius-pill);
-  background: var(--surface-accent-muted);
+  background: transparent;
   color: var(--accent);
   cursor: pointer;
-  transition:
-    background 0.12s linear,
-    border-color 0.12s linear;
+  transition: background 0.12s linear;
 }
 
 .sync-pending-badge:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft-bg-hover);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .sync-pending-badge:focus-visible {
@@ -122,8 +120,8 @@ onUnmounted(() => {
 
 .sync-pending-badge__bubble {
   position: absolute;
-  top: -5px;
-  right: -6px;
+  top: -2px;
+  right: -3px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;

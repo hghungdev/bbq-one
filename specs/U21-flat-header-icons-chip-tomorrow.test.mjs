@@ -22,7 +22,7 @@ const rule = (src, sel) => {
   const i = src.indexOf(`${sel} {`)
   return i === -1 ? '' : src.slice(i, src.indexOf('}', i))
 }
-const boxed = (r) => /border:\s*1px solid/.test(r) || /border-color:/.test(r) || /background:\s*(?!transparent)/.test(r)
+const boxed = (r) => /border:\s*1px solid/.test(r) || /border-color:/.test(r) || /background:(?!\s*transparent)/.test(r)
 
 const app = read('src', 'pages', 'App.vue')
 const right = rule(app, '.shell__header-right')

@@ -337,7 +337,7 @@ export const vi: Record<I18nKey, string> = {
   'calendar.search.doneTag': 'Xong',
   'calendar.agenda.today': 'Hôm nay',
   'calendar.agenda.tomorrow': 'Ngày mai',
-  'calendar.agenda.tomorrowCount': 'Mai {n}',
+  'calendar.agenda.tomorrowCount': 'Ngày mai {n}',
   'calendar.agenda.overdue': 'Quá hạn',
   'calendar.agenda.overdueCount': '{n} việc chưa xong',
   'calendar.agenda.overdueShort': '{n} quá hạn',

@@ -335,7 +335,7 @@ export const en = {
   'calendar.search.doneTag': 'Done',
   'calendar.agenda.today': 'Today',
   'calendar.agenda.tomorrow': 'Tomorrow',
-  'calendar.agenda.tomorrowCount': 'Tmrw {n}',
+  'calendar.agenda.tomorrowCount': 'Tomorrow {n}',
   'calendar.agenda.overdue': 'Overdue',
   'calendar.agenda.overdueCount': '{n} not done',
   'calendar.agenda.overdueShort': '{n} overdue',

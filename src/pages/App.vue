@@ -1118,18 +1118,15 @@
   }
 
   /* Icon toolbar bên phải */
+  /* U21: hàng icon phẳng — bỏ "viên" bọc ngoài (hộp lồng hộp). */
   .shell__header-right {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 2px;
     flex: 0 0 auto;
     min-width: 0;
-    padding: 3px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
   }
 
   .shell__brand {

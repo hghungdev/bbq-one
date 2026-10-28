@@ -119,29 +119,29 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+/* U21: nút icon phẳng như ☀ / thanh dọc — trạng thái đồng bộ chỉ bằng MÀU icon (✓ xanh lá, xoay màu nhấn,
+   ! đỏ), không viền / nền riêng. */
 .cloud-sync-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
   width: 32px;
-  height: 28px;
+  height: 32px;
   padding: 0;
   margin: 0;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-pill);
-  background: var(--bg-secondary);
-  color: var(--text-muted);
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
   transition:
     background 0.12s linear,
-    color 0.12s linear,
-    border-color 0.12s linear;
+    color 0.12s linear;
 }
 
 .cloud-sync-badge:hover:not(:disabled) {
-  color: var(--accent);
-  border-color: var(--accent-soft-border);
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
 }
 
 .cloud-sync-badge:focus-visible {
@@ -155,38 +155,24 @@ const emit = defineEmits<{
   opacity: 0.92;
 }
 
-.cloud-sync-badge:disabled:hover {
-  color: inherit;
-  border-color: inherit;
-}
-
 .cloud-sync-badge--idle {
-  color: var(--text-muted);
-  border-color: var(--border);
+  color: var(--text-secondary);
 }
 
 .cloud-sync-badge--done {
   color: var(--sync-done);
-  border-color: var(--sync-done-muted);
-  background: var(--surface-success-muted);
 }
 
 .cloud-sync-badge--syncing {
   color: var(--accent);
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
 }
 
 .cloud-sync-badge--unsaved {
   color: var(--danger);
-  border-color: var(--danger);
-  background: var(--surface-danger-muted);
 }
 
 .cloud-sync-badge--error {
   color: var(--danger);
-  border-color: var(--danger);
-  background: var(--surface-danger-muted);
 }
 
 .cloud-sync-badge__icon {
