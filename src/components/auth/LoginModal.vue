@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import IconButton from '@/components/ui/IconButton.vue'
@@ -21,6 +21,25 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
+const emailRef = ref<InstanceType<typeof RetroInput> | null>(null)
+
+/** C14: Esc đóng như mọi hộp thoại khác (C12) — trừ lúc đang gửi đăng nhập. */
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key !== 'Escape') return
+  e.stopPropagation()
+  if (loading.value) return
+  emit('close')
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  // Focus vào hộp (trước đây còn ở nút "Đăng nhập" trên header).
+  emailRef.value?.focus()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
 
 async function onSubmit(): Promise<void> {
   errorMessage.value = null
@@ -65,6 +84,7 @@ async function onSubmit(): Promise<void> {
           <label class="lm-label" for="lm-email">{{ t('login.email') }}</label>
           <RetroInput
             id="lm-email"
+            ref="emailRef"
             v-model="email"
             type="email"
             autocomplete="email"

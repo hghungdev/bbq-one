@@ -93,6 +93,8 @@ try {
   svc = loadTs('src/services/bookmarks.service.ts', {
     './supabase': { supabase: sb },
     '@/utils/bookmarkFingerprint': { hashBookmarkTree: async () => 'h', setPersistedBookmarkTreeHash: async () => {} },
+    // C15: import thuần mới của bookmarks.service (chỉ dùng khi hiển thị) — không liên quan PIN.
+    '@/utils/bookmarkTree': { unwrapBookmarkRoot: (nodes) => nodes },
     '@/services/localFirst/authMode': { isAuthenticated: async () => true },
     '@/services/localFirst/localBookmarks.service': { localBookmarksService: {} },
   }).bookmarksService

@@ -1,10 +1,18 @@
 import type { Note, NoteBody } from '@/types'
 
+/**
+ * C13: chèn khoảng trắng sau thẻ đóng khối / `<br>` — `textContent` ghép các khối liền nhau không cách
+ * ("…boxes.</p><pre>export" → "…boxes.export"). Chữ `</p>` trong code đã escape (`&lt;/p&gt;`) nên không khớp.
+ */
+export function spaceBlockBoundaries(html: string): string {
+  return html.replace(/<\/(?:p|div|li|pre|blockquote|h[1-6]|tr|td|th)\s*>|<br\s*\/?>/gi, '$& ')
+}
+
 /** Plain text từ HTML (dùng trong extension, có document). */
 export function plainTextFromHtml(html: string): string {
   if (typeof document === 'undefined') return ''
   const div = document.createElement('div')
-  div.innerHTML = html
+  div.innerHTML = spaceBlockBoundaries(html)
   return (div.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
 

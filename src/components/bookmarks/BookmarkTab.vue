@@ -10,6 +10,7 @@ import { useBookmarksStore } from '@/stores/bookmarks'
 import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
+import { unwrapBookmarkRoot } from '@/utils/bookmarkTree'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
@@ -40,7 +41,7 @@ const treeToShow = computed(() => {
 })
 
 const displayTree = computed(() =>
-  bookmarksService.filterBookmarkTreeByQuery(treeToShow.value, bm.searchQuery),
+  bookmarksService.filterBookmarkTreeByQuery(unwrapBookmarkRoot(treeToShow.value), bm.searchQuery),
 )
 
 const globalHits = computed(() =>

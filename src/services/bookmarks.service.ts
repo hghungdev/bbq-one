@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { hashBookmarkTree, setPersistedBookmarkTreeHash } from '@/utils/bookmarkFingerprint'
+import { unwrapBookmarkRoot } from '@/utils/bookmarkTree'
 import type { BookmarkBackup, BookmarkGlobalHit, BookmarkNode } from '@/types/bookmark'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localBookmarksService } from '@/services/localFirst/localBookmarks.service'
@@ -301,6 +302,6 @@ function flattenBookmarkUrls(nodes: BookmarkNode[]): { id: string; title: string
     }
   }
 
-  walk(nodes, '')
+  walk(unwrapBookmarkRoot(nodes), '')
   return acc
 }

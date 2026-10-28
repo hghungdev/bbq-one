@@ -337,3 +337,8 @@ Rà soát cuối: 62 harness PASS, `vue-tsc` sạch, build OK, `dist/manifest.js
 đổi; Chromium (ẩn danh + đăng nhập, sáng + tối): 3 mục thanh dọc, tạo + đánh dấu xong sự kiện, chip, ☀, ⚙ + Esc,
 bảng ☰, ☁ đồng bộ, menu tài khoản + đăng xuất — không lỗi console. Gộp vào `main` (fast-forward).
 
+**C13–C15 (trước khi lên Store — Sir: "cần fix không, mình chưa release"):** C13 nhãn Section không còn dính chữ giữa
+các khối (`spaceBlockBoundaries`); C14 Esc đóng hộp Đăng nhập + focus vào ô Email; C15 cây Bookmark bỏ nút gốc không
+tên "(no name)" khi hiển thị / đường dẫn tìm kiếm (`unwrapBookmarkRoot`). S3a thêm mock cho import mới (không đổi
+assertion). Ảnh Store `design/store/` chụp lại. 63 harness PASS.
+
