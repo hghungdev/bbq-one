@@ -63,11 +63,11 @@ const rail = (/<nav\b[^>]*class="shell__rail"[\s\S]*?<\/nav>/.exec(tpl) ?? [''])
 const drawer = (/<div\b[^>]*class="shell__drawer"[\s\S]*?<!-- \/drawer -->/.exec(tpl) ?? [''])[0]
 const headerRight = (/<div class="shell__header-right">[\s\S]*?<\/header>/.exec(tpl) ?? [''])[0]
 
+// U24 (đổi có chủ đích): ⚙ cũng rời thanh dọc / bảng mở rộng lên header (kiểu Gmail).
 check(
-  'U22.1 đáy thanh dọc + bảng mở rộng: chỉ còn ⚙ (không 👤 / ⇥ / onGoLogin / onLogout)',
-  /name="settings"/.test(rail) &&
+  'U22.1 thanh dọc + bảng mở rộng: không 👤 / ⇥ / onGoLogin / onLogout (⚙ lên header — U24)',
+  rail !== '' && drawer !== '' &&
     !/name="user"|name="log-out"|onGoLogin|onLogout/.test(rail) &&
-    /name="settings"/.test(drawer) &&
     !/name="user"|name="log-out"|onGoLogin|onLogout/.test(drawer),
   'thanh dọc / bảng mở rộng còn đăng nhập / xuất',
 )

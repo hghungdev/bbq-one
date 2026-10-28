@@ -41,10 +41,11 @@ check(
   'tablist dọc / icon / tên chưa đủ',
 )
 // U22 (đổi có chủ đích): 👤 / ⇥ tài khoản lên header (AccountMenu, kiểu Gmail) — đáy thanh chỉ còn ⚙.
+// U24 (đổi có chủ đích): ⚙ cũng lên header (kiểu Gmail — thanh dọc chỉ để các mục).
 check(
-  'U20.3 ⚙ Cài đặt ở đáy thanh; header không còn tab, ⚙; tài khoản ở header (U22 — AccountMenu)',
-  /shell__rail-bottom[\s\S]*name="settings"/.test(rail) && !/name="user"|name="log-out"/.test(rail) &&
-    !/role="tab"/.test(header) && !/name="settings"/.test(header) && /<AccountMenu\b/.test(header) &&
+  'U20.3 thanh dọc không còn ⚙ / tài khoản; header không còn tab, có ⚙ + AccountMenu (U22, U24)',
+  !/name="settings"|name="user"|name="log-out"/.test(rail) &&
+    !/role="tab"/.test(header) && /name="settings"/.test(header) && /<AccountMenu\b/.test(header) &&
     /<CalendarAgendaChip/.test(header),
   'chưa chuyển xuống đáy / header còn sót',
 )

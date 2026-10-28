@@ -1,0 +1,65 @@
+/**
+ * FAILING TEST — U24: ⚙ Cài đặt lên header (kiểu Gmail, ngay trước avatar); thanh dọc chỉ còn các mục.
+ *
+ * Chạy:   node specs/U24-settings-in-header.test.mjs
+ * GREEN sau khi áp specs/U24-settings-in-header.spec.md.
+ */
+
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const failures = []
+function check(name, ok, detail) {
+  const mark = ok ? 'PASS' : 'FAIL'
+  console.log(`  [${mark}] ${name}${ok ? '' : ` — ${detail}`}`)
+  if (!ok) failures.push(`${name}: ${detail}`)
+}
+const app = fs.readFileSync(path.join(ROOT, 'src', 'pages', 'App.vue'), 'utf8')
+const tpl = app.slice(app.indexOf('<template>'), app.lastIndexOf('</template>'))
+const css = app.slice(app.indexOf('<style'))
+const rail = (/<nav\b[^>]*class="shell__rail"[\s\S]*?<\/nav>/.exec(tpl) ?? [''])[0]
+const drawer = (/<div\b[^>]*class="shell__drawer"[\s\S]*?<!-- \/drawer -->/.exec(tpl) ?? [''])[0]
+const headerRight = (/<div class="shell__header-right">[\s\S]*?<\/header>/.exec(tpl) ?? [''])[0]
+
+check(
+  'U24.1 thanh dọc: chỉ ☰ + 3 mục — không ⚙, không khối đáy',
+  rail !== '' && !/name="settings"|showSettings|shell__rail-bottom/.test(rail),
+  'thanh dọc còn ⚙',
+)
+check(
+  'U24.2 bảng mở rộng ☰: chỉ logo + 3 mục — không Cài đặt, không khối đáy',
+  drawer !== '' && !/name="settings"|showSettings|shell__drawer-bottom/.test(drawer),
+  'bảng mở rộng còn Cài đặt',
+)
+const gear = (/<IconButton\b[^>]*>\s*<AppIcon name="settings"[^>]*\/>\s*<\/IconButton>/.exec(headerRight) ?? [''])[0]
+const flatGear = gear.replace(/\s+/g, ' ')
+check(
+  'U24.3 header: ⚙ = IconButton (như ☀), nhãn "Cài đặt", icon 17 px, bấm mở Settings',
+  /:label="t\('app\.aria\.settings'\)"/.test(flatGear) && /@click="showSettings = true"/.test(flatGear) &&
+    /<AppIcon name="settings" :size="17"/.test(flatGear) &&
+    /import IconButton from '@\/components\/ui\/IconButton\.vue'/.test(app),
+  flatGear.slice(0, 200) || 'header chưa có ⚙',
+)
+const at = (s) => headerRight.indexOf(s)
+check(
+  'U24.4 thứ tự Gmail: ☀ → ☁ → ⚙ → tài khoản',
+  at('<ThemeModeToggle') >= 0 && at('<ThemeModeToggle') < at('<CloudSyncStatusBadge') &&
+    at('<SyncStatusBadge') < at('name="settings"') && at('<CloudSyncStatusBadge') < at('name="settings"') &&
+    at('name="settings"') < at('<AccountMenu'),
+  `vị trí: theme ${at('<ThemeModeToggle')} cloud ${at('<CloudSyncStatusBadge')} gear ${at('name="settings"')} acc ${at('<AccountMenu')}`,
+)
+check(
+  'U24.5 bỏ CSS chết .shell__rail-bottom / .shell__drawer-bottom',
+  !/\.shell__rail-bottom|\.shell__drawer-bottom/.test(css),
+  'còn CSS khối đáy',
+)
+
+console.log('\n──────────────────────────────────────────────')
+if (failures.length > 0) {
+  console.log(`❌ FAIL (${failures.length}):\n- ${failures.join('\n- ')}`)
+  console.log('\n→ Áp specs/U24-settings-in-header.spec.md để chuyển sang PASS.')
+  process.exit(1)
+}
+console.log('✅ PASS — mọi case đạt. U24 đúng spec.')
