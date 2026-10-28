@@ -33,6 +33,7 @@
   import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
   import AppIcon from '@/components/ui/AppIcon.vue'
+  import IconButton from '@/components/ui/IconButton.vue'
   import AccountMenu from '@/components/layout/AccountMenu.vue'
   import brandLogo from '@/assets/brand/bbqone-logo.png'
   import {
@@ -686,18 +687,7 @@
           <AppIcon :name="tab.icon" :size="20" />
         </button>
       </div>
-      <div class="shell__rail-bottom">
-        <button
-          type="button"
-          class="shell__rail-btn"
-          :aria-label="t('app.aria.settings')"
-          :title="t('app.aria.settings')"
-          @click="showSettings = true"
-        >
-          <AppIcon name="settings" :size="20" />
-        </button>
-        <!-- U22: Đăng nhập / Đăng xuất lên header (AccountMenu, kiểu Gmail) — đáy thanh chỉ còn ⚙. -->
-      </div>
+      <!-- U22 / U24: ⚙ và tài khoản lên header (kiểu Gmail) — thanh dọc chỉ để các mục. -->
     </nav>
 
     <Transition name="shell-drawer">
@@ -738,12 +728,6 @@
             <AppIcon :name="tab.icon" :size="20" />
             <span>{{ t(tab.label) }}</span>
           </button>
-          <div class="shell__drawer-bottom">
-            <button type="button" class="shell__drawer-item" @click="closeRail(false); showSettings = true">
-              <AppIcon name="settings" :size="20" />
-              <span>{{ t('app.aria.settings') }}</span>
-            </button>
-          </div>
         </div>
         <!-- /drawer -->
       </div>
@@ -778,6 +762,10 @@
             />
             <!-- Local pending badge: chỉ hiện khi anonymous -->
             <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
+            <!-- U24: ⚙ ngay trước tài khoản, như Gmail. -->
+            <IconButton :label="t('app.aria.settings')" @click="showSettings = true">
+              <AppIcon name="settings" :size="17" />
+            </IconButton>
             <!-- U22: tài khoản đứng cuối, như avatar Gmail. -->
             <AccountMenu
               :signed-in="!isAnonymous"
@@ -964,13 +952,6 @@
     margin-top: 10px;
   }
 
-  .shell__rail-bottom {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: auto;
-  }
-
   .shell__rail-btn {
     display: inline-flex;
     align-items: center;
@@ -1062,13 +1043,6 @@
   .shell__drawer-item--active:hover {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 14%, transparent);
-  }
-
-  .shell__drawer-bottom {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-top: auto;
   }
 
   .shell-drawer-enter-active,

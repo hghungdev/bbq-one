@@ -315,3 +315,7 @@ Sổ tay: `supabase/functions/calendar-feed/README.md`. 55 harness PASS.
 Bộ icon của Sir (`design/navy`, `design/transparent`, commit `f82e756` trên `main`) gộp vào nhánh làm việc bằng merge
 commit. Ghi nhận: hộp Đăng nhập (`LoginModal`) chưa đóng bằng Esc — có từ trước, ngoài phạm vi U22.
 57 harness PASS.
+
+**U24 (cùng đợt):** ⚙ Cài đặt lên header kiểu Gmail (☀ · ☁ · ⚙ · tài khoản), thanh dọc chỉ còn ☰ + 3 mục, bảng ☰ chỉ
+logo + 3 mục. Test 5/5 (RED 5). Đổi assertion có chủ đích: U20.3, U22.1. Sir đồng ý icon Chrome bản transparent (U23).
+58 harness PASS. Gộp vào `main` theo yêu cầu Sir (fast-forward — `main` là tổ tiên trực tiếp).
