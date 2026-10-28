@@ -276,3 +276,7 @@ Chờ Sir quyết: (a) bỏ nút "Hủy" ở hộp nhập liệu (giữ ✕ + 1 
 `supabase functions deploy calendar-feed --no-verify-jwt --project-ref <ref>` (xem
 `supabase/functions/calendar-feed/README.md`).
 **U20:** Sir duyệt trên `claude/ui-nav-rail` → ưng thì gộp vào nhánh chính (merge, không xung đột dự kiến).
+
+**Gộp U20 (2026-10-28, theo yêu cầu Sir — tổng duyệt trước release):** `claude/ui-nav-rail` → nhánh chính bằng
+merge commit `f810bf0` (không xung đột; i18n tự gộp). Bản gộp: 51 harness PASS, `vue-tsc` sạch, build OK;
+Chromium: thanh dọc 3 mục, ⚙ / ⇥ ở đáy, Settings › Google Calendar chạy đủ luồng. `claude/ui-nav-rail` giữ làm mốc.
