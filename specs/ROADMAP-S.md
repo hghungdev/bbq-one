@@ -188,3 +188,20 @@ verify tay đợt này. S3/S4/S5 giữ nguyên lộ trình.
 - Đánh đổi: tiêu đề / mô tả sự kiện (≤ 64 ký tự) nằm dạng chữ thường trên Supabase, chỉ chủ tài khoản đọc được
   qua RLS; người quản trị DB hoặc bản dump lộ ra thì đọc được. Ghi rõ trong Settings › Mã hóa tài khoản.
 - Hệ quả cho S3: không DROP 2 CHECK độ dài của `calendar_events` (vẫn giữ giới hạn 64 ký tự).
+
+## S3b — TẠM HOÃN mã hóa thêm + ẩn "Mã hóa tài khoản" khỏi Settings (Sir, 2026-10-28)
+
+> Spec: `specs/S3b-hide-account-encryption.spec.md`. Cờ: `src/constants/features.ts` → `accountEncryptionSettings`.
+
+- **Tạm hoãn S3** (mã hóa tên thư mục + bản sao lưu Bookmark bằng DEK của "Mã hóa tài khoản") — Sir nghiên cứu thêm
+  trước khi làm. Mục "Mã hóa tài khoản" trong Settings **ẩn** (không bật mới được); code S2C giữ nguyên.
+- Tài khoản đã bật vẫn dùng bình thường: hỏi mở khóa khi mở app / khi bấm ghi chú bị khóa, recovery key trong hộp mở
+  khóa, tự khóa 30 phút. Chỉ mất nút "Khóa ngay" trong Settings.
+- **Phương án đã đề xuất cho S3 (để Sir nghiên cứu):**
+  - Tên thư mục: mã hóa bằng DEK (envelope v2 như ghi chú); đang khóa → hiện "🔒 Đã mã hóa".
+  - Bản sao lưu Bookmark: mã hóa `tree_json` bằng DEK. Sao lưu tự động khi đang khóa → **chờ trong máy** rồi tải
+    lên ngay sau khi mở khóa, có dòng báo "chờ mở khóa" (không âm thầm bỏ qua như Bookmark PIN cũ). Khôi phục cần
+    mở khóa.
+  - Lịch: KHÔNG mã hóa (quyết định phạm vi ở trên — cần cho link Google Calendar G1).
+  - Ước tính 3–5 ngày, theo quy trình spec + failing test.
+- **Bật lại:** đổi `accountEncryptionSettings` thành `true` (và cập nhật test S3b).

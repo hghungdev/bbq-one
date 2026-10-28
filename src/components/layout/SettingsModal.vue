@@ -13,6 +13,7 @@ import { useLangStore } from '@/stores/uiLang'
 import { getExtensionVersion } from '@/utils/extensionVersion'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
 import { calendarFeedService, type CalendarFeedInfo } from '@/services/calendarFeed.service'
+import { FEATURES } from '@/constants/features'
 import { copyTextToClipboard } from '@/utils/clipboard'
 
 const emit = defineEmits<{ close: []; 'lock-account': [] }>()
@@ -276,8 +277,9 @@ onUnmounted(() => {
           </div>
         </SettingsAccordionSection>
 
+        <!-- S3b: tạm ẩn (FEATURES.accountEncryptionSettings) — S3 hoãn, Sir nghiên cứu thêm. -->
         <SettingsAccordionSection
-          v-if="auth.isAuthenticated"
+          v-if="FEATURES.accountEncryptionSettings && auth.isAuthenticated"
           :title="t('account.settingsTitle')"
           :default-open="false"
         >
@@ -407,6 +409,7 @@ onUnmounted(() => {
     </div>
   </div>
   <AccountEncryptionSetupModal
+    v-if="FEATURES.accountEncryptionSettings"
     :open="showAccountSetup"
     @close="showAccountSetup = false"
     @done="showAccountSetup = false"

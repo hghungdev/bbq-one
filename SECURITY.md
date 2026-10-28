@@ -21,7 +21,7 @@ Sau khi đổi CSP, load lại extension từ `dist/` và smoke test login, sear
 
 | Dữ liệu | Mã hóa phía client | Ghi chú |
 |---|---|---|
-| Ghi chú (tiêu đề + nội dung, ngoài secure folder) | ✅ S2C | secure folder có mật khẩu riêng (S1) |
+| Ghi chú (tiêu đề + nội dung, ngoài secure folder) | ✅ S2C | secure folder có mật khẩu riêng (S1). **Mục bật trong Settings đang tạm ẩn (S3b)** — tài khoản đã bật vẫn mở khóa bình thường |
 | Tên thư mục, bản sao lưu bookmark | ⏳ S3 | Bookmark PIN cũ đã gỡ (S3a) |
 | **Lịch** (tiêu đề, mô tả) | ❌ **có chủ đích** | cần dạng đọc được cho link Google Calendar (G1) — quyết định 2026-10-28, xem `specs/ROADMAP-S.md`; chỉ chủ tài khoản đọc qua RLS |
 
