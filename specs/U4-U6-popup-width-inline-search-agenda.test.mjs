@@ -107,14 +107,15 @@ const inlineSrc = read('src', 'components', 'ui', 'InlineSearch.vue')
     'header vẫn có ô search toàn chiều ngang',
   )
 
-  const noteListSrc = read('src', 'components', 'layout', 'NoteList.vue') ?? ''
+  // U11 (đổi có chủ đích): ô tìm ghi chú chuyển lên đầu cột Thư mục (Sidebar) — đọc là "tìm tất cả".
+  const noteListSrc = read('src', 'components', 'layout', 'Sidebar.vue') ?? ''
   check(
-    'U5.8 NoteList: InlineSearch ở đầu cột → runSearch / clearSearch / searchFocusRequest',
+    'U5.8 Notes: InlineSearch (đầu cột Thư mục — U11) → runSearch / clearSearch / searchFocusRequest',
     /<InlineSearch[\s\S]*?\/?>/.test(noteListSrc) &&
       noteListSrc.includes('runSearch(') &&
       noteListSrc.includes('clearSearch()') &&
       noteListSrc.includes('notes.searchFocusRequest'),
-    'đầu cột ghi chú chưa có 🔍',
+    'đầu cột Thư mục chưa có ô tìm',
   )
 
   const bmTabSrc = read('src', 'components', 'bookmarks', 'BookmarkTab.vue') ?? ''
