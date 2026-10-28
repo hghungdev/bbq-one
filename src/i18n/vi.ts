@@ -169,7 +169,7 @@ export const vi: Record<I18nKey, string> = {
   'account.titleUnlock': 'Mở khóa ghi chú',
   'account.setupTitle': 'Bật mã hóa tài khoản',
   'account.setupIntro':
-    'Mã hóa tiêu đề và nội dung ghi chú ngoài secure folder bằng passphrase. Bạn sẽ nhận recovery key một lần duy nhất.',
+    'Mã hóa tiêu đề và nội dung ghi chú ngoài secure folder bằng passphrase. Bạn sẽ nhận recovery key một lần duy nhất. Lịch không được mã hóa (cần cho đồng bộ Google Calendar).',
   'account.unlock': 'Mở khóa',
   'account.later': 'Để sau',
   'account.forgot': 'Quên passphrase? Dùng Recovery key',

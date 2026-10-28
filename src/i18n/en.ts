@@ -167,7 +167,7 @@ export const en = {
   'account.titleUnlock': 'Unlock notes',
   'account.setupTitle': 'Enable encrypted account',
   'account.setupIntro':
-    'Encrypt note titles and content outside secure folders with a passphrase. You will receive a one-time recovery key.',
+    'Encrypt note titles and content outside secure folders with a passphrase. You will receive a one-time recovery key. Calendar events are not encrypted (needed for Google Calendar sync).',
   'account.unlock': 'Unlock',
   'account.later': 'Later',
   'account.forgot': 'Forgot passphrase? Use recovery key',

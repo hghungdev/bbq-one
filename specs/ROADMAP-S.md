@@ -152,7 +152,7 @@ verify tay đợt này. S3/S4/S5 giữ nguyên lộ trình.
 | Phase | Nội dung | Chặn bởi |
 |---|---|---|
 | **S2C2** | Backfill nền (lô 25, popup/dashboard, resume + progress) + banner recovery-thiếu + đổi passphrase + regenerate recovery key + nút "Khóa ngay" | S2C1 GREEN |
-| **S3** | `folders.name`, calendar title/description (**DROP 2 CHECK** — tên thật trên DB live: `calendar_events_title_check` [013 re-create] + `calendar_events_description_check` [012]), mã hóa bookmark backup bằng DEK chung (Bookmark PIN đã gỡ ở **S3a** — `specs/S3a-remove-bookmark-pin.spec.md`) | S2 |
+| **S3** | `folders.name`, mã hóa bookmark backup bằng DEK chung (Bookmark PIN đã gỡ ở **S3a** — `specs/S3a-remove-bookmark-pin.spec.md`). ~~calendar title/description~~ — **bỏ khỏi phạm vi** (quyết định 2026-10-28, xem dưới) | S2 |
 | **S4** | Argon2id — hoặc tối thiểu PBKDF2 310k → 600k | Benchmark MV3 SW |
 | **S5** | Blind index cho search/tag (gộp **N15** từ `ROADMAP-N.md`) | S3 |
 | **S6** | *(tùy chọn)* Hợp nhất 1 password kiểu Bitwarden | S2 + recovery đã chạy production |
@@ -177,3 +177,14 @@ verify tay đợt này. S3/S4/S5 giữ nguyên lộ trình.
   `vue-tsc` 0 lỗi, 19/19 harness cũ PASS → revert, tree về RED (6 fail). Nghĩa là spec này
   **chắc chắn GREEN được đúng như viết** — nếu Cursor báo vướng, vấn đề nằm ở cách làm, không
   nằm ở spec.
+
+## Quyết định phạm vi mã hóa (Sir, 2026-10-28)
+
+**Chỉ mã hóa đầu-cuối Ghi chú + Bookmark. Lịch KHÔNG mã hóa.**
+
+- Lý do: link đồng bộ Google Calendar (G1 — Supabase Edge Function sinh file `.ics`) và mọi tính năng phía
+  máy chủ cho lịch (nhắc việc, đồng bộ Google API sau này) cần đọc được tiêu đề sự kiện. Mã hóa lịch sẽ buộc
+  tắt link cho tài khoản đã mã hóa hoặc chỉ hiện "Bận" — mất giá trị chính của tính năng.
+- Đánh đổi: tiêu đề / mô tả sự kiện (≤ 64 ký tự) nằm dạng chữ thường trên Supabase, chỉ chủ tài khoản đọc được
+  qua RLS; người quản trị DB hoặc bản dump lộ ra thì đọc được. Ghi rõ trong Settings › Mã hóa tài khoản.
+- Hệ quả cho S3: không DROP 2 CHECK độ dài của `calendar_events` (vẫn giữ giới hạn 64 ký tự).

@@ -17,6 +17,14 @@ CSP cho `extension_pages` nằm trong `public/manifest.json`:
 
 Sau khi đổi CSP, load lại extension từ `dist/` và smoke test login, search, editor (Shiki).
 
+## Phạm vi mã hóa đầu-cuối (Encrypted account)
+
+| Dữ liệu | Mã hóa phía client | Ghi chú |
+|---|---|---|
+| Ghi chú (tiêu đề + nội dung, ngoài secure folder) | ✅ S2C | secure folder có mật khẩu riêng (S1) |
+| Tên thư mục, bản sao lưu bookmark | ⏳ S3 | Bookmark PIN cũ đã gỡ (S3a) |
+| **Lịch** (tiêu đề, mô tả) | ❌ **có chủ đích** | cần dạng đọc được cho link Google Calendar (G1) — quyết định 2026-10-28, xem `specs/ROADMAP-S.md`; chỉ chủ tài khoản đọc qua RLS |
+
 ## Row Level Security (Supabase)
 
 1. Bật RLS và policy “owner” cho `folders` và `notes` (xem `supabase/002_rls_policies.sql`).
