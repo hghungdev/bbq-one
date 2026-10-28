@@ -90,23 +90,25 @@ function fill(buf) {
   return { width, height, fx: (x1 - x0 + 1) / width, fy: (y1 - y0 + 1) / height }
 }
 
+// U26 (đổi có chủ đích): icon Chrome cắt bớt cánh → ngưỡng riêng (≥ 97 % ngang, ≥ 90 % dọc); logo header ≥ 94 / 80.
 const targets = [
-  [['public', 'icon-16.png'], 16],
-  [['public', 'icon-32.png'], 32],
-  [['public', 'icon-48.png'], 48],
-  [['public', 'icon-128.png'], 128],
-  [['src', 'assets', 'brand', 'bbqone-logo.png'], 64],
+  [['public', 'icon-16.png'], 16, 0.97, 0.9],
+  [['public', 'icon-32.png'], 32, 0.97, 0.9],
+  [['public', 'icon-48.png'], 48, 0.97, 0.9],
+  [['public', 'icon-128.png'], 128, 0.97, 0.9],
+  [['src', 'assets', 'brand', 'bbqone-logo.png'], 64, 0.94, 0.8],
+  [['src', 'assets', 'brand', 'bbqone-logo-32.png'], 32, 0.94, 0.8],
 ]
-const measured = targets.map(([p, size]) => {
+const measured = targets.map(([p, size, minX, minY]) => {
   try {
-    return { p: p.join('/'), size, ...fill(bytes(...p)) }
+    return { p: p.join('/'), size, minX, minY, ...fill(bytes(...p)) }
   } catch (e) {
     return { p: p.join('/'), size, error: String(e) }
   }
 })
 check(
-  'U25.1 icon Chrome + logo header: đúng cỡ, hình lấp ≥ 94 % ngang và ≥ 80 % dọc khung',
-  measured.every((m) => !m.error && m.width === m.size && m.height === m.size && m.fx >= 0.94 && m.fy >= 0.8),
+  'U25.1 đúng cỡ; icon Chrome lấp ≥ 97 % ngang / ≥ 90 % dọc, logo header ≥ 94 % / ≥ 80 % (U26)',
+  measured.every((m) => !m.error && m.width === m.size && m.height === m.size && m.fx >= m.minX && m.fy >= m.minY),
   measured.map((m) => m.error ?? `${m.p} ${(m.fx * 100).toFixed(0)}%×${(m.fy * 100).toFixed(0)}%`).join(' · '),
 )
 
@@ -117,7 +119,8 @@ const same = (a, b) => {
 }
 const mismatch = [
   ...[16, 32, 48, 128].filter((n) => !same(['public', `icon-${n}.png`], ['design', 'transparent-tight', `icon${n}.png`])),
-  ...(same(['src', 'assets', 'brand', 'bbqone-logo.png'], ['design', 'transparent-tight', 'icon64.png']) ? [] : ['logo']),
+  ...(same(['src', 'assets', 'brand', 'bbqone-logo.png'], ['design', 'transparent-tight', 'logo64.png']) ? [] : ['logo']),
+  ...(same(['src', 'assets', 'brand', 'bbqone-logo-32.png'], ['design', 'transparent-tight', 'logo32.png']) ? [] : ['logo-32']),
 ]
 check(
   'U25.2 public/icon-* + logo app = design/transparent-tight/* (nguồn đã cắt sát, commit cùng repo)',

@@ -72,12 +72,14 @@ check(
   'thanh dọc / bảng mở rộng còn đăng nhập / xuất',
 )
 const accTag = (/<AccountMenu\b[\s\S]*?\/>/.exec(headerRight) ?? [''])[0]
+// U26 (đổi có chủ đích): ☀ ☁ xuống đáy thanh dọc — header phải chỉ ⚙ → AccountMenu.
 check(
-  'U22.2 header phải: ☀ → ☁ → AccountMenu (cuối cùng), nối onGoLogin / onLogout + email',
+  'U22.2 header phải: AccountMenu đứng cuối cùng, nối onGoLogin / onLogout + email',
   accTag !== '' &&
-    headerRight.indexOf('<ThemeModeToggle') < headerRight.indexOf('<AccountMenu') &&
-    headerRight.indexOf('<CloudSyncStatusBadge') < headerRight.indexOf('<AccountMenu') &&
-    headerRight.indexOf('<SyncStatusBadge') < headerRight.indexOf('<AccountMenu') &&
+    headerRight.indexOf('<AccountMenu') > headerRight.indexOf('name="settings"') &&
+    !/<(IconButton|button|ThemeModeToggle|CloudSyncStatusBadge|SyncStatusBadge)\b/.test(
+      headerRight.slice(headerRight.indexOf('<AccountMenu')),
+    ) &&
     /@sign-in="onGoLogin"/.test(accTag) && /@sign-out="onLogout"/.test(accTag) &&
     /:email="/.test(accTag) && /:signed-in="!isAnonymous"/.test(accTag) &&
     /import AccountMenu from '@\/components\/layout\/AccountMenu\.vue'/.test(app),

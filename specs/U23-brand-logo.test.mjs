@@ -44,16 +44,18 @@ check(
   sizes.every((n) => manifest.icons?.[n] === `icon-${n}.png` && manifest.action?.default_icon?.[n] === `icon-${n}.png`),
   'manifest đổi',
 )
+// U26 (đổi có chủ đích): logo header tách khỏi icon Chrome — nguồn logo64.png (không cắt cánh).
 check(
-  'U23.3 logo app src/assets/brand/bbqone-logo.png = design/transparent-tight/icon64.png (U25)',
-  same(['src', 'assets', 'brand', 'bbqone-logo.png'], ['design', 'transparent-tight', 'icon64.png']),
+  'U23.3 logo app src/assets/brand/bbqone-logo.png = design/transparent-tight/logo64.png (U25, U26)',
+  same(['src', 'assets', 'brand', 'bbqone-logo.png'], ['design', 'transparent-tight', 'logo64.png']),
   'chưa có logo',
 )
 
 const app = read('src', 'pages', 'App.vue')
 const tpl = app.slice(app.indexOf('<template>'), app.lastIndexOf('</template>')).replace(/\n\s*/g, ' ')
 // U25 (đổi có chủ đích): logo 28 → 32 px (cùng cỡ avatar / nút header; ảnh đã cắt sát).
-const brand = /<span class="shell__brand"> <img class="shell__brand-logo" :src="brandLogo" alt="" width="32" height="32" \/> <span class="shell__brand-name">BBQOne<\/span> <\/span>/g
+// U26 (đổi có chủ đích): thêm srcset 1x / 2x.
+const brand = /<span class="shell__brand"> <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" \/> <span class="shell__brand-name">BBQOne<\/span> <\/span>/g
 const headerLeft = (/<div class="shell__header-left">[\s\S]*?<\/div>/.exec(tpl) ?? [''])[0]
 const drawerHead = (/<div class="shell__drawer-head">[\s\S]*?<\/span> <\/span> <\/div>/.exec(tpl) ?? [''])[0]
 check(

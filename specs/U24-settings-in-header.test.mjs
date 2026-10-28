@@ -23,9 +23,10 @@ const rail = (/<nav\b[^>]*class="shell__rail"[\s\S]*?<\/nav>/.exec(tpl) ?? [''])
 const drawer = (/<div\b[^>]*class="shell__drawer"[\s\S]*?<!-- \/drawer -->/.exec(tpl) ?? [''])[0]
 const headerRight = (/<div class="shell__header-right">[\s\S]*?<\/header>/.exec(tpl) ?? [''])[0]
 
+// U26 (đổi có chủ đích): khối đáy thanh dọc quay lại — chứa ☀ ☁ (vẫn không ⚙).
 check(
-  'U24.1 thanh dọc: chỉ ☰ + 3 mục — không ⚙, không khối đáy',
-  rail !== '' && !/name="settings"|showSettings|shell__rail-bottom/.test(rail),
+  'U24.1 thanh dọc: không ⚙ (khối đáy chỉ ☀ ☁ — U26)',
+  rail !== '' && !/name="settings"|showSettings/.test(rail),
   'thanh dọc còn ⚙',
 )
 check(
@@ -43,16 +44,17 @@ check(
   flatGear.slice(0, 200) || 'header chưa có ⚙',
 )
 const at = (s) => headerRight.indexOf(s)
+// U26 (đổi có chủ đích): ☀ ☁ xuống đáy thanh dọc — header chỉ ⚙ → tài khoản.
 check(
-  'U24.4 thứ tự Gmail: ☀ → ☁ → ⚙ → tài khoản',
-  at('<ThemeModeToggle') >= 0 && at('<ThemeModeToggle') < at('<CloudSyncStatusBadge') &&
-    at('<SyncStatusBadge') < at('name="settings"') && at('<CloudSyncStatusBadge') < at('name="settings"') &&
-    at('name="settings"') < at('<AccountMenu'),
+  'U24.4 thứ tự Gmail: ⚙ → tài khoản (☀ ☁ ở đáy thanh dọc — U26)',
+  at('name="settings"') >= 0 && at('name="settings"') < at('<AccountMenu') && at('<ThemeModeToggle') === -1 &&
+    at('<CloudSyncStatusBadge') === -1,
   `vị trí: theme ${at('<ThemeModeToggle')} cloud ${at('<CloudSyncStatusBadge')} gear ${at('name="settings"')} acc ${at('<AccountMenu')}`,
 )
+// U26 (đổi có chủ đích): .shell__rail-bottom dùng lại cho ☀ ☁; bảng ☰ vẫn không khối đáy.
 check(
-  'U24.5 bỏ CSS chết .shell__rail-bottom / .shell__drawer-bottom',
-  !/\.shell__rail-bottom|\.shell__drawer-bottom/.test(css),
+  'U24.5 bỏ CSS chết .shell__drawer-bottom (.shell__rail-bottom dùng lại — U26)',
+  !/\.shell__drawer-bottom/.test(css),
   'còn CSS khối đáy',
 )
 
