@@ -118,10 +118,11 @@ check(
 )
 // U15 (đổi có chủ đích): "Xóa" ở chân Sửa sự kiện từ nút chữ đỏ → icon 🗑 (giống danh sách ngày).
 check(
-  'S4 Chân: "Lưu" = ds-primary (đếm "Tạo n sự kiện" khi lặp), "Hủy" = nút chữ; sửa có 🗑 (U15)',
+  'S4 Chân: "Lưu" = ds-primary (đếm "Tạo n sự kiện" khi lặp); ‹ về danh sách (U19); sửa có 🗑 (U15)',
   /class="ds-primary[^"]*"[^>]*type="submit"|type="submit"[^>]*class="ds-primary/.test(tpl) &&
     /calendar\.repeat\.saveN/.test(tpl) &&
-    /ds-text-action ds-text-action--muted[\s\S]{0,200}calendar\.modal\.btn\.cancel/.test(tpl) &&
+    // U19 (đổi có chủ đích): bỏ "Hủy" ở chân — về danh sách bằng ‹ ở đầu tiêu đề.
+    /@click="cancelForm"[\s\S]{0,80}name="chevron-left"/.test(tpl) &&
     /ds-icon-action--danger[\s\S]{0,300}requestDeleteActive[\s\S]{0,80}name="trash"/.test(tpl),
   'chân hộp thoại chưa theo ADN',
 )

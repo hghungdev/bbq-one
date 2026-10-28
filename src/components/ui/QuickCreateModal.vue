@@ -101,9 +101,6 @@ function onSubmit(): void {
               />
             </label>
             <div class="quick-create__actions">
-              <RetroButton variant="sm" type="button" :disabled="busy" @click="emit('close')">
-                {{ t('calendar.modal.btn.cancel') }}
-              </RetroButton>
               <RetroButton variant="sm" type="submit" primary :disabled="busy">
                 {{ t('calendar.modal.btn.save') }}
               </RetroButton>

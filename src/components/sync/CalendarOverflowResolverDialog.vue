@@ -229,9 +229,6 @@ function sourceLabel(source: 'local' | 'cloud'): string {
           </p>
 
           <footer class="cal-overflow-dialog__actions">
-            <RetroButton variant="sm" type="button" @click="emit('cancel')">
-              {{ t('calendar.modal.btn.cancel') }}
-            </RetroButton>
             <RetroButton
               v-if="!isFirstPage"
               variant="sm"

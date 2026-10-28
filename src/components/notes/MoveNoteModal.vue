@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import IconButton from '@/components/ui/IconButton.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useLangStore } from '@/stores/uiLang'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -112,12 +111,6 @@ function onPick(folderId: string): void {
             </li>
           </ul>
           <p v-else class="move-note__empty">{{ t('note.moveNoTargets') }}</p>
-
-          <div class="move-note__actions">
-            <RetroButton variant="sm" type="button" :disabled="busy" @click="emit('close')">
-              {{ t('calendar.modal.btn.cancel') }}
-            </RetroButton>
-          </div>
         </div>
       </div>
     </Transition>
@@ -262,12 +255,6 @@ function onPick(folderId: string): void {
   color: var(--text-muted);
 }
 
-.move-note__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin: 12px 14px 14px;
-}
 
 .move-note-fade-enter-active,
 .move-note-fade-leave-active {

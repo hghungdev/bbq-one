@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useSecureFolderStore } from '@/stores/secureFolder'
@@ -101,9 +103,15 @@ const titleText = (): string => {
         tabindex="-1"
         @keydown="onPanelKeydown"
       >
-        <p class="secure-modal__title">
-          {{ titleText() }}
-        </p>
+        <!-- U19: ✕ ở góc thay cho nút "Hủy". -->
+        <header class="secure-modal__header">
+          <p class="secure-modal__title">
+            {{ titleText() }}
+          </p>
+          <IconButton variant="default" :label="t('common.close')" :disabled="busy" @click="emit('close')">
+            <AppIcon name="close" :size="18" />
+          </IconButton>
+        </header>
         <p v-if="error" class="secure-modal__err" role="alert">
           {{ error }}
         </p>
@@ -166,14 +174,6 @@ const titleText = (): string => {
           <RetroButton
             variant="sm"
             type="button"
-            :disabled="busy"
-            @click="emit('close')"
-          >
-            {{ t('common.cancel') }}
-          </RetroButton>
-          <RetroButton
-            variant="sm"
-            type="button"
             primary
             :disabled="busy"
             @click="submit"
@@ -216,8 +216,16 @@ const titleText = (): string => {
   overflow: hidden;
 }
 
-.secure-modal__title {
+.secure-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0 0 12px;
+}
+
+.secure-modal__title {
+  margin: 0;
   padding: 8px 10px;
   font-size: var(--font-size-base);
   font-weight: 700;

@@ -357,6 +357,17 @@ async function saveForm(): Promise<void> {
       >
         <!-- U13 (ADN popover): một tấm phẳng — tiêu đề đậm + dòng ngày phụ, ✕ trong suốt. -->
         <header class="cal-modal__header">
+          <!-- U19: ‹ về danh sách ngày thay cho nút "Hủy" ở chân form. -->
+          <button
+            v-if="showForm"
+            type="button"
+            class="ds-icon-action cal-modal__back"
+            :aria-label="t('calendar.modal.aria.back')"
+            :title="t('calendar.modal.aria.back')"
+            @click="cancelForm"
+          >
+            <AppIcon name="chevron-left" :size="18" />
+          </button>
           <div class="cal-modal__heading">
             <h2 :id="headingId" class="cal-modal__title">{{ modalHeading }}</h2>
             <p v-if="showForm && activeDateKey" class="cal-modal__subtitle">{{ longDate(activeDateKey) }}</p>
@@ -579,9 +590,6 @@ async function saveForm(): Promise<void> {
               <AppIcon name="trash" :size="17" />
             </button>
             <span class="cal-form__spacer" />
-            <button type="button" class="ds-text-action ds-text-action--muted" :disabled="busy" @click="cancelForm">
-              {{ t('calendar.modal.btn.cancel') }}
-            </button>
             <button type="submit" class="ds-primary" :disabled="busy">
               {{
                 isCreating && repeatFreq !== 'none'
@@ -641,7 +649,12 @@ async function saveForm(): Promise<void> {
 }
 
 .cal-modal__heading {
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.cal-modal__back {
+  margin: -1px -6px 0 -10px;
 }
 
 .cal-modal__title {

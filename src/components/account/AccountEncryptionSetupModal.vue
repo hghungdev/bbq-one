@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { generateRecoveryKey } from '@/utils/accountCrypto'
@@ -144,9 +145,15 @@ function onPanelKeydown(e: KeyboardEvent): void {
         tabindex="-1"
         @keydown="onPanelKeydown"
       >
-        <p class="account-modal__title">
-          {{ t('account.setupTitle') }}
-        </p>
+        <!-- U19: ✕ ở góc thay cho nút "Hủy"; "Quay lại" bên trái, nút chính bên phải. -->
+        <header class="account-modal__header">
+          <p class="account-modal__title">
+            {{ t('account.setupTitle') }}
+          </p>
+          <IconButton variant="default" :label="t('common.close')" :disabled="busy" @click="emit('close')">
+            <AppIcon name="close" :size="18" />
+          </IconButton>
+        </header>
         <p class="account-modal__step">
           {{ t('account.stepOf', { step, total: 3 }) }}
         </p>
@@ -171,9 +178,6 @@ function onPanelKeydown(e: KeyboardEvent): void {
             {{ t('account.ack3') }}
           </label>
           <div class="account-modal__actions">
-            <RetroButton variant="sm" type="button" @click="emit('close')">
-              {{ t('common.cancel') }}
-            </RetroButton>
             <RetroButton variant="sm" type="button" primary :disabled="!canProceedStep1" @click="goStep2">
               {{ t('account.continue') }}
             </RetroButton>
@@ -204,11 +208,11 @@ function onPanelKeydown(e: KeyboardEvent): void {
             @keydown.enter.prevent="goStep3"
           />
           <div class="account-modal__actions">
-            <RetroButton variant="sm" type="button" :disabled="!canProceedStep2" @click="goStep3">
-              {{ t('account.continue') }}
-            </RetroButton>
             <RetroButton variant="sm" type="button" @click="step = 1">
               {{ t('account.back') }}
+            </RetroButton>
+            <RetroButton variant="sm" type="button" primary :disabled="!canProceedStep2" @click="goStep3">
+              {{ t('account.continue') }}
             </RetroButton>
           </div>
         </template>
@@ -252,11 +256,11 @@ function onPanelKeydown(e: KeyboardEvent): void {
             @keydown.enter.prevent="enable"
           />
           <div class="account-modal__actions">
-            <RetroButton variant="sm" type="button" :disabled="busy" @click="enable">
-              {{ t('account.enableCta') }}
-            </RetroButton>
             <RetroButton variant="sm" type="button" :disabled="busy" @click="step = 2">
               {{ t('account.back') }}
+            </RetroButton>
+            <RetroButton variant="sm" type="button" primary :disabled="busy" @click="enable">
+              {{ t('account.enableCta') }}
             </RetroButton>
           </div>
         </template>
@@ -299,8 +303,16 @@ function onPanelKeydown(e: KeyboardEvent): void {
   max-width: 420px;
 }
 
-.account-modal__title {
+.account-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0 0 8px;
+}
+
+.account-modal__title {
+  margin: 0;
   padding: 8px 10px;
   font-size: var(--font-size-base);
   font-weight: 700;
