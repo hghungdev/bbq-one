@@ -233,3 +233,15 @@ nhánh cũ (`0ef22ee`), không mất gì. Đổi assertion có chủ đích: U5.
 Kèm: gỡ prop `digitOnly` của `RetroInput` (chỉ PIN dùng — sót từ S3a). 43 harness PASS.
 Đổi chữ có chủ đích: `calendar.repeat.none` "Không lặp lại" → "Một lần" (vừa ô segmented);
 `calendar.agenda.reviewOverdue` "Đánh dấu xong" → "Xem tất cả" (hết hiểu nhầm "đánh dấu tất cả").
+
+## Đợt 6 (2026-10-28) — U15, C12, U16 (nhánh `claude/ui-adn-redesign`)
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra trên Chromium |
+|---|---|---|---|
+| U15 ngôn ngữ icon thống nhất ("popup conflict icon / text") | `3d052de` → `6192767` | ✅ 13/13 (RED 12) | Sửa sự kiện 🗑 thay chữ "Delete"; dòng ✎ 🗑; section ghi chú 🗑 (trước ×); Bookmark ⤓ ⟳ 🗑 ở đầu cột TRÌNH DUYỆT, lá cây 🔗; hộp xác nhận xóa phẳng; header ⇤ đăng nhập; light + dark |
+| C12 Esc không đóng hộp xác nhận (phát hiện khi kiểm U15) | `1cf1dd6` → `6650120` | ✅ 3/3 (RED 3) | 🗑 → Esc → chỉ hộp xác nhận đóng, hộp Sửa còn, sự kiện còn |
+| U16 tab header kiểu viền ("bootstrap không phải outline") | `8a452c6` → `6d73f54` | ✅ 3/3 (RED 3) | tab chọn = viền + chữ màu nhấn; ← → / Home / End; light + dark |
+
+Đổi assertion có chủ đích: U11.C1, U13.S4, U13.S6 (U15). 46 harness PASS.
+Quy tắc icon (U15): hành động trên đối tượng = icon + tooltip; quyết định kết thúc hộp thoại (Lưu / Hủy /
+Xóa ở hộp xác nhận) và liên kết điều hướng = chữ — xem `specs/U15-icon-language.spec.md`.
