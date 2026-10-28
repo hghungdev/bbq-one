@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import IconButton from '@/components/ui/IconButton.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
 import { useLangStore } from '@/stores/uiLang'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{
   open: boolean
@@ -88,54 +88,13 @@ onUnmounted(() => {
                 :label="t('common.close')"
                 @click="dismiss"
               >
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                    d="M6 6l12 12M18 6L6 18"
-                  />
-                </svg>
+                <AppIcon name="close" :size="18" />
               </IconButton>
             </header>
 
             <div class="retro-confirm__body retro-confirm__body--danger">
               <div class="retro-confirm__icon-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-                  <polyline
-                    stroke="currentColor"
-                    stroke-width="1.85"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    points="3 6 5 6 21 6"
-                  />
-                  <path
-                    stroke="currentColor"
-                    stroke-width="1.85"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  />
-                  <line
-                    stroke="currentColor"
-                    stroke-width="1.85"
-                    stroke-linecap="round"
-                    x1="10"
-                    y1="11"
-                    x2="10"
-                    y2="17"
-                  />
-                  <line
-                    stroke="currentColor"
-                    stroke-width="1.85"
-                    stroke-linecap="round"
-                    x1="14"
-                    y1="11"
-                    x2="14"
-                    y2="17"
-                  />
-                </svg>
+                <AppIcon name="trash" :size="22" />
               </div>
               <p v-if="title" class="retro-confirm__detail">{{ message }}</p>
             </div>
@@ -145,19 +104,19 @@ onUnmounted(() => {
             <p class="retro-confirm__msg">{{ message }}</p>
           </template>
 
+          <!-- U15: quyết định = chữ (quy tắc 4) — "Hủy" nút chữ, "Xóa" nút đặc màu đỏ ghi rõ bằng chữ. -->
           <footer class="retro-confirm__actions">
-            <RetroButton variant="sm" type="button" @click="dismiss">
+            <button type="button" class="ds-text-action ds-text-action--muted" @click="dismiss">
               {{ t('common.cancel') }}
-            </RetroButton>
-            <RetroButton
-              variant="sm"
+            </button>
+            <button
               type="button"
-              class="retro-confirm__confirm-btn"
+              class="ds-primary retro-confirm__confirm-btn"
               :class="{ 'retro-confirm__confirm-btn--danger': variant === 'danger' }"
               @click="confirm"
             >
               {{ variant === 'danger' ? t('common.delete') : t('common.confirm') }}
-            </RetroButton>
+            </button>
           </footer>
         </div>
       </div>
@@ -177,27 +136,18 @@ onUnmounted(() => {
   padding: 16px;
 }
 
+/* U15 (ADN popover): một tấm phẳng như hộp thoại sự kiện — bỏ nền gradient, viền đỏ, hộp lồng hộp. */
 .retro-confirm {
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(
-      ellipse 110% 80% at 50% 0%,
-      color-mix(in srgb, var(--accent) 4%, transparent) 0%,
-      transparent 58%
-    ),
-    var(--bg-secondary);
-  outline: none;
-  box-shadow: 0 12px 48px var(--panel-ring);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.retro-confirm--danger {
-  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  width: 100%;
+  max-width: 380px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  box-shadow: 0 18px 48px var(--panel-ring);
+  outline: none;
 }
 
 .retro-confirm__header {
@@ -205,20 +155,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 10px 10px 0;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  padding: 14px 12px 0 20px;
 }
 
 .retro-confirm__title {
   margin: 0;
-  font-size: var(--font-size-base);
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text-primary);
   line-height: 1.35;
+  color: var(--text-primary);
 }
 
 .retro-confirm__body--danger {
@@ -226,11 +171,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  margin: 10px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+  padding: 8px 24px 4px;
   text-align: center;
 }
 
@@ -241,54 +182,43 @@ onUnmounted(() => {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-pill);
-  background: var(--surface-danger-muted);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
   color: var(--danger);
 }
 
 .retro-confirm__detail {
+  max-width: 320px;
   margin: 0;
   font-size: var(--font-size-sm);
-  color: var(--text-primary);
   line-height: 1.5;
-  max-width: 320px;
+  color: var(--text-secondary);
 }
 
 .retro-confirm__msg {
   margin: 0;
-  margin: 10px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+  padding: 18px 20px 4px;
   font-size: var(--font-size-sm);
-  color: var(--text-primary);
   line-height: 1.5;
-  text-align: center;
+  color: var(--text-primary);
   white-space: pre-wrap;
 }
 
 .retro-confirm__actions {
   display: flex;
-  gap: 8px;
   justify-content: flex-end;
-  margin: 0 10px 10px;
-  padding: 10px 0 0;
-  border: none;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
-  background: transparent;
+  gap: 6px;
+  padding: 14px 16px 16px;
 }
 
 .retro-confirm__confirm-btn--danger {
-  border-color: var(--danger) !important;
-  color: var(--danger) !important;
-  background: var(--surface-danger-muted) !important;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
 }
 
 .retro-confirm__confirm-btn--danger:hover:not(:disabled) {
-  color: var(--on-accent) !important;
-  background: var(--danger) !important;
-  border-color: var(--danger) !important;
+  border-color: color-mix(in srgb, var(--danger) 85%, #000);
+  background: color-mix(in srgb, var(--danger) 85%, #000);
 }
 
 .retro-confirm-fade-enter-active,

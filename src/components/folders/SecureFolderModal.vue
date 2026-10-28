@@ -167,17 +167,18 @@ const titleText = (): string => {
             variant="sm"
             type="button"
             :disabled="busy"
-            @click="submit"
+            @click="emit('close')"
           >
-            {{ t('common.bracketOk') }}
+            {{ t('common.cancel') }}
           </RetroButton>
           <RetroButton
             variant="sm"
             type="button"
+            primary
             :disabled="busy"
-            @click="emit('close')"
+            @click="submit"
           >
-            {{ t('common.bracketClear') }}
+            {{ t('common.ok') }}
           </RetroButton>
         </div>
       </div>

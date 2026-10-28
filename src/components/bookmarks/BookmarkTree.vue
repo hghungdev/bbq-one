@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { BookmarkNode } from '@/types/bookmark'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{ nodes: BookmarkNode[]; depth?: number }>()
 const depth = props.depth ?? 0
@@ -17,23 +18,15 @@ function toggle(id: string): void {
     <li v-for="node in nodes" :key="node.id" class="bm-tree__item">
       <!-- Folder -->
       <div v-if="!node.url" class="bm-tree__row bm-tree__row--folder" @click="toggle(node.id)">
-        <svg
-          class="bm-tree__icon bm-tree__chevron"
-          :class="{ 'bm-tree__chevron--open': !collapsed.has(node.id) }"
-          viewBox="0 0 24 24"
-          width="14"
-          height="14"
-          aria-hidden="true"
-        >
-          <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
-        </svg>
+        <AppIcon name="chevron-right" :size="14" class="bm-tree__icon bm-tree__chevron" :class="{ 'bm-tree__chevron--open': !collapsed.has(node.id) }" />
         <span class="bm-tree__title">{{ node.title || '(no name)' }}</span>
         <span v-if="node.children" class="bm-tree__count">{{ node.children.length }}</span>
       </div>
       <!-- Bookmark link -->
       <div v-else class="bm-tree__row bm-tree__row--link">
-        <span class="bm-tree__icon bm-tree__icon--link">›</span>
-        <a :href="node.url" target="_blank" class="bm-tree__link" :title="node.url">
+        <!-- U15: lá = 🔗 (› trước đây trông như thư mục đang đóng). -->
+        <AppIcon name="link" :size="13" class="bm-tree__icon bm-tree__icon--link" />
+        <a :href="node.url" target="_blank" rel="noopener noreferrer" class="bm-tree__link" :title="node.url">
           {{ node.title || node.url }}
         </a>
       </div>

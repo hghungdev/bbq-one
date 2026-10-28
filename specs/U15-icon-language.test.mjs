@@ -80,7 +80,7 @@ console.log('T — bộ icon (CODE THẬT)')
 const NAMES = [
   'trash', 'close', 'plus', 'pencil', 'move', 'copy', 'restore', 'download', 'refresh', 'upload-cloud',
   'lock', 'unlock', 'key', 'shield', 'check', 'search', 'settings', 'log-in', 'log-out',
-  'chevron-left', 'chevron-right', 'chevron-down',
+  'link', 'chevron-left', 'chevron-right', 'chevron-down',
 ]
 let icons = null
 if (exists('src', 'components', 'ui', 'icons.ts')) icons = loadTsModule(path.join(SRC, 'components', 'ui', 'icons.ts'))

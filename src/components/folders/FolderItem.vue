@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import ListItemSettingsMenu from '@/components/ui/ListItemSettingsMenu.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
@@ -148,28 +149,7 @@ function pickAction(
             :title="t('folder.secureLabel')"
             :aria-label="t('folder.secureLabel')"
           >
-            <svg
-              class="folder-item__lock"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <rect
-                class="folder-item__lock-stroke"
-                x="3"
-                y="11"
-                width="18"
-                height="11"
-                rx="2"
-                ry="2"
-              />
-              <path
-                class="folder-item__lock-stroke"
-                d="M7 11V7a5 5 0 0 1 10 0v4"
-              />
-            </svg>
+            <AppIcon name="lock" :size="14" class="folder-item__lock" />
           </span>
         </div>
         <div class="folder-item__foot">
@@ -195,12 +175,14 @@ function pickAction(
       >
         <li v-if="!folder.is_secure" role="none">
           <button type="button" role="menuitem" @click="pickAction('enable')">
+              <AppIcon name="shield" :size="15" />
             {{ t('folder.ctx.secure') }}
           </button>
         </li>
         <template v-else>
           <li v-if="secure.isFolderLocked(folder.id)" role="none">
             <button type="button" role="menuitem" @click="pickAction('unlock')">
+              <AppIcon name="unlock" :size="15" />
               {{ t('folder.ctx.unlock') }}
             </button>
           </li>
@@ -210,11 +192,13 @@ function pickAction(
               role="menuitem"
               @click="secure.lockFolder(folder.id)"
             >
+              <AppIcon name="lock" :size="15" />
               {{ t('folder.ctx.lock') }}
             </button>
           </li>
           <li role="none">
             <button type="button" role="menuitem" @click="pickAction('change')">
+              <AppIcon name="key" :size="15" />
               {{ t('folder.ctx.changePassphrase') }}
             </button>
           </li>
@@ -317,19 +301,6 @@ function pickAction(
   color: var(--accent);
 }
 
-.folder-item__lock {
-  width: 14px;
-  height: 14px;
-  display: block;
-}
-
-.folder-item__lock-stroke {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.85;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 
 .folder-ctx {
   position: fixed;
@@ -346,7 +317,10 @@ function pickAction(
 }
 
 .folder-ctx button {
-  display: block;
+  /* U15: menu dọc = icon + chữ. */
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   margin: 0;
   padding: 8px 12px;

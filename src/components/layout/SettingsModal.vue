@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
@@ -262,11 +263,13 @@ onUnmounted(() => {
                 type="button"
                 @click="accountCrypto.unlockModalOpen = true"
               >
+                <AppIcon name="unlock" :size="15" />
                 {{ t('account.unlock') }}
               </RetroButton>
             </div>
             <div v-else class="settings-row settings-row--pin">
               <RetroButton variant="sm" type="button" @click="emit('lock-account')">
+                <AppIcon name="lock" :size="15" />
                 {{ t('account.lockNow') }}
               </RetroButton>
             </div>

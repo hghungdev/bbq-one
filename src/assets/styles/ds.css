@@ -117,6 +117,13 @@
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
+/* U15: xóa — icon xám như mọi icon, chỉ đỏ khi rê / focus (không la hét đỏ khắp danh sách). */
+.ds-icon-action--danger:hover:not(:disabled),
+.ds-icon-action--danger:focus-visible {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
 .ds-text-action:disabled,
 .ds-icon-action:disabled,
 .ds-primary:disabled {

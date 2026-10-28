@@ -34,6 +34,7 @@
   import { useUndoToastStore } from '@/stores/undoToast'
   import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
+  import AppIcon from '@/components/ui/AppIcon.vue'
   import {
     hasPendingSyncWork,
     initAutoSyncOnNetworkRestore,
@@ -658,24 +659,7 @@
             :title="t('app.aria.settings')"
             @click="showSettings = true"
           >
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
-              />
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-              />
-            </svg>
+            <AppIcon name="settings" :size="17" />
           </IconButton>
           <IconButton
             v-if="isAnonymous"
@@ -684,25 +668,7 @@
             :title="t('app.aria.loginTitle')"
             @click="onGoLogin"
           >
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M8 10V7a4 4 0 0 1 8 0v3"
-              />
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 10h12v9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-9Z"
-              />
-              <circle cx="12" cy="15" r="1" fill="currentColor" />
-            </svg>
+            <AppIcon name="log-in" :size="17" />
           </IconButton>
           <IconButton
             v-else
@@ -711,16 +677,7 @@
             :title="t('app.aria.logoutTitle')"
             @click="onLogout"
           >
-            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
-              />
-            </svg>
+            <AppIcon name="log-out" :size="17" />
           </IconButton>
         </div>
       </div>

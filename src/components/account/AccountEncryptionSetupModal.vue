@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { generateRecoveryKey } from '@/utils/accountCrypto'
@@ -170,11 +171,11 @@ function onPanelKeydown(e: KeyboardEvent): void {
             {{ t('account.ack3') }}
           </label>
           <div class="account-modal__actions">
-            <RetroButton variant="sm" type="button" :disabled="!canProceedStep1" @click="goStep2">
-              {{ t('account.continue') }}
-            </RetroButton>
             <RetroButton variant="sm" type="button" @click="emit('close')">
-              {{ t('common.bracketClear') }}
+              {{ t('common.cancel') }}
+            </RetroButton>
+            <RetroButton variant="sm" type="button" primary :disabled="!canProceedStep1" @click="goStep2">
+              {{ t('account.continue') }}
             </RetroButton>
           </div>
         </template>
@@ -220,6 +221,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
             {{ recovery.display }}
           </p>
           <RetroButton variant="sm" type="button" :disabled="busy" @click="copyRecovery">
+            <AppIcon name="copy" :size="15" />
             {{ t('account.copy') }}
           </RetroButton>
           <p class="account-modal__hint account-modal__hint--warn">

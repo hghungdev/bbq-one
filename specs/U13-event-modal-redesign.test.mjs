@@ -116,12 +116,13 @@ check(
     !/repeatPreview/.test(modal),
   'xem trước vẫn là một câu dài',
 )
+// U15 (đổi có chủ đích): "Xóa" ở chân Sửa sự kiện từ nút chữ đỏ → icon 🗑 (giống danh sách ngày).
 check(
-  'S4 Chân: "Lưu" = ds-primary (đếm "Tạo n sự kiện" khi lặp), "Hủy" = nút chữ; sửa có "Xóa" đỏ',
+  'S4 Chân: "Lưu" = ds-primary (đếm "Tạo n sự kiện" khi lặp), "Hủy" = nút chữ; sửa có 🗑 (U15)',
   /class="ds-primary[^"]*"[^>]*type="submit"|type="submit"[^>]*class="ds-primary/.test(tpl) &&
     /calendar\.repeat\.saveN/.test(tpl) &&
     /ds-text-action ds-text-action--muted[\s\S]{0,200}calendar\.modal\.btn\.cancel/.test(tpl) &&
-    /ds-text-action--danger[\s\S]{0,300}calendar\.modal\.btn\.delete/.test(tpl),
+    /ds-icon-action--danger[\s\S]{0,300}requestDeleteActive[\s\S]{0,80}name="trash"/.test(tpl),
   'chân hộp thoại chưa theo ADN',
 )
 check(
@@ -133,10 +134,11 @@ check(
   'còn khung quanh trường / chân',
 )
 check(
-  'S6 Danh sách ngày: SectionHeader "SỰ KIỆN · n/max" + nút chữ thêm; dòng ds-row có vạch màu; 🗑 ds-icon-action',
+  'S6 Danh sách ngày: SectionHeader "SỰ KIỆN · n/max" + ＋ icon (U15); dòng ds-row có vạch màu; 🗑 ds-icon-action',
   /<SectionHeader[\s\S]{0,300}calendar\.modal\.section\.events/.test(tpl) &&
     /CALENDAR_MAX_EVENTS_PER_DAY/.test(tpl) &&
-    /ds-text-action[\s\S]{0,200}startCreate|startCreate[\s\S]{0,200}ds-text-action/.test(tpl) &&
+    // U15 (đổi có chủ đích): "＋ Thêm sự kiện" từ nút chữ → icon ＋ (giống đầu mục Ghi chú).
+    /ds-icon-action--accent[\s\S]{0,250}startCreate[\s\S]{0,80}name="plus"/.test(tpl) &&
     /class="cal-modal__row ds-row"/.test(tpl) &&
     /cal-modal__swatch/.test(tpl) &&
     /var\(--cal-event-rail\)/.test(style) &&

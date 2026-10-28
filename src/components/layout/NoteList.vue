@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import NoteItem from '@/components/notes/NoteItem.vue'
 import MoveNoteModal from '@/components/notes/MoveNoteModal.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
@@ -210,9 +211,7 @@ async function onMovePick(folderId: string): Promise<void> {
         :disabled="busy || folderLocked"
         @click="openCreateNoteModal"
       >
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
-        </svg>
+        <AppIcon name="plus" :size="17" />
       </button>
     </SectionHeader>
     <div class="note-list__body">

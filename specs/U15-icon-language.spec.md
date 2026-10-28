@@ -34,7 +34,8 @@
 
 1. **Một bộ icon** — `components/ui/icons.ts` + `AppIcon.vue` (nét 1.75, đầu tròn, khung 24; ≤ 14 px tự
    nét 2). Không file nào tự vẽ icon hành động nữa.
-2. **Một icon — một nghĩa:** 🗑 xóa · ✕ đóng / xóa chữ · ＋ thêm · ✎ sửa / đổi tên · ⇄ chuyển · ⧉ sao chép ·
+2. **Một icon — một nghĩa:** 🗑 xóa · ✕ đóng / xóa chữ · ＋ thêm · ✎ sửa / đổi tên · ⇄ chuyển · ⧉ sao chép · 🔗 liên kết ·
+   › ⌄ mở / đóng nhóm ·
    ↶ khôi phục · ⤓ xuất · ⟳ tải lại · ☁↑ sao lưu · 🔒 khóa · 🔓 mở khóa · ⇥ đăng xuất · ⇤ đăng nhập.
 3. **Hành động trên một đối tượng** (dòng, mục, form): **chỉ icon** + tooltip + `aria-label`. Hành động
    trên dòng hiện khi rê chuột / focus. Xóa: icon xám, **đỏ khi rê**.
@@ -55,9 +56,13 @@
   `IconDeleteButton`, `IconRestoreButton`); ✕ ở đầu KẾT QUẢ.
 - Hộp thoại: mọi ✕ dùng AppIcon; `[ X ]` đóng → ✕; `[ X ]` / `[ OK ]` ở chân → "Hủy" / "OK";
   xung đột đồng bộ: dòng ↶ 🗑 icon, mọi chữ qua i18n, chữ thường.
+- Hộp xác nhận xóa (dùng chung sau mọi 🗑): một tấm phẳng (bỏ hộp lồng hộp, viền đỏ, gradient); "Hủy" nút
+  chữ + "Xóa" nút đặc màu đỏ (vẫn ghi rõ bằng chữ — quy tắc 4).
 - Settings: "🔓 Mở khóa" / "🔒 Khóa ngay"; mã hóa tài khoản: "⧉ Sao chép".
 - Header: Đăng nhập ⇤ (thay 🔒), Đăng xuất ⇥, ⚙ — AppIcon.
 - Ô tìm, ‹ › tháng, mũi tên cây / accordion / chip: AppIcon.
+- Cây bookmark: lá (link) dùng 🔗 thay ký tự "›" — "›" trông như thư mục đang đóng (phát hiện khi chụp
+  ảnh kiểm U15; thêm `link` vào bộ icon).
 - i18n: gỡ `common.bracketOk/Clear/Yes/No`, `common.confirmYnPrompt`; `common.error` → "Lỗi:" / "Error:";
   khóa mới cho tooltip + 2 hộp thoại xung đột.
 

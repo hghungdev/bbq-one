@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/uiLang'
 import { isSupabaseConfigured, missingEnvHint } from '@/env'
 import { formatAuthErrorMessage } from '@/utils/authErrors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const emit = defineEmits<{
   close: []
@@ -52,15 +53,7 @@ async function onSubmit(): Promise<void> {
             :label="t('common.close')"
             @click="emit('close')"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                d="M6 6l12 12M18 6L6 18"
-              />
-            </svg>
+            <AppIcon name="close" :size="18" />
           </IconButton>
         </header>
 

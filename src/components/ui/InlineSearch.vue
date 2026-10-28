@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 /**
  * U5: ô tìm kiếm thu gọn thành nút 🔍, dùng chung cho Calendar / Notes / Bookmark — mỗi tab đặt nó
@@ -126,17 +127,7 @@ onBeforeUnmount(cancelDebounce)
   >
     <template v-if="open || persistent">
       <span class="inline-search__field">
-        <svg
-          v-if="persistent"
-          class="inline-search__field-icon"
-          viewBox="0 0 24 24"
-          width="15"
-          height="15"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.75" />
-          <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M16 16l4.5 4.5" />
-        </svg>
+        <AppIcon v-if="persistent" name="search" :size="15" class="inline-search__field-icon" />
         <RetroInput
           :id="inputId"
           ref="inputRef"
@@ -157,9 +148,7 @@ onBeforeUnmount(cancelDebounce)
           :title="closeLabel"
           @click="closeSearch"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-            <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
-          </svg>
+          <AppIcon name="close" :size="14" />
         </button>
       </span>
     </template>
@@ -173,10 +162,7 @@ onBeforeUnmount(cancelDebounce)
         :title="openLabel"
         @click="openSearch"
       >
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.75" />
-          <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M16 16l4.5 4.5" />
-        </svg>
+        <AppIcon name="search" :size="17" />
       </button>
     </template>
   </div>

@@ -5,6 +5,7 @@ import FolderItem from '@/components/folders/FolderItem.vue'
 import SecureFolderModal from '@/components/folders/SecureFolderModal.vue'
 import TagBadge from '@/components/ui/TagBadge.vue'
 import InlineSearch from '@/components/ui/InlineSearch.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import { useFoldersStore } from '@/stores/folders'
@@ -198,9 +199,7 @@ function closeCreateFolderModal(): void {
         :disabled="busy"
         @click="openCreateFolderModal"
       >
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
-        </svg>
+        <AppIcon name="plus" :size="17" />
       </button>
     </SectionHeader>
     <div class="sidebar__list">

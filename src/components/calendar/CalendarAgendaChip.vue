@@ -6,6 +6,7 @@
   import { useLangStore } from '@/stores/uiLang'
   import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
   import { agendaChip, buildAgenda, overduePanelRows, type AgendaDay, type AgendaItem } from '@/utils/calendarAgenda'
+  import AppIcon from '@/components/ui/AppIcon.vue'
 
   /**
    * U6: lịch hôm nay / ngày mai gọn trong MỘT chip trên header (thay 2 banner xếp chồng). Bấm → bảng
@@ -209,23 +210,7 @@
         <span class="agenda-chip__dot agenda-chip__dot--tomorrow" aria-hidden="true" />
         {{ t('calendar.agenda.tomorrowCount', { n: chip.tomorrowCount }) }}
       </span>
-      <svg
-        class="agenda-chip__chevron"
-        :class="{ 'agenda-chip__chevron--open': open }"
-        viewBox="0 0 24 24"
-        width="14"
-        height="14"
-        aria-hidden="true"
-      >
-        <path
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M6 9l6 6 6-6"
-        />
-      </svg>
+      <AppIcon name="chevron-down" :size="14" class="agenda-chip__chevron" :class="{ 'agenda-chip__chevron--open': open }" />
     </button>
 
     <div

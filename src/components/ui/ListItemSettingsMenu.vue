@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{
   settingsTitle: string
@@ -114,30 +115,14 @@ onBeforeUnmount(clearOutside)
     <button
       ref="triggerRef"
       type="button"
-      class="list-settings__trigger"
+      class="ds-icon-action list-settings__trigger"
       :title="settingsTitle"
       :aria-label="settingsTitle"
       :aria-expanded="open"
       aria-haspopup="menu"
       @click="toggle"
     >
-      <svg
-        class="list-settings__svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path
-          class="list-settings__stroke"
-          d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
-        />
-        <path
-          class="list-settings__stroke"
-          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-        />
-      </svg>
+      <AppIcon name="settings" :size="15" />
     </button>
 
     <Teleport to="body">
@@ -151,78 +136,34 @@ onBeforeUnmount(clearOutside)
       >
         <button
           type="button"
-          class="list-settings__action"
+          class="ds-icon-action list-settings__action"
           role="menuitem"
           :title="renameTitle"
           :aria-label="renameTitle"
           @click="onRename"
         >
-          <svg
-            class="list-settings__svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path class="list-settings__stroke" d="M12 20h9" />
-            <path
-              class="list-settings__stroke"
-              d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
-            />
-          </svg>
+          <AppIcon name="pencil" :size="15" />
         </button>
         <button
           v-if="moveTitle"
           type="button"
-          class="list-settings__action"
+          class="ds-icon-action list-settings__action"
           role="menuitem"
           :title="moveTitle"
           :aria-label="moveTitle"
           @click="onMove"
         >
-          <svg
-            class="list-settings__svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              class="list-settings__stroke"
-              d="M3 7h11M3 12h18M3 17h11"
-            />
-            <path
-              class="list-settings__stroke"
-              d="M17 4l4 3-4 3M17 14l4 3-4 3"
-            />
-          </svg>
+          <AppIcon name="move" :size="15" />
         </button>
         <button
           type="button"
-          class="list-settings__action list-settings__action--danger"
+          class="ds-icon-action ds-icon-action--danger list-settings__action"
           role="menuitem"
           :title="deleteTitle"
           :aria-label="deleteTitle"
           @click="onDelete"
         >
-          <svg
-            class="list-settings__svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <polyline class="list-settings__stroke" points="3 6 5 6 21 6" />
-            <path
-              class="list-settings__stroke"
-              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-            />
-            <line class="list-settings__stroke" x1="10" y1="11" x2="10" y2="17" />
-            <line class="list-settings__stroke" x1="14" y1="11" x2="14" y2="17" />
-          </svg>
+          <AppIcon name="trash" :size="15" />
         </button>
       </div>
     </Teleport>
@@ -235,58 +176,11 @@ onBeforeUnmount(clearOutside)
   display: inline-flex;
 }
 
+/* U15: nút icon chung (ds-icon-action) — chỉ giữ cỡ 26 px cho vừa dòng. Xóa: xám, đỏ khi rê. */
 .list-settings__trigger,
 .list-settings__action {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 26px;
   height: 26px;
-  padding: 0;
-  margin: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.list-settings__trigger:hover,
-.list-settings__action:hover {
-  border-color: var(--accent-soft-border);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
-}
-
-.list-settings__trigger:focus-visible,
-.list-settings__action:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.list-settings__action--danger {
-  color: var(--danger);
-}
-
-.list-settings__action--danger:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 12%, var(--bg-secondary));
-}
-
-.list-settings__svg {
-  width: 15px;
-  height: 15px;
-  display: block;
-}
-
-.list-settings__stroke {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .list-settings__menu {

@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit'
 import type { Editor } from '@tiptap/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { clearNoteDraft, saveNoteDraft } from '@/services/noteDraft.service'
 import { isRowMissingOnServerError } from '@/utils/syncConflict'
@@ -342,9 +343,7 @@ onBeforeUnmount(() => {
           :disabled="!notesStore.activeNoteId"
           @click="onAddBody"
         >
-          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
-            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
-          </svg>
+          <AppIcon name="plus" :size="17" />
         </button>
         <button
           type="button"
@@ -353,18 +352,7 @@ onBeforeUnmount(() => {
           :aria-label="t('editor.copyAriaLabel')"
           @click="copyBodyToClipboard"
         >
-          <svg
-            class="note-editor__copy-icon"
-            viewBox="0 0 24 24"
-            width="15"
-            height="15"
-            aria-hidden="true"
-          >
-            <path
-              fill="currentColor"
-              d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-            />
-          </svg>
+          <AppIcon name="copy" :size="15" />
         </button>
       </SectionHeader>
 
@@ -392,14 +380,12 @@ onBeforeUnmount(() => {
           </button>
           <button
             type="button"
-            class="ds-icon-action note-editor__tab-del"
+            class="ds-icon-action ds-icon-action--danger note-editor__tab-del"
             :aria-label="t('editor.deleteBodyTitle')"
             :title="t('editor.deleteBodyTitle')"
             @click="onDeleteBody(b.id, $event)"
           >
-            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-              <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
-            </svg>
+            <AppIcon name="trash" :size="14" />
           </button>
         </div>
       </div>
@@ -511,10 +497,6 @@ onBeforeUnmount(() => {
 .note-editor__tab--active .note-editor__tab-del,
 .note-editor__tab-del:focus-visible {
   opacity: 1;
-}
-
-.note-editor__copy-icon {
-  display: block;
 }
 
 .note-editor__body {

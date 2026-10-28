@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, useId } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -30,16 +31,7 @@ function toggle(): void {
         @click="toggle"
       >
         <span class="set-acc__title ds-label">{{ title }}</span>
-        <svg
-          class="set-acc__chevron"
-          :class="{ 'set-acc__chevron--open': open }"
-          viewBox="0 0 24 24"
-          width="14"
-          height="14"
-          aria-hidden="true"
-        >
-          <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
-        </svg>
+        <AppIcon name="chevron-right" :size="14" class="set-acc__chevron" :class="{ 'set-acc__chevron--open': open }" />
       </button>
     </h3>
     <div

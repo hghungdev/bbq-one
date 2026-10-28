@@ -4,6 +4,7 @@ import IconButton from '@/components/ui/IconButton.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useLangStore } from '@/stores/uiLang'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{
   open: boolean
@@ -80,15 +81,7 @@ function onSubmit(): void {
               :disabled="busy"
               @click="emit('close')"
             >
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  d="M6 6l12 12M18 6L6 18"
-                />
-              </svg>
+              <AppIcon name="close" :size="18" />
             </IconButton>
           </header>
 

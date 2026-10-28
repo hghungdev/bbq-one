@@ -3,6 +3,8 @@ import { computed, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { CALENDAR_MAX_EVENTS_PER_DAY } from '@/constants/calendar'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import type {
   CalendarDayKeepSelection,
   CalendarOverflowReport,
@@ -165,15 +167,14 @@ function sourceLabel(source: 'local' | 'cloud'): string {
             <h2 id="cal-overflow-title" class="cal-overflow-dialog__title">
               {{ t('calendar.overflow.title') }}
             </h2>
-            <RetroButton
-              variant="sm"
-              type="button"
+            <IconButton
+              variant="default"
               class="cal-overflow-dialog__close"
-              :aria-label="t('common.close')"
+              :label="t('common.close')"
               @click="emit('cancel')"
             >
-              {{ t('common.bracketClear') }}
-            </RetroButton>
+              <AppIcon name="close" :size="18" />
+            </IconButton>
           </header>
 
           <p class="cal-overflow-dialog__intro">

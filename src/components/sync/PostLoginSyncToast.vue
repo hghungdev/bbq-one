@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { SyncResult } from '@/types/localFirst'
 import { useLangStore } from '@/stores/uiLang'
 import IconButton from '@/components/ui/IconButton.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const { t } = useLangStore()
 
@@ -41,15 +42,7 @@ const hasSyncDetails = computed(() => {
           :label="t('common.close')"
           @click="$emit('close')"
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            <path
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              d="M6 6l12 12M18 6L6 18"
-            />
-          </svg>
+          <AppIcon name="close" :size="16" />
         </IconButton>
       </div>
       <div v-if="hasSyncDetails" class="sync-toast__body">

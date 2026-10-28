@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useLangStore } from '@/stores/uiLang'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{ year: number; month: number }>()
 
@@ -42,9 +43,7 @@ watch(
       :title="t('calendar.nav.prev')"
       @click="emit('prev')"
     >
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6" />
-      </svg>
+      <AppIcon name="chevron-left" :size="18" />
     </button>
     <span class="cal-month-nav__label" :class="`cal-month-nav__label--${slideDir}`">
       <Transition :name="`cal-month-label-${slideDir}`" mode="out-in">
@@ -58,9 +57,7 @@ watch(
       :title="t('calendar.nav.next')"
       @click="emit('next')"
     >
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
-      </svg>
+      <AppIcon name="chevron-right" :size="18" />
     </button>
     <div class="cal-month-nav__end">
       <!-- U2: CalendarTab đặt ô tìm kiếm (CalendarInlineSearch) vào đây. -->

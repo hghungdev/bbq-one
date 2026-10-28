@@ -2,8 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import InlineSearch from '@/components/ui/InlineSearch.vue'
-import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
-import IconRestoreButton from '@/components/ui/IconRestoreButton.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import DeleteBackupModal from '@/components/bookmarks/DeleteBackupModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
@@ -142,28 +141,11 @@ async function onRefreshLive(): Promise<void> {
   <div class="bm-tab">
     <!-- Toolbar -->
     <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
-      <!-- U11 (ADN popover): một hành động chính đặc màu, còn lại là nút chữ. -->
+      <!-- U11 (ADN popover): một hành động chính đặc màu. U15: icon + chữ (hành động chính của tab);
+           Xuất / Tải lại / Xóa tất cả chỉ tác động cây trình duyệt → icon ở đầu cột TRÌNH DUYỆT. -->
       <button type="button" class="ds-primary" :disabled="bm.loading" @click="bm.backup(backupLabel)">
+        <AppIcon name="upload-cloud" :size="15" />
         {{ t('bookmark.backupNow') }}
-      </button>
-      <button
-        type="button"
-        class="ds-text-action"
-        :disabled="bm.loading || bm.liveTree.length === 0"
-        @click="bm.exportHTML()"
-      >
-        {{ t('bookmark.exportHtml') }}
-      </button>
-      <button type="button" class="ds-text-action" :disabled="bm.loading" @click="onRefreshLive()">
-        {{ t('bookmark.refresh') }}
-      </button>
-      <button
-        type="button"
-        class="ds-text-action ds-text-action--danger"
-        :disabled="bm.loading"
-        @click="confirmDeleteAll = true"
-      >
-        {{ t('bookmark.deleteAll') }}
       </button>
       <span v-if="bm.lastBackupAt" class="bm-tab__hint">
         {{ t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') }) }}
@@ -213,15 +195,26 @@ async function onRefreshLive(): Promise<void> {
         >
           <div class="bm-tab__backup-top">
             <span class="bm-tab__backup-label">{{ bk.label }}</span>
+            <!-- U15: ↶ / 🗑 kiểu chung — hiện khi rê chuột, đang chọn hoặc focus. -->
             <div class="bm-tab__backup-actions">
-              <IconRestoreButton
+              <button
+                type="button"
+                class="ds-icon-action"
+                :aria-label="t('bookmark.rstTitle')"
                 :title="t('bookmark.rstTitle')"
                 @click.stop="onRestoreClick(bk.id)"
-              />
-              <IconDeleteButton
+              >
+                <AppIcon name="restore" />
+              </button>
+              <button
+                type="button"
+                class="ds-icon-action ds-icon-action--danger"
+                :aria-label="t('bookmark.delTitle')"
                 :title="t('bookmark.delTitle')"
                 @click.stop="onDeleteBackupClick(bk.id)"
-              />
+              >
+                <AppIcon name="trash" />
+              </button>
             </div>
           </div>
           <span class="bm-tab__backup-hint">{{ bk.browser_hint }}</span>
@@ -237,11 +230,12 @@ async function onRefreshLive(): Promise<void> {
         >
           <button
             type="button"
-            class="ds-text-action ds-text-action--muted"
+            class="ds-icon-action"
+            :aria-label="t('bookmark.clearTitle')"
             :title="t('bookmark.clearTitle')"
             @click="bm.clearBookmarkSearch()"
           >
-            {{ t('bookmark.clearSearch') }}
+            <AppIcon name="close" />
           </button>
         </SectionHeader>
         <SectionHeader
@@ -257,6 +251,38 @@ async function onRefreshLive(): Promise<void> {
           >
             {{ t('bookmark.liveSwitchBtn') }}
           </button>
+          <template v-else>
+            <button
+              type="button"
+              class="ds-icon-action"
+              :aria-label="t('bookmark.exportHtml')"
+              :title="t('bookmark.exportHtml')"
+              :disabled="bm.loading || bm.liveTree.length === 0"
+              @click="bm.exportHTML()"
+            >
+              <AppIcon name="download" />
+            </button>
+            <button
+              type="button"
+              class="ds-icon-action"
+              :aria-label="t('bookmark.refresh')"
+              :title="t('bookmark.refresh')"
+              :disabled="bm.loading"
+              @click="onRefreshLive()"
+            >
+              <AppIcon name="refresh" />
+            </button>
+            <button
+              type="button"
+              class="ds-icon-action ds-icon-action--danger"
+              :aria-label="t('bookmark.deleteAll')"
+              :title="t('bookmark.deleteAll')"
+              :disabled="bm.loading"
+              @click="confirmDeleteAll = true"
+            >
+              <AppIcon name="trash" />
+            </button>
+          </template>
         </SectionHeader>
         <div
           v-if="bm.loading"
@@ -494,7 +520,21 @@ async function onRefreshLive(): Promise<void> {
   flex: 0 0 auto;
   flex-shrink: 0;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s linear;
+}
+
+.bm-tab__backup-item:hover .bm-tab__backup-actions,
+.bm-tab__backup-item:focus-within .bm-tab__backup-actions,
+.bm-tab__backup-item--active .bm-tab__backup-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .bm-tab__backup-actions {
+    opacity: 1;
+  }
 }
 .bm-tab__global {
   flex: 1 1 auto;

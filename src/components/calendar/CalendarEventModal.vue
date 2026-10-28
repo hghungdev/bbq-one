@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { CALENDAR_MAX_EVENTS_PER_DAY, CALENDAR_TITLE_MAX } from '@/constants/calendar'
 import { useCalendarEventsStore } from '@/stores/calendarEvents'
 import { useLangStore } from '@/stores/uiLang'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
@@ -367,15 +368,7 @@ async function saveForm(): Promise<void> {
             :title="t('common.close')"
             @click="store.closeModal"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                d="M6 6l12 12M18 6L6 18"
-              />
-            </svg>
+            <AppIcon name="close" :size="18" />
           </button>
         </header>
 
@@ -384,17 +377,17 @@ async function saveForm(): Promise<void> {
             :label="t('calendar.modal.section.events')"
             :meta="`${dayEvents.length}/${CALENDAR_MAX_EVENTS_PER_DAY}`"
           >
+            <!-- U15: ＋ icon như đầu mục Thư mục / Ghi chú / Section. -->
             <button
               v-if="!isPastActiveDate && !dayIsFull"
               type="button"
-              class="ds-text-action"
+              class="ds-icon-action ds-icon-action--accent"
+              :aria-label="t('calendar.modal.aria.add')"
+              :title="t('calendar.modal.aria.add')"
               :disabled="busy"
               @click="startCreate"
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
-              </svg>
-              {{ t('calendar.modal.aria.add') }}
+              <AppIcon name="plus" :size="17" />
             </button>
           </SectionHeader>
           <p v-if="resultInfo" class="cal-modal__hint" role="status">{{ resultInfo }}</p>
@@ -422,23 +415,24 @@ async function saveForm(): Promise<void> {
               <button type="button" class="cal-modal__row-title" @click.stop="startEdit(ev)">
                 {{ ev.title }}
               </button>
+              <!-- U15: ✎ / 🗑 như menu ⚙ của thư mục, ghi chú — hiện khi rê chuột / focus. -->
               <button
                 type="button"
-                class="ds-icon-action cal-modal__row-del"
+                class="ds-icon-action cal-modal__row-act"
+                :aria-label="t('calendar.modal.aria.edit')"
+                :title="t('calendar.modal.aria.edit')"
+                @click.stop="startEdit(ev)"
+              >
+                <AppIcon name="pencil" />
+              </button>
+              <button
+                type="button"
+                class="ds-icon-action ds-icon-action--danger cal-modal__row-act"
                 :aria-label="t('calendar.modal.aria.delete')"
                 :title="t('calendar.modal.aria.delete')"
                 @click="requestDelete(ev.id, $event)"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.75"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 7h16M9 7V5h6v2M7 7l1 12h8l1-12M10 11v5M14 11v5"
-                  />
-                </svg>
+                <AppIcon name="trash" />
               </button>
             </li>
           </ul>
@@ -502,9 +496,7 @@ async function saveForm(): Promise<void> {
                     :disabled="busy || repeatCount <= 2"
                     @click="stepRepeat(-1)"
                   >
-                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 12h12" />
-                    </svg>
+                    <AppIcon name="minus" :size="14" />
                   </button>
                   <input
                     :id="`${headingId}-repeat-count`"
@@ -524,9 +516,7 @@ async function saveForm(): Promise<void> {
                     :disabled="busy || repeatCount >= repeatMax"
                     @click="stepRepeat(1)"
                   >
-                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 6v12M6 12h12" />
-                    </svg>
+                    <AppIcon name="plus" :size="14" />
                   </button>
                 </div>
                 <span class="cal-form__until">{{ t('calendar.repeat.until', { date: repeatUntil }) }}</span>
@@ -568,16 +558,7 @@ async function saveForm(): Promise<void> {
                   </li>
                 </ul>
                 <p v-if="repeatFullDays.length > 0" class="cal-form__warn">
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.9"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 4l9 16H3zM12 10v4M12 17h.01"
-                    />
-                  </svg>
+                  <AppIcon name="alert" :size="14" class="cal-form__warn-icon" />
                   {{ t('calendar.repeat.previewSkip', { n: repeatFullDays.length, max: CALENDAR_MAX_EVENTS_PER_DAY }) }}
                 </p>
               </div>
@@ -585,14 +566,17 @@ async function saveForm(): Promise<void> {
           </div>
 
           <div class="cal-form__actions">
+            <!-- U15: xóa = 🗑 như ở danh sách ngày (không còn chữ "Xóa" riêng ở đây). -->
             <button
               v-if="!isCreating && store.activeEventId"
               type="button"
-              class="ds-text-action ds-text-action--danger"
+              class="ds-icon-action ds-icon-action--danger"
+              :aria-label="t('calendar.modal.aria.delete')"
+              :title="t('calendar.modal.aria.delete')"
               :disabled="busy"
               @click="requestDeleteActive"
             >
-              {{ t('calendar.modal.btn.delete') }}
+              <AppIcon name="trash" :size="17" />
             </button>
             <span class="cal-form__spacer" />
             <button type="button" class="ds-text-action ds-text-action--muted" :disabled="busy" @click="cancelForm">
@@ -758,23 +742,18 @@ async function saveForm(): Promise<void> {
   opacity: 0.45;
 }
 
-/* 🗑 chỉ hiện khi rê chuột / focus trong dòng. */
-.cal-modal__row-del {
+/* ✎ 🗑 chỉ hiện khi rê chuột / focus trong dòng. */
+.cal-modal__row-act {
   opacity: 0;
 }
 
-.cal-modal__row:hover .cal-modal__row-del,
-.cal-modal__row:focus-within .cal-modal__row-del {
+.cal-modal__row:hover .cal-modal__row-act,
+.cal-modal__row:focus-within .cal-modal__row-act {
   opacity: 1;
 }
 
-.cal-modal__row .cal-modal__row-del:hover:not(:disabled) {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 9%, transparent);
-}
-
 @media (hover: none) {
-  .cal-modal__row-del {
+  .cal-modal__row-act {
     opacity: 1;
   }
 }
@@ -1012,8 +991,7 @@ html[data-theme='dark'] .cal-form__segment--on {
   color: var(--danger);
 }
 
-.cal-form__warn svg {
-  flex: 0 0 auto;
+.cal-form__warn-icon {
   margin-top: 1px;
 }
 
