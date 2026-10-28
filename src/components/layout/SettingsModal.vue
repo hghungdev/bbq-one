@@ -23,10 +23,9 @@ const { t } = langStore
 
 const extensionVersion = getExtensionVersion()
 
-/** U9: tên ngôn ngữ luôn viết theo chính ngôn ngữ đó (ai cũng tìm được ngôn ngữ của mình). */
 const LANG_OPTIONS = [
-  { code: 'en', name: 'English', labelKey: 'settings.langEN' },
-  { code: 'vi', name: 'Tiếng Việt', labelKey: 'settings.langVI' },
+  { code: 'en', labelKey: 'settings.langEN' },
+  { code: 'vi', labelKey: 'settings.langVI' },
 ] as const
 
 const bmPinOld = ref('')
@@ -268,7 +267,7 @@ onUnmounted(() => {
         <!-- Language selection -->
         <SettingsAccordionSection :title="t('settings.language')" :default-open="true">
           <p class="settings-hint">{{ t('settings.languageDesc') }}</p>
-          <!-- U9: cờ chữ nhật + tên ngôn ngữ (viết theo chính ngôn ngữ đó), không bọc trong nút pill. -->
+          <!-- U9: cờ chữ nhật, không bọc trong nút pill; tên ngôn ngữ ở aria-label + tooltip. -->
           <div class="settings-row settings-lang-row" role="radiogroup" :aria-label="t('settings.language')">
             <button
               v-for="opt in LANG_OPTIONS"
@@ -279,10 +278,10 @@ onUnmounted(() => {
               :class="{ 'settings-lang-option--active': langStore.lang === opt.code }"
               :aria-checked="langStore.lang === opt.code"
               :aria-label="t(opt.labelKey)"
+              :title="t(opt.labelKey)"
               @click="langStore.setLang(opt.code)"
             >
               <span class="settings-lang-flag"><LangFlagIcon :locale="opt.code" /></span>
-              <span class="settings-lang-name">{{ opt.name }}</span>
             </button>
           </div>
         </SettingsAccordionSection>
@@ -788,11 +787,8 @@ onUnmounted(() => {
 
 .settings-lang-option {
   display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
   margin: 0;
-  padding: 4px 6px;
+  padding: 2px;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -819,16 +815,6 @@ onUnmounted(() => {
 .settings-lang-option--active .settings-lang-flag,
 .settings-lang-option--active:hover .settings-lang-flag {
   border-color: var(--accent);
-}
-
-.settings-lang-name {
-  font-size: var(--font-size-sm);
-  line-height: 1.2;
-}
-
-.settings-lang-option--active .settings-lang-name {
-  color: var(--accent);
-  font-weight: 600;
 }
 
 .settings-lang-option:focus-visible {

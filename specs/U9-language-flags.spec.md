@@ -14,15 +14,14 @@
   ┌────────┐   ┌────────┐
   │ ▓▓▓▓▓▓ │   │   ★    │      ← cờ chữ nhật 40×21, góc 2 px; đang chọn = vòng viền màu nhấn
   └────────┘   └────────┘
-   English     Tiếng Việt     ← tên ngôn ngữ (viết theo chính ngôn ngữ đó)
 ```
 
 - `LangFlagIcon`: góc 2 px (hình chữ nhật), viền mảnh để sọc trắng không lẫn nền.
 - Settings: bỏ `RetroButton` pill → `role="radiogroup"` + 2 nút `role="radio"` `aria-checked`; nút
-  trong suốt, cờ + tên bên dưới; đang chọn: vòng viền màu nhấn quanh cờ + chữ đậm màu nhấn; hover nhẹ;
-  focus bàn phím rõ. Không còn `disabled` cho ngôn ngữ đang chọn.
+  trong suốt, chỉ có cờ (Sir: bỏ chữ dưới cờ — tên ngôn ngữ ở `aria-label` + tooltip); đang chọn: vòng
+  viền màu nhấn quanh cờ; hover nhẹ; focus bàn phím rõ. Không còn `disabled` cho ngôn ngữ đang chọn.
 
 ## Nghiệm thu
 
 1. Test GREEN; mọi harness khác PASS; `vue-tsc` sạch; build OK.
-2. Settings → Language: 2 cờ chữ nhật có tên; bấm đổi ngôn ngữ, vòng chọn chuyển theo; dark mode rõ.
+2. Settings → Language: 2 cờ chữ nhật (rê chuột thấy tên); bấm đổi ngôn ngữ, vòng chọn chuyển theo; dark mode rõ.

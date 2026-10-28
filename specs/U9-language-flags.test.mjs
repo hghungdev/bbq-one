@@ -41,10 +41,11 @@ check(
   block.includes('role="radiogroup"') && (block.match(/role="radio"/g) ?? []).length >= 1 && block.includes(':aria-checked'),
   'thiếu ngữ nghĩa radio',
 )
+// Đổi theo yêu cầu (Sir): bỏ chữ dưới cờ — tên ngôn ngữ chỉ còn ở aria-label + tooltip.
 check(
-  'U9.4 có tên ngôn ngữ dưới cờ (English / Tiếng Việt)',
-  /English/.test(settings) && /Tiếng Việt/.test(settings) && block.includes('settings-lang-name'),
-  'thiếu tên ngôn ngữ',
+  'U9.4 không có chữ dưới cờ; tên ngôn ngữ ở aria-label + title',
+  !block.includes('settings-lang-name') && block.includes(':aria-label="t(opt.labelKey)"') && block.includes(':title="t(opt.labelKey)"'),
+  'còn chữ dưới cờ / thiếu tên cho trình đọc màn hình',
 )
 
 console.log('\n──────────────────────────────────────────────')
