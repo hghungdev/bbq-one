@@ -261,3 +261,18 @@ không có commit riêng → không xung đột, lịch sử giữ nguyên từn
 Đổi assertion có chủ đích: U15.T1 + U15.M5 (log-in → user). 48 harness PASS.
 Chờ Sir quyết: (a) bỏ nút "Hủy" ở hộp nhập liệu (giữ ✕ + 1 nút chính); (b) thanh điều hướng dọc
 (navigation rail) thay 3 tab trên header.
+
+## Đợt 8 (2026-10-28) — U19, quyết định mã hóa, G1 (nhánh chính) + U20 (nhánh thử)
+
+| Mục | Nhánh | Commit (docs → feat) | Test | Kiểm tra |
+|---|---|---|---|---|
+| U19 bỏ "Hủy" trong hộp nhập liệu | `claude/dazzling-wright-m0fqb2` | `2567b4d` → `7153fcb` | ✅ 12/12 (RED 8) | ‹ về danh sách ngày; Thư mục bảo mật / Bật mã hóa có ✕ |
+| Quyết định: Lịch KHÔNG mã hóa (chỉ Ghi chú + Bookmark) | `claude/dazzling-wright-m0fqb2` | `1995935` | — | ROADMAP-S, SECURITY.md, lời giới thiệu Settings |
+| G1 link Google Calendar (iCal một chiều) trong Settings | `claude/dazzling-wright-m0fqb2` | `f9b2d83` → `ddeddec` | ✅ 18/18 (RED 8) | Supabase giả: tạo / tạo mới / tắt link; file .ics mẫu đúng RFC 5545 |
+| U20 thanh điều hướng dọc | **`claude/ui-nav-rail`** (thử) | `db35029` → `6cf17c2` | ✅ 7/7 (RED 7) | chip 273 → 553 px; ☰ bảng nổi đè; ↑ ↓; light + dark |
+
+Đổi assertion có chủ đích: U13.S4 (U19); U16, U17.1 (U20 — chỉ trên nhánh thử).
+**Việc của Sir cho G1:** chạy `supabase/migrations/017_calendar_feeds.sql`, rồi
+`supabase functions deploy calendar-feed --no-verify-jwt --project-ref <ref>` (xem
+`supabase/functions/calendar-feed/README.md`).
+**U20:** Sir duyệt trên `claude/ui-nav-rail` → ưng thì gộp vào nhánh chính (merge, không xung đột dự kiến).
