@@ -65,10 +65,11 @@ check(
   !appSrc.includes('tickHeaderClock') && !appSrc.includes('headerClockTimer'),
   'setInterval(tickHeaderClock, 1000) vẫn chạy suốt đời popup',
 )
+// U8 (đổi có chủ đích — yêu cầu của Sir): bỏ luôn mục Múi giờ trong Settings, ngày theo giờ máy.
 check(
-  'U1.3 Settings vẫn giữ mục Múi giờ (nơi chỉnh UTC offset)',
-  settingsSrc.includes("t('settings.timezone')") && settingsSrc.includes('onUtcOffsetChange'),
-  'mất chỗ chỉnh múi giờ',
+  'U1.3 Settings không còn mục Múi giờ (U8)',
+  !settingsSrc.includes("t('settings.timezone')") && !settingsSrc.includes('onUtcOffsetChange'),
+  'còn mục Múi giờ',
 )
 check(
   'U1.4 i18n app.aria.clock đã gỡ (không còn ai dùng)',
