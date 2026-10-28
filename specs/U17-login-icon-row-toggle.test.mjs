@@ -21,7 +21,8 @@ const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8')
 console.log('1 — icon đăng nhập')
 const app = read('src', 'pages', 'App.vue')
 const icons = read('src', 'components', 'ui', 'icons.ts')
-const loginBtn = (/<IconButton\s+v-if="isAnonymous"[\s\S]*?<\/IconButton>/.exec(app) ?? [''])[0]
+// U20 (đổi có chủ đích): nút đăng nhập chuyển xuống đáy thanh dọc — <button>, không còn IconButton.
+const loginBtn = (/<(?:IconButton|button)\s+v-if="isAnonymous"[\s\S]*?<\/(?:IconButton|button)>/.exec(app) ?? [''])[0]
 check(
   'U17.1 chưa đăng nhập: icon người (user), không còn ⇤ log-in (ảnh lật của ⇥ đăng xuất)',
   /name="user"/.test(loginBtn) && !/name="log-in"/.test(app) && /\buser: \[/.test(icons) && !/'log-in'/.test(icons),

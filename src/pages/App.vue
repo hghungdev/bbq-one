@@ -27,7 +27,6 @@
   import CloudSyncStatusBadge from '@/components/sync/CloudSyncStatusBadge.vue'
   import type { CloudSyncVariant } from '@/components/sync/CloudSyncStatusBadge.vue'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
-  import IconButton from '@/components/ui/IconButton.vue'
   import ThemeModeToggle from '@/components/ui/ThemeModeToggle.vue'
   import UndoToast from '@/components/ui/UndoToast.vue'
   import { useUndoToastStore } from '@/stores/undoToast'
@@ -77,27 +76,57 @@
   const networkOnline = ref(isOnline())
   const showSettings = ref(false)
   const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('calendar')
-  /** U16: 3 tab chính — điều hướng nên kiểu viền, không tô đặc như nút hành động. */
+  /** U16 / U20: 3 mục chính — trên thanh dọc bên trái, chỉ icon (tên ở tooltip / bảng mở rộng). */
   const HEADER_TABS = [
-    { id: 'calendar', label: 'app.tabs.calendar' },
-    { id: 'notes', label: 'app.tabs.notes' },
-    { id: 'bookmarks', label: 'app.tabs.bookmark' },
+    { id: 'calendar', label: 'app.tabs.calendar', icon: 'calendar' },
+    { id: 'notes', label: 'app.tabs.notes', icon: 'notes' },
+    { id: 'bookmarks', label: 'app.tabs.bookmark', icon: 'bookmark' },
   ] as const
   const tabsRef = ref<HTMLElement | null>(null)
 
-  /** Mẫu tablist: ← → / Home / End chuyển tab + dời focus (roving tabindex). */
+  /** Mẫu tablist dọc: ↑ ↓ (và ← →) / Home / End chuyển mục + dời focus (roving tabindex). */
   function onTabsKeydown(e: KeyboardEvent): void {
     const n = HEADER_TABS.length
     const i = HEADER_TABS.findIndex((tab) => tab.id === activeTab.value)
     let next: number
-    if (e.key === 'ArrowRight') next = (i + 1) % n
-    else if (e.key === 'ArrowLeft') next = (i - 1 + n) % n
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (i + 1) % n
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (i - 1 + n) % n
     else if (e.key === 'Home') next = 0
     else if (e.key === 'End') next = n - 1
     else return
     e.preventDefault()
     activeTab.value = HEADER_TABS[next].id
     void nextTick(() => tabsRef.value?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus())
+  }
+
+  /**
+   * U20: bảng mở rộng của thanh dọc — NỔI ĐÈ (không đẩy nội dung: popup chỉ 800 px). Đóng khi chọn mục,
+   * Esc hoặc bấm ra ngoài; Esc / ☰ trả focus về nút ☰.
+   */
+  const railOpen = ref(false)
+  const railMenuRef = ref<HTMLButtonElement | null>(null)
+  const drawerRef = ref<HTMLElement | null>(null)
+
+  function openRail(): void {
+    railOpen.value = true
+    void nextTick(() => drawerRef.value?.querySelector<HTMLButtonElement>('.shell__drawer-item--active')?.focus())
+  }
+
+  function closeRail(returnFocus: boolean): void {
+    railOpen.value = false
+    if (returnFocus) void nextTick(() => railMenuRef.value?.focus())
+  }
+
+  function selectTab(id: (typeof HEADER_TABS)[number]['id']): void {
+    activeTab.value = id
+    closeRail(false)
+  }
+
+  function onDrawerKeydown(e: KeyboardEvent): void {
+    if (e.key !== 'Escape') return
+    e.preventDefault()
+    e.stopPropagation()
+    closeRail(true)
   }
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
@@ -616,125 +645,203 @@
 
 <template>
   <div class="shell shell--dashboard">
-    <header class="shell__header">
-      <div class="shell__header-row shell__header-row--top">
-        <div class="shell__header-left">
-          <span class="shell__brand">BBQOne</span>
-          <span class="shell__brand-sep" aria-hidden="true" />
-          <nav
-            ref="tabsRef"
-            class="shell__tabs"
-            role="tablist"
-            :aria-label="t('app.tabs.aria')"
-            @keydown="onTabsKeydown"
-          >
-            <button
-              v-for="tab in HEADER_TABS"
-              :key="tab.id"
-              type="button"
-              role="tab"
-              class="shell__tab"
-              :class="{ 'shell__tab--active': activeTab === tab.id }"
-              :aria-selected="activeTab === tab.id"
-              :tabindex="activeTab === tab.id ? 0 : -1"
-              @click="activeTab = tab.id"
-            >
-              {{ t(tab.label) }}
-            </button>
-          </nav>
-        </div>
-        <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
-        <div class="shell__header-mid">
-          <CalendarAgendaChip
-            v-if="dataReady"
-            @open-calendar="onOpenCalendarFromAgenda"
-            @review-overdue="showOverdueReminder = true"
-          />
-        </div>
-        <div class="shell__header-right">
-          <ThemeModeToggle class="shell__theme-toggle" />
-          <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
-          <CloudSyncStatusBadge
-            v-if="!isAnonymous"
-            :variant="syncBadgeVariant"
-            :label="syncBadgeTitle"
-            :disabled="syncBusy"
-            @click="onSync"
-          />
-          <!-- Local pending badge: chỉ hiện khi anonymous -->
-          <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
-          <IconButton
-            variant="default"
-            :label="t('app.aria.settings')"
-            :title="t('app.aria.settings')"
-            @click="showSettings = true"
-          >
-            <AppIcon name="settings" :size="17" />
-          </IconButton>
-          <IconButton
-            v-if="isAnonymous"
-            variant="accent"
-            :label="t('app.aria.login')"
-            :title="t('app.aria.loginTitle')"
-            @click="onGoLogin"
-          >
-            <!-- U17: 👤 thay ⇤ — ⇤ chỉ là ảnh lật của ⇥ "Đăng xuất", nhìn như một. -->
-            <AppIcon name="user" :size="17" />
-          </IconButton>
-          <IconButton
-            v-else
-            variant="default"
-            :label="t('app.aria.logout')"
-            :title="t('app.aria.logoutTitle')"
-            @click="onLogout"
-          >
-            <AppIcon name="log-out" :size="17" />
-          </IconButton>
-        </div>
+    <!-- U20: thanh điều hướng dọc — thu gọn chỉ icon; ☰ mở bảng nổi đè (icon + chữ). -->
+    <nav class="shell__rail">
+      <button
+        ref="railMenuRef"
+        type="button"
+        class="shell__rail-btn"
+        :aria-label="t('app.rail.expand')"
+        :title="t('app.rail.expand')"
+        :aria-expanded="railOpen"
+        @click="openRail"
+      >
+        <AppIcon name="menu" :size="20" />
+      </button>
+      <div
+        ref="tabsRef"
+        class="shell__rail-items"
+        role="tablist"
+        aria-orientation="vertical"
+        :aria-label="t('app.tabs.aria')"
+        @keydown="onTabsKeydown"
+      >
+        <button
+          v-for="tab in HEADER_TABS"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="shell__rail-btn shell__rail-item"
+          :class="{ 'shell__rail-item--active': activeTab === tab.id }"
+          :aria-selected="activeTab === tab.id"
+          :tabindex="activeTab === tab.id ? 0 : -1"
+          :aria-label="t(tab.label)"
+          :title="t(tab.label)"
+          @click="activeTab = tab.id"
+        >
+          <AppIcon :name="tab.icon" :size="20" />
+        </button>
       </div>
-    </header>
+      <div class="shell__rail-bottom">
+        <button
+          type="button"
+          class="shell__rail-btn"
+          :aria-label="t('app.aria.settings')"
+          :title="t('app.aria.settings')"
+          @click="showSettings = true"
+        >
+          <AppIcon name="settings" :size="20" />
+        </button>
+        <!-- U17: 👤 thay ⇤ — ⇤ chỉ là ảnh lật của ⇥ "Đăng xuất", nhìn như một. -->
+        <button
+          v-if="isAnonymous"
+          type="button"
+          class="shell__rail-btn shell__rail-btn--accent"
+          :aria-label="t('app.aria.login')"
+          :title="t('app.aria.loginTitle')"
+          @click="onGoLogin"
+        >
+          <AppIcon name="user" :size="20" />
+        </button>
+        <button
+          v-else
+          type="button"
+          class="shell__rail-btn"
+          :aria-label="t('app.aria.logout')"
+          :title="t('app.aria.logoutTitle')"
+          @click="onLogout"
+        >
+          <AppIcon name="log-out" :size="20" />
+        </button>
+      </div>
+    </nav>
 
-    <OfflineBanner />
-
-    <p v-if="loadErrorLine" class="shell__error" role="alert">
-      {{ loadErrorLine }}
-    </p>
-
-    <template v-if="dataReady">
-      <!-- Tab: Notes (layout 3 cột hiện tại) -->
-      <div v-show="activeTab === 'notes'" class="shell__grid">
-        <Sidebar
-          v-model:renaming-folder-id="renamingFolderId"
-          class="shell__col shell__col--folders"
-        />
-        <NoteList
-          v-model:renaming-note-id="renamingNoteId"
-          class="shell__col shell__col--notes"
-          :class="{ 'shell__col--notes--search': isSearchActive }"
-          :style="noteListColumnStyle"
-        />
+    <Transition name="shell-drawer">
+      <div v-if="railOpen" class="shell__drawer-scrim" @click.self="closeRail(true)">
         <div
-          v-show="!isSearchActive"
-          class="shell__resize"
-          :title="t('app.dragResize')"
-          aria-hidden="true"
-          @mousedown="onResizeStart($event)"
-        />
-        <div v-show="!isSearchActive" class="shell__col shell__col--editor">
-          <NoteEditor ref="noteEditorRef" />
+          ref="drawerRef"
+          class="shell__drawer"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="t('app.tabs.aria')"
+          @keydown="onDrawerKeydown"
+        >
+          <div class="shell__drawer-head">
+            <button
+              type="button"
+              class="shell__rail-btn"
+              :aria-label="t('app.rail.collapse')"
+              :title="t('app.rail.collapse')"
+              aria-expanded="true"
+              @click="closeRail(true)"
+            >
+              <AppIcon name="menu" :size="20" />
+            </button>
+            <span class="shell__brand">BBQOne</span>
+          </div>
+          <button
+            v-for="tab in HEADER_TABS"
+            :key="tab.id"
+            type="button"
+            class="shell__drawer-item"
+            :class="{ 'shell__drawer-item--active': activeTab === tab.id }"
+            :aria-current="activeTab === tab.id ? 'page' : undefined"
+            @click="selectTab(tab.id)"
+          >
+            <AppIcon :name="tab.icon" :size="20" />
+            <span>{{ t(tab.label) }}</span>
+          </button>
+          <div class="shell__drawer-bottom">
+            <button type="button" class="shell__drawer-item" @click="closeRail(false); showSettings = true">
+              <AppIcon name="settings" :size="20" />
+              <span>{{ t('app.aria.settings') }}</span>
+            </button>
+            <button v-if="isAnonymous" type="button" class="shell__drawer-item" @click="closeRail(false); onGoLogin()">
+              <AppIcon name="user" :size="20" />
+              <span>{{ t('app.aria.login') }}</span>
+            </button>
+            <button v-else type="button" class="shell__drawer-item" @click="closeRail(false); onLogout()">
+              <AppIcon name="log-out" :size="20" />
+              <span>{{ t('app.aria.logout') }}</span>
+            </button>
+          </div>
         </div>
+        <!-- /drawer -->
       </div>
+    </Transition>
 
-      <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
-      <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
-        <BookmarkTab class="shell__col--full" />
-      </div>
+    <div class="shell__main">
+      <header class="shell__header">
+        <div class="shell__header-row shell__header-row--top">
+          <div class="shell__header-left">
+            <span class="shell__brand">BBQOne</span>
+          </div>
+          <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
+          <div class="shell__header-mid">
+            <CalendarAgendaChip
+              v-if="dataReady"
+              @open-calendar="onOpenCalendarFromAgenda"
+              @review-overdue="showOverdueReminder = true"
+            />
+          </div>
+          <div class="shell__header-right">
+            <ThemeModeToggle class="shell__theme-toggle" />
+            <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
+            <CloudSyncStatusBadge
+              v-if="!isAnonymous"
+              :variant="syncBadgeVariant"
+              :label="syncBadgeTitle"
+              :disabled="syncBusy"
+              @click="onSync"
+            />
+            <!-- Local pending badge: chỉ hiện khi anonymous -->
+            <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
+          </div>
+        </div>
+      </header>
 
-      <div v-if="activeTab === 'calendar'" class="shell__grid shell__grid--full">
-        <CalendarTab class="shell__col--full" />
-      </div>
-    </template>
-    <DashboardSkeleton v-else class="shell__loading-skel" />
+      <OfflineBanner />
+
+      <p v-if="loadErrorLine" class="shell__error" role="alert">
+        {{ loadErrorLine }}
+      </p>
+
+      <template v-if="dataReady">
+        <!-- Tab: Notes (layout 3 cột hiện tại) -->
+        <div v-show="activeTab === 'notes'" class="shell__grid">
+          <Sidebar
+            v-model:renaming-folder-id="renamingFolderId"
+            class="shell__col shell__col--folders"
+          />
+          <NoteList
+            v-model:renaming-note-id="renamingNoteId"
+            class="shell__col shell__col--notes"
+            :class="{ 'shell__col--notes--search': isSearchActive }"
+            :style="noteListColumnStyle"
+          />
+          <div
+            v-show="!isSearchActive"
+            class="shell__resize"
+            :title="t('app.dragResize')"
+            aria-hidden="true"
+            @mousedown="onResizeStart($event)"
+          />
+          <div v-show="!isSearchActive" class="shell__col shell__col--editor">
+            <NoteEditor ref="noteEditorRef" />
+          </div>
+        </div>
+
+        <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
+        <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
+          <BookmarkTab class="shell__col--full" />
+        </div>
+
+        <div v-if="activeTab === 'calendar'" class="shell__grid shell__grid--full">
+          <CalendarTab class="shell__col--full" />
+        </div>
+      </template>
+      <DashboardSkeleton v-else class="shell__loading-skel" />
+    </div>
 
     <SettingsModal
       v-if="showSettings"
@@ -770,9 +877,11 @@
 </template>
 
 <style scoped>
+  /* U20: hàng ngang = thanh dọc (rail) + cột nội dung (shell__main). */
   .shell {
+    position: relative;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     /* Bề rộng popup cố định: global.css (--popup-width); lưới có overflow-x khi hẹp hơn 3 cột */
     min-width: 0;
     min-height: 0;
@@ -838,64 +947,172 @@
     gap: 10px;
   }
 
-  .shell__brand-sep {
-    flex: 0 0 auto;
-    align-self: center;
-    width: 1px;
-    height: 24px;
-    background: var(--border);
-  }
-
-  .shell__tabs {
+  .shell__main {
     display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 2px;
+    flex-direction: column;
+    flex: 1 1 auto;
     min-width: 0;
-    padding: 3px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
-    box-shadow: inset 0 1px 0 var(--bg-secondary);
+    min-height: 0;
+    overflow: hidden;
   }
 
-  /* U16: tab = điều hướng → viền (outline), không tô đặc kiểu Bootstrap — chỉ hành động chính mới đặc. */
-  .shell__tab {
-    min-height: 28px;
-    padding: 4px 15px;
-    border: 1px solid transparent;
+  /* —— U20: thanh điều hướng dọc —— */
+  .shell__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 56px;
+    gap: 6px;
+    padding: 12px 0 12px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-secondary);
+  }
+
+  .shell__rail-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .shell__rail-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .shell__rail-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 36px;
+    padding: 0;
+    border: none;
     border-radius: var(--radius-pill);
     background: transparent;
     color: var(--text-secondary);
-    font: inherit;
-    font-weight: 600;
-    letter-spacing: -0.012em;
-    white-space: nowrap;
     cursor: pointer;
     transition:
-      color 0.12s linear,
       background 0.12s linear,
-      border-color 0.12s linear;
+      color 0.12s linear;
   }
 
-  .shell__tab:hover:not(.shell__tab--active) {
+  .shell__rail-btn:hover {
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
   }
 
-  .shell__tab:focus-visible {
+  .shell__rail-btn:focus-visible,
+  .shell__drawer-item:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
   }
 
-  .shell__tab--active {
-    border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+  /* Mục đang chọn: viên nền nhấn nhạt + icon màu nhấn (không tô đặc). */
+  .shell__rail-item--active,
+  .shell__rail-item--active:hover {
     color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 7%, var(--bg-panel));
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .shell__rail-btn--accent {
+    color: var(--accent);
+    background: var(--surface-accent-muted);
+  }
+
+  /* Bảng mở rộng: nổi đè, không đẩy nội dung. */
+  .shell__drawer-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    background: color-mix(in srgb, #000 22%, transparent);
+  }
+
+  .shell__drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 220px;
+    padding: 12px 10px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-panel);
+    box-shadow: 8px 0 28px var(--panel-ring);
+  }
+
+  .shell__drawer-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px -2px;
+  }
+
+  .shell__drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 40px;
+    padding: 0 14px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .shell__drawer-item:hover {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  }
+
+  .shell__drawer-item--active,
+  .shell__drawer-item--active:hover {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .shell__drawer-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: auto;
+  }
+
+  .shell-drawer-enter-active,
+  .shell-drawer-leave-active {
+    transition: opacity 0.15s ease;
+  }
+
+  .shell-drawer-enter-active .shell__drawer,
+  .shell-drawer-leave-active .shell__drawer {
+    transition: transform 0.15s ease;
+  }
+
+  .shell-drawer-enter-from,
+  .shell-drawer-leave-to {
+    opacity: 0;
+  }
+
+  .shell-drawer-enter-from .shell__drawer,
+  .shell-drawer-leave-to .shell__drawer {
+    transform: translateX(-100%);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .shell__tab {
+    .shell__rail-btn,
+    .shell-drawer-enter-active,
+    .shell-drawer-leave-active,
+    .shell-drawer-enter-active .shell__drawer,
+    .shell-drawer-leave-active .shell__drawer {
       transition: none;
     }
   }
