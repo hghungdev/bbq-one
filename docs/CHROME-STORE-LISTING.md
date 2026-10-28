@@ -2,7 +2,7 @@
 
 ## Short Description (132 chars max)
 
-Local-first notes, bookmarks, and calendar. Optional cloud sync. Privacy-respecting, offline-capable.
+Local-first notes, bookmarks, and calendar. Optional cloud sync and Google Calendar link. Private and offline-capable.
 
 _(118 characters — fits the 132 limit.)_
 
@@ -14,7 +14,7 @@ _(118 characters — fits the 132 limit.)_
 
 ## Detailed Description (store / long form)
 
-**BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a simple **calendar** — from one compact, retro-inspired popup dashboard.
+**BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a **calendar** — from one clean, compact popup dashboard (side rail for Calendar / Notes / Bookmarks; settings and account in the header).
 
 **Release 2.0.0 (highlights):** New vertical navigation rail and flat, modern UI with one icon set; redesigned calendar event dialog, per-item overdue check-off, and a private one-way Google Calendar link (Settings › Google Calendar); bookmark PIN removed so backups are never blocked.
 
@@ -50,8 +50,11 @@ _(118 characters — fits the 132 limit.)_
 
 **CALENDAR**
 
-- Month grid with events stored **locally** by default  
-- Optional sync to your account when signed in (same Supabase project as notes/bookmarks)  
+- Month grid with events stored **locally** by default — up to 3 events per day  
+- Repeat events weekly, monthly, or yearly; search across all events  
+- Today / tomorrow chip in the header; mark done with one click; tick off overdue items one by one  
+- Optional sync to your account when signed in (same Supabase backend as notes/bookmarks)  
+- Optional **private one-way Google Calendar link** (Settings › Google Calendar) — Google decides when to refresh; anyone with the link can read the calendar  
 
 ---
 
@@ -75,7 +78,7 @@ BBQOne does **not** run a behavioral ad network inside the extension. Read the P
 **LOOK & FEEL**  
 ═══════════════════════════════════════════════════  
 
-Vintage terminal–inspired chrome (dense panels, monospace accents where it matters), manual **light / dark** theme control synced to storage, typography tuned for long sessions. Interface copy available in **English** and **Vietnamese**.
+Clean, flat layout: a compact **side rail** for Calendar / Notes / Bookmarks (☀ theme and ☁ sync at its foot), **settings + account** in the header, one consistent icon set. Manual **light / dark** theme synced to storage; interface copy in **English** and **Vietnamese**.
 
 ---
 

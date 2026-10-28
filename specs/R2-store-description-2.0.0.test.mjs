@@ -24,7 +24,9 @@ const shortDesc = txt.split('\n')[0].trim()
 
 check(
   'R2.1 bỏ chỗ sai: PIN Bookmark, "retro" / "vintage terminal", "your Supabase project", "today/tomorrow banner"',
-  !/\bPIN\b/.test(txt) && !/retro|vintage terminal/i.test(txt + md) && !/your Supabase project/i.test(txt) &&
+  // Được nhắc PIN đã gỡ (What's new); cấm mô tả PIN như tính năng còn có.
+  !/PIN encryption|PIN-protected|protected by a PIN/i.test(txt) && /PIN removed/.test(txt) &&
+    !/retro|vintage terminal/i.test(txt + md) && !/your Supabase project/i.test(txt) &&
     !/tomorrow banner/i.test(txt),
   'còn mô tả cũ',
 )
