@@ -11,6 +11,7 @@ import {
 import './assets/styles/global.css'
 import './assets/styles/calendar-events.css'
 import './assets/styles/retro.css'
+import './assets/styles/ds.css'
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
   if (!isRecoverableRefreshTokenAuthError(event.reason)) return

@@ -144,9 +144,9 @@ function onRenameKeydown(e: KeyboardEvent): void {
 
 <template>
   <div
-    class="note-item"
+    class="note-item ds-row"
     :class="{
-      'note-item--active': selected,
+      'note-item--active ds-row--selected': selected,
       'note-item--search-hit': showFolderPath && hideDelete,
     }"
     :title="t('note.renameHint')"
@@ -215,32 +215,28 @@ function onRenameKeydown(e: KeyboardEvent): void {
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  margin-bottom: 6px;
-  background: transparent;
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease,
-    box-shadow 0.12s ease;
+  margin-bottom: 2px;
 }
 
 .note-item__top {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  padding-right: 2px;
 }
 
-.note-item--active {
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+/* U11 (ADN popover): dòng phẳng — nền / vạch chọn ở ds-row (ds.css). ⚙ chỉ hiện khi rê chuột, đang
+   chọn hoặc focus bàn phím. */
+.note-item :deep(.list-settings) {
+  opacity: 0;
+  transition: opacity 0.12s linear;
 }
 
-.note-item:hover:not(.note-item--active),
-.note-item:focus-within:not(.note-item--active) {
-  border-color: var(--accent-soft-border);
-  background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
+.note-item:hover :deep(.list-settings),
+.note-item:focus-within :deep(.list-settings),
+.note-item--active :deep(.list-settings),
+.note-item :deep(.list-settings:has([aria-expanded='true'])) {
+  opacity: 1;
 }
 
 .note-item__main {
@@ -251,7 +247,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
   align-items: flex-start;
   gap: 2px;
   margin: 0;
-  padding: 8px 10px;
+  padding: 7px 10px 7px 12px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -277,10 +273,15 @@ function onRenameKeydown(e: KeyboardEvent): void {
   word-break: break-word;
 }
 
+/* Kết quả tìm: dòng phẳng, ngăn nhau bằng đường kẻ mảnh (không còn thẻ có viền). */
 .note-item--search-hit {
-  margin-bottom: 6px;
-  border-color: var(--border);
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.note-item--search-hit:last-child {
+  border-bottom: none;
 }
 
 .note-item__search-title {
@@ -324,6 +325,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
 
 .note-item--active .note-item__main {
   color: var(--text-primary);
+  font-weight: 600;
 }
 
 .note-item--active .note-item__main-body--search-path {

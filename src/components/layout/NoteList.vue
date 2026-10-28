@@ -2,8 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import NoteItem from '@/components/notes/NoteItem.vue'
 import MoveNoteModal from '@/components/notes/MoveNoteModal.vue'
-import IconButton from '@/components/ui/IconButton.vue'
-import InlineSearch from '@/components/ui/InlineSearch.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { useFoldersStore } from '@/stores/folders'
@@ -66,6 +65,12 @@ function sortNotesByUpdatedDesc<T extends { updated_at: string }>(list: T[]): T[
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
   )
 }
+
+/** U11: phạm vi hiển thị ở đầu cột. */
+const searching = computed(() => notes.searchQuery.trim().length > 0)
+const activeFolderName = computed(
+  () => folders.folders.find((f) => f.id === folders.activeFolderId)?.name ?? '',
+)
 
 const displayedNotes = computed(() => {
   const folderId = folders.activeFolderId
@@ -187,31 +192,29 @@ async function onMovePick(folderId: string): Promise<void> {
 
 <template>
   <div class="note-list">
-    <!-- U5: tìm ghi chú thu vào nút 🔍 ở đầu cột (thay SearchBar toàn chiều ngang trên header). -->
-    <div class="note-list__head">
-      <InlineSearch
-        compact
-        input-id="bbqone-notes-search"
-        :query="notes.searchQuery"
-        :focus-request="notes.searchFocusRequest"
-        :placeholder="t('search.placeholderNotes')"
-        :input-label="t('search.ariaNotes')"
-        :open-label="t('search.openNotes')"
-        :close-label="t('search.close')"
-        @search="(q) => notes.runSearch(q)"
-        @clear="notes.clearSearch()"
+    <!-- U11: đầu cột ghi rõ phạm vi — "GHI CHÚ · <folder>" hoặc, khi tìm, "KẾT QUẢ · n · mọi thư mục"
+         (ô tìm ở đầu cột Thư mục). -->
+    <SectionHeader
+      v-if="searching"
+      class="note-list__head"
+      :label="t('notes.searchResults')"
+      :meta="notes.searchLoading ? '…' : `${displayedNotes.length} · ${t('notes.scopeAllFolders')}`"
+    />
+    <SectionHeader v-else class="note-list__head" :label="t('notes.header')" :meta="activeFolderName">
+      <button
+        v-if="canAddNote"
+        type="button"
+        class="ds-icon-action ds-icon-action--accent"
+        :aria-label="t('notes.aria.addNote')"
+        :title="t('notes.aria.addNote')"
+        :disabled="busy || folderLocked"
+        @click="openCreateNoteModal"
       >
-        <template #collapsed>
-          <span class="note-list__head-title">{{ t('notes.header') }}</span>
-        </template>
-        <template #suffix>
-          <span v-if="notes.searchLoading" class="note-list__hits">…</span>
-          <span v-else-if="notes.searchQuery.trim()" class="note-list__hits" aria-live="polite">
-            {{ t('notes.searchHits', { n: displayedNotes.length }) }}
-          </span>
-        </template>
-      </InlineSearch>
-    </div>
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+    </SectionHeader>
     <div class="note-list__body">
       <NoteItem
         v-for="n in displayedNotes"
@@ -245,25 +248,6 @@ async function onMovePick(folderId: string): Promise<void> {
       >
         {{ t('notes.noNotes') }}
       </p>
-    </div>
-    <div v-if="canAddNote" class="note-list__foot note-list__foot--add">
-      <IconButton
-        variant="accent"
-        :label="t('notes.aria.addNote')"
-        :disabled="busy || folderLocked"
-        @click="openCreateNoteModal"
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            d="M12 5v14M5 12h14"
-          />
-        </svg>
-      </IconButton>
-      <span class="note-list__foot-label">{{ t('notes.aria.addNote') }}</span>
     </div>
 
     <QuickCreateModal
@@ -306,71 +290,18 @@ async function onMovePick(folderId: string): Promise<void> {
   flex-direction: column;
   min-height: 0;
   border-right: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-panel) 80%, transparent), transparent 180px),
-    var(--bg-primary);
+  background: var(--bg-primary);
 }
 
+/* Cùng hàng với ô tìm ở đầu cột Thư mục (10 px trên, cao 30 px). */
 .note-list__head {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  margin: 8px 8px 4px;
-  /* Nút 🔍 / ✕ 24 px + padding 3 px = đúng chiều cao pill "Folders" (chữ 13 px + padding 7 px). */
-  padding: 3px 4px 3px 10px;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.012em;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
-}
-
-/* Chỉ khi focus ở Ô NHẬP (nút 🔍 / ✕ đã có vòng focus riêng). */
-.note-list__head:has(input:focus-visible) {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--focus-ring);
-}
-
-.note-list__head-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.note-list__hits {
-  flex: 0 0 auto;
-  font-weight: 500;
-  color: var(--text-muted);
-  white-space: nowrap;
+  margin: 10px 4px 6px 0;
 }
 
 .note-list__body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 6px 8px 8px;
-}
-
-.note-list__foot {
-  padding: 10px 10px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
-}
-
-.note-list__foot--add {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 8px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.note-list__foot-label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  padding: 2px 6px 8px;
 }
 </style>

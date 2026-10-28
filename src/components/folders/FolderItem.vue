@@ -117,8 +117,8 @@ function pickAction(
 
 <template>
   <div
-    class="folder-item"
-    :class="{ 'folder-item--active': selected }"
+    class="folder-item ds-row"
+    :class="{ 'folder-item--active ds-row--selected': selected }"
     :title="t('folder.renameHint')"
   >
     <RetroInput
@@ -230,32 +230,28 @@ function pickAction(
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  margin-bottom: 6px;
-  position: relative;
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease,
-    box-shadow 0.12s ease;
+  margin-bottom: 2px;
 }
 
 .folder-item__top {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  padding-right: 2px;
 }
 
-.folder-item--active {
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+/* U11 (ADN popover): dòng phẳng — nền / vạch chọn ở ds-row (ds.css). ⚙ chỉ hiện khi rê chuột, đang
+   chọn hoặc focus bàn phím — bớt nhiễu khi lướt danh sách. */
+.folder-item :deep(.list-settings) {
+  opacity: 0;
+  transition: opacity 0.12s linear;
 }
 
-.folder-item:hover:not(.folder-item--active),
-.folder-item:focus-within:not(.folder-item--active) {
-  border-color: var(--accent-soft-border);
-  background: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
+.folder-item:hover :deep(.list-settings),
+.folder-item:focus-within :deep(.list-settings),
+.folder-item--active :deep(.list-settings),
+.folder-item :deep(.list-settings:has([aria-expanded='true'])) {
+  opacity: 1;
 }
 
 .folder-item__main {
@@ -266,7 +262,7 @@ function pickAction(
   align-items: stretch;
   gap: 2px;
   margin: 0;
-  padding: 8px 10px;
+  padding: 7px 10px 7px 12px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
@@ -279,6 +275,7 @@ function pickAction(
 
 .folder-item--active .folder-item__main {
   color: var(--text-primary);
+  font-weight: 600;
 }
 
 .folder-item__row {

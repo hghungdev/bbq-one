@@ -76,6 +76,7 @@ export const vi: Record<I18nKey, string> = {
   'search.placeholderNotes': 'Tìm ghi chú…',
   'search.placeholderBookmarks': 'Tìm bookmark…',
   'search.placeholderCalendar': 'Tìm sự kiện…',
+  'search.placeholderAllNotes': 'Tìm trong tất cả ghi chú…',
   'search.openNotes': 'Tìm ghi chú (Ctrl+F)',
   'search.openBookmarks': 'Tìm bookmark (Ctrl+F)',
   'search.close': 'Đóng tìm kiếm (Esc)',
@@ -105,7 +106,8 @@ export const vi: Record<I18nKey, string> = {
 
   // ── Notes list ──
   'notes.header': 'Ghi chú',
-  'notes.searchHits': '{n} kết quả',
+  'notes.searchResults': 'Kết quả',
+  'notes.scopeAllFolders': 'mọi thư mục',
   'notes.noNotes': 'Chưa có ghi chú',
   'notes.createFolderFirst': 'Hãy tạo thư mục trước, sau đó thêm ghi chú tại đây.',
   'notes.selectFolderFirst': 'Chọn một thư mục để xem và thêm ghi chú.',
@@ -138,6 +140,8 @@ export const vi: Record<I18nKey, string> = {
   'editor.noBody': 'Chưa có nội dung',
   'editor.addFirstBody': 'Thêm nội dung',
   'editor.bodyLabel': 'Phần nội dung',
+  'editor.addBodyTitle': 'Thêm phần nội dung',
+  'editor.deleteBodyTitle': 'Xóa phần nội dung này',
   'editor.copied': 'Đã sao chép',
   'editor.copyTitle': 'Sao chép nội dung (plain text) vào clipboard',
   'editor.copyAriaLabel': 'Sao chép nội dung body vào clipboard',

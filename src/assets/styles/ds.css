@@ -1,0 +1,159 @@
+/*
+ * U11 — "ADN popover" dùng chung (rút từ bảng Lịch sắp tới — CalendarAgendaChip):
+ * bề mặt phẳng, không hộp lồng hộp; nhãn mục IN HOA nhỏ; hành động là chữ / icon trong suốt;
+ * dòng phẳng, đang chọn = nền nhấn nhạt + vạch nhấn 3 px bên trái.
+ */
+
+/* Nhãn mục: "TODAY · Oct 28" */
+.ds-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.ds-label__meta {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+/* Nút chữ: "Open calendar" */
+.ds-text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s linear, color 0.12s linear;
+}
+
+.ds-text-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+.ds-text-action--muted {
+  color: var(--text-secondary);
+}
+
+.ds-text-action--muted:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.ds-text-action--danger {
+  color: var(--danger);
+}
+
+.ds-text-action--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+}
+
+/* Hành động chính duy nhất của một khu vực: nút đặc màu nhấn. */
+.ds-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s linear, border-color 0.12s linear;
+}
+
+.ds-primary:hover:not(:disabled) {
+  background: var(--color-primary-focus);
+  border-color: var(--color-primary-focus);
+}
+
+/* Icon trong suốt: ＋, ⧉, ‹ ›, 🔍 */
+.ds-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 0;
+  transition: background 0.12s linear, color 0.12s linear;
+}
+
+.ds-icon-action:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+}
+
+.ds-icon-action--accent {
+  color: var(--accent);
+}
+
+.ds-icon-action--accent:hover:not(:disabled) {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.ds-text-action:disabled,
+.ds-icon-action:disabled,
+.ds-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ds-text-action:focus-visible,
+.ds-icon-action:focus-visible,
+.ds-primary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Dòng phẳng trong danh sách */
+.ds-row {
+  position: relative;
+  border-radius: var(--radius-md);
+  background: transparent;
+  transition: background 0.12s linear, box-shadow 0.12s linear;
+}
+
+.ds-row:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.ds-row--selected,
+.ds-row--selected:hover {
+  background: var(--surface-accent-muted);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-text-action,
+  .ds-icon-action,
+  .ds-primary,
+  .ds-row {
+    transition: none;
+  }
+}

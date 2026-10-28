@@ -4,7 +4,8 @@ import DeleteFolderModal from '@/components/folders/DeleteFolderModal.vue'
 import FolderItem from '@/components/folders/FolderItem.vue'
 import SecureFolderModal from '@/components/folders/SecureFolderModal.vue'
 import TagBadge from '@/components/ui/TagBadge.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import InlineSearch from '@/components/ui/InlineSearch.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
@@ -36,6 +37,8 @@ const createFolderOpen = ref(false)
 const newName = ref('')
 const createFolderError = ref<string | null>(null)
 const busy = ref(false)
+/** U11: đang tìm mọi thư mục — folder đang chọn thôi là phạm vi. */
+const searching = computed(() => notes.searchQuery.trim().length > 0)
 
 const secureModal = ref<{
   open: boolean
@@ -165,10 +168,41 @@ function closeCreateFolderModal(): void {
 </script>
 
 <template>
-  <aside class="sidebar">
-    <div class="sidebar__head">
-      {{ t('sidebar.folders') }}
+  <aside class="sidebar" :class="{ 'sidebar--searching': searching }">
+    <!-- U11: tìm ghi chú đặt TRÊN mọi thư mục → đọc là "tìm tất cả" (trước ở đầu cột Ghi chú, dễ hiểu
+         nhầm là chỉ tìm trong folder đang mở). -->
+    <div class="sidebar__search">
+      <InlineSearch
+        persistent
+        input-id="bbqone-notes-search"
+        :query="notes.searchQuery"
+        :focus-request="notes.searchFocusRequest"
+        :placeholder="t('search.placeholderAllNotes')"
+        :input-label="t('search.ariaNotes')"
+        :open-label="t('search.openNotes')"
+        :close-label="t('search.close')"
+        @search="(q) => notes.runSearch(q)"
+        @clear="notes.clearSearch()"
+      >
+        <template #suffix>
+          <span v-if="notes.searchLoading" class="sidebar__search-busy" aria-hidden="true">…</span>
+        </template>
+      </InlineSearch>
     </div>
+    <SectionHeader :label="t('sidebar.folders')" :meta="String(folders.folders.length)">
+      <button
+        type="button"
+        class="ds-icon-action ds-icon-action--accent"
+        :aria-label="t('sidebar.aria.addFolder')"
+        :title="t('sidebar.aria.addFolder')"
+        :disabled="busy"
+        @click="openCreateFolderModal"
+      >
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+    </SectionHeader>
     <div class="sidebar__list">
       <FolderItem
         v-for="f in folders.folders"
@@ -191,9 +225,7 @@ function closeCreateFolderModal(): void {
     </div>
 
     <div v-if="uniqueTags.length" class="sidebar__tags">
-      <div class="sidebar__tag-head">
-        {{ t('sidebar.tags') }}
-      </div>
+      <SectionHeader :label="t('sidebar.tags')" />
       <div class="sidebar__tag-list">
         <TagBadge
           v-for="t in uniqueTags"
@@ -203,26 +235,6 @@ function closeCreateFolderModal(): void {
           @select="notes.setFilterTag"
         />
       </div>
-    </div>
-
-    <div class="sidebar__foot sidebar__foot--add">
-      <IconButton
-        variant="accent"
-        :label="t('sidebar.aria.addFolder')"
-        :disabled="busy"
-        @click="openCreateFolderModal"
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            d="M12 5v14M5 12h14"
-          />
-        </svg>
-      </IconButton>
-      <span class="sidebar__foot-label">{{ t('sidebar.aria.addFolder') }}</span>
     </div>
 
     <QuickCreateModal
@@ -263,72 +275,43 @@ function closeCreateFolderModal(): void {
 .sidebar {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   min-height: 0;
   border-right: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-panel) 84%, transparent), transparent 180px),
-    var(--bg-primary);
+  background: var(--bg-primary);
 }
 
-.sidebar__head {
-  margin: 8px 8px 4px;
-  padding: 7px 10px;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.012em;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+.sidebar__search {
+  padding: 10px 8px 6px;
+}
+
+.sidebar__search-busy {
+  padding-right: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .sidebar__list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 6px 8px 8px;
+  padding: 2px 6px 8px;
 }
 
-.sidebar__foot {
-  padding: 10px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-panel) 68%, transparent);
-}
-
-.sidebar__foot--add {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 8px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.sidebar__foot-label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+/* Đang tìm (mọi thư mục): folder đang chọn không còn là phạm vi → bỏ nổi bật. */
+.sidebar--searching :deep(.ds-row--selected) {
+  background: transparent;
+  box-shadow: none;
 }
 
 .sidebar__tags {
-  margin: 0 8px 8px;
-  padding: 8px;
+  padding: 6px 2px 8px;
   border-top: 1px solid var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
-}
-
-.sidebar__tag-head {
-  margin-bottom: 8px;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.012em;
 }
 
 .sidebar__tag-list {
   display: flex;
   flex-wrap: wrap;
+  padding: 2px 8px 0;
 }
 </style>

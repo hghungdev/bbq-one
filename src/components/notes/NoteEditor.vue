@@ -4,7 +4,7 @@ import StarterKit from '@tiptap/starter-kit'
 import type { Editor } from '@tiptap/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { clearNoteDraft, saveNoteDraft } from '@/services/noteDraft.service'
 import { isRowMissingOnServerError } from '@/utils/syncConflict'
 import { useFoldersStore } from '@/stores/folders'
@@ -322,54 +322,51 @@ onBeforeUnmount(() => {
       <p class="note-editor__empty retro-empty">
         {{ t('editor.noBody') }}
       </p>
-      <RetroButton
-        variant="sm"
-        type="button"
-        class="note-editor__add-first"
-        @click="onAddBody"
-      >
+      <button type="button" class="ds-text-action note-editor__add-first" @click="onAddBody">
         {{ t('editor.addFirstBody') }}
-      </RetroButton>
+      </button>
     </template>
     <template v-else>
-      <div class="note-editor__head">
-        <span class="note-editor__label">{{ t('editor.bodyLabel') }}</span>
-        <div class="note-editor__head-actions">
-          <RetroButton
-            variant="sm"
-            type="button"
-            :disabled="!notesStore.activeNoteId"
-            @click="onAddBody"
+      <!-- U11: tiêu đề mục + icon trong suốt (ADN popover), không còn khung quanh nút. -->
+      <SectionHeader
+        class="note-editor__head"
+        :label="t('editor.bodyLabel')"
+        :meta="String(bodiesForEditor.length)"
+      >
+        <span v-if="copyFeedback" class="note-editor__copied" role="status">{{ t('editor.copied') }}</span>
+        <button
+          type="button"
+          class="ds-icon-action ds-icon-action--accent"
+          :aria-label="t('editor.addBodyTitle')"
+          :title="t('editor.addBodyTitle')"
+          :disabled="!notesStore.activeNoteId"
+          @click="onAddBody"
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="ds-icon-action note-editor__copy"
+          :title="t('editor.copyTitle')"
+          :aria-label="t('editor.copyAriaLabel')"
+          @click="copyBodyToClipboard"
+        >
+          <svg
+            class="note-editor__copy-icon"
+            viewBox="0 0 24 24"
+            width="15"
+            height="15"
+            aria-hidden="true"
           >
-            +
-          </RetroButton>
-          <span
-            v-if="copyFeedback"
-            class="note-editor__copied"
-            role="status"
-          >{{ t('editor.copied') }}</span>
-          <button
-            type="button"
-            class="note-editor__copy"
-            :title="t('editor.copyTitle')"
-            :aria-label="t('editor.copyAriaLabel')"
-            @click="copyBodyToClipboard"
-          >
-            <svg
-              class="note-editor__copy-icon"
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              aria-hidden="true"
-            >
-              <path
-                fill="currentColor"
-                d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+            <path
+              fill="currentColor"
+              d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+            />
+          </svg>
+        </button>
+      </SectionHeader>
 
       <div
         class="note-editor__tabs"
@@ -379,9 +376,9 @@ onBeforeUnmount(() => {
         <div
           v-for="(b, i) in bodiesForEditor"
           :key="b.id"
-          class="note-editor__tab"
+          class="note-editor__tab ds-row"
           :class="{
-            'note-editor__tab--active': notesStore.activeBodyId === b.id,
+            'note-editor__tab--active ds-row--selected': notesStore.activeBodyId === b.id,
           }"
         >
           <button
@@ -393,15 +390,17 @@ onBeforeUnmount(() => {
           >
             {{ bodyListLabel(b, i) }}
           </button>
-          <RetroButton
-            variant="sm"
+          <button
             type="button"
-            class="note-editor__tab-del"
-            aria-label="Xóa body"
+            class="ds-icon-action note-editor__tab-del"
+            :aria-label="t('editor.deleteBodyTitle')"
+            :title="t('editor.deleteBodyTitle')"
             @click="onDeleteBody(b.id, $event)"
           >
-            [×]
-          </RetroButton>
+            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+              <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -430,101 +429,57 @@ onBeforeUnmount(() => {
 .note-editor {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   min-height: 0;
   flex: 1 1 auto;
-  padding: 12px;
-  background:
-    radial-gradient(
-      ellipse 100% 70% at 50% 0%,
-      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
-      transparent 58%
-    ),
-    var(--bg-primary);
+  padding: 10px 12px 12px 6px;
+  background: var(--bg-primary);
 }
 
 .note-editor__empty {
   margin: 0;
-  padding-top: 12px;
+  padding: 14px 0 0 10px;
 }
 
 .note-editor__add-first {
   align-self: flex-start;
+  margin-left: 4px;
 }
 
-.note-editor__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex: 0 0 auto;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+.note-editor__copied {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success);
 }
 
-.note-editor__head-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  margin-left: auto;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
-}
-
-.note-editor__label {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.012em;
-}
-
+/* U11: danh sách section = dòng phẳng (ds-row), × chỉ hiện khi rê chuột / đang chọn. */
 .note-editor__tabs {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   flex: 0 0 auto;
   max-height: min(40vh, 200px);
   overflow-y: auto;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .note-editor__tab {
   display: flex;
-  align-items: stretch;
-  gap: 4px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease;
-}
-
-.note-editor__tab--active {
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
+  align-items: center;
+  gap: 2px;
+  padding-right: 2px;
 }
 
 .note-editor__tab-main {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  padding: 7px 9px;
+  padding: 7px 10px 7px 12px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-family: inherit;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   text-align: left;
   cursor: pointer;
   overflow: hidden;
@@ -547,39 +502,15 @@ onBeforeUnmount(() => {
 }
 
 .note-editor__tab-del {
-  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  opacity: 0;
 }
 
-.note-editor__copied {
-  font-size: var(--font-size-sm);
-  color: var(--success);
-  letter-spacing: 0.06em;
-}
-
-.note-editor__copy {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  color: var(--accent);
-  cursor: pointer;
-  line-height: 0;
-}
-
-.note-editor__copy:hover {
-  border-color: var(--accent);
-  color: var(--text-primary);
-}
-
-.note-editor__copy:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+.note-editor__tab:hover .note-editor__tab-del,
+.note-editor__tab--active .note-editor__tab-del,
+.note-editor__tab-del:focus-visible {
+  opacity: 1;
 }
 
 .note-editor__copy-icon {
@@ -589,18 +520,20 @@ onBeforeUnmount(() => {
 .note-editor__body {
   flex: 1 1 0;
   min-height: 0;
+  margin-left: 6px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
+/* Tấm soạn thảo: một bề mặt duy nhất (bo 16, viền mảnh) — như thân bảng popover. */
 .note-editor__body :deep(.note-editor__prose) {
   outline: none;
   min-height: 120px;
   box-sizing: border-box;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
+  background: var(--bg-panel);
   color: var(--text-primary);
   font-family: inherit;
   font-size: var(--font-size-base);
@@ -623,16 +556,16 @@ onBeforeUnmount(() => {
 }
 
 .note-editor__code {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 10px;
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
+  margin-left: 6px;
+  padding: 4px 0 0;
+  border-top: 1px solid var(--border);
 }
 
 .note-editor__code-head {
-  margin-bottom: 8px;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+  margin: 6px 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
 }
 </style>

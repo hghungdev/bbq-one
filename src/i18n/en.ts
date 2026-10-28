@@ -74,6 +74,7 @@ export const en = {
   'search.placeholderNotes': 'Search notes…',
   'search.placeholderBookmarks': 'Search bookmarks…',
   'search.placeholderCalendar': 'Search events…',
+  'search.placeholderAllNotes': 'Search all notes…',
   'search.openNotes': 'Search notes (Ctrl+F)',
   'search.openBookmarks': 'Search bookmarks (Ctrl+F)',
   'search.close': 'Close search (Esc)',
@@ -103,7 +104,8 @@ export const en = {
 
   // ── Notes list ──
   'notes.header': 'Notes',
-  'notes.searchHits': '{n} result(s)',
+  'notes.searchResults': 'Results',
+  'notes.scopeAllFolders': 'all folders',
   'notes.noNotes': 'No notes yet',
   'notes.createFolderFirst': 'Create a folder first, then add notes here.',
   'notes.selectFolderFirst': 'Select a folder to view and add notes.',
@@ -136,6 +138,8 @@ export const en = {
   'editor.noBody': 'No content yet',
   'editor.addFirstBody': 'Add content',
   'editor.bodyLabel': 'Section',
+  'editor.addBodyTitle': 'Add section',
+  'editor.deleteBodyTitle': 'Delete this section',
   'editor.copied': 'Copied',
   'editor.copyTitle': 'Copy content (plain text) to clipboard',
   'editor.copyAriaLabel': 'Copy body content to clipboard',
