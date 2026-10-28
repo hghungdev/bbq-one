@@ -226,18 +226,20 @@ const appSrc = fs.readFileSync(path.join(ROOT, 'src', 'pages', 'App.vue'), 'utf8
 
 const onMountedBlock = appSrc.match(/onMounted\(async \(\) => \{([\s\S]*?)\n  \}\)/)?.[1] ?? ''
 
+// U12 (đổi có chủ đích — Sir chốt 2026-10-28): quá hạn không còn là hộp thoại tự bật mà là một mục
+// trong chip lịch. Chip là computed theo calendar.events → tự cập nhật sau mỗi lần pull / đăng nhập
+// muộn (đúng mục đích cũ của C7a / C7b: không nhắc trên dữ liệu cache cũ, không bỏ sót khi login chậm).
+const chipSrcC7 = fs.readFileSync(path.join(ROOT, 'src', 'components', 'calendar', 'CalendarAgendaChip.vue'), 'utf8')
 check(
-  'C7a refreshStoresFromNetwork().then(() => maybeShowOverdueReminder()) trong onMounted',
-  /refreshStoresFromNetwork\(\)\s*\.\s*then\s*\([\s\S]*maybeShowOverdueReminder\s*\(\s*\)/.test(
-    onMountedBlock,
-  ),
-  'maybeShowOverdueReminder chạy trên cache hydrate (có thể stale) trước khi pull xong',
+  'C7a quá hạn tính lại theo calendar.events (computed trong chip), không tự bật hộp thoại trên cache cũ',
+  !appSrc.includes('maybeShowOverdueReminder') && /computed\([\s\S]{0,200}listOverdueIncompleteEvents\(calendar\.events\)/.test(chipSrcC7),
+  'còn hộp thoại tự bật / chip không đọc store',
 )
 
 check(
-  'C7b watch(isAuthenticated) re-check maybeShowOverdueReminder',
-  /watch\s*\(\s*isAuthenticated[\s\S]*maybeShowOverdueReminder\s*\(\s*\)/.test(appSrc),
-  'auth.init >1.5s → isAuthenticated=false lúc mount → reminder skip cả phiên',
+  'C7b đăng nhập muộn vẫn thấy quá hạn (chip phụ thuộc store, không phụ thuộc lúc mount)',
+  !/isOverdueReminderDismissed/.test(appSrc) && chipSrcC7.includes('calendar.events'),
+  'còn phụ thuộc cờ / thời điểm mount',
 )
 
 // ═════════════════════════════════════════════════════════════════════════════
