@@ -294,13 +294,13 @@ if (agendaMod) {
       chipSrc.includes('role="dialog"'),
     'thiếu chip / popover',
   )
+  // U10 (đổi có chủ đích — yêu cầu của Sir): bỏ nút "Ẩn" ở mục Ngày mai.
   check(
-    'U6.9 Esc + bấm ra ngoài đóng popover; "Ẩn" dùng dismissUpcomingBannerForDate; emit open-calendar(dateKey)',
+    'U6.9 Esc + bấm ra ngoài đóng popover; emit open-calendar(dateKey)',
     chipSrc.includes("'Escape'") &&
       /pointerdown/.test(chipSrc) &&
-      chipSrc.includes('dismissUpcomingBannerForDate(') &&
       /emit\('open-calendar',\s*\w/.test(chipSrc),
-    'thiếu đóng / ẩn / mở lịch',
+    'thiếu đóng / mở lịch',
   )
   check(
     'U6.10 không chạy chữ, không tự ẩn theo giờ',
@@ -339,8 +339,6 @@ if (agendaMod) {
     'calendar.agenda.chipAria',
     'calendar.agenda.panelTitle',
     'calendar.agenda.openDay',
-    'calendar.agenda.dismissTomorrow',
-    'calendar.agenda.dismissTomorrowHint',
     'calendar.agenda.listSeparator',
   ]
   const missing = agendaKeys.filter((k) => !viSrc.includes(`'${k}'`) || !enSrc.includes(`'${k}'`))
