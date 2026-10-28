@@ -31,9 +31,10 @@ const same = (a, b) => {
 const read = (...p) => (bytes(...p) ?? '').toString('utf8')
 
 const sizes = [16, 32, 48, 128]
-const diff = sizes.filter((n) => !same(['public', `icon-${n}.png`], ['design', 'transparent', `icon${n}.png`]))
+// U25 (đổi có chủ đích): bản transparent CẮT SÁT viền (design/transparent-tight, sinh từ design/transparent/icon1024).
+const diff = sizes.filter((n) => !same(['public', `icon-${n}.png`], ['design', 'transparent-tight', `icon${n}.png`]))
 check(
-  'U23.1 icon Chrome (public/icon-16/32/48/128.png) = bản transparent',
+  'U23.1 icon Chrome (public/icon-16/32/48/128.png) = bản transparent (cắt sát — U25)',
   diff.length === 0,
   `khác: ${diff.join(', ')}`,
 )
@@ -44,8 +45,8 @@ check(
   'manifest đổi',
 )
 check(
-  'U23.3 logo app src/assets/brand/bbqone-logo.png = design/transparent/icon64.png',
-  same(['src', 'assets', 'brand', 'bbqone-logo.png'], ['design', 'transparent', 'icon64.png']),
+  'U23.3 logo app src/assets/brand/bbqone-logo.png = design/transparent-tight/icon64.png (U25)',
+  same(['src', 'assets', 'brand', 'bbqone-logo.png'], ['design', 'transparent-tight', 'icon64.png']),
   'chưa có logo',
 )
 
