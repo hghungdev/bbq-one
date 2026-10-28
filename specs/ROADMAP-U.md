@@ -291,3 +291,15 @@ Chromium: thanh dọc 3 mục, ⚙ / ⇥ ở đáy, Settings › Google Calendar
 
 54 harness PASS. Gộp vào `main` theo yêu cầu Sir (fast-forward — `main` là tổ tiên trực tiếp). Không gộp
 `20260418_backup` (nhánh sao lưu tháng 4, rẽ khỏi `main`, còn code từ điển đã gỡ).
+
+## Đợt 10 (2026-10-28) — G1 chạy thật + G1b sổ tay làm lại
+
+**G1 đã chạy thật:** Sir chạy `016_drop_bookmark_crypto.sql` + `017_calendar_feeds.sql` (SQL Editor), deploy
+`calendar-feed` bằng **Dashboard › Edge Functions › Via Editor** (dán 1 file gộp), tắt **"Verify JWT with legacy
+secret"** ở tab Settings của function.
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra |
+|---|---|---|---|
+| G1b sổ tay làm lại (Dashboard / CLI / project mới / server khác) + `npm run calendar-feed:bundle` | `cc97306` → (commit này) | ✅ 13/13 (RED 12) | file gộp trùng code đã deploy; chạy thử với Supabase / Deno giả: 404 / 200 `text/calendar` |
+
+Sổ tay: `supabase/functions/calendar-feed/README.md`. 55 harness PASS.
