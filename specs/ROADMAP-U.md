@@ -187,3 +187,16 @@ dấu bao nhiêu mục, bấm khi chưa chọn gì thì chỉ đóng hộp tho�
 
 **Theo sau (chưa làm, cần Sir quyết):** thêm hành động "Dời sang hôm nay" cho mục chưa làm xong (kiểu
 Todoist) — đụng giới hạn 3 sự kiện / ngày nên cần thiết kế riêng.
+
+## Trạng thái đợt 2 (2026-10-28)
+
+| Mục | Commit (docs → feat/fix) | Test | Kiểm tra trên Chromium (extension thật) |
+|---|---|---|---|
+| U4–U6 | `798d920` → `7320254` | ✅ 31/31 (RED 25 trên `ee9d1e5`) | bề rộng 800 px ở mọi tab / khi tìm; header 205 → 63 px; "trading in" giữ dấu cách; Ctrl+F đúng tab; chip → bảng → Esc / bấm ngoài; mở ngày mai nhảy đúng ô; dark mode |
+| U8 | `9499476` → `6c1cbbe` | ✅ 6/6 (RED 5) | Settings không còn mục Múi giờ |
+| U7 | `6a50ad0` → `6c61355` | ✅ 10/10 (RED 8) | chọn tất cả / một phần / Ctrl+A / Shift 1–4 / cả ngày → xác nhận 5 mục is_done; dark mode |
+| C11 | `a9397af` → `06bb98d` | ✅ 8/8 (RED 8) | lỗi tìm thấy khi kiểm U7 — storage không còn `{0:…}`; cache hỏng cũ + offline vẫn hiện lịch / folder |
+| U9 | `b90502c` → `44f5046` + bỏ chữ | ✅ 4/4 | cờ chữ nhật, vòng chọn màu nhấn; light / dark |
+
+Đổi assertion có chủ đích (ghi trong spec từng mục): U2.1, U2.3–U2.5 (U5), U1.3 (U8), U9.4.
+Chờ Sir verify tay theo mục "Nghiệm thu" của từng spec.
