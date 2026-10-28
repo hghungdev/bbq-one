@@ -280,3 +280,14 @@ Chờ Sir quyết: (a) bỏ nút "Hủy" ở hộp nhập liệu (giữ ✕ + 1 
 **Gộp U20 (2026-10-28, theo yêu cầu Sir — tổng duyệt trước release):** `claude/ui-nav-rail` → nhánh chính bằng
 merge commit `f810bf0` (không xung đột; i18n tự gộp). Bản gộp: 51 harness PASS, `vue-tsc` sạch, build OK;
 Chromium: thanh dọc 3 mục, ⚙ / ⇥ ở đáy, Settings › Google Calendar chạy đủ luồng. `claude/ui-nav-rail` giữ làm mốc.
+
+## Đợt 9 (2026-10-28) — U21, S3b, R1 2.0.0 → `main`
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra |
+|---|---|---|---|
+| U21 ☀ ☁ phẳng + chip "Ngày mai 3" | `0ca93bb` → `db4410d` | ✅ 4/4 (RED 4) | header chỉ còn 2 icon phẳng; chip đủ chữ |
+| S3b tạm ẩn Mã hóa tài khoản (S3 hoãn) | `3f1a033` → `8413b98` | ✅ 5/5 (RED 4) | Settings: Ngôn ngữ / Mật khẩu / Google Calendar |
+| R1 phát hành 2.0.0 + privacy policy | `25846a1` → `f3be3ab` | ✅ 5/5 (RED 5) | "BBQOne v2.0.0"; privacy policy có mục Google Calendar |
+
+54 harness PASS. Gộp vào `main` theo yêu cầu Sir (fast-forward — `main` là tổ tiên trực tiếp). Không gộp
+`20260418_backup` (nhánh sao lưu tháng 4, rẽ khỏi `main`, còn code từ điển đã gỡ).
