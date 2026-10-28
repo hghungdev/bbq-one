@@ -150,3 +150,25 @@ export function overduePanelRows(
     return item.title === '' ? [] : [{ ...item, dateKey: e.event_date }]
   })
 }
+
+/**
+ * U18: chip header hiện bao nhiêu tên TRỌN VẸN thì vừa `available` px — còn lại gom thành "+n"
+ * (cách Gmail hiện người nhận). Chỉ chừa chỗ cho "+n" khi thật sự có tên bị ẩn. Ít nhất 1: tên đầu dài
+ * hơn cả chỗ trống thì để CSS cắt riêng nó ("…"), vẫn kèm "+n".
+ */
+export function fitTitleCount(
+  widths: number[],
+  available: number,
+  sepWidth: number,
+  moreWidth: (hidden: number) => number,
+): number {
+  const n = widths.length
+  if (n === 0) return 0
+  for (let k = n; k >= 1; k--) {
+    let need = sepWidth * (k - 1)
+    for (let i = 0; i < k; i++) need += widths[i]
+    if (k < n) need += moreWidth(n - k)
+    if (need <= available) return k
+  }
+  return 1
+}

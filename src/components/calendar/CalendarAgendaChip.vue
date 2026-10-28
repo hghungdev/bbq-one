@@ -5,7 +5,14 @@
   import { listOverdueIncompleteEvents } from '@/services/calendarOverdueReminder.service'
   import { useLangStore } from '@/stores/uiLang'
   import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
-  import { agendaChip, buildAgenda, overduePanelRows, type AgendaDay, type AgendaItem } from '@/utils/calendarAgenda'
+  import {
+    agendaChip,
+    buildAgenda,
+    fitTitleCount,
+    overduePanelRows,
+    type AgendaDay,
+    type AgendaItem,
+  } from '@/utils/calendarAgenda'
   import AppIcon from '@/components/ui/AppIcon.vue'
 
   /**
@@ -77,12 +84,85 @@
     if (chip.value.tone === 'overdue') return t('calendar.agenda.overdueCount', { n: chip.value.overdueCount })
     return chip.value.titles.join(separator.value)
   })
+
   /** Đoạn "· 5 quá hạn" cạnh chữ chính (khi chữ chính là hôm nay / ngày mai). */
   const overdueShort = computed(() =>
     chip.value && chip.value.tone !== 'overdue' && chip.value.overdueCount > 0
       ? t('calendar.agenda.overdueShort', { n: chip.value.overdueCount })
       : '',
   )
+
+  /**
+   * U18: chỉ vẽ các tên TRỌN VẸN vừa chỗ, còn lại "+n" — trước đây nối hết rồi để CSS cắt giữa chữ
+   * ("HSBC T1279, OT -…"). null = chưa đo → vẽ hết (lần đầu), đo xong mới rút.
+   */
+  const fitCount = ref<number | null>(null)
+  const titlesRef = ref<HTMLElement | null>(null)
+  const plusRef = ref<HTMLElement | null>(null)
+  const listTitles = computed(() => (chip.value && chip.value.tone !== 'overdue' ? chip.value.titles : []))
+  const shownCount = computed(() => Math.min(fitCount.value ?? listTitles.value.length, listTitles.value.length))
+  const hiddenCount = computed(() => listTitles.value.length - shownCount.value)
+  const shownTitles = computed(() =>
+    chip.value?.tone === 'overdue'
+      ? chipTitles.value
+      : listTitles.value.slice(0, shownCount.value).join(separator.value),
+  )
+  /** Lề ngang của viên "+n" (padding 0 6px). */
+  const PLUS_PAD_X = 12
+
+  let measureCtx: CanvasRenderingContext2D | null = null
+  function textWidth(text: string, el: Element): number {
+    measureCtx ??= document.createElement('canvas').getContext('2d')
+    if (!measureCtx) return 0
+    const cs = getComputedStyle(el)
+    measureCtx.font = cs.font
+    if ('letterSpacing' in measureCtx) measureCtx.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing
+    return measureCtx.measureText(text).width
+  }
+
+  /** Chỗ trống thật = bề rộng vùng giữa header − phần cố định của chip (chấm, nhãn, "Mai 3", ⌄, lề). */
+  function measureTitles(): void {
+    const c = chip.value
+    const titlesEl = titlesRef.value
+    const trigger = triggerRef.value
+    const mid = rootRef.value?.parentElement
+    if (!c || c.tone === 'overdue' || !titlesEl || !trigger || !mid) return
+    const gap = parseFloat(getComputedStyle(trigger).columnGap) || 0
+    const plusOuter = plusRef.value ? plusRef.value.getBoundingClientRect().width + gap : 0
+    const fixed = trigger.getBoundingClientRect().width - titlesEl.getBoundingClientRect().width - plusOuter
+    const available = mid.clientWidth - fixed - 2
+    const widths = c.titles.map((title) => Math.ceil(textWidth(title, titlesEl)))
+    const sep = textWidth(separator.value, titlesEl)
+    const more = (n: number): number => Math.ceil(textWidth(`+${n}`, titlesEl) + PLUS_PAD_X + gap)
+    fitCount.value = fitTitleCount(widths, available, sep, more)
+  }
+
+  function scheduleMeasure(): void {
+    void nextTick(measureTitles)
+  }
+
+  let midObserver: ResizeObserver | null = null
+  watch(
+    rootRef,
+    (el) => {
+      midObserver?.disconnect()
+      midObserver = null
+      const mid = el?.parentElement
+      if (!mid || typeof ResizeObserver === 'undefined') return
+      midObserver = new ResizeObserver(scheduleMeasure)
+      midObserver.observe(mid)
+    },
+    { flush: 'post' },
+  )
+  watch(
+    () => [listTitles.value.join('\u0000'), separator.value, chipLabel.value, overdueShort.value, chip.value?.tomorrowCount],
+    () => {
+      fitCount.value = null
+      scheduleMeasure()
+    },
+    { flush: 'post' },
+  )
+  void document.fonts?.ready.then(scheduleMeasure)
 
   /** Ngày ngắn cho dòng quá hạn: 20/10 · Oct 20. */
   function shortDate(dateKey: string): string {
@@ -149,6 +229,7 @@
   })
 
   onBeforeUnmount(() => {
+    midObserver?.disconnect()
     document.removeEventListener('pointerdown', onDocPointerDown, true)
   })
 
@@ -200,7 +281,8 @@
     >
       <span class="agenda-chip__dot" :class="`agenda-chip__dot--${chip.tone}`" aria-hidden="true" />
       <span class="agenda-chip__label">{{ chipLabel }}</span>
-      <span class="agenda-chip__titles">{{ chipTitles }}</span>
+      <span ref="titlesRef" class="agenda-chip__titles">{{ shownTitles }}</span>
+      <span v-if="hiddenCount > 0" ref="plusRef" class="agenda-chip__plus" aria-hidden="true">+{{ hiddenCount }}</span>
       <span v-if="overdueShort" class="agenda-chip__more agenda-chip__more--overdue">
         <span class="agenda-chip__dot agenda-chip__dot--overdue" aria-hidden="true" />
         {{ overdueShort }}
@@ -428,13 +510,25 @@
     white-space: nowrap;
   }
 
+  /* U18: ôm sát chữ (không giãn) để "+n" đứng ngay sau tên cuối. */
   .agenda-chip__titles {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text-secondary);
+  }
+
+  .agenda-chip__plus {
+    flex: 0 0 auto;
+    padding: 0 6px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    line-height: 18px;
+    white-space: nowrap;
   }
 
   .agenda-chip__more {
