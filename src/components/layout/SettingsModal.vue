@@ -23,6 +23,12 @@ const { t } = langStore
 
 const extensionVersion = getExtensionVersion()
 
+/** U9: tên ngôn ngữ luôn viết theo chính ngôn ngữ đó (ai cũng tìm được ngôn ngữ của mình). */
+const LANG_OPTIONS = [
+  { code: 'en', name: 'English', labelKey: 'settings.langEN' },
+  { code: 'vi', name: 'Tiếng Việt', labelKey: 'settings.langVI' },
+] as const
+
 const bmPinOld = ref('')
 const bmPinNew = ref('')
 const bmPinConfirm = ref('')
@@ -262,29 +268,22 @@ onUnmounted(() => {
         <!-- Language selection -->
         <SettingsAccordionSection :title="t('settings.language')" :default-open="true">
           <p class="settings-hint">{{ t('settings.languageDesc') }}</p>
-          <div class="settings-row settings-lang-row">
-            <RetroButton
-              variant="sm"
+          <!-- U9: cờ chữ nhật + tên ngôn ngữ (viết theo chính ngôn ngữ đó), không bọc trong nút pill. -->
+          <div class="settings-row settings-lang-row" role="radiogroup" :aria-label="t('settings.language')">
+            <button
+              v-for="opt in LANG_OPTIONS"
+              :key="opt.code"
               type="button"
-              class="settings-lang-btn"
-              :disabled="langStore.lang === 'en'"
-              :aria-label="t('settings.langEN')"
-              :aria-current="langStore.lang === 'en' ? 'true' : undefined"
-              @click="langStore.setLang('en')"
+              role="radio"
+              class="settings-lang-option"
+              :class="{ 'settings-lang-option--active': langStore.lang === opt.code }"
+              :aria-checked="langStore.lang === opt.code"
+              :aria-label="t(opt.labelKey)"
+              @click="langStore.setLang(opt.code)"
             >
-              <LangFlagIcon locale="en" />
-            </RetroButton>
-            <RetroButton
-              variant="sm"
-              type="button"
-              class="settings-lang-btn"
-              :disabled="langStore.lang === 'vi'"
-              :aria-label="t('settings.langVI')"
-              :aria-current="langStore.lang === 'vi' ? 'true' : undefined"
-              @click="langStore.setLang('vi')"
-            >
-              <LangFlagIcon locale="vi" />
-            </RetroButton>
+              <span class="settings-lang-flag"><LangFlagIcon :locale="opt.code" /></span>
+              <span class="settings-lang-name">{{ opt.name }}</span>
+            </button>
           </div>
         </SettingsAccordionSection>
 
@@ -784,20 +783,63 @@ onUnmounted(() => {
 }
 
 .settings-lang-row {
-  gap: 8px;
+  gap: 14px;
 }
 
-.settings-lang-row :deep(.settings-lang-btn) {
-  width: 48px;
-  min-width: 48px;
-  padding: 6px;
+.settings-lang-option {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
 }
 
-.settings-lang-row :deep(.settings-lang-btn[aria-current='true']) {
-  opacity: 1;
+.settings-lang-flag {
+  display: inline-flex;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  transition:
+    border-color 0.12s linear,
+    transform 0.12s ease;
+}
+
+.settings-lang-option:hover .settings-lang-flag {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.settings-lang-option--active .settings-lang-flag,
+.settings-lang-option--active:hover .settings-lang-flag {
   border-color: var(--accent);
-  background: var(--surface-accent-muted);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+}
+
+.settings-lang-name {
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+}
+
+.settings-lang-option--active .settings-lang-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.settings-lang-option:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-lang-flag {
+    transition: none;
+  }
 }
 
 </style>

@@ -41,11 +41,12 @@ defineProps<{
   line-height: 0;
 }
 
+/* U9: cờ hình chữ nhật (góc 2 px) — viền mảnh để sọc trắng không lẫn vào nền sáng. */
 .lang-flag-svg {
   display: block;
-  width: 32px;
-  height: calc(32px * 30 / 57);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 1px var(--panel-ring);
+  width: 40px;
+  height: calc(40px * 30 / 57);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent);
 }
 </style>
