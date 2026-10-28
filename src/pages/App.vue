@@ -36,6 +36,7 @@
   import IconButton from '@/components/ui/IconButton.vue'
   import AccountMenu from '@/components/layout/AccountMenu.vue'
   import brandLogo from '@/assets/brand/bbqone-logo.png'
+  import brandLogo32 from '@/assets/brand/bbqone-logo-32.png'
   import {
     hasPendingSyncWork,
     initAutoSyncOnNetworkRestore,
@@ -400,6 +401,9 @@
     }
   }
 
+  /** U26: logo đúng cỡ từng mật độ màn hình — 1x không để trình duyệt tự thu 64 → 32 px (nhòe). */
+  const brandLogoSrcset = `${brandLogo32} 1x, ${brandLogo} 2x`
+
   /** Anonymous: chưa đăng nhập */
   const isAnonymous = computed(() => !isAuthenticated.value)
   /** U22: email cho avatar / menu tài khoản — null khi phiên offline "mềm" chưa có user. */
@@ -687,7 +691,20 @@
           <AppIcon :name="tab.icon" :size="20" />
         </button>
       </div>
-      <!-- U22 / U24: ⚙ và tài khoản lên header (kiểu Gmail) — thanh dọc chỉ để các mục. -->
+      <!-- U22 / U24: ⚙ và tài khoản ở header (kiểu Gmail). U26: ☀ giao diện + ☁ đồng bộ ở đáy thanh dọc. -->
+      <div class="shell__rail-bottom">
+        <ThemeModeToggle />
+        <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
+        <CloudSyncStatusBadge
+          v-if="!isAnonymous"
+          :variant="syncBadgeVariant"
+          :label="syncBadgeTitle"
+          :disabled="syncBusy"
+          @click="onSync"
+        />
+        <!-- Local pending badge: chỉ hiện khi anonymous -->
+        <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
+      </div>
     </nav>
 
     <Transition name="shell-drawer">
@@ -712,7 +729,7 @@
               <AppIcon name="menu" :size="20" />
             </button>
             <span class="shell__brand">
-              <img class="shell__brand-logo" :src="brandLogo" alt="" width="32" height="32" />
+              <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" />
               <span class="shell__brand-name">BBQOne</span>
             </span>
           </div>
@@ -738,7 +755,7 @@
         <div class="shell__header-row shell__header-row--top">
           <div class="shell__header-left">
             <span class="shell__brand">
-              <img class="shell__brand-logo" :src="brandLogo" alt="" width="32" height="32" />
+              <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" />
               <span class="shell__brand-name">BBQOne</span>
             </span>
           </div>
@@ -751,17 +768,6 @@
             />
           </div>
           <div class="shell__header-right">
-            <ThemeModeToggle class="shell__theme-toggle" />
-            <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
-            <CloudSyncStatusBadge
-              v-if="!isAnonymous"
-              :variant="syncBadgeVariant"
-              :label="syncBadgeTitle"
-              :disabled="syncBusy"
-              @click="onSync"
-            />
-            <!-- Local pending badge: chỉ hiện khi anonymous -->
-            <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
             <!-- U24: ⚙ ngay trước tài khoản, như Gmail. -->
             <IconButton :label="t('app.aria.settings')" @click="showSettings = true">
               <AppIcon name="settings" :size="17" />
@@ -952,6 +958,25 @@
     margin-top: 10px;
   }
 
+  /* U26: ☀ ☁ ở đáy thanh — cỡ như mục thanh dọc (component giữ nguyên nhãn / màu trạng thái). */
+  .shell__rail-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .shell__rail-bottom :deep(button) {
+    width: 40px;
+    height: 36px;
+  }
+
+  .shell__rail-bottom :deep(svg) {
+    width: 20px;
+    height: 20px;
+  }
+
   .shell__rail-btn {
     display: inline-flex;
     align-items: center;
@@ -1102,6 +1127,8 @@
     flex: 0 0 auto;
     width: 32px;
     height: 32px;
+    /* U26: viền tóc theo hình — giao diện sáng, dải giấy trắng của logo không còn lẫn vào nền. */
+    filter: drop-shadow(0 0 0.6px var(--brand-logo-edge));
   }
 
   .shell__brand-name {
@@ -1118,10 +1145,6 @@
     justify-content: flex-end;
     flex: 1 1 32px;
     min-width: 0;
-  }
-
-  .shell__theme-toggle {
-    flex-shrink: 0;
   }
 
   .shell__error {

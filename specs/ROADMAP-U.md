@@ -325,3 +325,8 @@ ngang / 76–81 % dọc khung → `scripts/make-brand-icons.py` cắt sát viề
 → `public/icon-*` + logo header; logo header 28 → 32 px. Test giải mã PNG thật (≥ 94 % ngang). Đổi assertion có chủ
 đích: U23.1, U23.3, U23.4, U23.5. 59 harness PASS.
 
+**U26 (Sir thử bản `346782f`):** ☀ ☁ xuống đáy thanh dọc (header chỉ ⚙ · tài khoản); logo header "vỡ" do dải giấy
+trắng trùng nền sáng + ảnh 64 → 32 tự thu ở màn 1x → viền tóc `--brand-logo-edge` (chỉ giao diện sáng) + `srcset`
+32 / 64; icon Chrome cắt bớt 50 % phần ngang dư (16 × 14 → lấp ~94 % dọc), logo header giữ dáng. Đổi assertion có chủ
+đích: U22.1, U22.2, U24.1, U24.4, U24.5, U23.3, U23.4, U25.1, U25.2. 60 harness PASS.
+

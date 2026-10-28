@@ -101,6 +101,9 @@
   /* U4: popup Chrome co giãn theo nội dung (tối đa 800 × 600) — cố định để chuyển tab / gõ tìm
      không làm popup đổi bề rộng. */
   --popup-width: 800px;
+
+  /* U26: viền tóc quanh logo header — sáng: dải giấy trắng của logo cần mép; tối: không cần. */
+  --brand-logo-edge: rgba(15, 23, 42, 0.42);
 }
 
 *,
@@ -189,6 +192,8 @@ html[data-theme='light'] {
 /* Dark UI — charcoal sâu hơn; accent xanh vừa (không ice-blue nhạt kiểu light) */
 html[data-theme='dark'] {
   color-scheme: dark;
+
+  --brand-logo-edge: transparent;
 
   /* Mid blue chuyên nghiệp trên nền đen — tránh #7dc4ff (quá nhạt / “light-mode”) */
   --color-primary: #3b82f6;

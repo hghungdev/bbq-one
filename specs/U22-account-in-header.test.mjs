@@ -67,7 +67,10 @@ const headerRight = (/<div class="shell__header-right">[\s\S]*?<\/header>/.exec(
 check(
   'U22.1 thanh dọc + bảng mở rộng: không 👤 / ⇥ / onGoLogin / onLogout (⚙ lên header — U24)',
   rail !== '' && drawer !== '' &&
-    !/name="user"|name="log-out"|onGoLogin|onLogout/.test(rail) &&
+    // U26 (đổi có chủ đích): ☁ chờ đồng bộ xuống đáy thanh — bấm nó mời đăng nhập (@sign-in="onGoLogin", có từ
+    // trước); không còn NÚT đăng nhập / xuất nào trong thanh.
+    !/name="user"|name="log-out"|onLogout/.test(rail) &&
+    !/onGoLogin/.test(rail.replace('<SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />', '')) &&
     !/name="user"|name="log-out"|onGoLogin|onLogout/.test(drawer),
   'thanh dọc / bảng mở rộng còn đăng nhập / xuất',
 )

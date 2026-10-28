@@ -34,6 +34,8 @@ Nguồn: `design/transparent-tight/icon{16,32,48,128}.png` (Chrome) + `logo{32,6
 
 ## Đổi assertion cũ có chủ đích
 
+- **U22.1** — thanh dọc được có `onGoLogin` duy nhất qua `<SyncStatusBadge @sign-in>` (bấm ☁ chờ đồng bộ mời đăng
+  nhập — hành vi có từ trước); vẫn không có nút 👤 / ⇥.
 - **U22.2, U24.4** — thứ tự header: trước ☀ → ☁ → (⚙) → tài khoản; nay header chỉ ⚙ → tài khoản, ☀ ☁ ở đáy thanh.
 - **U24.1, U24.5** — trước: thanh dọc không có khối đáy / bỏ CSS `.shell__rail-bottom`; nay khối đáy chứa ☀ ☁ (vẫn
   không có ⚙). Bảng ☰ vẫn không khối đáy.
