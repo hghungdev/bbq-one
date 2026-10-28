@@ -361,8 +361,9 @@ onUnmounted(() => {
                 :disabled="!gcalFeed.enabled"
                 @click="onGcalCopy"
               >
-                <AppIcon v-if="gcalCopied" name="check" />
-                <AppIcon v-else name="copy" />
+                <!-- Cùng icon + cỡ với nút sao chép section bên Ghi chú (NoteEditor). -->
+                <AppIcon v-if="gcalCopied" name="check" :size="15" />
+                <AppIcon v-else name="copy" :size="15" />
               </button>
             </div>
             <p v-if="!gcalFeed.enabled" class="settings-hint settings-hint--danger">{{ t('settings.gcal.disabledHint') }}</p>
