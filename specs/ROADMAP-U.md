@@ -250,3 +250,14 @@ Xóa ở hộp xác nhận) và liên kết điều hướng = chữ — xem `sp
 `claude/ui-adn-redesign` → `claude/dazzling-wright-m0fqb2` bằng fast-forward (nhánh chính vẫn ở `0ef22ee`,
 không có commit riêng → không xung đột, lịch sử giữ nguyên từng commit docs/feat). Từ đây làm tiếp trên
 `claude/dazzling-wright-m0fqb2`; `claude/ui-adn-redesign` giữ lại làm mốc, không xóa.
+
+## Đợt 7 (2026-10-28) — U17, U18 (nhánh `claude/dazzling-wright-m0fqb2`, sau khi gộp)
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra trên Chromium |
+|---|---|---|---|
+| U17 icon 👤 "Đăng nhập" (⇤ trông như ⇥) + bấm tên sự kiện = đánh dấu xong | `da06998` → `97f56b1` | ✅ 5/5 (RED 3) | bấm "HSBC" → is_done đổi, không mở Sửa; ✎ → Sửa |
+| U18 chip hiện tên trọn vẹn + "+n" (hết "OT -…") | `c5a380b` → `eebb327` | ✅ 9/9 (RED 7) | 800 px: "HSBC T1279 +1"; tên ngắn: "VIB, UOB"; tên đầu rất dài: "…" + "+1" |
+
+Đổi assertion có chủ đích: U15.T1 + U15.M5 (log-in → user). 48 harness PASS.
+Chờ Sir quyết: (a) bỏ nút "Hủy" ở hộp nhập liệu (giữ ✕ + 1 nút chính); (b) thanh điều hướng dọc
+(navigation rail) thay 3 tab trên header.
