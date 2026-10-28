@@ -1,6 +1,5 @@
 import { supabase } from './supabase'
 import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
-import { fetchBookmarkCryptoRow } from '@/services/bookmarkCryptoKeys.service'
 import { bookmarksService } from './bookmarks.service'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
 import {
@@ -8,7 +7,6 @@ import {
   hashBookmarkTree,
   setPersistedBookmarkTreeHash,
 } from '@/utils/bookmarkFingerprint'
-import { getBookmarkCryptoKeyFromSession } from '@/utils/bookmarkSessionKey'
 
 /** Gom nhiều sự kiện bookmark liên tiếp (import / restore) thành một lần backup. */
 const DEBOUNCE_MS = 4000
@@ -38,16 +36,6 @@ async function runBookmarkAutoBackup(): Promise<void> {
       return
     }
     if (!session) return
-
-    const cryptoRow = await fetchBookmarkCryptoRow()
-
-    if (cryptoRow) {
-      // PIN đang được bật → cần session key để encrypt backup.
-      // Nếu chưa unlock (user chưa nhập PIN trong phiên này) → bỏ qua, không thể encrypt.
-      const key = await getBookmarkCryptoKeyFromSession()
-      if (!key) return
-    }
-    // Không có PIN (cryptoRow = null) → saveBackup sẽ lưu plaintext, không cần key.
 
     const tree = await bookmarksService.getFromBrowser()
     const fp = await hashBookmarkTree(tree)

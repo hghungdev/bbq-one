@@ -152,7 +152,7 @@ verify tay đợt này. S3/S4/S5 giữ nguyên lộ trình.
 | Phase | Nội dung | Chặn bởi |
 |---|---|---|
 | **S2C2** | Backfill nền (lô 25, popup/dashboard, resume + progress) + banner recovery-thiếu + đổi passphrase + regenerate recovery key + nút "Khóa ngay" | S2C1 GREEN |
-| **S3** | `folders.name`, calendar title/description (**DROP 2 CHECK** — tên thật trên DB live: `calendar_events_title_check` [013 re-create] + `calendar_events_description_check` [012]), gộp bookmark PIN về DEK chung | S2 |
+| **S3** | `folders.name`, calendar title/description (**DROP 2 CHECK** — tên thật trên DB live: `calendar_events_title_check` [013 re-create] + `calendar_events_description_check` [012]), mã hóa bookmark backup bằng DEK chung (Bookmark PIN đã gỡ ở **S3a** — `specs/S3a-remove-bookmark-pin.spec.md`) | S2 |
 | **S4** | Argon2id — hoặc tối thiểu PBKDF2 310k → 600k | Benchmark MV3 SW |
 | **S5** | Blind index cho search/tag (gộp **N15** từ `ROADMAP-N.md`) | S3 |
 | **S6** | *(tùy chọn)* Hợp nhất 1 password kiểu Bitwarden | S2 + recovery đã chạy production |

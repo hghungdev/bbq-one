@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabase'
 import { bootstrapBookmarkBaseline } from '@/services/bookmarkAutoBackup.service'
-import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { clearPersistedBookmarkTreeHash } from '@/utils/bookmarkFingerprint'
 import { authService } from '@/services/auth.service'
 import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
@@ -74,7 +73,6 @@ export const useAuthStore = defineStore('auth', () => {
           }
           if (!newSession) {
             void clearPersistedBookmarkTreeHash()
-            void useBookmarkPinStore().lock()
           }
         })
         authSubscription = data.subscription
@@ -104,7 +102,6 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     void persistLoggedInForContextMenu(false)
     await clearPersistedBookmarkTreeHash()
-    await useBookmarkPinStore().lock()
   }
 
   async function changeAccountPassword(

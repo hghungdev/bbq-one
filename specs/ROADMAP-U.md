@@ -211,3 +211,14 @@ Chờ Sir verify tay theo mục "Nghiệm thu" của từng spec.
 
 U11 nằm trên nhánh riêng theo yêu cầu: ưng → gộp vào `claude/dazzling-wright-m0fqb2`; không → giữ
 nhánh cũ (`0ef22ee`), không mất gì. Đổi assertion có chủ đích: U5.8 (ô tìm ghi chú sang Sidebar).
+
+## Đợt 4 (2026-10-28) — U12, S3a (nhánh `claude/ui-adn-redesign`)
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra trên Chromium |
+|---|---|---|---|
+| U12 "Quá hạn" vào chip lịch, bỏ hộp thoại tự bật | `d0e711f` → `293503b` | ✅ 8/8 | chip "· 5 quá hạn"; bảng có mục QUÁ HẠN + "Đánh dấu xong"; không tự bật hộp thoại khi mở popup |
+| S3a gỡ hẳn Bookmark PIN | `ddaa214` → *(commit feat S3a)* | ✅ 10/10 (RED 8) | đăng nhập (session giả, offline): tab Bookmark mở thẳng; Settings chỉ còn Ngôn ngữ / Mật khẩu / Encrypted account |
+
+Đính chính: commit `293503b` ghi "41 harness PASS" — đúng là **40** (U12 là harness thứ 40); sau S3a: 41.
+Đổi assertion có chủ đích: C7a/C7b, U10.2 (U12 — bỏ cờ "ẩn nhắc quá hạn").
+**Việc của Sir sau S3a:** khi mọi máy đã lên bản mới → chạy `supabase/migrations/016_drop_bookmark_crypto.sql`.

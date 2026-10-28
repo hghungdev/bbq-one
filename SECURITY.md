@@ -82,7 +82,7 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   `chrome.storage.session` (RAM của trình duyệt — không ghi đĩa, không lộ cho content script)
   để popup mở lại không phải gõ passphrase và service worker mã hóa được khi đồng bộ. Tự khóa
   sau **30 phút không thao tác**, khi đóng trình duyệt, khi reload/update extension, khi logout,
-  hoặc khi bấm **Khóa ngay** (Settings). Cùng chỗ với refresh token Supabase và khóa bookmark PIN.
+  hoặc khi bấm **Khóa ngay** (Settings). Cùng chỗ với refresh token Supabase.
 - **Mở khóa offline (S2C1.3):** row `user_crypto` (salt, DEK đã bọc, verifier — bản giống hệt nằm
   trên server) được cache trong `chrome.storage.session`, không cache xuống `chrome.storage.local`
   → mất mạng vẫn mở khóa được, còn người đọc được ổ đĩa không có gì để dò passphrase.

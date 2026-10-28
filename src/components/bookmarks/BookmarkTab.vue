@@ -7,19 +7,14 @@ import IconRestoreButton from '@/components/ui/IconRestoreButton.vue'
 import DeleteBackupModal from '@/components/bookmarks/DeleteBackupModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import { bookmarksService } from '@/services/bookmarks.service'
-import { isAuthenticated } from '@/services/localFirst/authMode'
 import { useBookmarksStore } from '@/stores/bookmarks'
-import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
-import BookmarkSkeleton from '@/components/ui/BookmarkSkeleton.vue'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
-import BookmarkPinModal from './BookmarkPinModal.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
 const bm = useBookmarksStore()
-const pin = useBookmarkPinStore()
 const { t } = useLangStore()
 const confirmRestore = ref(false)
 const pendingRestoreId = ref<string | null>(null)
@@ -28,59 +23,15 @@ const pendingDeleteBackupId = ref<string | null>(null)
 const confirmDeleteAll = ref(false)
 const viewMode = ref<'live' | 'backups'>('live')
 
-/** Đang xác định trạng thái PIN — tránh flash modal setup trước khi load xong. */
-const pinGateLoading = ref(true)
-/** Chỉ hiện nội dung tab sau khi mở khóa (nếu đã đặt PIN) hoặc không cần PIN. */
-const pinReady = ref(false)
-const pinModalMode = ref<'setup' | 'unlock'>('unlock')
-
 async function loadBookmarkTabData(): Promise<void> {
   await bm.loadLive()
   await bm.loadBackups()
 }
 
-async function resolvePinGate(): Promise<void> {
-  // Anonymous mode: không cần PIN, vào bookmark thẳng
-  if (!(await isAuthenticated())) {
-    pinReady.value = true
-    await loadBookmarkTabData()
-    return
-  }
-
-  await pin.loadCryptoState()
-  await pin.hydrateFromSession()
-
-  // Chưa đặt PIN: vào thẳng — PIN là tùy chọn, thiết lập qua Settings
-  if (!pin.hasCryptoSetup) {
-    pinReady.value = true
-    await loadBookmarkTabData()
-    return
-  }
-
-  // Đã đặt PIN nhưng chưa unlock trong phiên này
-  if (!pin.unlocked) {
-    pinModalMode.value = 'unlock'
-    return
-  }
-
-  pinReady.value = true
-  await loadBookmarkTabData()
-}
-
-onMounted(async () => {
-  pinGateLoading.value = true
-  pinReady.value = false
-  try {
-    await resolvePinGate()
-  } finally {
-    pinGateLoading.value = false
-  }
-})
-
-function onPinDone(): void {
-  pinReady.value = true
+// S3a: Bookmark PIN đã gỡ — mở tab là nạp dữ liệu (không còn cổng PIN).
+onMounted(() => {
   void loadBookmarkTabData()
-}
+})
 
 const treeToShow = computed(() => {
   if (viewMode.value === 'backups' && bm.selectedBackup) {
@@ -188,13 +139,7 @@ async function onRefreshLive(): Promise<void> {
 </script>
 
 <template>
-  <BookmarkSkeleton v-if="pinGateLoading" class="bm-tab__skeleton" />
-  <BookmarkPinModal
-    v-else-if="!pinReady"
-    :mode="pinModalMode"
-    @done="onPinDone"
-  />
-  <div v-else class="bm-tab">
+  <div class="bm-tab">
     <!-- Toolbar -->
     <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
       <!-- U11 (ADN popover): một hành động chính đặc màu, còn lại là nút chữ. -->
@@ -397,11 +342,6 @@ async function onRefreshLive(): Promise<void> {
 </template>
 
 <style scoped>
-.bm-tab__skeleton {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .bm-tab__tree-skel {
   display: flex;
   flex-direction: column;

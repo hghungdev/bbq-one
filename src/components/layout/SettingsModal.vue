@@ -7,17 +7,14 @@ import SettingsAccordionSection from '@/components/layout/SettingsAccordionSecti
 import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
-import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
 import { getExtensionVersion } from '@/utils/extensionVersion'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
-import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
 
 const emit = defineEmits<{ close: []; 'lock-account': [] }>()
 
 const auth = useAuthStore()
 const accountCrypto = useAccountCryptoStore()
-const bookmarkPin = useBookmarkPinStore()
 const langStore = useLangStore()
 const { t } = langStore
 
@@ -27,26 +24,6 @@ const LANG_OPTIONS = [
   { code: 'en', labelKey: 'settings.langEN' },
   { code: 'vi', labelKey: 'settings.langVI' },
 ] as const
-
-const bmPinOld = ref('')
-const bmPinNew = ref('')
-const bmPinConfirm = ref('')
-const bmPinBusy = ref(false)
-const bmPinError = ref<string | null>(null)
-const bmPinOk = ref(false)
-
-// Remove PIN form
-const bmPinRemoveCurrent = ref('')
-const bmPinRemoveBusy = ref(false)
-const bmPinRemoveError = ref<string | null>(null)
-const bmPinRemoveOk = ref(false)
-
-// Setup PIN form (optional, for users without PIN)
-const bmPinSetupNew = ref('')
-const bmPinSetupConfirm = ref('')
-const bmPinSetupBusy = ref(false)
-const bmPinSetupError = ref<string | null>(null)
-const bmPinSetupOk = ref(false)
 
 const acctPwCurrent = ref('')
 const acctPwNew = ref('')
@@ -71,101 +48,6 @@ const acctPwCanSubmit = computed(() => {
   if (acctPwIssueKeys.value.length > 0) return false
   return true
 })
-
-function bmDigits(s: string, max: number): string {
-  const d = s.replace(/\D/g, '')
-  const n = Math.floor(Number(max))
-  const limit = Number.isFinite(n) && n >= 1 ? n : 9
-  return d.slice(0, limit)
-}
-
-async function onRemoveBookmarkPin(): Promise<void> {
-  bmPinRemoveError.value = null
-  bmPinRemoveOk.value = false
-  const pin = bmPinRemoveCurrent.value
-  if (!/^\d{6}$/.test(pin) && !/^\d{9}$/.test(pin)) {
-    bmPinRemoveError.value = t('settings.pinErrOldLen')
-    return
-  }
-  bmPinRemoveBusy.value = true
-  try {
-    await bookmarkPin.removePin(pin)
-    bmPinRemoveCurrent.value = ''
-    bmPinRemoveOk.value = true
-  } catch (e) {
-    bmPinRemoveError.value = (e as Error).message
-  } finally {
-    bmPinRemoveBusy.value = false
-  }
-}
-
-async function onSetupBookmarkPin(): Promise<void> {
-  bmPinSetupError.value = null
-  bmPinSetupOk.value = false
-  const newP = bmPinSetupNew.value
-  const c = bmPinSetupConfirm.value
-  if (!/^\d{6}$/.test(newP) && !/^\d{9}$/.test(newP)) {
-    bmPinSetupError.value = t('settings.pinErrNewLen')
-    return
-  }
-  if (newP !== c) {
-    bmPinSetupError.value = t('settings.pinErrMismatch')
-    return
-  }
-  const weakKey = bookmarkPinWeakReason(newP)
-  if (weakKey) {
-    bmPinSetupError.value = t(weakKey)
-    return
-  }
-  bmPinSetupBusy.value = true
-  try {
-    await bookmarkPin.setupPin(newP)
-    bmPinSetupNew.value = ''
-    bmPinSetupConfirm.value = ''
-    bmPinSetupOk.value = true
-  } catch (e) {
-    bmPinSetupError.value = (e as Error).message
-  } finally {
-    bmPinSetupBusy.value = false
-  }
-}
-
-async function onChangeBookmarkPin(): Promise<void> {
-  bmPinError.value = null
-  bmPinOk.value = false
-  const oldP = bmPinOld.value
-  const newP = bmPinNew.value
-  const c = bmPinConfirm.value
-  if (!/^\d{6}$/.test(oldP) && !/^\d{9}$/.test(oldP)) {
-    bmPinError.value = t('settings.pinErrOldLen')
-    return
-  }
-  if (!/^\d{6}$/.test(newP) && !/^\d{9}$/.test(newP)) {
-    bmPinError.value = t('settings.pinErrNewLen')
-    return
-  }
-  if (newP !== c) {
-    bmPinError.value = t('settings.pinErrMismatch')
-    return
-  }
-  const weakKey = bookmarkPinWeakReason(newP)
-  if (weakKey) {
-    bmPinError.value = t(weakKey)
-    return
-  }
-  bmPinBusy.value = true
-  try {
-    await bookmarkPin.changePin(oldP, newP)
-    bmPinOld.value = ''
-    bmPinNew.value = ''
-    bmPinConfirm.value = ''
-    bmPinOk.value = true
-  } catch (e) {
-    bmPinError.value = (e as Error).message
-  } finally {
-    bmPinBusy.value = false
-  }
-}
 
 async function onChangeAccountPassword(): Promise<void> {
   acctPwError.value = null
@@ -214,22 +96,8 @@ watch([acctPwCurrent, acctPwNew, acctPwConfirm], () => {
   acctPwOk.value = false
 })
 
-watch([bmPinOld, bmPinNew, bmPinConfirm], () => {
-  bmPinOk.value = false
-})
-
-watch(bmPinRemoveCurrent, () => {
-  bmPinRemoveOk.value = false
-  bmPinRemoveError.value = null
-})
-
-watch([bmPinSetupNew, bmPinSetupConfirm], () => {
-  bmPinSetupOk.value = false
-})
-
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown, true)
-  void bookmarkPin.loadCryptoState()
   if (auth.isAuthenticated) {
     // Lỗi mạng: giữ trạng thái đang có, không để unhandled rejection.
     accountCrypto.refreshStatus().catch(() => {})
@@ -405,160 +273,6 @@ onUnmounted(() => {
           </template>
         </SettingsAccordionSection>
 
-        <!-- Chưa đặt PIN: Setup tùy chọn -->
-        <SettingsAccordionSection
-          v-if="auth.isAuthenticated && !bookmarkPin.hasCryptoSetup"
-          :title="t('settings.pinSetupTitle')"
-          :default-open="false"
-        >
-          <p class="settings-hint settings-hint--sub">
-            {{ t('settings.pinSetupHint') }}
-          </p>
-          <label class="settings-field-label" for="set-bm-setup-new">
-            {{ t('settings.pinSetupNew') }}
-          </label>
-          <RetroInput
-            id="set-bm-setup-new"
-            :model-value="bmPinSetupNew"
-            type="password"
-            digit-only
-            autocomplete="new-password"
-            :placeholder="t('pin.digits69Placeholder')"
-            :disabled="bmPinSetupBusy"
-            :maxlength="9"
-            @update:model-value="bmPinSetupNew = bmDigits($event, 9)"
-          />
-          <label class="settings-field-label" for="set-bm-setup-confirm">
-            {{ t('settings.pinSetupConfirm') }}
-          </label>
-          <RetroInput
-            id="set-bm-setup-confirm"
-            :model-value="bmPinSetupConfirm"
-            type="password"
-            digit-only
-            autocomplete="new-password"
-            :placeholder="t('pin.digits69Placeholder')"
-            :disabled="bmPinSetupBusy"
-            :maxlength="9"
-            @update:model-value="bmPinSetupConfirm = bmDigits($event, 9)"
-          />
-          <p v-if="bmPinSetupError" class="settings-pin-err">{{ bmPinSetupError }}</p>
-          <p v-else-if="bmPinSetupOk" class="settings-pin-ok">{{ t('settings.pinSetupOk') }}</p>
-          <div class="settings-row settings-row--pin">
-            <RetroButton
-              variant="sm"
-              type="button"
-              :disabled="bmPinSetupBusy"
-              @click="onSetupBookmarkPin"
-            >
-              {{ t('settings.pinSetupBtn') }}
-            </RetroButton>
-          </div>
-        </SettingsAccordionSection>
-
-        <!-- Đã đặt PIN: Change PIN + Remove PIN -->
-        <SettingsAccordionSection
-          v-if="auth.isAuthenticated && bookmarkPin.hasCryptoSetup"
-          :title="t('settings.bookmarkPin')"
-          :default-open="false"
-        >
-          <!-- Change PIN -->
-          <p class="settings-hint settings-hint--sub">
-            {{ t('settings.pinHint') }}
-          </p>
-          <label class="settings-field-label" for="set-bm-pin-old">
-            {{ t('settings.pinOld') }}
-          </label>
-          <RetroInput
-            id="set-bm-pin-old"
-            :model-value="bmPinOld"
-            type="password"
-            digit-only
-            autocomplete="current-password"
-            :placeholder="t('pin.digits69Placeholder')"
-            :disabled="bmPinBusy"
-            :maxlength="9"
-            @update:model-value="bmPinOld = bmDigits($event, 9)"
-          />
-          <label class="settings-field-label" for="set-bm-pin-new">
-            {{ t('settings.pinNew') }}
-          </label>
-          <RetroInput
-            id="set-bm-pin-new"
-            :model-value="bmPinNew"
-            type="password"
-            digit-only
-            autocomplete="new-password"
-            :placeholder="t('pin.digits69Placeholder')"
-            :disabled="bmPinBusy"
-            :maxlength="9"
-            @update:model-value="bmPinNew = bmDigits($event, 9)"
-          />
-          <label class="settings-field-label" for="set-bm-pin-confirm">
-            {{ t('settings.pinConfirm') }}
-          </label>
-          <RetroInput
-            id="set-bm-pin-confirm"
-            :model-value="bmPinConfirm"
-            type="password"
-            digit-only
-            autocomplete="new-password"
-            :placeholder="t('pin.digits69Placeholder')"
-            :disabled="bmPinBusy"
-            :maxlength="9"
-            @update:model-value="bmPinConfirm = bmDigits($event, 9)"
-          />
-          <p v-if="bmPinError" class="settings-pin-err">{{ bmPinError }}</p>
-          <p v-else-if="bmPinOk" class="settings-pin-ok">{{ t('settings.pinOk') }}</p>
-          <div class="settings-row settings-row--pin">
-            <RetroButton
-              variant="sm"
-              type="button"
-              :disabled="bmPinBusy"
-              @click="onChangeBookmarkPin"
-            >
-              {{ t('settings.pinSubmit') }}
-            </RetroButton>
-          </div>
-
-          <!-- Divider -->
-          <div class="settings-divider" />
-
-          <!-- Remove PIN section -->
-          <p class="settings-field-label settings-field-label--section">
-            {{ t('settings.pinRemoveTitle') }}
-          </p>
-          <p class="settings-hint settings-hint--sub settings-hint--danger">
-            {{ t('settings.pinRemoveHint') }}
-          </p>
-          <label class="settings-field-label" for="set-bm-pin-remove-cur">
-            {{ t('settings.pinRemoveCurrent') }}
-          </label>
-          <RetroInput
-            id="set-bm-pin-remove-cur"
-            :model-value="bmPinRemoveCurrent"
-            type="password"
-            digit-only
-            autocomplete="current-password"
-            :placeholder="t('pin.digits69Placeholder')"
-            :disabled="bmPinRemoveBusy"
-            :maxlength="9"
-            @update:model-value="bmPinRemoveCurrent = bmDigits($event, 9)"
-          />
-          <p v-if="bmPinRemoveError" class="settings-pin-err">{{ bmPinRemoveError }}</p>
-          <p v-else-if="bmPinRemoveOk" class="settings-pin-ok">{{ t('settings.pinRemoveOk') }}</p>
-          <div class="settings-row settings-row--pin">
-            <RetroButton
-              variant="sm"
-              type="button"
-              class="settings-btn--danger"
-              :disabled="bmPinRemoveBusy"
-              @click="onRemoveBookmarkPin"
-            >
-              {{ t('settings.pinRemoveBtn') }}
-            </RetroButton>
-          </div>
-        </SettingsAccordionSection>
       </div>
 
       <!-- U11: chân trang phẳng — phiên bản (chữ phụ) + "Đóng" (nút chữ). -->
