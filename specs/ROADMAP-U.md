@@ -153,3 +153,37 @@ Tổng: header từ ~205 px (hàng tab + 2 banner + hàng search) còn ~60 px �
 ## Thứ tự
 
 U4 → U5 → U6 (U5/U6 cùng đụng header `pages/App.vue`).
+
+## U7 — Hộp thoại "Sự kiện đã qua hạn": chọn hàng loạt
+
+**Hiện trạng:** mỗi sự kiện một checkbox, phải bấm từng cái; nút "HOÀN THÀNH" không cho biết sẽ đánh
+dấu bao nhiêu mục, bấm khi chưa chọn gì thì chỉ đóng hộp thoại.
+
+**Giải pháp — mẫu "bulk select" của các app task hiện đại (Gmail, Linear, Todoist):**
+
+```
+┌ Sự kiện đã qua hạn ───────────────────────────── ✕ ┐
+│ 5 sự kiện trước hôm nay chưa đánh dấu xong.          │
+│ ┌──────────────────────────────────────────────────┐ │
+│ │ [■] Chọn tất cả                     Đã chọn 3/5  │ │  ← thanh chọn (dính trên cùng khi cuộn)
+│ └──────────────────────────────────────────────────┘ │
+│ [■] 20/10/2026                                   2   │  ← chọn cả ngày (3 trạng thái)
+│     [✓] Shinhan                                      │  ← bấm cả hàng để chọn
+│     [✓] Claude                                       │
+│ [ ] 26/10/2026                                   1   │
+│     [ ] SPLayer                                      │
+│ Mẹo: Shift + bấm để chọn liên tiếp · Ctrl+A chọn hết │
+│                     [ĐỂ SAU]  [✓ ĐÁNH DẤU XONG (3)]  │
+└──────────────────────────────────────────────────────┘
+```
+
+- **Chọn tất cả** (3 trạng thái: trống / gạch ngang khi chọn một phần / đủ) + đếm "Đã chọn 3/5".
+- **Chọn cả ngày** ở tiêu đề từng ngày (cũng 3 trạng thái).
+- **Shift + bấm** chọn liên tiếp từ mục bấm trước; **Ctrl/⌘+A** chọn / bỏ chọn tất cả.
+- Bấm vào cả hàng (không chỉ ô vuông) để chọn; hàng đã chọn tô nhạt.
+- Nút chính ghi số lượng "ĐÁNH DẤU XONG (3)", mờ khi chưa chọn gì (đóng = "ĐỂ SAU" như cũ).
+- Không chọn sẵn gì (tránh lỡ tay đánh dấu xong việc chưa làm) — nhưng chỉ 1 cú bấm "Chọn tất cả".
+- Logic chọn tách ra `utils/bulkSelection.ts` (thuần, có test).
+
+**Theo sau (chưa làm, cần Sir quyết):** thêm hành động "Dời sang hôm nay" cho mục chưa làm xong (kiểu
+Todoist) — đụng giới hạn 3 sự kiện / ngày nên cần thiết kế riêng.
