@@ -79,9 +79,10 @@ check(
 // ═════════════════════════════════════════════════════════════════════════════
 console.log('\nU2 — Calendar: ô tìm kiếm thu vào nút kính lúp')
 
+// U5 (đổi có chủ đích — specs/U4-U6-…spec.md): header bỏ SearchBar ở MỌI tab (chặt hơn bản cũ).
 check(
   'U2.1 App.vue: SearchBar header KHÔNG render ở tab Calendar',
-  /<SearchBar\s+v-if="activeTab !== 'calendar'"/.test(appSrc),
+  !/<SearchBar/.test(appSrc),
   'tab Calendar vẫn có ô search toàn chiều ngang',
 )
 const keydownStart = appSrc.indexOf("e.key.toLowerCase() === 'f'")
@@ -92,7 +93,11 @@ check(
   keydownBlock.replace(/\s+/g, ' ').slice(0, 160),
 )
 
-const inlineSrc = read('src', 'components', 'calendar', 'CalendarInlineSearch.vue')
+// U5 (đổi có chủ đích): debounce / Esc / mở sẵn chuyển vào ui/InlineSearch.vue dùng chung —
+// đọc wrapper Calendar CÙNG component chung.
+const calInlineSrc = read('src', 'components', 'calendar', 'CalendarInlineSearch.vue')
+const sharedInlineSrc = read('src', 'components', 'ui', 'InlineSearch.vue')
+const inlineSrc = calInlineSrc === null ? null : calInlineSrc + '\n' + (sharedInlineSrc ?? '')
 check(
   'U2.3 CalendarInlineSearch.vue: mặc định nút 🔍, mở → ô nhập debounce → setSearchQuery',
   inlineSrc !== null &&
@@ -106,7 +111,7 @@ check(
   inlineSrc !== null &&
     inlineSrc.includes('clearCalendarSearch()') &&
     inlineSrc.includes("'Escape'") &&
-    /ref\(\s*store\.searchQuery\.trim\(\)\.length > 0\s*\)/.test(inlineSrc),
+    /ref\(\s*(store\.searchQuery|props\.query)\.trim\(\)\.length > 0\s*\)/.test(inlineSrc),
   'thiếu nhánh đóng / mở sẵn',
 )
 check(

@@ -75,3 +75,81 @@ U3 → U2 → U1 (U2/U1 đụng `pages/App.vue` — làm sau khi review bảo m�
 | U1 + U2 | `8a4a9ef` → `791b86a` | ✅ 12/12 (RED 11 trên `474e569`) | header hết đồng hồ; tab Calendar hết hàng search; 🔍 lọc đúng; Esc / Ctrl+F đúng; tab Notes giữ SearchBar |
 
 Chờ Sir verify tay theo mục "Nghiệm thu" của hai spec.
+
+---
+
+# Đợt 2 (2026-10-28) — U4 → U6
+
+> Phản hồi của Sir sau khi test bản `ee9d1e5` (2 ảnh: tab Bookmark, tab Notes). Hướng tới bản thương
+> mại → ưu tiên gọn, nhất quán, không giật layout.
+
+## U4 — Bookmark: gõ tìm kiếm thì popup "thu nhỏ" (bug)
+
+**Nguyên nhân:** popup của extension Chrome tự co giãn theo độ rộng nội dung (giới hạn 800 × 600).
+`global.css` để `html { min-width: 720px; width: 100% }` → bề rộng do nội dung quyết định: cây
+bookmark có tiêu đề dài kéo popup lên **800 px** (ảnh 1), tab Notes chỉ **~716 px** (ảnh 2); gõ tìm →
+cây lọc còn ít dòng ngắn → popup co về 720 px ngay khi đang gõ. Chuyển tab cũng "nhảy" bề rộng.
+
+**Sửa:** cố định `html { width: 800px }` (`--popup-width`, đúng mức tối đa Chrome cho phép) — mọi tab,
+mọi trạng thái tìm kiếm cùng một bề rộng; Calendar / Notes được thêm ~80 px.
+
+## U5 — Notes + Bookmark: tìm kiếm thu vào nút 🔍 giống Calendar
+
+Bỏ hẳn hàng `SearchBar` toàn chiều ngang trên header (≈ 56 px). Mỗi tab đặt 🔍 trong **thanh công cụ
+của chính nội dung nó lọc** (như Calendar đặt trong hàng điều hướng tháng):
+
+```
+Notes:     [ Ghi chú ................ 🔍 ]   →   [ Tìm ghi chú…     4  ✕ ]   (đầu cột danh sách)
+Bookmark:  [Backup now][Export HTML][Refresh][Delete all] ........ 🔍   →   … [ Tìm bookmark…  ✕ ]
+Calendar:  (giữ nguyên U2)
+```
+
+- Một component dùng chung `components/ui/InlineSearch.vue` (Calendar chuyển sang dùng luôn) → hành vi
+  giống hệt nhau: bấm 🔍 mở + focus; debounce 300 ms; ✕ / Esc = xóa + thu gọn; rời ô khi trống = thu
+  gọn; còn query (quay lại tab) = mở sẵn; Ctrl+F ở tab nào mở ô của tab đó.
+- Sửa kèm lỗi cũ của `SearchBar`: store lưu query đã `trim()` → ô nhập bị ghi đè, **mất dấu cách cuối**
+  khi gõ chậm ("trading in" → "tradingin"). `InlineSearch` so sánh sau khi trim.
+- Đầu cột Notes: khi đang tìm hiện số kết quả cạnh ô nhập (thay chữ "N kết quả" cũ).
+
+## U6 — Thông báo lịch: gom vào một "chip lịch" trên header
+
+**Hiện trạng:** `CalendarTodayBanner` = 2 dải màu xếp chồng (ngày mai + hôm nay) ≈ 90 px — cùng với hàng
+search là ~1/4 chiều cao popup 600 px, hiện ở mọi tab.
+
+**Cân nhắc các gợi ý:**
+
+| Phương án | Vấn đề |
+|---|---|
+| Chữ chạy phải → trái (marquee) | Khó đọc, gây xao nhãng; nội dung chuyển động > 5 s phải có nút dừng (WCAG 2.2.2); vẫn tốn 1 hàng |
+| Hiện 10–15 s rồi ẩn | Dễ bỏ lỡ (mở popup chỉ vài giây là chuyện thường); lúc ẩn layout giật lên |
+| Icon "!" + chấm đỏ, hover ra tooltip | "!" mang nghĩa lỗi/cảnh báo; thông tin hôm nay bị giấu sau một cú bấm; tooltip không dùng được bằng bàn phím và không chứa được nút (mở lịch, ẩn nhắc) |
+
+**Chốt — chip lịch (glanceable + chi tiết khi cần), 0 px chiều cao thêm:**
+
+```
+[BBQOne | Calendar  Notes  Bookmark]   [● Hôm nay · HSBC T1279, OT - 2 Hou… · Mai 3 ▾]  [☀][☁][⚙][⎋]
+                                                   │ bấm (hoặc Enter)
+                                                   ▼
+                                       ┌ Lịch sắp tới ───────────────────────┐
+                                       │ ● HÔM NAY · 28/10/2026      Mở lịch │
+                                       │   HSBC T1279                         │
+                                       │   09:00  OT - 2 Hours                │
+                                       │ ● NGÀY MAI · 29/10/2026  Ẩn  Mở lịch │
+                                       │   VIB · HSBC · OT - 2 Hours          │
+                                       └──────────────────────────────────────┘
+```
+
+- Nằm ở khoảng trống sẵn có giữa nhóm tab và nhóm icon của header — không thêm hàng nào.
+- Một dòng, không chuyển động; chấm **vàng** = hôm nay, **xanh** = chỉ có ngày mai; tiêu đề dài cắt
+  "…"; có cả hai thì thêm "· Mai N".
+- Bấm → bảng nhỏ (popover) liệt kê đủ hôm nay + ngày mai (giờ, màu, việc đã xong gạch ngang); bấm một
+  sự kiện / "Mở lịch" → tab Lịch, nhảy đúng ngày đó; "Ẩn" = ẩn nhắc ngày mai như nút ✕ cũ. Esc / bấm
+  ra ngoài để đóng; điều khiển được bằng bàn phím.
+- Không có sự kiện → không hiện gì. Logic chọn ngày / nội dung tách thành hàm thuần
+  `utils/calendarAgenda.ts` (có test).
+
+Tổng: header từ ~205 px (hàng tab + 2 banner + hàng search) còn ~60 px → nội dung được thêm ~145 px.
+
+## Thứ tự
+
+U4 → U5 → U6 (U5/U6 cùng đụng header `pages/App.vue`).
