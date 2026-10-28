@@ -5,7 +5,6 @@
   import NoteList from '@/components/layout/NoteList.vue'
   import SettingsModal from '@/components/layout/SettingsModal.vue'
   import Sidebar from '@/components/layout/Sidebar.vue'
-  import RetroButton from '@/components/ui/RetroButton.vue'
   import BookmarkTab from '@/components/bookmarks/BookmarkTab.vue'
   import CalendarTab from '@/components/calendar/CalendarTab.vue'
   import CalendarAgendaChip from '@/components/calendar/CalendarAgendaChip.vue'
@@ -78,6 +77,28 @@
   const networkOnline = ref(isOnline())
   const showSettings = ref(false)
   const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('calendar')
+  /** U16: 3 tab chính — điều hướng nên kiểu viền, không tô đặc như nút hành động. */
+  const HEADER_TABS = [
+    { id: 'calendar', label: 'app.tabs.calendar' },
+    { id: 'notes', label: 'app.tabs.notes' },
+    { id: 'bookmarks', label: 'app.tabs.bookmark' },
+  ] as const
+  const tabsRef = ref<HTMLElement | null>(null)
+
+  /** Mẫu tablist: ← → / Home / End chuyển tab + dời focus (roving tabindex). */
+  function onTabsKeydown(e: KeyboardEvent): void {
+    const n = HEADER_TABS.length
+    const i = HEADER_TABS.findIndex((tab) => tab.id === activeTab.value)
+    let next: number
+    if (e.key === 'ArrowRight') next = (i + 1) % n
+    else if (e.key === 'ArrowLeft') next = (i - 1 + n) % n
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = n - 1
+    else return
+    e.preventDefault()
+    activeTab.value = HEADER_TABS[next].id
+    void nextTick(() => tabsRef.value?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus())
+  }
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
 
@@ -600,37 +621,26 @@
         <div class="shell__header-left">
           <span class="shell__brand">BBQOne</span>
           <span class="shell__brand-sep" aria-hidden="true" />
-          <nav class="shell__tabs" role="tablist" :aria-label="t('app.tabs.aria')">
-            <RetroButton
-              variant="sm"
+          <nav
+            ref="tabsRef"
+            class="shell__tabs"
+            role="tablist"
+            :aria-label="t('app.tabs.aria')"
+            @keydown="onTabsKeydown"
+          >
+            <button
+              v-for="tab in HEADER_TABS"
+              :key="tab.id"
               type="button"
               role="tab"
-              :class="activeTab === 'calendar' ? 'shell__tab-btn--active' : ''"
-              :aria-selected="activeTab === 'calendar'"
-              @click="activeTab = 'calendar'"
+              class="shell__tab"
+              :class="{ 'shell__tab--active': activeTab === tab.id }"
+              :aria-selected="activeTab === tab.id"
+              :tabindex="activeTab === tab.id ? 0 : -1"
+              @click="activeTab = tab.id"
             >
-              {{ t('app.tabs.calendar') }}
-            </RetroButton>
-            <RetroButton
-              variant="sm"
-              type="button"
-              role="tab"
-              :class="activeTab === 'notes' ? 'shell__tab-btn--active' : ''"
-              :aria-selected="activeTab === 'notes'"
-              @click="activeTab = 'notes'"
-            >
-              {{ t('app.tabs.notes') }}
-            </RetroButton>
-            <RetroButton
-              variant="sm"
-              type="button"
-              role="tab"
-              :class="activeTab === 'bookmarks' ? 'shell__tab-btn--active' : ''"
-              :aria-selected="activeTab === 'bookmarks'"
-              @click="activeTab = 'bookmarks'"
-            >
-              {{ t('app.tabs.bookmark') }}
-            </RetroButton>
+              {{ t(tab.label) }}
+            </button>
           </nav>
         </div>
         <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
@@ -839,7 +849,7 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     min-width: 0;
     padding: 3px;
     border: 1px solid var(--border);
@@ -848,24 +858,45 @@
     box-shadow: inset 0 1px 0 var(--bg-secondary);
   }
 
-  /* Tab chính dạng segmented control: rõ affordance nhưng nhẹ hơn nút action. */
-  .shell__tabs :deep(.retro-btn) {
-    min-width: auto;
+  /* U16: tab = điều hướng → viền (outline), không tô đặc kiểu Bootstrap — chỉ hành động chính mới đặc. */
+  .shell__tab {
     min-height: 28px;
-    padding: 5px 16px;
-    font-size: inherit;
+    padding: 4px 15px;
     border: 1px solid transparent;
+    border-radius: var(--radius-pill);
     background: transparent;
     color: var(--text-secondary);
+    font: inherit;
     font-weight: 600;
     letter-spacing: -0.012em;
-    box-shadow: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      color 0.12s linear,
+      background 0.12s linear,
+      border-color 0.12s linear;
   }
 
-  .shell__tabs :deep(.retro-btn:hover:not(:disabled)) {
+  .shell__tab:hover:not(.shell__tab--active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  }
+
+  .shell__tab:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  .shell__tab--active {
+    border-color: color-mix(in srgb, var(--accent) 65%, transparent);
     color: var(--accent);
-    border-color: transparent;
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    background: color-mix(in srgb, var(--accent) 7%, var(--bg-panel));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shell__tab {
+      transition: none;
+    }
   }
 
   /* Icon toolbar bên phải */
@@ -989,22 +1020,6 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
-  }
-
-  .shell__tab-btn--active {
-    border-color: var(--accent) !important;
-    color: var(--on-accent) !important;
-    background: var(--accent) !important;
-    font-weight: 700;
-    box-shadow:
-      0 1px 2px var(--panel-ring),
-      inset 0 1px 0 color-mix(in srgb, var(--on-accent) 24%, transparent);
-  }
-
-  .shell__tab-btn--active:hover:not(:disabled) {
-    color: var(--on-accent) !important;
-    background: var(--color-primary-focus) !important;
-    border-color: var(--color-primary-focus) !important;
   }
 
   .shell__sep-v {

@@ -20,7 +20,7 @@ function check(name, ok, detail) {
 const app = fs.readFileSync(path.join(ROOT, 'src', 'pages', 'App.vue'), 'utf8')
 const tpl = app.slice(app.indexOf('<template>'), app.lastIndexOf('</template>'))
 const style = app.slice(app.indexOf('<style'))
-const nav = (/<nav class="shell__tabs"[\s\S]*?<\/nav>/.exec(tpl) ?? [''])[0]
+const nav = (/<nav\b[^>]*class="shell__tabs"[\s\S]*?<\/nav>/.exec(tpl) ?? [''])[0]
 const rule = (sel) => {
   const i = style.indexOf(`${sel} {`)
   return i === -1 ? '' : style.slice(i, style.indexOf('}', i))
@@ -29,7 +29,10 @@ const rule = (sel) => {
 console.log('U16 — tab header')
 check(
   'U16.1 tab là <button role="tab"> riêng (không còn RetroButton ghi đè :deep / !important)',
-  nav !== '' && !nav.includes('<RetroButton') && (nav.match(/role="tab"/g) ?? []).length === 3 &&
+  nav !== '' && !nav.includes('<RetroButton') &&
+    ((nav.match(/role="tab"/g) ?? []).length === 3 ||
+      (/v-for="tab in HEADER_TABS"/.test(nav) && /role="tab"/.test(nav) &&
+        (/const HEADER_TABS = \[([\s\S]*?)\] as const/.exec(app)?.[1].match(/id: '/g) ?? []).length === 3)) &&
     !/\.shell__tabs :deep\(\.retro-btn/.test(style) && !/shell__tab[\w-]*[^{]*\{[^}]*!important/.test(style),
   'còn RetroButton / !important',
 )
