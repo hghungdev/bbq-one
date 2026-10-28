@@ -45,9 +45,11 @@ check(
 )
 const at = (s) => headerRight.indexOf(s)
 // U26 (đổi có chủ đích): ☀ ☁ xuống đáy thanh dọc — header chỉ ⚙ → tài khoản.
+// U27 (đổi có chủ đích): ☀ về lại header, đứng trước ⚙ — ☁ vẫn ở đáy thanh.
 check(
-  'U24.4 thứ tự Gmail: ⚙ → tài khoản (☀ ☁ ở đáy thanh dọc — U26)',
-  at('name="settings"') >= 0 && at('name="settings"') < at('<AccountMenu') && at('<ThemeModeToggle') === -1 &&
+  'U24.4 thứ tự Gmail: ☀ → ⚙ → tài khoản (☁ ở đáy thanh dọc — U26, U27)',
+  at('name="settings"') >= 0 && at('name="settings"') < at('<AccountMenu') &&
+    at('<ThemeModeToggle') >= 0 && at('<ThemeModeToggle') < at('name="settings"') &&
     at('<CloudSyncStatusBadge') === -1,
   `vị trí: theme ${at('<ThemeModeToggle')} cloud ${at('<CloudSyncStatusBadge')} gear ${at('name="settings"')} acc ${at('<AccountMenu')}`,
 )

@@ -35,19 +35,20 @@ const headerRight = (/<div class="shell__header-right">[\s\S]*?<\/header>/.exec(
 const drawer = (/<div\b[^>]*class="shell__drawer"[\s\S]*?<!-- \/drawer -->/.exec(tpl) ?? [''])[0]
 
 console.log('1 — ☀ ☁ xuống đáy thanh dọc')
+// U27 (đổi có chủ đích): ☀ về lại header (trước ⚙) — đáy thanh chỉ còn ☁.
 check(
-  'U26.1 đáy thanh dọc: ☀ giao diện → ☁ đồng bộ (đăng nhập) / ☁ chờ đồng bộ (chưa đăng nhập); không ⚙',
+  'U26.1 đáy thanh dọc: ☁ đồng bộ (đăng nhập) / ☁ chờ đồng bộ (chưa đăng nhập); không ⚙ (☀ ở header — U27)',
   railBottom !== '' &&
-    railBottom.indexOf('<ThemeModeToggle') >= 0 &&
-    railBottom.indexOf('<ThemeModeToggle') < railBottom.indexOf('<CloudSyncStatusBadge') &&
+    !/<ThemeModeToggle/.test(railBottom) &&
     /<CloudSyncStatusBadge[\s\S]*?v-if="!isAnonymous"/.test(railBottom) &&
     /<SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin"/.test(railBottom) &&
     !/name="settings"/.test(rail),
   flat(railBottom).slice(0, 200) || 'chưa có khối đáy',
 )
+// U27 (đổi có chủ đích): header ☀ → ⚙ → tài khoản; ☁ vẫn ở đáy thanh.
 check(
-  'U26.2 header phải chỉ còn ⚙ → tài khoản (không ☀ ☁)',
-  !/<ThemeModeToggle|<CloudSyncStatusBadge|<SyncStatusBadge/.test(headerRight) &&
+  'U26.2 header phải: không ☁; ⚙ → tài khoản (☀ đứng trước ⚙ — U27)',
+  !/<CloudSyncStatusBadge|<SyncStatusBadge/.test(headerRight) &&
     headerRight.indexOf('name="settings"') >= 0 && headerRight.indexOf('name="settings"') < headerRight.indexOf('<AccountMenu'),
   'header còn ☀ / ☁',
 )
