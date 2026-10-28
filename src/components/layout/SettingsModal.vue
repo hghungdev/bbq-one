@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
+import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
 import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
@@ -11,6 +12,8 @@ import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useLangStore } from '@/stores/uiLang'
 import { getExtensionVersion } from '@/utils/extensionVersion'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
+import { calendarFeedService, type CalendarFeedInfo } from '@/services/calendarFeed.service'
+import { copyTextToClipboard } from '@/utils/clipboard'
 
 const emit = defineEmits<{ close: []; 'lock-account': [] }>()
 
@@ -90,7 +93,56 @@ async function onChangeAccountPassword(): Promise<void> {
 }
 
 function onGlobalKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Escape') emit('close')
+  // Hộp xác nhận "Tạo link mới" đang mở: Esc chỉ đóng hộp đó (C12), không đóng cả Settings.
+  if (e.key === 'Escape' && !gcalConfirmRotate.value) emit('close')
+}
+
+// ── G1: link Google Calendar (một chiều) — mỗi user một link riêng ──
+const gcalFeed = ref<CalendarFeedInfo | null>(null)
+const gcalLoaded = ref(false)
+const gcalBusy = ref(false)
+const gcalError = ref<string | null>(null)
+const gcalCopied = ref(false)
+const gcalConfirmRotate = ref(false)
+
+async function loadGcalFeed(): Promise<void> {
+  gcalError.value = null
+  try {
+    gcalFeed.value = await calendarFeedService.get()
+  } catch (e) {
+    console.error(e)
+    gcalError.value = t('settings.gcal.error')
+  } finally {
+    gcalLoaded.value = true
+  }
+}
+
+async function runGcal(action: () => Promise<CalendarFeedInfo>): Promise<void> {
+  gcalBusy.value = true
+  gcalError.value = null
+  try {
+    gcalFeed.value = await action()
+  } catch (e) {
+    console.error(e)
+    gcalError.value = t('settings.gcal.error')
+  } finally {
+    gcalBusy.value = false
+  }
+}
+
+function onGcalCreate(): void {
+  void runGcal(() => calendarFeedService.createOrRotate())
+}
+
+function onGcalToggle(): void {
+  const feed = gcalFeed.value
+  if (feed) void runGcal(() => calendarFeedService.setEnabled(!feed.enabled))
+}
+
+async function onGcalCopy(): Promise<void> {
+  if (!gcalFeed.value) return
+  gcalCopied.value = await copyTextToClipboard(gcalFeed.value.url)
+  if (gcalCopied.value) setTimeout(() => (gcalCopied.value = false), 2000)
 }
 
 watch([acctPwCurrent, acctPwNew, acctPwConfirm], () => {
@@ -102,6 +154,7 @@ onMounted(() => {
   if (auth.isAuthenticated) {
     // Lỗi mạng: giữ trạng thái đang có, không để unhandled rejection.
     accountCrypto.refreshStatus().catch(() => {})
+    void loadGcalFeed()
   }
 })
 
@@ -275,6 +328,69 @@ onUnmounted(() => {
             </div>
           </template>
         </SettingsAccordionSection>
+
+        <!-- G1: link Google Calendar (một chiều BBQOne → Google) — mỗi user một link riêng. -->
+        <SettingsAccordionSection
+          v-if="auth.isAuthenticated"
+          :title="t('settings.gcal.title')"
+          :default-open="false"
+        >
+          <p class="settings-hint settings-hint--sub">{{ t('settings.gcal.desc') }}</p>
+          <p v-if="gcalError" class="settings-pin-err" role="alert">{{ gcalError }}</p>
+          <div v-if="gcalLoaded && !gcalFeed" class="settings-row settings-row--pin">
+            <RetroButton variant="sm" type="button" primary :disabled="gcalBusy" @click="onGcalCreate">
+              <AppIcon name="link" :size="15" />
+              {{ t('settings.gcal.create') }}
+            </RetroButton>
+          </div>
+          <template v-else-if="gcalFeed">
+            <div class="settings-gcal-url" :class="{ 'settings-gcal-url--off': !gcalFeed.enabled }">
+              <input
+                class="settings-gcal-url__input"
+                type="text"
+                readonly
+                :value="gcalFeed.url"
+                :aria-label="t('settings.gcal.title')"
+                @focus="($event.target as HTMLInputElement).select()"
+              />
+              <button
+                type="button"
+                class="ds-icon-action"
+                :aria-label="t('settings.gcal.copy')"
+                :title="gcalCopied ? t('settings.gcal.copied') : t('settings.gcal.copy')"
+                :disabled="!gcalFeed.enabled"
+                @click="onGcalCopy"
+              >
+                <AppIcon v-if="gcalCopied" name="check" />
+                <AppIcon v-else name="copy" />
+              </button>
+            </div>
+            <p v-if="!gcalFeed.enabled" class="settings-hint settings-hint--danger">{{ t('settings.gcal.disabledHint') }}</p>
+            <ol class="settings-gcal-steps">
+              <li>{{ t('settings.gcal.step1') }}</li>
+              <li>{{ t('settings.gcal.step2') }}</li>
+            </ol>
+            <p class="settings-gcal-warn">
+              <AppIcon name="alert" :size="14" />
+              {{ t('settings.gcal.warnPublic') }}
+            </p>
+            <p class="settings-hint">{{ t('settings.gcal.warnDelay') }}</p>
+            <div class="settings-row settings-row--pin">
+              <RetroButton variant="sm" type="button" :disabled="gcalBusy" @click="gcalConfirmRotate = true">
+                <AppIcon name="refresh" :size="15" />
+                {{ t('settings.gcal.rotate') }}
+              </RetroButton>
+              <RetroButton variant="sm" type="button" :disabled="gcalBusy" @click="onGcalToggle">
+                {{ gcalFeed.enabled ? t('settings.gcal.disable') : t('settings.gcal.enable') }}
+              </RetroButton>
+            </div>
+          </template>
+        </SettingsAccordionSection>
+        <RetroConfirm
+          v-model:open="gcalConfirmRotate"
+          :message="t('settings.gcal.rotateConfirm')"
+          @confirm="onGcalCreate"
+        />
 
       </div>
 
@@ -471,6 +587,61 @@ onUnmounted(() => {
   color: var(--text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.settings-gcal-url {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 8px;
+  padding: 2px 4px 2px 0;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.settings-gcal-url--off {
+  opacity: 0.55;
+}
+
+.settings-gcal-url__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.settings-gcal-url__input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 0;
+  border-radius: var(--radius-sm);
+}
+
+.settings-gcal-steps {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.settings-gcal-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+
+.settings-gcal-warn :deep(.app-icon) {
+  margin-top: 1px;
 }
 
 .settings-hint--danger {
