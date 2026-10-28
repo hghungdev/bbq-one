@@ -245,3 +245,8 @@ Kèm: gỡ prop `digitOnly` của `RetroInput` (chỉ PIN dùng — sót từ S3
 Đổi assertion có chủ đích: U11.C1, U13.S4, U13.S6 (U15). 46 harness PASS.
 Quy tắc icon (U15): hành động trên đối tượng = icon + tooltip; quyết định kết thúc hộp thoại (Lưu / Hủy /
 Xóa ở hộp xác nhận) và liên kết điều hướng = chữ — xem `specs/U15-icon-language.spec.md`.
+
+**Gộp nhánh (2026-10-28, theo yêu cầu Sir — tổng duyệt trước khi release production):**
+`claude/ui-adn-redesign` → `claude/dazzling-wright-m0fqb2` bằng fast-forward (nhánh chính vẫn ở `0ef22ee`,
+không có commit riêng → không xung đột, lịch sử giữ nguyên từng commit docs/feat). Từ đây làm tiếp trên
+`claude/dazzling-wright-m0fqb2`; `claude/ui-adn-redesign` giữ lại làm mốc, không xóa.
