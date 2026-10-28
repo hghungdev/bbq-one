@@ -133,3 +133,20 @@ export function agendaChip(agenda: Agenda): AgendaChip | null {
   }
   return null
 }
+
+/**
+ * U14: dòng quá hạn của bảng ĐANG MỞ — theo đúng thứ tự `ids` chụp lúc mở, trạng thái xong lấy từ store.
+ * Việc vừa đánh dấu xong vẫn ở chỗ cũ (gạch ngang, bấm lại = hoàn tác); id đã bị xóa thì bỏ qua.
+ */
+export function overduePanelRows(
+  ids: string[],
+  events: (AgendaEvent & { event_date: string })[],
+): (AgendaItem & { dateKey: string })[] {
+  const byId = new Map(events.map((e) => [e.id, e]))
+  return ids.flatMap((id) => {
+    const e = byId.get(id)
+    if (!e) return []
+    const item = itemOf(e)
+    return item.title === '' ? [] : [{ ...item, dateKey: e.event_date }]
+  })
+}

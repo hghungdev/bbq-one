@@ -5,12 +5,13 @@
   import { listOverdueIncompleteEvents } from '@/services/calendarOverdueReminder.service'
   import { useLangStore } from '@/stores/uiLang'
   import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
-  import { agendaChip, buildAgenda, type AgendaDay } from '@/utils/calendarAgenda'
+  import { agendaChip, buildAgenda, overduePanelRows, type AgendaDay, type AgendaItem } from '@/utils/calendarAgenda'
 
   /**
    * U6: lịch hôm nay / ngày mai gọn trong MỘT chip trên header (thay 2 banner xếp chồng). Bấm → bảng
    * chi tiết; không chạy chữ, không tự ẩn — có sự kiện thì luôn thấy, hết sự kiện thì chip biến mất.
-   * U12: nhóm thứ hai "Quá hạn" (thay hộp thoại tự bật) — đứng đầu bảng, "Đánh dấu xong" mở hộp thoại.
+   * U12: nhóm thứ hai "Quá hạn" (thay hộp thoại tự bật) — đứng đầu bảng, "Xem tất cả" mở hộp thoại.
+   * U14: ✓ từng dòng quá hạn — xong một việc ngay trong bảng, bấm lại = hoàn tác.
    */
   const emit = defineEmits<{
     'open-calendar': [dateKey: string]
@@ -45,6 +46,18 @@
     ),
   )
   const chip = computed(() => agendaChip(agenda.value))
+
+  /**
+   * U14: id các dòng quá hạn chụp lúc mở bảng — đánh dấu xong thì dòng ở nguyên chỗ (gạch ngang, bấm lại
+   * = hoàn tác) thay vì biến mất / nhảy dòng; đóng bảng rồi mở lại mới rút khỏi danh sách.
+   */
+  const overdueShownIds = ref<string[]>([])
+  const overdueRows = computed(() => overduePanelRows(overdueShownIds.value, calendar.events))
+  const overdueOpenCount = computed(() => agenda.value.overdue?.count ?? 0)
+  /** "và n việc khác": việc chưa xong ngoài các dòng đang hiện. */
+  const overdueMoreCount = computed(
+    () => overdueOpenCount.value - overdueRows.value.filter((r) => !r.done).length,
+  )
 
   const days = computed(() => {
     const out: { tone: 'today' | 'tomorrow'; day: AgendaDay }[] = []
@@ -126,6 +139,7 @@
   watch(open, (isOpen) => {
     if (isOpen) document.addEventListener('pointerdown', onDocPointerDown, true)
     else document.removeEventListener('pointerdown', onDocPointerDown, true)
+    overdueShownIds.value = isOpen ? (agenda.value.overdue?.items.map((i) => i.id) ?? []) : []
   })
 
   // Hết sự kiện (vd vừa ẩn ngày mai, không có hôm nay) → chip biến mất → bỏ trạng thái mở.
@@ -140,6 +154,16 @@
   function openDay(dateKey: string): void {
     closePanel(false)
     emit('open-calendar', dateKey)
+  }
+
+  /** Lưu ngay (không hẹn giờ) — đóng popup lúc nào cũng an toàn. */
+  async function toggleOverdueDone(item: AgendaItem): Promise<void> {
+    try {
+      if (item.done) await calendar.toggleDone(item.id)
+      else await calendar.markEventsDone([item.id])
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   function reviewOverdue(): void {
@@ -215,22 +239,50 @@
     >
       <p class="agenda-chip__panel-title">{{ t('calendar.agenda.panelTitle') }}</p>
       <!-- U12: nhóm "Quá hạn" đứng đầu (gấp nhất). -->
-      <section v-if="agenda.overdue" class="agenda-chip__day agenda-chip__day--overdue">
+      <section v-if="overdueRows.length > 0" class="agenda-chip__day agenda-chip__day--overdue">
         <div class="agenda-chip__day-head">
           <span class="agenda-chip__dot agenda-chip__dot--overdue" aria-hidden="true" />
           <span class="agenda-chip__day-label">
             {{ t('calendar.agenda.overdue')
             }}<span class="agenda-chip__day-date">
-              · {{ t('calendar.agenda.overdueCount', { n: agenda.overdue.count }) }}</span
+              · {{ t('calendar.agenda.overdueCount', { n: overdueOpenCount }) }}</span
             >
           </span>
-          <button type="button" class="agenda-chip__link agenda-chip__link--accent" @click="reviewOverdue">
+          <button
+            v-if="overdueOpenCount > 0"
+            type="button"
+            class="agenda-chip__link agenda-chip__link--accent"
+            @click="reviewOverdue"
+          >
             {{ t('calendar.agenda.reviewOverdue') }}
           </button>
         </div>
         <ul class="agenda-chip__items">
-          <li v-for="item in agenda.overdue.items" :key="item.id">
-            <button type="button" class="agenda-chip__item" @click="openDay(item.dateKey)">
+          <li v-for="item in overdueRows" :key="item.id" class="agenda-chip__row">
+            <button
+              type="button"
+              class="agenda-chip__check"
+              :class="{ 'agenda-chip__check--done': item.done }"
+              :aria-pressed="item.done"
+              :aria-label="t('calendar.agenda.markOneDone', { title: item.title })"
+              :title="
+                item.done
+                  ? t('calendar.agenda.markOneUndo', { title: item.title })
+                  : t('calendar.agenda.markOneDone', { title: item.title })
+              "
+              @click="toggleOverdueDone(item)"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <circle class="agenda-chip__check-ring" cx="12" cy="12" r="8.25" />
+                <path class="agenda-chip__check-mark" d="M8.6 12.3l2.3 2.3 4.6-5" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="agenda-chip__item"
+              :class="{ 'agenda-chip__item--done': item.done }"
+              @click="openDay(item.dateKey)"
+            >
               <span
                 class="agenda-chip__swatch"
                 :style="item.color ? { background: item.color } : undefined"
@@ -240,9 +292,9 @@
               <span class="agenda-chip__item-date">{{ shortDate(item.dateKey) }}</span>
             </button>
           </li>
-          <li v-if="agenda.overdue.count > agenda.overdue.items.length">
+          <li v-if="overdueMoreCount > 0">
             <button type="button" class="agenda-chip__item agenda-chip__item--more" @click="reviewOverdue">
-              {{ t('calendar.agenda.overdueMore', { n: agenda.overdue.count - agenda.overdue.items.length }) }}
+              {{ t('calendar.agenda.overdueMore', { n: overdueMoreCount }) }}
             </button>
           </li>
         </ul>
@@ -537,6 +589,77 @@
     background: color-mix(in srgb, var(--accent) 8%, transparent);
   }
 
+  /* U14: ✓ từng việc quá hạn — vòng tròn rỗng; rê chuột hiện dấu ✓ mờ; xong = tròn đặc màu nhấn. */
+  .agenda-chip__row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .agenda-chip__row .agenda-chip__item {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .agenda-chip__check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .agenda-chip__check:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  .agenda-chip__check-ring {
+    fill: transparent;
+    stroke: var(--text-muted);
+    stroke-width: 1.5;
+    transition:
+      fill 0.12s linear,
+      stroke 0.12s linear;
+  }
+
+  .agenda-chip__check-mark {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transition: opacity 0.12s linear;
+  }
+
+  .agenda-chip__check:hover .agenda-chip__check-ring {
+    stroke: var(--accent);
+  }
+
+  .agenda-chip__check:hover .agenda-chip__check-mark {
+    opacity: 0.55;
+  }
+
+  .agenda-chip__check--done .agenda-chip__check-ring,
+  .agenda-chip__check--done:hover .agenda-chip__check-ring {
+    fill: var(--accent);
+    stroke: var(--accent);
+  }
+
+  .agenda-chip__check--done .agenda-chip__check-mark,
+  .agenda-chip__check--done:hover .agenda-chip__check-mark {
+    stroke: var(--on-accent);
+    opacity: 1;
+  }
+
   .agenda-chip__swatch {
     flex: 0 0 auto;
     width: 3px;
@@ -564,7 +687,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .agenda-chip__chevron {
+    .agenda-chip__chevron,
+    .agenda-chip__check-ring,
+    .agenda-chip__check-mark {
       transition: none;
     }
   }
