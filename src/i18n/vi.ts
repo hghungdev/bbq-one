@@ -361,8 +361,6 @@ export const vi: Record<I18nKey, string> = {
   'calendar.agenda.chipAria': '{label}: {list} — xem lịch sắp tới',
   'calendar.agenda.panelTitle': 'Lịch sắp tới',
   'calendar.agenda.openDay': 'Mở lịch',
-  'calendar.agenda.dismissTomorrow': 'Ẩn',
-  'calendar.agenda.dismissTomorrowHint': 'Ẩn nhắc ngày mai (hiện lại khi mở lại trình duyệt hoặc đăng nhập lại)',
   'calendar.agenda.listSeparator': ' · ',
   'calendar.cell.pastTitle': 'Ngày đã qua — không thêm sự kiện mới. Nhấn vào sự kiện để sửa.',
   'calendar.modal.title.create': 'Sự kiện mới',

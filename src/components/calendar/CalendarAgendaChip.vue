@@ -1,12 +1,8 @@
 <script setup lang="ts">
-  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
   import { useLangStore } from '@/stores/uiLang'
-  import {
-    dismissUpcomingBannerForDate,
-    getDismissedUpcomingBannerDateKey,
-  } from '@/services/calendarBannerDismiss.service'
   import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
   import { agendaChip, buildAgenda, type AgendaDay } from '@/utils/calendarAgenda'
 
@@ -23,8 +19,6 @@
   const { t } = langStore
   const { lang } = storeToRefs(langStore)
 
-  const dismissLoaded = ref(false)
-  const dismissedTomorrowKey = ref<string | null>(null)
   /** Làm mới mỗi lần mở bảng — popup / tab mở qua nửa đêm không kẹt ở ngày cũ. */
   const todayKey = ref(todayLocalKey())
   const tomorrowKey = computed(() => addDaysToLocalKey(todayKey.value, 1))
@@ -35,16 +29,11 @@
   const panelRef = ref<HTMLElement | null>(null)
   const panelId = 'bbqone-agenda-panel'
 
+  // U10: tạm bỏ "Ẩn" ngày mai — không đọc trạng thái ẩn cũ (ai từng bấm Ẩn vẫn thấy Ngày mai).
   const agenda = computed(() =>
-    buildAgenda(
-      (key) => calendar.eventsForDate(key),
-      todayKey.value,
-      tomorrowKey.value,
-      dismissedTomorrowKey.value,
-    ),
+    buildAgenda((key) => calendar.eventsForDate(key), todayKey.value, tomorrowKey.value, null),
   )
-  /** Chưa đọc xong trạng thái "đã ẩn ngày mai" thì chưa hiện — tránh nháy phần đã ẩn. */
-  const chip = computed(() => (dismissLoaded.value ? agendaChip(agenda.value) : null))
+  const chip = computed(() => agendaChip(agenda.value))
 
   const days = computed(() => {
     const out: { tone: 'today' | 'tomorrow'; day: AgendaDay }[] = []
@@ -66,11 +55,6 @@
   function dateLabel(dateKey: string): string {
     return formatCalendarBannerDate(dateKey, lang.value)
   }
-
-  onMounted(async () => {
-    dismissedTomorrowKey.value = await getDismissedUpcomingBannerDateKey()
-    dismissLoaded.value = true
-  })
 
   async function openPanel(): Promise<void> {
     todayKey.value = todayLocalKey()
@@ -125,15 +109,6 @@
   function openDay(dateKey: string): void {
     closePanel(false)
     emit('open-calendar', dateKey)
-  }
-
-  async function onDismissTomorrow(): Promise<void> {
-    const key = tomorrowKey.value
-    dismissedTomorrowKey.value = key
-    // Nút vừa bấm biến mất → giữ focus trong bảng (nếu bảng còn).
-    await nextTick()
-    panelRef.value?.focus()
-    await dismissUpcomingBannerForDate(key)
   }
 </script>
 
@@ -199,15 +174,6 @@
           <span class="agenda-chip__day-label">
             {{ dayLabel(d.tone) }}<span class="agenda-chip__day-date"> · {{ dateLabel(d.day.dateKey) }}</span>
           </span>
-          <button
-            v-if="d.tone === 'tomorrow'"
-            type="button"
-            class="agenda-chip__link"
-            :title="t('calendar.agenda.dismissTomorrowHint')"
-            @click="onDismissTomorrow"
-          >
-            {{ t('calendar.agenda.dismissTomorrow') }}
-          </button>
           <button
             type="button"
             class="agenda-chip__link agenda-chip__link--accent"

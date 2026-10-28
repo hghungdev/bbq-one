@@ -359,8 +359,6 @@ export const en = {
   'calendar.agenda.chipAria': '{label}: {list} — show upcoming events',
   'calendar.agenda.panelTitle': 'Upcoming',
   'calendar.agenda.openDay': 'Open calendar',
-  'calendar.agenda.dismissTomorrow': 'Hide',
-  'calendar.agenda.dismissTomorrowHint': "Hide tomorrow's reminder (comes back after restarting the browser or signing in again)",
   'calendar.agenda.listSeparator': ', ',
   'calendar.cell.pastTitle': 'Past date — cannot add new events here. Click an event to edit.',
   'calendar.modal.title.create': 'New event',
