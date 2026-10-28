@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import IconButton from '@/components/ui/IconButton.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import type { OverdueCalendarDayGroup } from '@/services/calendarOverdueReminder.service'
 import { useLangStore } from '@/stores/uiLang'
+import { selectRange, selectionState, toggleMany } from '@/utils/bulkSelection'
 import { formatCalendarBannerDate } from '@/utils/calendarDate'
 
 const props = defineProps<{
@@ -22,20 +23,35 @@ const { t } = langStore
 const { lang } = storeToRefs(langStore)
 
 const checkedIds = ref<Set<string>>(new Set())
+/** Mục bấm gần nhất — Shift + bấm chọn liên tiếp từ đây (U7). */
+const anchorId = ref<string | null>(null)
 const busy = ref(false)
+const selectAllRef = ref<HTMLInputElement | null>(null)
 
-const totalEvents = computed(() =>
-  props.groups.reduce((sum, g) => sum + g.events.length, 0),
-)
+/** Thứ tự hiển thị (ngày cũ → mới, trong ngày theo position) — dùng cho chọn liên tiếp. */
+const allIds = computed(() => props.groups.flatMap((g) => g.events.map((e) => e.id)))
+const totalEvents = computed(() => allIds.value.length)
+const selectedCount = computed(() => allIds.value.filter((id) => checkedIds.value.has(id)).length)
+const allState = computed(() => selectionState(allIds.value, checkedIds.value))
 
-function resetChecks(): void {
-  checkedIds.value = new Set()
+function dayIds(group: OverdueCalendarDayGroup): string[] {
+  return group.events.map((e) => e.id)
 }
 
+function dayState(group: OverdueCalendarDayGroup): 'none' | 'some' | 'all' {
+  return selectionState(dayIds(group), checkedIds.value)
+}
+
+// Không chọn sẵn mục nào (tránh lỡ tay đánh dấu xong việc chưa làm); focus "Chọn tất cả" để bàn phím
+// dùng được ngay.
 watch(
   () => props.visible,
-  (open) => {
-    if (open) resetChecks()
+  async (open) => {
+    if (!open) return
+    checkedIds.value = new Set()
+    anchorId.value = null
+    await nextTick()
+    selectAllRef.value?.focus()
   },
 )
 
@@ -47,11 +63,28 @@ function isChecked(id: string): boolean {
   return checkedIds.value.has(id)
 }
 
-function toggleCheck(id: string, checked: boolean): void {
-  const next = new Set(checkedIds.value)
-  if (checked) next.add(id)
-  else next.delete(id)
-  checkedIds.value = next
+function onToggleAll(): void {
+  checkedIds.value = toggleMany(allIds.value, checkedIds.value)
+  anchorId.value = null
+}
+
+function onToggleDay(group: OverdueCalendarDayGroup): void {
+  checkedIds.value = toggleMany(dayIds(group), checkedIds.value)
+  anchorId.value = null
+}
+
+/** Lúc click chạy, ô đã đổi trạng thái — đọc `checked` mới; Shift → áp cho cả đoạn từ anchor. */
+function onRowClick(id: string, e: MouseEvent): void {
+  const checked = (e.target as HTMLInputElement).checked
+  if (e.shiftKey && anchorId.value !== null) {
+    checkedIds.value = selectRange(allIds.value, anchorId.value, id, checked, checkedIds.value)
+  } else {
+    const next = new Set(checkedIds.value)
+    if (checked) next.add(id)
+    else next.delete(id)
+    checkedIds.value = next
+  }
+  anchorId.value = id
 }
 
 function onClose(): void {
@@ -60,10 +93,10 @@ function onClose(): void {
 }
 
 async function onConfirm(): Promise<void> {
-  if (busy.value) return
+  if (busy.value || selectedCount.value === 0) return
   busy.value = true
   try {
-    const ids = [...checkedIds.value]
+    const ids = allIds.value.filter((id) => checkedIds.value.has(id))
     emit('confirm', ids)
   } finally {
     busy.value = false
@@ -79,6 +112,12 @@ function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     e.preventDefault()
     onClose()
+    return
+  }
+  // Ctrl/⌘+A trong hộp thoại: chọn / bỏ chọn tất cả (thay vì bôi đen chữ cả trang).
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+    e.preventDefault()
+    onToggleAll()
   }
 }
 
@@ -127,36 +166,77 @@ onUnmounted(() => {
           {{ t('calendar.overdue.intro', { n: totalEvents }) }}
         </p>
 
+        <!-- U7: chọn hàng loạt -->
+        <div class="cal-overdue__selectbar">
+          <label class="cal-overdue__selectall">
+            <input
+              ref="selectAllRef"
+              type="checkbox"
+              class="cal-overdue__check"
+              :checked="allState === 'all'"
+              :indeterminate="allState === 'some'"
+              @change="onToggleAll"
+            />
+            <span>{{ t('calendar.overdue.selectAll') }}</span>
+          </label>
+          <span class="cal-overdue__count" aria-live="polite">
+            {{ t('calendar.overdue.selectedCount', { n: selectedCount, total: totalEvents }) }}
+          </span>
+        </div>
+
         <div class="cal-overdue__scroll">
           <section
             v-for="group in groups"
             :key="group.dateKey"
             class="cal-overdue__day"
           >
-            <h3 class="cal-overdue__day-title">{{ dateLabel(group.dateKey) }}</h3>
-            <ul class="cal-overdue__list">
-              <li v-for="ev in group.events" :key="ev.id" class="cal-overdue__row">
+            <h3 class="cal-overdue__day-title">
+              <label class="cal-overdue__day-label">
                 <input
-                  :id="`cal-overdue-${ev.id}`"
                   type="checkbox"
                   class="cal-overdue__check"
-                  :checked="isChecked(ev.id)"
-                  @change="toggleCheck(ev.id, ($event.target as HTMLInputElement).checked)"
+                  :checked="dayState(group) === 'all'"
+                  :indeterminate="dayState(group) === 'some'"
+                  :aria-label="t('calendar.overdue.selectDay', { date: dateLabel(group.dateKey) })"
+                  @change="onToggleDay(group)"
                 />
-                <label :for="`cal-overdue-${ev.id}`" class="cal-overdue__label">
-                  {{ ev.title }}
+                <span class="cal-overdue__day-date">{{ dateLabel(group.dateKey) }}</span>
+                <span class="cal-overdue__day-count">{{ group.events.length }}</span>
+              </label>
+            </h3>
+            <ul class="cal-overdue__list">
+              <li v-for="ev in group.events" :key="ev.id">
+                <label
+                  class="cal-overdue__row"
+                  :class="{ 'cal-overdue__row--checked': isChecked(ev.id) }"
+                >
+                  <input
+                    type="checkbox"
+                    class="cal-overdue__check"
+                    :checked="isChecked(ev.id)"
+                    @click="onRowClick(ev.id, $event)"
+                  />
+                  <span class="cal-overdue__label">{{ ev.title }}</span>
                 </label>
               </li>
             </ul>
           </section>
         </div>
 
+        <p class="cal-overdue__tip">{{ t('calendar.overdue.tip') }}</p>
+
         <footer class="cal-overdue__footer">
           <RetroButton variant="sm" type="button" :disabled="busy" @click="onClose">
             {{ t('calendar.overdue.btnLater') }}
           </RetroButton>
-          <RetroButton variant="sm" type="button" :disabled="busy" @click="onConfirm">
-            {{ t('calendar.overdue.btnConfirm') }}
+          <RetroButton
+            variant="sm"
+            type="button"
+            class="cal-overdue__primary"
+            :disabled="busy || selectedCount === 0"
+            @click="onConfirm"
+          >
+            {{ t('calendar.overdue.btnConfirmCount', { n: selectedCount }) }}
           </RetroButton>
         </footer>
       </div>
@@ -217,16 +297,43 @@ onUnmounted(() => {
 }
 
 .cal-overdue__intro {
-  margin: 0;
-  margin: 10px;
-  padding: 9px 10px;
+  margin: 10px 14px 0;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   line-height: 1.45;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
   flex-shrink: 0;
+}
+
+/* U7: thanh chọn hàng loạt — nằm ngoài vùng cuộn nên luôn thấy. */
+.cal-overdue__selectbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 10px 0;
+  padding: 7px 12px 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  flex-shrink: 0;
+}
+
+.cal-overdue__selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cal-overdue__count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .cal-overdue__scroll {
@@ -241,15 +348,36 @@ onUnmounted(() => {
 }
 
 .cal-overdue__day-title {
-  margin: 0 0 6px;
-  padding: 6px 9px;
+  margin: 0 0 4px;
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.012em;
-  border: 1px solid var(--border);
+}
+
+.cal-overdue__day-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cal-overdue__day-date {
+  flex: 1 1 auto;
+}
+
+.cal-overdue__day-count {
+  min-width: 20px;
+  padding: 1px 7px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .cal-overdue__list {
@@ -260,32 +388,70 @@ onUnmounted(() => {
 
 .cal-overdue__row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  padding: 7px 8px;
-  margin-bottom: 5px;
+  /* Thụt vào thẳng hàng chữ ngày (ô chọn ngày 16 px + gap 10 px). */
+  padding: 8px 10px 8px 36px;
+  margin-bottom: 4px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background 0.1s linear,
+    border-color 0.1s linear;
 }
 
 .cal-overdue__row:hover {
   border-color: var(--accent-soft-border);
+}
+
+.cal-overdue__row--checked {
+  border-color: var(--accent-soft-border);
   background: var(--surface-accent-muted);
 }
 
+.cal-overdue__row:has(.cal-overdue__check:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
 .cal-overdue__check {
-  margin-top: 2px;
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
   accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .cal-overdue__label {
   flex: 1 1 auto;
+  min-width: 0;
   font-size: var(--font-size-base);
   color: var(--text-primary);
   line-height: 1.4;
-  cursor: pointer;
+}
+
+.cal-overdue__tip {
+  margin: 0 14px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Nút chính đặc màu nhấn — rõ là hành động chính; mờ khi chưa chọn gì. */
+.cal-overdue__primary:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.cal-overdue__primary:hover:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--color-primary-focus);
+  border-color: var(--color-primary-focus);
 }
 
 .cal-overdue__footer {

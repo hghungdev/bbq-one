@@ -410,8 +410,11 @@ export const vi: Record<I18nKey, string> = {
   'calendar.overflow.btn.next': 'TIẾP',
   'calendar.overflow.btn.save': 'LƯU',
   'calendar.overdue.title': 'Sự kiện đã qua hạn',
-  'calendar.overdue.intro':
-    'Các sự kiện quá hạn chưa đánh dấu hoàn thành ({n} mục). Tích những việc đã xong, rồi xác nhận.',
+  'calendar.overdue.intro': '{n} sự kiện trước hôm nay chưa đánh dấu xong. Chọn những việc đã làm rồi xác nhận.',
+  'calendar.overdue.selectAll': 'Chọn tất cả',
+  'calendar.overdue.selectedCount': 'Đã chọn {n}/{total}',
+  'calendar.overdue.selectDay': 'Chọn tất cả sự kiện ngày {date}',
+  'calendar.overdue.tip': 'Mẹo: Shift + bấm để chọn liên tiếp · Ctrl+A chọn / bỏ chọn tất cả',
   'calendar.overdue.btnLater': 'ĐỂ SAU',
-  'calendar.overdue.btnConfirm': 'HOÀN THÀNH',
+  'calendar.overdue.btnConfirmCount': 'ĐÁNH DẤU XONG ({n})',
 }

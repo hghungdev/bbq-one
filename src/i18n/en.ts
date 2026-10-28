@@ -408,10 +408,13 @@ export const en = {
   'calendar.overflow.btn.next': 'NEXT',
   'calendar.overflow.btn.save': 'SAVE',
   'calendar.overdue.title': 'Overdue events',
-  'calendar.overdue.intro':
-    'These past events are not marked done yet ({n} total). Check the ones you finished, then confirm.',
+  'calendar.overdue.intro': "{n} past events aren't marked done yet. Select the ones you finished, then confirm.",
+  'calendar.overdue.selectAll': 'Select all',
+  'calendar.overdue.selectedCount': '{n} of {total} selected',
+  'calendar.overdue.selectDay': 'Select all events on {date}',
+  'calendar.overdue.tip': 'Tip: Shift-click to select a range · Ctrl+A selects / clears all',
   'calendar.overdue.btnLater': 'LATER',
-  'calendar.overdue.btnConfirm': 'MARK DONE',
+  'calendar.overdue.btnConfirmCount': 'MARK DONE ({n})',
 } as const
 
 export type I18nKey = keyof typeof en
