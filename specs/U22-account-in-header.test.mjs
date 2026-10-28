@@ -98,7 +98,9 @@ const avatarBtn = (/<button\b[^>]*ref="triggerRef"[\s\S]*?<\/button>/.exec(accTp
 check(
   'U22.4 đã đăng nhập: avatar chữ cái (không email → 👤), aria-haspopup="menu" + aria-expanded + aria-label có email',
   /aria-haspopup="menu"/.test(avatarBtn) && /:aria-expanded="open"/.test(avatarBtn) &&
-    /t\('app\.account\.aria'/.test(avatarBtn) && /initial/.test(avatarBtn) && /name="user"/.test(avatarBtn) &&
+    (/t\('app\.account\.aria'/.test(avatarBtn) ||
+      (/:aria-label="accountLabel"/.test(avatarBtn) && /accountLabel = computed\(\(\) => t\('app\.account\.aria'/.test(accScript))) &&
+    /initial/.test(avatarBtn) && /name="user"/.test(avatarBtn) &&
     /avatarInitial\(/.test(accScript),
   avatarBtn.slice(0, 200) || 'chưa có avatar',
 )

@@ -33,6 +33,7 @@
   import DashboardSkeleton from '@/components/ui/DashboardSkeleton.vue'
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
   import AppIcon from '@/components/ui/AppIcon.vue'
+  import AccountMenu from '@/components/layout/AccountMenu.vue'
   import {
     hasPendingSyncWork,
     initAutoSyncOnNetworkRestore,
@@ -399,6 +400,8 @@
 
   /** Anonymous: chưa đăng nhập */
   const isAnonymous = computed(() => !isAuthenticated.value)
+  /** U22: email cho avatar / menu tài khoản — null khi phiên offline "mềm" chưa có user. */
+  const accountEmail = computed(() => auth.user?.email ?? null)
 
   async function onLogout(): Promise<void> {
     // S2C1.6: chốt các xóa đang chờ Undo khi còn đăng nhập — Undo sau logout sẽ khôi phục ghi chú
@@ -692,27 +695,7 @@
         >
           <AppIcon name="settings" :size="20" />
         </button>
-        <!-- U17: 👤 thay ⇤ — ⇤ chỉ là ảnh lật của ⇥ "Đăng xuất", nhìn như một. -->
-        <button
-          v-if="isAnonymous"
-          type="button"
-          class="shell__rail-btn shell__rail-btn--accent"
-          :aria-label="t('app.aria.login')"
-          :title="t('app.aria.loginTitle')"
-          @click="onGoLogin"
-        >
-          <AppIcon name="user" :size="20" />
-        </button>
-        <button
-          v-else
-          type="button"
-          class="shell__rail-btn"
-          :aria-label="t('app.aria.logout')"
-          :title="t('app.aria.logoutTitle')"
-          @click="onLogout"
-        >
-          <AppIcon name="log-out" :size="20" />
-        </button>
+        <!-- U22: Đăng nhập / Đăng xuất lên header (AccountMenu, kiểu Gmail) — đáy thanh chỉ còn ⚙. -->
       </div>
     </nav>
 
@@ -756,14 +739,6 @@
               <AppIcon name="settings" :size="20" />
               <span>{{ t('app.aria.settings') }}</span>
             </button>
-            <button v-if="isAnonymous" type="button" class="shell__drawer-item" @click="closeRail(false); onGoLogin()">
-              <AppIcon name="user" :size="20" />
-              <span>{{ t('app.aria.login') }}</span>
-            </button>
-            <button v-else type="button" class="shell__drawer-item" @click="closeRail(false); onLogout()">
-              <AppIcon name="log-out" :size="20" />
-              <span>{{ t('app.aria.logout') }}</span>
-            </button>
           </div>
         </div>
         <!-- /drawer -->
@@ -796,6 +771,13 @@
             />
             <!-- Local pending badge: chỉ hiện khi anonymous -->
             <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
+            <!-- U22: tài khoản đứng cuối, như avatar Gmail. -->
+            <AccountMenu
+              :signed-in="!isAnonymous"
+              :email="accountEmail"
+              @sign-in="onGoLogin"
+              @sign-out="onLogout"
+            />
           </div>
         </div>
       </header>
@@ -1015,11 +997,6 @@
   .shell__rail-item--active:hover {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 14%, transparent);
-  }
-
-  .shell__rail-btn--accent {
-    color: var(--accent);
-    background: var(--surface-accent-muted);
   }
 
   /* Bảng mở rộng: nổi đè, không đẩy nội dung. */

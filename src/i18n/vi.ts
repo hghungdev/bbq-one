@@ -31,6 +31,8 @@ export const vi: Record<I18nKey, string> = {
   'app.aria.loginTitle': 'Đăng nhập tài khoản',
   'app.aria.logout': 'Đăng xuất',
   'app.aria.logoutTitle': 'Thoát tài khoản',
+  'app.account.aria': 'Tài khoản {email}',
+  'app.account.signedIn': 'Đã đăng nhập',
   'app.find': 'TÌM',
   'app.logout': 'ĐĂNG XUẤT',
   'app.login': 'ĐĂNG NHẬP',

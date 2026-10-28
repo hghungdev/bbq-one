@@ -29,6 +29,8 @@ export const en = {
   'app.aria.loginTitle': 'Sign in to your account',
   'app.aria.logout': 'Log out',
   'app.aria.logoutTitle': 'Sign out of your account',
+  'app.account.aria': 'Account {email}',
+  'app.account.signedIn': 'Signed in',
   'app.find': 'FIND',
   'app.logout': 'LOGOUT',
   'app.login': 'SIGN IN',
