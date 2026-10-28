@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
 import LangFlagIcon from '@/components/ui/LangFlagIcon.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
 import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
-import { useAppTimezoneStore } from '@/stores/appTimezone'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useBookmarkPinStore } from '@/stores/bookmarkPin'
 import { useLangStore } from '@/stores/uiLang'
-import { formatUtcOffsetLabel, UTC_OFFSET_OPTIONS } from '@/utils/appDateTime'
 import { getExtensionVersion } from '@/utils/extensionVersion'
 import { accountPasswordIssues } from '@/utils/accountPasswordValidation'
 import { bookmarkPinWeakReason } from '@/utils/bookmarkPinValidation'
@@ -21,21 +18,10 @@ const emit = defineEmits<{ close: []; 'lock-account': [] }>()
 const auth = useAuthStore()
 const accountCrypto = useAccountCryptoStore()
 const bookmarkPin = useBookmarkPinStore()
-const appTimezone = useAppTimezoneStore()
-const { utcOffsetHours } = storeToRefs(appTimezone)
 const langStore = useLangStore()
 const { t } = langStore
 
 const extensionVersion = getExtensionVersion()
-
-const utcOffsetCurrentHint = computed(() =>
-  t('settings.utcOffsetCurrent', { label: formatUtcOffsetLabel(utcOffsetHours.value) }),
-)
-
-function onUtcOffsetChange(e: Event): void {
-  const v = Number((e.target as HTMLSelectElement).value)
-  void appTimezone.setOffsetHours(v)
-}
 
 const bmPinOld = ref('')
 const bmPinNew = ref('')
@@ -300,24 +286,6 @@ onUnmounted(() => {
               <LangFlagIcon locale="vi" />
             </RetroButton>
           </div>
-        </SettingsAccordionSection>
-
-        <SettingsAccordionSection :title="t('settings.timezone')" :default-open="true">
-          <p class="settings-hint">{{ t('settings.timezoneDesc') }}</p>
-          <p class="settings-hint settings-hint--sub">{{ utcOffsetCurrentHint }}</p>
-          <label class="settings-field-label" for="set-utc-offset">
-            {{ t('settings.timezoneOffset') }}
-          </label>
-          <select
-            id="set-utc-offset"
-            class="settings-utc-select"
-            :value="utcOffsetHours"
-            @change="onUtcOffsetChange"
-          >
-            <option v-for="h in UTC_OFFSET_OPTIONS" :key="h" :value="h">
-              {{ formatUtcOffsetLabel(h) }}
-            </option>
-          </select>
         </SettingsAccordionSection>
 
         <SettingsAccordionSection
@@ -705,26 +673,6 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 0;
-}
-
-.settings-utc-select {
-  display: block;
-  width: 100%;
-  max-width: 220px;
-  margin: 0 0 4px;
-  padding: 8px 10px;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-}
-
-.settings-utc-select:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
 }
 
 .settings-row--pin {

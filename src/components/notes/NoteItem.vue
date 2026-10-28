@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useAppTimezoneStore } from '@/stores/appTimezone'
 import ListItemSettingsMenu from '@/components/ui/ListItemSettingsMenu.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { formatListUpdatedAt } from '@/utils/date'
@@ -41,7 +39,6 @@ const emit = defineEmits<{
 const notes = useNotesStore()
 const folders = useFoldersStore()
 const { t } = useLangStore()
-const { utcOffsetHours } = storeToRefs(useAppTimezoneStore())
 
 const rowLocked = computed(() => isEncryptedEnvelope(props.note.title))
 
@@ -194,7 +191,7 @@ function onRenameKeydown(e: KeyboardEvent): void {
             </template>
           </div>
           <div class="note-item__foot">
-            {{ formatListUpdatedAt(note.updated_at, utcOffsetHours) }}
+            {{ formatListUpdatedAt(note.updated_at) }}
           </div>
         </button>
         <ListItemSettingsMenu

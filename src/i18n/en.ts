@@ -202,11 +202,6 @@ export const en = {
   'settings.title': 'SETTINGS',
   'settings.language': 'LANGUAGE',
   'settings.languageDesc': 'UI display language.',
-  'settings.timezone': 'TIMEZONE (UTC)',
-  'settings.timezoneDesc':
-    'Timezone used for folder/note dates. Default is UTC+0.',
-  'settings.timezoneOffset': 'UTC offset',
-  'settings.utcOffsetCurrent': 'Current: {label}',
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',
   'settings.accountPassword': 'ACCOUNT — PASSWORD',

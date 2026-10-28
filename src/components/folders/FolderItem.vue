@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useAppTimezoneStore } from '@/stores/appTimezone'
 import ListItemSettingsMenu from '@/components/ui/ListItemSettingsMenu.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import { useFoldersStore } from '@/stores/folders'
@@ -16,7 +14,6 @@ const props = defineProps<{
   renaming: boolean
 }>()
 
-const { utcOffsetHours } = storeToRefs(useAppTimezoneStore())
 
 const emit = defineEmits<{
   select: [id: string]
@@ -176,7 +173,7 @@ function pickAction(
           </span>
         </div>
         <div class="folder-item__foot">
-          {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at, utcOffsetHours) }}
+          {{ formatListUpdatedAt(folder.updated_at ?? folder.created_at) }}
         </div>
       </button>
       <ListItemSettingsMenu

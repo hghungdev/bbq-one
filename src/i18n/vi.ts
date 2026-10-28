@@ -204,11 +204,6 @@ export const vi: Record<I18nKey, string> = {
   'settings.title': 'CÀI ĐẶT',
   'settings.language': 'NGÔN NGỮ GIAO DIỆN',
   'settings.languageDesc': 'Ngôn ngữ hiển thị giao diện ứng dụng.',
-  'settings.timezone': 'MÚI GIỜ (UTC)',
-  'settings.timezoneDesc':
-    'Múi giờ dùng cho ngày cập nhật folder/note. Mặc định UTC+0.',
-  'settings.timezoneOffset': 'Lệch UTC',
-  'settings.utcOffsetCurrent': 'Đang chọn: {label}',
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',
   'settings.accountPassword': 'TÀI KHOẢN — MẬT KHẨU',
