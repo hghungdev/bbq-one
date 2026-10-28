@@ -18,7 +18,7 @@ import { scheduleAutoSync } from '@/services/autoSync.service'
 import { isCalendarEventDirty, mergeFreshWithDirtyLocal, mergeSnapshotWithStored } from '@/services/sync.service'
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
-import { safeCacheWrite } from '@/utils/cacheWrite'
+import { readCachedArray, safeCacheWrite } from '@/utils/cacheWrite'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -92,9 +92,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
 
   async function persistCache(): Promise<void> {
     const stored = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
-    const disk = Array.isArray(stored[CALENDAR_EVENTS_CACHE_KEY])
-      ? (stored[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[])
-      : []
+    const disk = readCachedArray<CalendarEvent>(stored[CALENDAR_EVENTS_CACHE_KEY]) ?? []
     events.value = mergeSnapshotWithStored(events.value, disk, isCalendarEventDirty)
     await safeCacheWrite({ [CALENDAR_EVENTS_CACHE_KEY]: events.value }, (e) => {
       loadError.value = e instanceof Error ? e.message : 'Cache write failed'
@@ -103,8 +101,8 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
 
   async function hydrateFromCache(): Promise<void> {
     const cached = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
-    const raw = cached[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[] | undefined
-    if (Array.isArray(raw) && raw.length > 0) {
+    const raw = readCachedArray<CalendarEvent>(cached[CALENDAR_EVENTS_CACHE_KEY])
+    if (raw && raw.length > 0) {
       events.value = withNormalizedDates(raw)
     }
   }
@@ -130,8 +128,8 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
       loadError.value = e instanceof Error ? e.message : 'Load calendar failed'
       // Fall back to cache
       const cached = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
-      const raw = cached[CALENDAR_EVENTS_CACHE_KEY] as CalendarEvent[] | undefined
-      if (Array.isArray(raw)) events.value = withNormalizedDates(raw)
+      const raw = readCachedArray<CalendarEvent>(cached[CALENDAR_EVENTS_CACHE_KEY])
+      if (raw) events.value = withNormalizedDates(raw)
     }
   }
 

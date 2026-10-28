@@ -163,6 +163,8 @@ try {
       safeCacheWrite: async (obj) => {
         for (const [key, v] of Object.entries(obj)) disk.set(key, structuredClone(v))
       },
+      // C11: store đọc cache qua readCachedArray (mock chỉ vá API mới, dùng code thật).
+      readCachedArray: loadTsModule(path.join(ROOT, 'src', 'utils', 'cacheWrite.ts')).readCachedArray,
     },
   }).useCalendarEventsStore
 } catch (e) {

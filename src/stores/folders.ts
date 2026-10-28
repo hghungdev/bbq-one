@@ -9,7 +9,7 @@ import { withTimeout } from '@/utils/withTimeout'
 import { isOnline } from '@/services/networkReachability.service'
 import { isNetworkError } from '@/utils/networkErrors'
 import { scheduleAutoSync } from '@/services/autoSync.service'
-import { safeCacheWrite } from '@/utils/cacheWrite'
+import { readCachedArray, safeCacheWrite } from '@/utils/cacheWrite'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -38,8 +38,8 @@ export const useFoldersStore = defineStore('folders', () => {
 
   async function hydrateFromCache(): Promise<void> {
     const cached = await chrome.storage.local.get(FOLDERS_CACHE_KEY)
-    const raw = cached[FOLDERS_CACHE_KEY] as Folder[] | undefined
-    if (Array.isArray(raw) && raw.length > 0) {
+    const raw = readCachedArray<Folder>(cached[FOLDERS_CACHE_KEY])
+    if (raw && raw.length > 0) {
       folders.value = raw
     }
   }
@@ -59,8 +59,8 @@ export const useFoldersStore = defineStore('folders', () => {
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load folders failed'
       const cached = await chrome.storage.local.get(FOLDERS_CACHE_KEY)
-      const raw = cached[FOLDERS_CACHE_KEY] as Folder[] | undefined
-      if (Array.isArray(raw) && raw.length > 0) {
+      const raw = readCachedArray<Folder>(cached[FOLDERS_CACHE_KEY])
+      if (raw && raw.length > 0) {
         folders.value = raw
       }
     }

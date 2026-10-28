@@ -33,6 +33,8 @@ hỏng); chỉ mất lớp kiểm tra phụ "folder bảo mật" trong đường
   có cache hỏng **cứu lại** được row dirty (hydrate → merge với bản server giữ row dirty → ghi lại
   dạng mảng → auto-sync đẩy lên).
 - `sync.service` / `autoSync.service` không đổi: sau lần ghi đầu tiên cache đã là mảng.
+- Chi phí: chép sâu 2.000 note + 2.000 body (body 2 KB) ≈ 4–10 ms / lần lưu (đo bằng Node) — chấp
+  nhận để sửa tập trung một chỗ (bao cả cache bookmark có cây lồng mảng); chuỗi không bị chép.
 
 ## Nghiệm thu
 
