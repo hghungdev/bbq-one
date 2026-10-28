@@ -319,3 +319,9 @@ commit. Ghi nhận: hộp Đăng nhập (`LoginModal`) chưa đóng bằng Esc �
 **U24 (cùng đợt):** ⚙ Cài đặt lên header kiểu Gmail (☀ · ☁ · ⚙ · tài khoản), thanh dọc chỉ còn ☰ + 3 mục, bảng ☰ chỉ
 logo + 3 mục. Test 5/5 (RED 5). Đổi assertion có chủ đích: U20.3, U22.1. Sir đồng ý icon Chrome bản transparent (U23).
 58 harness PASS. Gộp vào `main` theo yêu cầu Sir (fast-forward — `main` là tổ tiên trực tiếp).
+
+**U25 (cùng đợt — Sir: "icon mới nhỏ hơn icon khác trên Chrome, vào trong app nữa"):** bản transparent chỉ lấp 86–88 %
+ngang / 76–81 % dọc khung → `scripts/make-brand-icons.py` cắt sát viền (lề 1,5 %), xuất `design/transparent-tight/`
+→ `public/icon-*` + logo header; logo header 28 → 32 px. Test giải mã PNG thật (≥ 94 % ngang). Đổi assertion có chủ
+đích: U23.1, U23.3, U23.4, U23.5. 59 harness PASS.
+

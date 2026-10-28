@@ -712,7 +712,7 @@
               <AppIcon name="menu" :size="20" />
             </button>
             <span class="shell__brand">
-              <img class="shell__brand-logo" :src="brandLogo" alt="" width="28" height="28" />
+              <img class="shell__brand-logo" :src="brandLogo" alt="" width="32" height="32" />
               <span class="shell__brand-name">BBQOne</span>
             </span>
           </div>
@@ -738,7 +738,7 @@
         <div class="shell__header-row shell__header-row--top">
           <div class="shell__header-left">
             <span class="shell__brand">
-              <img class="shell__brand-logo" :src="brandLogo" alt="" width="28" height="28" />
+              <img class="shell__brand-logo" :src="brandLogo" alt="" width="32" height="32" />
               <span class="shell__brand-name">BBQOne</span>
             </span>
           </div>
@@ -1096,11 +1096,12 @@
     white-space: nowrap;
   }
 
+  /* U25: 32 px — cùng cỡ avatar / nút header; ảnh đã cắt sát viền (design/transparent-tight). */
   .shell__brand-logo {
     display: block;
     flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
   }
 
   .shell__brand-name {

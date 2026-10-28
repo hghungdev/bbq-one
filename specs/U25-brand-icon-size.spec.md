@@ -17,7 +17,8 @@ logo 28 px nhưng hình chỉ ~24 × 21 px.
   `design/transparent-tight/icon{16,32,48,64,128}.png` → `public/icon-{16,32,48,128}.png` + `src/assets/brand/bbqone-logo.png` (64).
   Bản gốc `design/transparent/` của Sir giữ nguyên.
 - Hình rộng hơn cao (~888 × 782) → sau khi cắt: lấp ~97 % ngang, ~85 % dọc (giữ đúng tỉ lệ, không kéo méo).
-- Header giữ khung logo 28 px (U23.5) — hình to lên ~16 % nhờ cắt sát.
+- Header: khung logo 28 → **32 px** (cùng cỡ avatar và các nút 32 px của header) — cộng với cắt sát, hình rộng
+  ~24 → ~31 px.
 - 128 px cũng cắt sát (không theo gợi ý 96 + 16 px lề của Web Store): trang Extensions ở màn 2x dùng bản 128 → nếu chừa
   lề thì lại nhỏ như cũ.
 
@@ -25,6 +26,7 @@ logo 28 px nhưng hình chỉ ~24 × 21 px.
 
 - **U23.1 / U23.3** — trước: `public/icon-*` và logo app trùng `design/transparent/…`. Nay: trùng
   `design/transparent-tight/…` (sinh từ `design/transparent/icon1024.png` bằng script).
+- **U23.4 / U23.5** — logo header 28 → 32 px (thuộc tính `width` / `height` + CSS).
 
 ## Nghiệm thu
 

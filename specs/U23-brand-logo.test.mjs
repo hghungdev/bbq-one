@@ -52,7 +52,8 @@ check(
 
 const app = read('src', 'pages', 'App.vue')
 const tpl = app.slice(app.indexOf('<template>'), app.lastIndexOf('</template>')).replace(/\n\s*/g, ' ')
-const brand = /<span class="shell__brand"> <img class="shell__brand-logo" :src="brandLogo" alt="" width="28" height="28" \/> <span class="shell__brand-name">BBQOne<\/span> <\/span>/g
+// U25 (đổi có chủ đích): logo 28 → 32 px (cùng cỡ avatar / nút header; ảnh đã cắt sát).
+const brand = /<span class="shell__brand"> <img class="shell__brand-logo" :src="brandLogo" alt="" width="32" height="32" \/> <span class="shell__brand-name">BBQOne<\/span> <\/span>/g
 const headerLeft = (/<div class="shell__header-left">[\s\S]*?<\/div>/.exec(tpl) ?? [''])[0]
 const drawerHead = (/<div class="shell__drawer-head">[\s\S]*?<\/span> <\/span> <\/div>/.exec(tpl) ?? [''])[0]
 check(
@@ -65,8 +66,8 @@ check(
 const css = app.slice(app.indexOf('<style'))
 const rule = (sel) => (new RegExp(`\\${sel} \\{[^}]*\\}`).exec(css) ?? [''])[0]
 check(
-  'U23.5 CSS: logo 28 × 28 không co; tên màu chữ thường (không còn --accent)',
-  /width: 28px/.test(rule('.shell__brand-logo')) && /height: 28px/.test(rule('.shell__brand-logo')) &&
+  'U23.5 CSS: logo 32 × 32 (U25) không co; tên màu chữ thường (không còn --accent)',
+  /width: 32px/.test(rule('.shell__brand-logo')) && /height: 32px/.test(rule('.shell__brand-logo')) &&
     /flex: 0 0 auto/.test(rule('.shell__brand-logo')) &&
     /color: var\(--text-primary\)/.test(rule('.shell__brand-name')) &&
     !/--accent/.test(rule('.shell__brand') + rule('.shell__brand-name')),
