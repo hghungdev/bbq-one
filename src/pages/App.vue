@@ -34,6 +34,7 @@
   import OfflineBanner from '@/components/ui/OfflineBanner.vue'
   import AppIcon from '@/components/ui/AppIcon.vue'
   import AccountMenu from '@/components/layout/AccountMenu.vue'
+  import brandLogo from '@/assets/brand/bbqone-logo.png'
   import {
     hasPendingSyncWork,
     initAutoSyncOnNetworkRestore,
@@ -720,7 +721,10 @@
             >
               <AppIcon name="menu" :size="20" />
             </button>
-            <span class="shell__brand">BBQOne</span>
+            <span class="shell__brand">
+              <img class="shell__brand-logo" :src="brandLogo" alt="" width="28" height="28" />
+              <span class="shell__brand-name">BBQOne</span>
+            </span>
           </div>
           <button
             v-for="tab in HEADER_TABS"
@@ -749,7 +753,10 @@
       <header class="shell__header">
         <div class="shell__header-row shell__header-row--top">
           <div class="shell__header-left">
-            <span class="shell__brand">BBQOne</span>
+            <span class="shell__brand">
+              <img class="shell__brand-logo" :src="brandLogo" alt="" width="28" height="28" />
+              <span class="shell__brand-name">BBQOne</span>
+            </span>
           </div>
           <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
           <div class="shell__header-mid">
@@ -1106,13 +1113,27 @@
     min-width: 0;
   }
 
+  /* U23: cụm logo + tên kiểu Gmail — logo mang màu xanh, tên màu chữ thường (không tranh nhau). */
   .shell__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     flex: 0 0 auto;
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: -0.035em;
     white-space: nowrap;
+  }
+
+  .shell__brand-logo {
+    display: block;
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+  }
+
+  .shell__brand-name {
+    font-size: 16px;
+    font-weight: 650;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
   }
 
   /* Khoảng giữa nhóm tab và nhóm icon — chứa chip lịch (canh phải, sát nhóm icon). Không overflow:

@@ -303,3 +303,15 @@ secret"** ở tab Settings của function.
 | G1b sổ tay làm lại (Dashboard / CLI / project mới / server khác) + `npm run calendar-feed:bundle` | `cc97306` → (commit này) | ✅ 13/13 (RED 12) | file gộp trùng code đã deploy; chạy thử với Supabase / Deno giả: 404 / 200 `text/calendar` |
 
 Sổ tay: `supabase/functions/calendar-feed/README.md`. 55 harness PASS.
+
+## Đợt 11 (2026-10-28) — U22 tài khoản lên header, U23 logo mới
+
+| Mục | Commit (docs → feat) | Test | Kiểm tra |
+|---|---|---|---|
+| U22 tài khoản lên header kiểu Gmail (avatar + menu), ⚙ ở lại thanh dọc | `58614b9` → `9f99d92` | ✅ 8/8 (RED 8) | ẩn danh "👤 Đăng nhập"; avatar "H" → menu email + Đăng xuất; Esc / bấm ngoài / Tab đóng |
+| U23 logo mới: header logo + tên (kiểu Gmail), icon Chrome bản transparent | `d661171` → (commit này) | ✅ 5/5 (RED 4) | logo 28 px tải đúng (light + dark, bảng ☰); `dist/icon-*.png` = bản transparent |
+
+Đổi assertion có chủ đích: U20.3, U17.1/U17.2, U15.M5 (icon tài khoản nay ở `AccountMenu.vue`).
+Bộ icon của Sir (`design/navy`, `design/transparent`, commit `f82e756` trên `main`) gộp vào nhánh làm việc bằng merge
+commit. Ghi nhận: hộp Đăng nhập (`LoginModal`) chưa đóng bằng Esc — có từ trước, ngoài phạm vi U22.
+57 harness PASS.
