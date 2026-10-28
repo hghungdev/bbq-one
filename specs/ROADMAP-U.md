@@ -330,3 +330,10 @@ trắng trùng nền sáng + ảnh 64 → 32 tự thu ở màn 1x → viền tó
 32 / 64; icon Chrome cắt bớt 50 % phần ngang dư (16 × 14 → lấp ~94 % dọc), logo header giữ dáng. Đổi assertion có chủ
 đích: U22.1, U22.2, U24.1, U24.4, U24.5, U23.3, U23.4, U25.1, U25.2. 60 harness PASS.
 
+**R2 + U27 (rà soát cuối trước khi lên Store):** R2 — mô tả Chrome Web Store viết lại cho 2.0.0 (bỏ PIN Bookmark,
+"retro", "your Supabase project"; thêm Google Calendar, lặp sự kiện; What's new 2.0.0). U27 — Sir: "Dark/Light ›
+Setting › User": ☀ về header trước ⚙, đáy thanh dọc chỉ ☁. Đổi assertion có chủ đích: U26.1, U26.2, U24.4.
+Rà soát cuối: 62 harness PASS, `vue-tsc` sạch, build OK, `dist/manifest.json` 2.0.0 + 4 icon cắt sát, quyền không
+đổi; Chromium (ẩn danh + đăng nhập, sáng + tối): 3 mục thanh dọc, tạo + đánh dấu xong sự kiện, chip, ☀, ⚙ + Esc,
+bảng ☰, ☁ đồng bộ, menu tài khoản + đăng xuất — không lỗi console. Gộp vào `main` (fast-forward).
+

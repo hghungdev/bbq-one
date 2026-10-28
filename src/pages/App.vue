@@ -691,9 +691,8 @@
           <AppIcon :name="tab.icon" :size="20" />
         </button>
       </div>
-      <!-- U22 / U24: ⚙ và tài khoản ở header (kiểu Gmail). U26: ☀ giao diện + ☁ đồng bộ ở đáy thanh dọc. -->
+      <!-- U22 / U24 / U27: ☀ › ⚙ › tài khoản ở header (kiểu Gmail). U26: ☁ đồng bộ ở đáy thanh dọc. -->
       <div class="shell__rail-bottom">
-        <ThemeModeToggle />
         <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
         <CloudSyncStatusBadge
           v-if="!isAnonymous"
@@ -768,6 +767,8 @@
             />
           </div>
           <div class="shell__header-right">
+            <!-- U27: ☀ giao diện đứng trước ⚙ (Sir: Dark/Light › Setting › User). -->
+            <ThemeModeToggle />
             <!-- U24: ⚙ ngay trước tài khoản, như Gmail. -->
             <IconButton :label="t('app.aria.settings')" @click="showSettings = true">
               <AppIcon name="settings" :size="17" />
@@ -958,7 +959,7 @@
     margin-top: 10px;
   }
 
-  /* U26: ☀ ☁ ở đáy thanh — cỡ như mục thanh dọc (component giữ nguyên nhãn / màu trạng thái). */
+  /* U26: ☁ ở đáy thanh — cỡ như mục thanh dọc (component giữ nguyên nhãn / màu trạng thái). */
   .shell__rail-bottom {
     display: flex;
     flex-direction: column;
