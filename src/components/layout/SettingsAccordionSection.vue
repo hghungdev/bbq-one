@@ -29,8 +29,17 @@ function toggle(): void {
         :aria-controls="panelId"
         @click="toggle"
       >
-        <span class="set-acc__chevron" aria-hidden="true">{{ open ? '▼' : '▶' }}</span>
-        <span class="set-acc__title">{{ title }}</span>
+        <span class="set-acc__title ds-label">{{ title }}</span>
+        <svg
+          class="set-acc__chevron"
+          :class="{ 'set-acc__chevron--open': open }"
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          aria-hidden="true"
+        >
+          <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+        </svg>
       </button>
     </h3>
     <div
@@ -48,13 +57,13 @@ function toggle(): void {
 </template>
 
 <style scoped>
+/* U11 (ADN popover): mục = nhãn in hoa + mũi tên, ngăn bằng đường kẻ mảnh — không còn hộp viền. */
 .set-acc {
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  border-top: 1px solid var(--border);
+}
+
+.set-acc:first-child {
+  border-top: none;
 }
 
 .set-acc__heading {
@@ -69,21 +78,17 @@ function toggle(): void {
   gap: 8px;
   width: 100%;
   margin: 0;
-  padding: 9px 10px;
+  padding: 11px 6px 9px;
   border: none;
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  background: transparent;
   font-family: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  letter-spacing: -0.012em;
   text-align: left;
   cursor: pointer;
 }
 
-.set-acc__trigger:hover {
-  background: var(--surface-accent-muted);
-  color: var(--accent-dashboard);
+.set-acc__trigger:hover .set-acc__title {
+  color: var(--text-primary);
 }
 
 .set-acc__trigger:focus-visible {
@@ -91,25 +96,28 @@ function toggle(): void {
   outline-offset: -2px;
 }
 
-.set-acc__chevron {
-  flex: 0 0 auto;
-  width: 1.25em;
-  font-size: 10px;
-  line-height: 1;
-  color: var(--text-muted);
-}
-
 .set-acc__title {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.set-acc__panel {
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+.set-acc__chevron {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
 }
 
-.set-acc__inner {
-  padding: 10px;
+.set-acc__chevron--open {
+  transform: rotate(90deg);
+}
+
+.set-acc__panel {
+  padding: 0 6px 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .set-acc__chevron {
+    transition: none;
+  }
 }
 </style>

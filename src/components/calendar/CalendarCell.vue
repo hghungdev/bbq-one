@@ -115,9 +115,19 @@ function onEventClick(e: Event): void {
   box-shadow: inset 0 0 0 1px var(--accent-soft-border), inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
+/* U11: số ngày hôm nay trong vòng tròn màu nhấn (kiểu lịch hiện đại). */
 .cal-cell--today .cal-cell__day {
-  color: var(--accent);
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
 }
 
 .cal-cell--modal-target {
@@ -162,7 +172,7 @@ function onEventClick(e: Event): void {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -134,10 +134,10 @@ defineEmits<{
   align-items: center;
   padding: 8px 10px;
   margin-bottom: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .conflict-dialog__title {
@@ -227,11 +227,12 @@ defineEmits<{
 .conflict-dialog__actions {
   display: flex;
   gap: 8px;
-  padding: 6px;
+  padding: 10px 0 0;
   margin-top: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
   flex-wrap: wrap;
 }
 

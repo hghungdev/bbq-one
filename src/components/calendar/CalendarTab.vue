@@ -411,9 +411,13 @@ function jumpToEvent(ev: CalendarEvent): void {
   overflow: hidden;
 }
 
+/* U11: tên thứ = nhãn mục (in hoa nhỏ, giãn chữ). */
 .calendar-tab__weekday {
-  padding: 6px 8px;
-  font-size: var(--font-size-sm);
+  padding: 7px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--text-muted);
   text-align: left;
 }

@@ -561,12 +561,15 @@ onUnmounted(() => {
         </SettingsAccordionSection>
       </div>
 
-      <p class="settings-version">
-        {{ t('settings.version', { version: extensionVersion }) }}
-      </p>
-      <RetroButton type="button" class="settings-close" @click="emit('close')">
-        {{ t('settings.closeBtn') }}
-      </RetroButton>
+      <!-- U11: chân trang phẳng — phiên bản (chữ phụ) + "Đóng" (nút chữ). -->
+      <div class="settings-footer">
+        <p class="settings-version">
+          {{ t('settings.version', { version: extensionVersion }) }}
+        </p>
+        <button type="button" class="ds-text-action settings-close" @click="emit('close')">
+          {{ t('settings.closeBtn') }}
+        </button>
+      </div>
     </div>
   </div>
   <AccountEncryptionSetupModal
@@ -602,47 +605,36 @@ onUnmounted(() => {
   max-width: 100%;
   width: min(100%, 480px);
   max-height: min(90vh, 520px);
-  padding: 12px;
+  padding: 14px 14px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background:
-    radial-gradient(
-      ellipse 110% 80% at 50% 0%,
-      color-mix(in srgb, var(--accent) 5%, transparent) 0%,
-      transparent 58%
-    ),
-    var(--bg-secondary);
-  box-shadow: 0 18px 54px var(--panel-ring);
+  background: var(--bg-panel);
+  box-shadow: 0 18px 48px var(--panel-ring);
   overflow: hidden;
 }
 
 .settings-title {
   margin: 0;
   flex-shrink: 0;
-  font-size: var(--font-size-lg);
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
 .settings-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 10px 12px;
-  margin-bottom: 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  margin: 0 0 6px;
+  padding: 0 6px 8px;
   flex-shrink: 0;
   min-width: 0;
 }
 
 .settings-header-email {
   margin: 0;
-  font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   overflow: hidden;
@@ -650,12 +642,8 @@ onUnmounted(() => {
   white-space: nowrap;
   flex: 0 1 auto;
   min-width: 0;
-  max-width: min(220px, 58%);
+  max-width: min(240px, 60%);
   text-align: right;
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
 }
 
 .settings-scroll {
@@ -733,24 +721,25 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--success) 10%, var(--bg-secondary));
 }
 
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-top: 6px;
+  padding: 8px 2px 0 6px;
+  border-top: 1px solid var(--border);
+}
+
 .settings-close {
   flex-shrink: 0;
-  width: 100%;
-  margin-top: 8px;
 }
 
 .settings-version {
-  flex-shrink: 0;
-  margin: 10px 0 0;
-  padding: 6px 8px;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  margin: 0;
+  font-size: 11px;
   color: var(--text-muted);
-  letter-spacing: 0.06em;
-  text-align: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 64%, transparent);
 }
 
 .settings-divider {

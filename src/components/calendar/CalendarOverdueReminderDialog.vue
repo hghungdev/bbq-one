@@ -282,11 +282,11 @@ onUnmounted(() => {
   gap: 12px;
   margin: 10px 10px 0;
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: none;
+  border-radius: 0;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .cal-overdue__title {
@@ -311,10 +311,8 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 10px;
   margin: 10px 10px 0;
-  padding: 7px 12px 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  padding: 8px 12px 8px 10px;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -391,11 +389,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   /* Thụt vào thẳng hàng chữ ngày (ô chọn ngày 16 px + gap 10 px). */
-  padding: 8px 10px 8px 36px;
-  margin-bottom: 4px;
+  padding: 7px 10px 7px 36px;
+  margin-bottom: 2px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
+  background: transparent;
   cursor: pointer;
   user-select: none;
   transition:
@@ -404,11 +402,12 @@ onUnmounted(() => {
 }
 
 .cal-overdue__row:hover {
-  border-color: var(--accent-soft-border);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
-.cal-overdue__row--checked {
-  border-color: var(--accent-soft-border);
+/* Dòng phẳng (ADN popover): đã chọn = nền nhấn nhạt, không viền. */
+.cal-overdue__row--checked,
+.cal-overdue__row--checked:hover {
   background: var(--surface-accent-muted);
 }
 
@@ -459,10 +458,11 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: 8px;
   margin: 0 10px 10px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  padding: 10px 0 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  background: transparent;
 }
 </style>

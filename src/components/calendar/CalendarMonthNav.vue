@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
 import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{ year: number; month: number }>()
@@ -34,36 +33,41 @@ watch(
 </script>
 
 <template>
+  <!-- U11 (ADN popover): hàng phẳng — tên tháng chữ đậm, ‹ › icon trong suốt, "Hôm nay" nút chữ. -->
   <div class="cal-month-nav">
-    <RetroButton
-      variant="sm"
+    <button
       type="button"
-      class="cal-month-nav__icon-btn"
+      class="ds-icon-action cal-month-nav__icon-btn"
       :aria-label="t('calendar.nav.prev')"
+      :title="t('calendar.nav.prev')"
       @click="emit('prev')"
     >
-      ◀
-    </RetroButton>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6" />
+      </svg>
+    </button>
     <span class="cal-month-nav__label" :class="`cal-month-nav__label--${slideDir}`">
       <Transition :name="`cal-month-label-${slideDir}`" mode="out-in">
         <span :key="monthLabel" class="cal-month-nav__label-text">{{ monthLabel }}</span>
       </Transition>
     </span>
-    <RetroButton
-      variant="sm"
+    <button
       type="button"
-      class="cal-month-nav__icon-btn"
+      class="ds-icon-action cal-month-nav__icon-btn"
       :aria-label="t('calendar.nav.next')"
+      :title="t('calendar.nav.next')"
       @click="emit('next')"
     >
-      ▶
-    </RetroButton>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+      </svg>
+    </button>
     <div class="cal-month-nav__end">
       <!-- U2: CalendarTab đặt ô tìm kiếm (CalendarInlineSearch) vào đây. -->
       <slot name="actions" />
-      <RetroButton variant="sm" type="button" class="cal-month-nav__today" @click="emit('today')">
+      <button type="button" class="ds-text-action cal-month-nav__today" @click="emit('today')">
         {{ t('calendar.nav.today') }}
-      </RetroButton>
+      </button>
     </div>
   </div>
 </template>
@@ -73,27 +77,19 @@ watch(
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin: 10px 12px 8px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  gap: 2px;
+  margin: 8px 12px 6px 8px;
   flex: 0 0 auto;
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .cal-month-nav__label {
-  font-size: var(--font-size-lg);
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-primary);
   min-width: 150px;
-  padding: 5px 12px;
+  padding: 2px 6px;
   text-align: center;
   letter-spacing: -0.02em;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
   position: relative;
   overflow: hidden;
   display: inline-flex;
@@ -166,7 +162,5 @@ watch(
   min-width: 0;
 }
 
-.cal-month-nav__today {
-  min-width: 100px;
-}
+
 </style>

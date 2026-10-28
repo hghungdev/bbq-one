@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import RetroButton from '@/components/ui/RetroButton.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import InlineSearch from '@/components/ui/InlineSearch.vue'
 import IconDeleteButton from '@/components/ui/IconDeleteButton.vue'
 import IconRestoreButton from '@/components/ui/IconRestoreButton.vue'
@@ -197,23 +197,29 @@ async function onRefreshLive(): Promise<void> {
   <div v-else class="bm-tab">
     <!-- Toolbar -->
     <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
-      <RetroButton variant="sm" :disabled="bm.loading" @click="bm.backup(backupLabel)">
+      <!-- U11 (ADN popover): một hành động chính đặc màu, còn lại là nút chữ. -->
+      <button type="button" class="ds-primary" :disabled="bm.loading" @click="bm.backup(backupLabel)">
         {{ t('bookmark.backupNow') }}
-      </RetroButton>
-      <RetroButton variant="sm" :disabled="bm.loading || bm.liveTree.length === 0" @click="bm.exportHTML()">
+      </button>
+      <button
+        type="button"
+        class="ds-text-action"
+        :disabled="bm.loading || bm.liveTree.length === 0"
+        @click="bm.exportHTML()"
+      >
         {{ t('bookmark.exportHtml') }}
-      </RetroButton>
-      <RetroButton variant="sm" :disabled="bm.loading" @click="onRefreshLive()">
+      </button>
+      <button type="button" class="ds-text-action" :disabled="bm.loading" @click="onRefreshLive()">
         {{ t('bookmark.refresh') }}
-      </RetroButton>
-      <RetroButton
-        variant="sm"
+      </button>
+      <button
+        type="button"
+        class="ds-text-action ds-text-action--danger"
         :disabled="bm.loading"
-        class="bm-tab__btn--danger"
         @click="confirmDeleteAll = true"
       >
         {{ t('bookmark.deleteAll') }}
-      </RetroButton>
+      </button>
       <span v-if="bm.lastBackupAt" class="bm-tab__hint">
         {{ t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') }) }}
       </span>
@@ -237,7 +243,7 @@ async function onRefreshLive(): Promise<void> {
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
       <div class="bm-tab__backups" @click.self="bm.clearBookmarkSearch()">
-        <p class="bm-tab__col-title">{{ t('bookmark.backups') }}</p>
+        <SectionHeader :label="t('bookmark.backups')" :meta="String(bm.backups.length)" />
         <div
           v-if="bm.loading && bm.backups.length === 0"
           class="bm-tab__backups-skel"
@@ -256,8 +262,8 @@ async function onRefreshLive(): Promise<void> {
         <div
           v-for="bk in bm.backups"
           :key="bk.id"
-          class="bm-tab__backup-item"
-          :class="{ 'bm-tab__backup-item--active': bm.selectedBackupId === bk.id }"
+          class="bm-tab__backup-item ds-row"
+          :class="{ 'bm-tab__backup-item--active ds-row--selected': bm.selectedBackupId === bk.id }"
           @click="onBackupRowClick(bk.id)"
         >
           <div class="bm-tab__backup-top">
@@ -279,27 +285,34 @@ async function onRefreshLive(): Promise<void> {
 
       <!-- Cột phải: tree viewer -->
       <div class="bm-tab__tree-col">
-        <p v-if="isBookmarkSearchActive" class="bm-tab__col-title">
-          {{ t('bookmark.globalSearch', { n: globalHits.length }) }}
+        <SectionHeader
+          v-if="isBookmarkSearchActive"
+          :label="t('bookmark.results')"
+          :meta="String(globalHits.length)"
+        >
           <button
             type="button"
-            class="bm-tab__act-btn bm-tab__title-action"
+            class="ds-text-action ds-text-action--muted"
             :title="t('bookmark.clearTitle')"
             @click="bm.clearBookmarkSearch()"
           >
             {{ t('bookmark.clearSearch') }}
           </button>
-        </p>
-        <p v-else class="bm-tab__col-title">
-          {{ viewMode === 'live' ? t('bookmark.live') : t('bookmark.backupTitle', { label: bm.selectedBackup?.label ?? '' }) }}
+        </SectionHeader>
+        <SectionHeader
+          v-else
+          :label="viewMode === 'live' ? t('bookmark.live') : t('bookmark.backupView')"
+          :meta="viewMode === 'live' ? undefined : (bm.selectedBackup?.label ?? '')"
+        >
           <button
             v-if="viewMode === 'backups'"
-            class="bm-tab__act-btn bm-tab__title-action"
+            type="button"
+            class="ds-text-action"
             @click="viewMode = 'live'; bm.selectedBackupId = null"
           >
             {{ t('bookmark.liveSwitchBtn') }}
           </button>
-        </p>
+        </SectionHeader>
         <div
           v-if="bm.loading"
           class="bm-tab__tree-skel"
@@ -334,7 +347,7 @@ async function onRefreshLive(): Promise<void> {
                 <span class="bm-tab__global-sec-title">{{ sec.label }}</span>
                 <button
                   type="button"
-                  class="bm-tab__act-btn"
+                  class="ds-text-action"
                   :title="t('bookmark.treeTitle')"
                   @click="focusSourceInTree(sec.sourceKey)"
                 >
@@ -437,29 +450,18 @@ async function onRefreshLive(): Promise<void> {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(
-      ellipse 110% 80% at 50% 0%,
-      color-mix(in srgb, var(--accent) 4%, transparent) 0%,
-      transparent 58%
-    ),
-    var(--bg-primary);
+  background: var(--bg-primary);
 }
+/* U11: hàng phẳng (không khung) — nút chính đặc + nút chữ. */
 .bm-tab__toolbar {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
-  margin: 10px 12px 8px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
-  border-bottom: 1px solid var(--border);
+  gap: 4px;
+  margin: 8px 12px 6px;
   flex-shrink: 0;
 }
-.bm-tab__toolbar > :deep(.retro-btn) {
+.bm-tab__toolbar > button {
   flex-shrink: 0;
 }
 .bm-tab__hint {
@@ -496,32 +498,17 @@ async function onRefreshLive(): Promise<void> {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow-y: auto;
-  padding: 8px;
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
+  padding: 6px;
+  background: var(--bg-panel);
 }
 .bm-tab__tree-col {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 8px;
+  padding: 6px;
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
-}
-.bm-tab__col-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 8px;
-  padding: 7px 10px;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
-  letter-spacing: -0.012em;
+  background: var(--bg-panel);
 }
 .bm-tab__empty {
   margin: 0;
@@ -530,27 +517,17 @@ async function onRefreshLive(): Promise<void> {
   color: var(--text-muted);
 }
 .bm-tab__backup-item {
-  padding: 8px 10px;
+  padding: 7px 8px 7px 12px;
   cursor: pointer;
   font-size: var(--font-size-sm);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 6px;
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease;
-}
-.bm-tab__backup-item:hover,
-.bm-tab__backup-item--active {
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
+  margin-bottom: 2px;
 }
 
 .bm-tab__backup-item--active .bm-tab__backup-label {
-  color: var(--accent);
+  font-weight: 600;
 }
 
 .bm-tab__backup-top {
@@ -579,27 +556,6 @@ async function onRefreshLive(): Promise<void> {
   align-items: center;
   gap: 4px;
 }
-.bm-tab__act-btn {
-  background: color-mix(in srgb, var(--bg-panel) 74%, var(--bg-secondary));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  color: var(--accent);
-  font-size: var(--font-size-sm);
-  padding: 3px 9px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.bm-tab__act-btn:hover { border-color: var(--accent); }
-
-.bm-tab__title-action {
-  margin-left: auto;
-}
-
-.bm-tab__btn--danger {
-  border-color: var(--danger) !important;
-  color: var(--danger) !important;
-}
-
 .bm-tab__global {
   flex: 1 1 auto;
   min-height: 0;

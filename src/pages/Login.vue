@@ -79,7 +79,7 @@
         </p>
 
         <div class="login__actions">
-          <RetroButton type="submit" :disabled="loading">
+          <RetroButton type="submit" primary :disabled="loading">
             {{ loading ? t('login.loading') : t('login.btn') }}
           </RetroButton>
         </div>

@@ -910,6 +910,7 @@
     min-width: auto;
     min-height: 28px;
     padding: 5px 16px;
+    font-size: inherit;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-secondary);

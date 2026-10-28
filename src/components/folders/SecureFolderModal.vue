@@ -222,9 +222,9 @@ const titleText = (): string => {
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.012em;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .secure-modal__err {
@@ -251,9 +251,10 @@ const titleText = (): string => {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 14px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  padding: 10px 0 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
 }
 </style>

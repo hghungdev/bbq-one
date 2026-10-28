@@ -22,6 +22,15 @@
   --cal-event-6-border: rgba(154, 132, 52, 0.3);
   --cal-event-7-bg: rgba(88, 108, 128, 0.11);
   --cal-event-7-border: rgba(88, 108, 128, 0.26);
+  /* U11: vạch màu 3 px bên trái (như vạch màu trong bảng Lịch sắp tới) — màu đặc. */
+  --cal-event-0-rail: #0066cc;
+  --cal-event-1-rail: #2d8643;
+  --cal-event-2-rail: #6b5cb8;
+  --cal-event-3-rail: #b57648;
+  --cal-event-4-rail: #388e8e;
+  --cal-event-5-rail: #b0627a;
+  --cal-event-6-rail: #9a8434;
+  --cal-event-7-rail: #586c80;
 }
 
 html[data-theme='dark'] {
@@ -41,92 +50,84 @@ html[data-theme='dark'] {
   --cal-event-6-border: color-mix(in srgb, #facc15 68%, var(--border));
   --cal-event-7-bg: color-mix(in srgb, #94a3b8 20%, var(--bg-panel));
   --cal-event-7-border: color-mix(in srgb, #cbd5e1 65%, var(--border));
+  --cal-event-0-rail: #60a5fa;
+  --cal-event-1-rail: #6ede8a;
+  --cal-event-2-rail: #c4b5fd;
+  --cal-event-3-rail: #f0c090;
+  --cal-event-4-rail: #5eead4;
+  --cal-event-5-rail: #f9a8d4;
+  --cal-event-6-rail: #facc15;
+  --cal-event-7-rail: #cbd5e1;
 }
 
 .cal-event-tone-0 {
   --cal-event-bg: var(--cal-event-0-bg);
   --cal-event-border: var(--cal-event-0-border);
+  --cal-event-rail: var(--cal-event-0-rail);
 }
 .cal-event-tone-1 {
   --cal-event-bg: var(--cal-event-1-bg);
   --cal-event-border: var(--cal-event-1-border);
+  --cal-event-rail: var(--cal-event-1-rail);
 }
 .cal-event-tone-2 {
   --cal-event-bg: var(--cal-event-2-bg);
   --cal-event-border: var(--cal-event-2-border);
+  --cal-event-rail: var(--cal-event-2-rail);
 }
 .cal-event-tone-3 {
   --cal-event-bg: var(--cal-event-3-bg);
   --cal-event-border: var(--cal-event-3-border);
+  --cal-event-rail: var(--cal-event-3-rail);
 }
 .cal-event-tone-4 {
   --cal-event-bg: var(--cal-event-4-bg);
   --cal-event-border: var(--cal-event-4-border);
+  --cal-event-rail: var(--cal-event-4-rail);
 }
 .cal-event-tone-5 {
   --cal-event-bg: var(--cal-event-5-bg);
   --cal-event-border: var(--cal-event-5-border);
+  --cal-event-rail: var(--cal-event-5-rail);
 }
 .cal-event-tone-6 {
   --cal-event-bg: var(--cal-event-6-bg);
   --cal-event-border: var(--cal-event-6-border);
+  --cal-event-rail: var(--cal-event-6-rail);
 }
 .cal-event-tone-7 {
   --cal-event-bg: var(--cal-event-7-bg);
   --cal-event-border: var(--cal-event-7-border);
+  --cal-event-rail: var(--cal-event-7-rail);
 }
 
-/* —— Lưới tháng —— */
-.cal-cell__event.cal-event-tone-0,
-.cal-cell__event.cal-event-tone-1,
-.cal-cell__event.cal-event-tone-2,
-.cal-cell__event.cal-event-tone-3,
-.cal-cell__event.cal-event-tone-4,
-.cal-cell__event.cal-event-tone-5,
-.cal-cell__event.cal-event-tone-6,
-.cal-cell__event.cal-event-tone-7 {
+/* —— Lưới tháng —— U11: nền nhạt + vạch màu 3 px bên trái ở CẢ light lẫn dark (ADN popover).
+   Tiền tố .cal-cell: thắng `border: 1px solid` trong style scoped của CalendarCell (cùng độ ưu tiên). */
+.cal-cell .cal-cell__event.cal-event-tone-0,
+.cal-cell .cal-cell__event.cal-event-tone-1,
+.cal-cell .cal-cell__event.cal-event-tone-2,
+.cal-cell .cal-cell__event.cal-event-tone-3,
+.cal-cell .cal-cell__event.cal-event-tone-4,
+.cal-cell .cal-cell__event.cal-event-tone-5,
+.cal-cell .cal-cell__event.cal-event-tone-6,
+.cal-cell .cal-cell__event.cal-event-tone-7 {
   background: var(--cal-event-bg);
-  border-color: var(--cal-event-border);
+  border-color: transparent;
+  border-left: 3px solid var(--cal-event-rail);
   color: var(--text-primary);
 }
 
-.cal-cell__event.cal-event-tone-0:hover,
-.cal-cell__event.cal-event-tone-1:hover,
-.cal-cell__event.cal-event-tone-2:hover,
-.cal-cell__event.cal-event-tone-3:hover,
-.cal-cell__event.cal-event-tone-4:hover,
-.cal-cell__event.cal-event-tone-5:hover,
-.cal-cell__event.cal-event-tone-6:hover,
-.cal-cell__event.cal-event-tone-7:hover {
-  background: color-mix(in srgb, var(--cal-event-bg) 72%, var(--bg-panel));
-  border-color: color-mix(in srgb, var(--cal-event-border) 88%, var(--accent-soft-border));
-}
-
-/* Dark: chip nổi hơn — rail trái màu + chữ sáng */
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-0,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-1,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-2,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-3,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-4,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-5,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-6,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-7 {
-  border-color: color-mix(in srgb, var(--cal-event-border) 35%, transparent);
-  border-left: 2px solid var(--cal-event-border);
-  color: var(--text-primary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-0:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-1:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-2:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-3:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-4:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-5:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-6:hover,
-html[data-theme='dark'] .cal-cell__event.cal-event-tone-7:hover {
-  background: color-mix(in srgb, var(--cal-event-bg) 88%, var(--cal-event-border));
-  border-left-color: var(--cal-event-border);
+.cal-cell .cal-cell__event.cal-event-tone-0:hover,
+.cal-cell .cal-cell__event.cal-event-tone-1:hover,
+.cal-cell .cal-cell__event.cal-event-tone-2:hover,
+.cal-cell .cal-cell__event.cal-event-tone-3:hover,
+.cal-cell .cal-cell__event.cal-event-tone-4:hover,
+.cal-cell .cal-cell__event.cal-event-tone-5:hover,
+.cal-cell .cal-cell__event.cal-event-tone-6:hover,
+.cal-cell .cal-cell__event.cal-event-tone-7:hover {
+  background: color-mix(in srgb, var(--cal-event-rail) 12%, var(--cal-event-bg));
+  border-color: transparent;
+  border-left-color: var(--cal-event-rail);
 }
 
 .cal-cell__event--done {
@@ -148,7 +149,7 @@ html[data-theme='dark'] .cal-cell__event--done {
 .cal-modal__row.cal-event-tone-5,
 .cal-modal__row.cal-event-tone-6,
 .cal-modal__row.cal-event-tone-7 {
-  border-left: 3px solid var(--cal-event-border);
+  border-left: 3px solid var(--cal-event-rail);
   background: color-mix(in srgb, var(--cal-event-bg) 55%, var(--bg-panel));
 }
 
@@ -161,7 +162,7 @@ html[data-theme='dark'] .cal-cell__event--done {
 .cal-modal__row.cal-event-tone-6:hover,
 .cal-modal__row.cal-event-tone-7:hover {
   border-color: color-mix(in srgb, var(--cal-event-border) 70%, transparent);
-  border-left-color: var(--cal-event-border);
+  border-left-color: var(--cal-event-rail);
   background: color-mix(in srgb, var(--cal-event-bg) 72%, var(--bg-panel));
 }
 
@@ -174,7 +175,7 @@ html[data-theme='dark'] .cal-cell__event--done {
 .cal-search-panel__row.cal-event-tone-5,
 .cal-search-panel__row.cal-event-tone-6,
 .cal-search-panel__row.cal-event-tone-7 {
-  border-left: 3px solid var(--cal-event-border);
+  border-left: 3px solid var(--cal-event-rail);
   background: color-mix(in srgb, var(--cal-event-bg) 50%, var(--bg-panel));
 }
 

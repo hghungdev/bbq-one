@@ -299,10 +299,10 @@ function sourceLabel(source: 'local' | 'cloud'): string {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .cal-overflow-dialog__title {
@@ -414,10 +414,11 @@ function sourceLabel(source: 'local' | 'cloud'): string {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  padding: 10px 0 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
 }
 
 .cal-overflow-fade-enter-active,

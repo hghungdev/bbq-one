@@ -97,7 +97,7 @@ async function onSubmit(): Promise<void> {
           </p>
 
           <div class="lm-actions">
-            <RetroButton type="submit" :disabled="loading">
+            <RetroButton type="submit" primary :disabled="loading">
               {{ loading ? t('login.loading') : t('login.btn') }}
             </RetroButton>
           </div>
@@ -147,12 +147,8 @@ async function onSubmit(): Promise<void> {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  margin-bottom: 4px;
+  padding: 4px 4px 4px 8px;
 }
 
 .lm-title {
@@ -164,14 +160,12 @@ async function onSubmit(): Promise<void> {
 }
 
 /* ── Form ── */
+/* U11 (ADN popover): form nằm thẳng trên bề mặt panel — không hộp lồng hộp. */
 .lm-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+  padding: 4px 8px 6px;
 }
 
 .lm-label {

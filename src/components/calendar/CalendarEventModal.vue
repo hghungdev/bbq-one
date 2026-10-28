@@ -424,7 +424,7 @@ async function saveForm(): Promise<void> {
             <RetroButton variant="sm" type="button" :disabled="busy" @click="cancelForm">
               {{ t('calendar.modal.btn.cancel') }}
             </RetroButton>
-            <RetroButton variant="sm" type="submit" :disabled="busy">
+            <RetroButton variant="sm" type="submit" primary :disabled="busy">
               {{ t('calendar.modal.btn.save') }}
             </RetroButton>
           </div>
@@ -481,12 +481,11 @@ async function saveForm(): Promise<void> {
   gap: 12px;
   margin: 10px 10px 0;
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  border-bottom: 1px solid var(--border);
+  border: none;
+  border-radius: 0;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .cal-modal__title {

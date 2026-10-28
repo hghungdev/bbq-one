@@ -111,7 +111,7 @@ function onSubmit(): void {
               <RetroButton variant="sm" type="button" :disabled="busy" @click="emit('close')">
                 {{ t('calendar.modal.btn.cancel') }}
               </RetroButton>
-              <RetroButton variant="sm" type="submit" :disabled="busy">
+              <RetroButton variant="sm" type="submit" primary :disabled="busy">
                 {{ t('calendar.modal.btn.save') }}
               </RetroButton>
             </div>
@@ -158,10 +158,10 @@ function onSubmit(): void {
   gap: 12px;
   margin: 10px 10px 0;
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .quick-create__title {
@@ -210,10 +210,11 @@ function onSubmit(): void {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-secondary));
+  padding: 10px 0 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
 }
 
 .quick-create-fade-enter-active,

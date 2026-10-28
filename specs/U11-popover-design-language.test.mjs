@@ -97,7 +97,7 @@ check(
 const calCss = read('src', 'assets', 'styles', 'calendar-events.css')
 check(
   'B2 sự kiện có vạch màu 3 px ở cả light (không chỉ dark)',
-  /--cal-event-rail/.test(calCss) && /\n\.cal-cell__event[^{]*\{[^}]*border-left:\s*3px solid var\(--cal-event-rail\)/.test(calCss),
+  /--cal-event-rail/.test(calCss) && /\n(\.cal-cell )?\.cal-cell__event[^{]*\{[^}]*border-left:\s*3px solid var\(--cal-event-rail\)/.test(calCss),
   'light chưa có vạch màu',
 )
 const cell = read('src', 'components', 'calendar', 'CalendarCell.vue')

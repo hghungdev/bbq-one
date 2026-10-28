@@ -23,6 +23,8 @@ defineProps<{
 </template>
 
 <style scoped>
+/* U11 (ADN popover): icon trong suốt, hover tô nhạt — nhóm icon trên header đã có khung pill bao
+   ngoài, hộp thoại không cần vòng viền riêng cho nút ✕. */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -31,33 +33,29 @@ defineProps<{
   height: 32px;
   padding: 0;
   margin: 0;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--bg-panel) 76%, var(--bg-secondary));
+  background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
   flex-shrink: 0;
   transition:
     background 0.12s linear,
-    color 0.12s linear,
-    border-color 0.12s linear;
+    color 0.12s linear;
 }
 
 .icon-btn:hover:not(:disabled) {
-  color: var(--accent);
-  border-color: var(--accent-soft-border);
-  background: var(--surface-accent-muted);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
 }
 
 .icon-btn--accent {
   color: var(--accent);
-  border-color: var(--accent-soft-border);
   background: var(--surface-accent-muted);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--bg-secondary) 70%, transparent);
 }
 
 .icon-btn--accent:hover:not(:disabled) {
-  border-color: var(--accent);
+  color: var(--accent);
   background: var(--accent-soft-bg-hover);
 }
 
@@ -67,7 +65,6 @@ defineProps<{
 
 .icon-btn--danger:hover:not(:disabled) {
   color: var(--danger);
-  border-color: var(--danger);
   background: var(--surface-danger-muted);
 }
 
