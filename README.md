@@ -45,6 +45,7 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | Area | What you get |
 |------|----------------|
 | **Notes** | Folders, rich-text editing, code-friendly blocks (Shiki highlighting), full-text search, copy-to-clipboard. Settings menu on rows (rename / move / delete); double-click or F2 still renames. Move between **regular** folders only (secure-folder moves deferred). |
+| **Address bar search** | Type `bbq` + Space in Chrome's address bar, then a keyword: matching notes appear as suggestions. **Enter** opens the note in BBQOne; **Alt+Enter** copies the whole note to the clipboard (✓ flashes on the toolbar icon). Searches only the data on this device — no network request. |
 | **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are AES-GCM encrypted client-side before leaving your device. |
 | **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, and export as HTML; backups sync to your account when signed in. |
 | **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. Event chips use pastel fills in light mode and softer solid chips with a left color rail in dark mode. |
@@ -133,6 +134,8 @@ Shortcuts apply in the **notes dashboard** (where supported).
 | `Ctrl` + `F` | Focus search |
 | `Ctrl` + `N` | Create a new note in the active folder (blocked if the folder is locked) |
 | `Ctrl` + `S` | Flush save for the open editor |
+| `bbq` + `Space` (address bar) | Search notes; **Enter** opens the note, **Alt+Enter** copies the whole note |
+| `Esc` | Closes the innermost dialog / menu / search — never the extension (click outside to close it) |
 
 On macOS, use `⌘` instead of `Ctrl` where the browser maps it.
 

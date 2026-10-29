@@ -93,7 +93,7 @@ gộp vào cuối 2.0.1.
 
 | # | Việc | Công | Ghi chú |
 |---|---|---|---|
-| F1 | **Tìm từ thanh địa chỉ** (việc nhỏ số 6): gõ `bb <từ khóa>` — Sir chọn **cách 2: Enter = sao chép thẳng**, Alt+Enter = mở | S–M (~1–1,5 ngày) | **Bản mô tả: `specs/F1-omnibox-proposal.md` — chờ Sir chốt 4 câu hỏi.** Không thêm quyền (omnibox không cảnh báo; sao chép dùng clipboardWrite + offscreen sẵn có) |
+| F1 | **Tìm từ thanh địa chỉ** (việc nhỏ số 6) — ✅ **Sir chốt + đã làm** (2026-10-29): từ khóa `bbq`, **Enter = mở**, **Alt+Enter = sao chép cả ghi chú**, không tìm lịch | S–M | Xem Trạng thái · spec `F1-omnibox-search.spec.md` (mô tả gốc `F1-omnibox-proposal.md`). Không thêm quyền |
 | ~~F2~~ | ~~Dời việc quá hạn sang hôm nay~~ — **BỎ** | — | Sir (2026-10-29): "Vẫn giữ việc overdue ngày setup" — việc quá hạn giữ nguyên ngày đã đặt, không dời |
 | F3 | **Sửa / xóa cả chuỗi sự kiện lặp** (số 7a) — ✅ **Sir duyệt (2026-10-29), đã làm** | M | Xem Trạng thái. **Sir chạy `supabase/migrations/018_calendar_series.sql` trước khi phát hành** (upsert đẩy mọi cột). Chuỗi tạo trước F3 không có `series_id` → vẫn sửa / xóa từng cái |
 | — | Ghi nhanh từ trang web, giờ + nhắc việc, Side Panel (gợi ý 1–3 hôm 2026-10-29) | M mỗi mục | Nhắc việc cần quyền `notifications` → để ở `optional_permissions`, xin khi bật |
@@ -111,3 +111,4 @@ gộp vào cuối 2.0.1.
 | C16 | `eacb85d` → (commit này) | ✅ 9/9 (RED 6) | Chromium, không đăng nhập: xóa ghi chú → mất ngay (trước: vẫn hiện), hết 5 s + mở lại popup vẫn mất (đĩa: kho máy = cache); xóa sự kiện lịch / section tương tự; hoàn tác vẫn chạy; smoke test 7/7, không lỗi console |
 | F3 | `6c5d80c` → (commit này) | ✅ 15/15 (RED 15) | Chromium (không đăng nhập): "Họp tuần" hằng tuần × 4 → cùng `series_id`, dấu ↻ cạnh tên; sửa lần 2 "Từ đây về sau" → lần 2–4 đổi, lần 1 giữ ("Sẽ sửa 3 sự kiện"); xóa "Cả chuỗi" → 1 lượt hoàn tác cho 4 sự kiện, hoàn tác về đủ; xóa lại + hết 5 s + mở lại popup → chỉ còn sự kiện đơn; nhãn phạm vi không bị cắt (en / vi, sáng / tối) |
 | U29 | `32a9a63` → (commit này) | ✅ 6/6 (RED 6) | Popup thật (CDP): màn hình chính Esc → popup **vẫn mở** (trước: đóng); form Thêm sự kiện → Esc đóng form, Esc lần 2 popup vẫn mở; menu ⚙ → Esc đóng menu, popup còn |
+| F1 | `1b79e51` → (commit này) | ✅ 15/15 (RED 7) | Chromium (gọi thẳng sự kiện omnibox trong service worker): `kafka` → "Kafka plan" (khớp tên, in đậm) trước "Other" (khớp nội dung), thư mục bảo mật không hiện; Alt+Enter → clipboard có cả ghi chú (2 section, SQL giữ thụt lề), icon ✓ rồi tự tắt; Enter → BBQOne mở tab Ghi chú đúng ghi chú; Enter dòng mặc định → ô tìm điền sẵn. `dist/manifest.json` có `omnibox.keyword = "bbq"`, quyền không đổi |

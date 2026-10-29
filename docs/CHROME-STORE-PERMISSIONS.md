@@ -161,6 +161,10 @@ BBQOne follows a **privacy-first, local-first** philosophy:
   Google Calendar link, which Google fetches from the server — not from
   the extension).
 - No content scripts on third-party sites.
+- Address-bar search uses the manifest **`omnibox`** key (keyword `bbq`) — not a
+  permission, no install warning. Text typed after `bbq` goes only to the
+  extension, which searches notes stored on the device (no network request);
+  copying a note reuses `clipboardWrite` + `offscreen`.
 - No tracking, no analytics, no advertising.
 - All permissions are scoped to features that are actually present in the
   build — anything that previously required broader permissions (in-page

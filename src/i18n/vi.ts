@@ -67,6 +67,8 @@ export const vi: Record<I18nKey, string> = {
 
   // ── Search ──
   'search.label': 'Tìm kiếm',
+  'omnibox.default': 'Tìm “<match>%s</match>” trong BBQOne · Enter mở · Alt+Enter sao chép ghi chú',
+  'omnibox.noResults': 'Không thấy ghi chú nào khớp “<match>%s</match>” · Enter để mở BBQOne',
   'search.ariaNotes': 'Tìm ghi chú',
   'search.ariaBookmarks': 'Tìm bookmark',
   'search.ariaCalendar': 'Tìm sự kiện lịch',

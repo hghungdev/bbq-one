@@ -10,6 +10,7 @@ KEY FEATURES
 
 NOTES
 Rich text editing with code syntax highlighting, folders, and full-text search. Rename, move, or delete from each row's menu. Optional passphrase-protected secure folders (client-side AES-GCM encryption).
+Search from the address bar: type "bbq", press Space, then a keyword. Enter opens the note; Alt+Enter copies the whole note.
 
 BOOKMARKS
 Snapshot, browse, search, and restore your Chrome bookmark tree. Export as HTML. Backups sync to your account when you sign in.

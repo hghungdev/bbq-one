@@ -44,7 +44,8 @@ async function bootstrap(): Promise<void> {
     await chrome.storage.local.remove(BBQ_PENDING_ROUTE_KEY)
     const normalized = routePath.startsWith('/') ? routePath : `/${routePath}`
     window.location.hash = `#${normalized}`
-  } else {
+  } else if (!window.location.hash.startsWith('#/')) {
+    // F1: tab mở từ thanh địa chỉ đã mang sẵn route (vd #/dashboard?note=…) — giữ nguyên.
     window.location.hash = '#/dashboard'
   }
   app.use(router)

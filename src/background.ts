@@ -14,7 +14,27 @@ import {
   PENDING_DELETE_FLUSH_ALARM,
   scheduleOrphanExpiryAlarm,
 } from '@/services/pendingDeleteCommit.service'
-import { BBQ_AUTH_LOGGED_IN_KEY, BBQ_PENDING_ROUTE_KEY } from '@/constants/storage'
+import {
+  BBQ_AUTH_LOGGED_IN_KEY,
+  BBQ_PENDING_ROUTE_KEY,
+  FOLDERS_CACHE_KEY,
+  NOTE_BODIES_CACHE_KEY,
+  NOTES_CACHE_KEY,
+  UI_LANG_KEY,
+} from '@/constants/storage'
+import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
+import type { Folder, Note, NoteBody } from '@/types'
+import { en } from '@/i18n/en'
+import { vi } from '@/i18n/vi'
+import {
+  noteCopyText,
+  omniboxContent,
+  omniboxDescription,
+  omniboxNoteRoute,
+  omniboxSearchRoute,
+  resolveOmniboxNoteId,
+  searchNotesForOmnibox,
+} from '@/utils/omniboxNotes'
 import {
   isRecoverableRefreshTokenAuthError,
   recoverSupabaseAuthFromStaleSession,
@@ -165,6 +185,30 @@ function isCopyToOsClipboardMessage(msg: unknown): msg is CopyToOsClipboardMessa
   return typeof (p as { text?: unknown }).text === 'string'
 }
 
+/** Ghi chữ vào clipboard hệ điều hành qua offscreen document (execCommand) — nút ⧉ (fallback) + thanh địa chỉ (F1). */
+async function copyViaOffscreen(text: string): Promise<{ ok: boolean; error?: string }> {
+  const offscreenUrl = chrome.runtime.getURL('offscreen.html')
+  return withWebLock(OFFSCREEN_CLIPBOARD_LOCK, async () => {
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
+      documentUrls: [offscreenUrl],
+    })
+    if (existingContexts.length === 0) {
+      await chrome.offscreen.createDocument({
+        url: offscreenUrl,
+        reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
+        justification: 'Write text to OS clipboard from extension popup.',
+      })
+    }
+    const r = (await chrome.runtime.sendMessage({
+      type: 'offscreen-copy',
+      text,
+    })) as { ok: boolean; error?: string }
+    await chrome.offscreen.closeDocument().catch(() => {})
+    return r
+  })
+}
+
 chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
   void (async () => {
     try {
@@ -178,33 +222,123 @@ chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
         sendResponse({ ok: false, error: 'Unknown message type' })
         return
       }
-      const { text } = msg.payload
-      const offscreenUrl = chrome.runtime.getURL('offscreen.html')
-
-      const result = await withWebLock(OFFSCREEN_CLIPBOARD_LOCK, async () => {
-        const existingContexts = await chrome.runtime.getContexts({
-          contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
-          documentUrls: [offscreenUrl],
-        })
-        if (existingContexts.length === 0) {
-          await chrome.offscreen.createDocument({
-            url: offscreenUrl,
-            reasons: ['CLIPBOARD' as chrome.offscreen.Reason],
-            justification: 'Write text to OS clipboard from extension popup.',
-          })
-        }
-        const r = (await chrome.runtime.sendMessage({
-          type: 'offscreen-copy',
-          text,
-        })) as { ok: boolean; error?: string }
-        await chrome.offscreen.closeDocument().catch(() => {})
-        return r
-      })
-
-      sendResponse(result)
+      sendResponse(await copyViaOffscreen(msg.payload.text))
     } catch (e) {
       sendResponse({ ok: false, error: e instanceof Error ? e.message : String(e) })
     }
   })()
   return true
+})
+
+// ─── F1: tìm ghi chú từ thanh địa chỉ (`bbq …`) — Enter mở, Alt+Enter sao chép cả ghi chú ─────────────────────
+
+interface OmniboxData {
+  notes: Note[]
+  bodies: NoteBody[]
+  folders: Folder[]
+  lang: 'en' | 'vi'
+}
+
+/** Cache trước (có cả khi đăng nhập), thiếu thì kho máy — không gọi mạng. */
+const OMNIBOX_KEYS: string[] = [
+  NOTES_CACHE_KEY,
+  NOTE_BODIES_CACHE_KEY,
+  FOLDERS_CACHE_KEY,
+  LOCAL_STORAGE_KEYS.notes,
+  LOCAL_STORAGE_KEYS.noteBodies,
+  LOCAL_STORAGE_KEYS.folders,
+  UI_LANG_KEY,
+]
+let omniboxData: Promise<OmniboxData> | null = null
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && Object.keys(changes).some((k) => OMNIBOX_KEYS.includes(k))) omniboxData = null
+})
+
+function loadOmniboxData(): Promise<OmniboxData> {
+  if (omniboxData) return omniboxData
+  const loading = (async (): Promise<OmniboxData> => {
+    const r = await chrome.storage.local.get(OMNIBOX_KEYS)
+    const pick = <T>(cached: unknown, local: unknown): T[] =>
+      (Array.isArray(cached) ? cached : Array.isArray(local) ? local : []) as T[]
+    return {
+      notes: pick<Note>(r[NOTES_CACHE_KEY], r[LOCAL_STORAGE_KEYS.notes]),
+      bodies: pick<NoteBody>(r[NOTE_BODIES_CACHE_KEY], r[LOCAL_STORAGE_KEYS.noteBodies]),
+      folders: pick<Folder>(r[FOLDERS_CACHE_KEY], r[LOCAL_STORAGE_KEYS.folders]),
+      lang: r[UI_LANG_KEY] === 'vi' ? 'vi' : 'en',
+    }
+  })()
+  omniboxData = loading
+  // Đọc lỗi → lần gõ sau đọc lại (không kẹt Promise reject).
+  loading.catch(() => {
+    if (omniboxData === loading) omniboxData = null
+  })
+  return loading
+}
+
+function omniboxText(lang: OmniboxData['lang'], key: 'omnibox.default' | 'omnibox.noResults' | 'notes.untitled'): string {
+  return (lang === 'vi' ? vi : en)[key]
+}
+
+/** ✓ (xanh) / ! (đỏ) trên icon ~1,5 s — báo đã sao chép (thanh địa chỉ không có chỗ nào khác để báo). */
+async function flashBadge(ok: boolean): Promise<void> {
+  await chrome.action.setBadgeBackgroundColor({ color: ok ? '#16a34a' : '#dc2626' })
+  await chrome.action.setBadgeText({ text: ok ? '✓' : '!' })
+  setTimeout(() => void chrome.action.setBadgeText({ text: '' }), 1500)
+}
+
+/** Mở popup ở route (cách menu chuột phải); không mở được (vd không có cửa sổ đang focus) → mở BBQOne trong tab. */
+async function openPopupAt(route: string): Promise<void> {
+  await chrome.storage.local.set({ [BBQ_PENDING_ROUTE_KEY]: route })
+  try {
+    await chrome.action.openPopup()
+  } catch {
+    await chrome.storage.local.remove(BBQ_PENDING_ROUTE_KEY)
+    await chrome.tabs.create({ url: chrome.runtime.getURL(`index.html#${route}`) })
+  }
+}
+
+chrome.omnibox.onInputChanged.addListener((text, suggest) => {
+  void (async () => {
+    let data: OmniboxData
+    try {
+      data = await loadOmniboxData()
+    } catch (e) {
+      console.warn('[BBQOne] omnibox: không đọc được ghi chú', e)
+      return
+    }
+    const hits = searchNotesForOmnibox({ notes: data.notes, bodies: data.bodies, folders: data.folders, query: text })
+    const untitled = omniboxText(data.lang, 'notes.untitled')
+    const folderNames = new Map(data.folders.map((f) => [f.id, f.name]))
+    chrome.omnibox.setDefaultSuggestion({
+      description: omniboxText(data.lang, hits.length > 0 || !text.trim() ? 'omnibox.default' : 'omnibox.noResults'),
+    })
+    suggest(
+      hits.map((h) => ({
+        content: omniboxContent(h.note, untitled),
+        description: omniboxDescription(h, h.note.folder_id ? folderNames.get(h.note.folder_id) ?? null : null, text, untitled),
+      })),
+    )
+  })()
+})
+
+chrome.omnibox.onInputEntered.addListener((text, disposition) => {
+  void (async () => {
+    let data: OmniboxData
+    try {
+      data = await loadOmniboxData()
+    } catch (e) {
+      console.warn('[BBQOne] omnibox: không đọc được ghi chú', e)
+      await openPopupAt(omniboxSearchRoute(text.trim()))
+      return
+    }
+    const noteId = resolveOmniboxNoteId(text, data.notes)
+    // Sir: Enter = mở; Alt+Enter (Chrome báo "mở tab mới") = sao chép cả ghi chú, không mở gì.
+    if (noteId && disposition !== 'currentTab') {
+      const { ok } = await copyViaOffscreen(noteCopyText(data.bodies.filter((b) => b.note_id === noteId)))
+      await flashBadge(ok)
+      return
+    }
+    await openPopupAt(noteId ? omniboxNoteRoute(noteId) : omniboxSearchRoute(text.trim()))
+  })()
 })

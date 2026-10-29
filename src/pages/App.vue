@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
   import { storeToRefs } from 'pinia'
+  import { useRoute, useRouter } from 'vue-router'
   import NoteEditor from '@/components/notes/NoteEditor.vue'
   import NoteList from '@/components/layout/NoteList.vue'
   import SettingsModal from '@/components/layout/SettingsModal.vue'
@@ -225,6 +226,27 @@
     }
   }
 
+  const route = useRoute()
+  const router = useRouter()
+
+  /**
+   * F1: thanh địa chỉ (`bbq …`) mở popup với `?note=` (Enter trên một gợi ý → mở đúng ghi chú) hoặc `?q=` (dòng mặc
+   * định → ô tìm ghi chú điền sẵn). Áp một lần rồi xóa query (mở lại popup không áp lại).
+   */
+  function applyOmniboxRoute(): void {
+    const noteId = typeof route.query.note === 'string' ? route.query.note : ''
+    const q = typeof route.query.q === 'string' ? route.query.q.trim() : ''
+    if (!noteId && !q) return
+    if (noteId && notes.notes.some((n) => n.id === noteId)) {
+      activeTab.value = 'notes'
+      notes.selectNote(noteId)
+    } else if (q) {
+      activeTab.value = 'notes'
+      void notes.runSearch(q)
+    }
+    void router.replace({ path: '/dashboard' })
+  }
+
   onMounted(async () => {
     window.addEventListener('keydown', onGlobalKeydown, true)
     await langStore.loadLang()
@@ -238,6 +260,7 @@
       calendarEvents.hydrateFromCache(),
     ])
     dataReady.value = true
+    applyOmniboxRoute()
     chrome.storage.onChanged.addListener(onAccountSessionChanged)
     // Không có ai đăng nhập → không được còn trạng thái/DEK account trong session.
     if (auth.initialized && !isAuthenticated.value) await clearAccountSession()
