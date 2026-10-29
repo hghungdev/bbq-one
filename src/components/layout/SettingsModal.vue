@@ -7,6 +7,7 @@ import RetroConfirm from '@/components/ui/RetroConfirm.vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
 import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
+import BackupSettingsSection from '@/components/backup/BackupSettingsSection.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useLangStore } from '@/stores/uiLang'
@@ -16,7 +17,15 @@ import { calendarFeedService, type CalendarFeedInfo } from '@/services/calendarF
 import { FEATURES } from '@/constants/features'
 import { copyTextToClipboard } from '@/utils/clipboard'
 
+const props = defineProps<{
+  /** B1: App.vue mở Cài đặt từ route `?restore=1` (chọn file) / `?restore=done` (vừa khôi phục). */
+  backupFocus?: 'restore' | 'done' | null
+}>()
+
 const emit = defineEmits<{ close: []; 'lock-account': [] }>()
+
+/** B1: hộp xem trước / xác nhận khôi phục đang mở — Esc chỉ đóng hộp đó, không đóng cả Cài đặt. */
+const backupLayerOpen = ref(false)
 
 const auth = useAuthStore()
 const accountCrypto = useAccountCryptoStore()
@@ -95,7 +104,7 @@ async function onChangeAccountPassword(): Promise<void> {
 
 function onGlobalKeydown(e: KeyboardEvent): void {
   // Hộp xác nhận "Tạo link mới" đang mở: Esc chỉ đóng hộp đó (C12), không đóng cả Settings.
-  if (e.key === 'Escape' && !gcalConfirmRotate.value) emit('close')
+  if (e.key === 'Escape' && !gcalConfirmRotate.value && !backupLayerOpen.value) emit('close')
 }
 
 // ── G1: link Google Calendar (một chiều) — mỗi user một link riêng ──
@@ -208,6 +217,14 @@ onUnmounted(() => {
             </button>
           </div>
         </SettingsAccordionSection>
+
+        <!-- B1: sao lưu ra file — người không đăng nhập; FEATURES.backupFileSignedIn bật thì người đăng nhập chỉ tải. -->
+        <BackupSettingsSection
+          v-if="!auth.isAuthenticated || FEATURES.backupFileSignedIn"
+          :signed-in="auth.isAuthenticated"
+          :focus="props.backupFocus ?? null"
+          @layer-open="backupLayerOpen = $event"
+        />
 
         <SettingsAccordionSection
           v-if="auth.isAuthenticated"

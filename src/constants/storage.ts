@@ -39,3 +39,8 @@ export const BBQ_NOTE_DRAFT_SESSION_KEY = 'bbqone_note_editor_draft'
 export const BBQ_DATA_OWNER_USER_ID_KEY = 'bbqone_data_owner_user_id'
 /** Quarantine data chưa-sync của owner cũ khi user KHÁC đăng nhập: Record<userId, ForeignStash>. */
 export const BBQ_FOREIGN_STASH_KEY = 'bbqone_foreign_stash_v1'
+
+/** B1: trạng thái sao lưu ra file — công tắc tự động, lần sao lưu gần nhất + dấu SHA-256, ngày đã kiểm, lần khôi phục. */
+export const BBQ_BACKUP_STATE_KEY = 'bbqone_backup_state'
+/** B1: đổi mỗi lần khôi phục từ file — trang BBQOne khác đang mở thấy thì tải lại (RAM cũ không được ghi đè). */
+export const BBQ_RESTORE_EPOCH_KEY = 'bbqone_restore_epoch'

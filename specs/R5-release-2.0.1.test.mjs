@@ -17,14 +17,16 @@ function check(name, ok, detail) {
   if (!ok) failures.push(`${name}: ${detail}`)
 }
 const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8')
-const V = '2.0.1'
-
 const manifest = JSON.parse(read('public', 'manifest.json'))
+// B1 (đổi có chủ đích): 2.1.0 đã nâng — chỗ ghi "phiên bản hiện tại" kiểm theo manifest (≥ 2.0.1); phần lịch sử 2.0.1
+// (mục README, "Release 2.0.1 (highlights)", đoạn Address bar search) vẫn kiểm như cũ.
+const V = manifest.version
+const atLeast201 = /^2\.0\.([1-9]\d*)$|^2\.[1-9]\d*\.\d+$|^[3-9]\.\d+\.\d+$/.test(V)
 const pkg = JSON.parse(read('package.json'))
 const lock = JSON.parse(read('package-lock.json'))
 check(
-  'R5.1 manifest / package.json / package-lock.json = 2.0.1',
-  manifest.version === V && pkg.version === V && lock.version === V && lock.packages?.['']?.version === V,
+  'R5.1 manifest / package.json / package-lock.json cùng phiên bản, ≥ 2.0.1 (B1)',
+  atLeast201 && manifest.version === V && pkg.version === V && lock.version === V && lock.packages?.['']?.version === V,
   `manifest=${manifest.version} pkg=${pkg.version} lock=${lock.version}/${lock.packages?.['']?.version}`,
 )
 check(
@@ -39,7 +41,7 @@ const w201 = readme.indexOf('## What changed in 2.0.1')
 const w200 = readme.indexOf('## What changed in 2.0.0')
 const sec = w201 === -1 ? '' : readme.slice(w201, w200)
 check(
-  'R5.3 README: Version 2.0.1; "What changed in 2.0.1" trong mục lục, đứng trước 2.0.0',
+  'R5.3 README: Version = phiên bản hiện tại (B1); "What changed in 2.0.1" trong mục lục, đứng trước 2.0.0',
   readme.includes(`**Version:** ${V}`) && /\[What changed in 2\.0\.1\]\(#what-changed-in-201\)/.test(readme) && w201 !== -1 && w201 < w200,
   'README chưa cập nhật',
 )
@@ -51,24 +53,24 @@ check(
 )
 const design = read('DESIGN.md')
 check(
-  'R5.5 DESIGN.md: token version 2.0.1; sơ đồ khung mới (header hết bề ngang + thanh dọc)',
-  /\nversion: 2\.0\.1\n/.test(design) && !/\[Calendar\] \[Notes\] \[Bookmark\]/.test(design) && /rail/i.test(design.slice(design.indexOf('### Dashboard shell'), design.indexOf('### Dashboard shell') + 1200)),
+  'R5.5 DESIGN.md: token version = phiên bản hiện tại (B1); sơ đồ khung mới (header hết bề ngang + thanh dọc)',
+  design.includes(`\nversion: ${V}\n`) && !/\[Calendar\] \[Notes\] \[Bookmark\]/.test(design) && /rail/i.test(design.slice(design.indexOf('### Dashboard shell'), design.indexOf('### Dashboard shell') + 1200)),
   'DESIGN.md',
 )
 const pp = read('docs', 'privacy-policy.html')
 check(
-  'R5.6 privacy policy: áp dụng từ 2.0.1; có đoạn Address bar search (bbq, chỉ trên máy, không gửi đi)',
-  /applies to extension version 2\.0\.1 and later/.test(pp) && /Address bar search/.test(pp) && /<code>bbq<\/code>/.test(pp) &&
+  'R5.6 privacy policy: áp dụng từ 2.x (B1: 2.1.0); có đoạn Address bar search (bbq, chỉ trên máy, không gửi đi)',
+  /applies to extension version 2\.\d+\.\d+ and later/.test(pp) && /Address bar search/.test(pp) && /<code>bbq<\/code>/.test(pp) &&
     /not sent/i.test(pp),
   'privacy policy chưa cập nhật',
 )
 const listing = read('docs', 'CHROME-STORE-LISTING.md')
 const txt = read('docs', 'chrome-store-detailed-description.txt')
 check(
-  'R5.7 Store: "Release 2.0.1 (highlights)" trước 2.0.0; WHAT\'S NEW IN 2.0.1 (chỉ bản mới nhất); permissions doc v2.0.1 + omnibox',
+  'R5.7 Store: "Release 2.0.1 (highlights)" trước 2.0.0; WHAT\'S NEW là bản mới nhất (B1: 2.1.0, không còn 2.0.0); mô tả có tìm từ thanh địa chỉ; permissions doc ghi phiên bản hiện tại + omnibox',
   /Release 2\.0\.1 \(highlights\)/.test(listing) && listing.indexOf('Release 2.0.1') < listing.indexOf('Release 2.0.0') &&
-    /WHAT'S NEW IN 2\.0\.1/.test(txt) && !/WHAT'S NEW IN 2\.0\.0/.test(txt) && /`?bbq`?/.test(txt.slice(txt.indexOf("WHAT'S NEW"))) &&
-    /\*\*v2\.0\.1\*\*/.test(read('docs', 'CHROME-STORE-PERMISSIONS.md')),
+    txt.includes(`WHAT'S NEW IN ${V}`) && !/WHAT'S NEW IN 2\.0\.0/.test(txt) && /type "bbq", press Space/.test(txt) &&
+    read('docs', 'CHROME-STORE-PERMISSIONS.md').includes(`**v${V}**`) && /omnibox/.test(read('docs', 'CHROME-STORE-PERMISSIONS.md')),
   'store docs chưa cập nhật',
 )
 

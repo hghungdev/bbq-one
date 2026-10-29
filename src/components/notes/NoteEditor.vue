@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEditor, EditorContent } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
+import { noteEditorExtensions } from '@/utils/noteEditorExtensions'
 import type { Editor } from '@tiptap/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CodeBlock from '@/components/notes/CodeBlock.vue'
@@ -140,15 +140,8 @@ function applyBody(ed: Editor, body: NoteBody | null): void {
 }
 
 const editor = useEditor({
-  extensions: [
-    StarterKit.configure({
-      codeBlock: {
-        HTMLAttributes: {
-          class: 'retro-code-block',
-        },
-      },
-    }),
-  ],
+  // B1: cùng schema với bộ lọc HTML khi nạp file sao lưu (utils/noteEditorExtensions).
+  extensions: noteEditorExtensions(),
   content: '<p></p>',
   editorProps: {
     attributes: {

@@ -11,6 +11,8 @@ const props = defineProps<{
   /** Tiêu đề dialog — danger nên truyền riêng. */
   title?: string
   variant?: 'default' | 'danger'
+  /** Chữ nút xác nhận — mặc định "Xóa" (danger) / "Xác nhận"; B1: "Thay toàn bộ". */
+  confirmLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -132,7 +134,7 @@ onUnmounted(() => {
               :class="{ 'retro-confirm__confirm-btn--danger': variant === 'danger' }"
               @click="confirm"
             >
-              {{ variant === 'danger' ? t('common.delete') : t('common.confirm') }}
+              {{ confirmLabel ?? (variant === 'danger' ? t('common.delete') : t('common.confirm')) }}
             </button>
           </footer>
         </div>

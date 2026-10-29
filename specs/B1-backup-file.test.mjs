@@ -48,17 +48,21 @@ const LOCAL = load('src/types/localFirst.ts')
 
 let B = null
 try {
-  B = load('src/utils/backupFile.ts', { '@/constants/calendar': CAL, '@/constants/storage': STORAGE, '@/types/localFirst': LOCAL })
+  B = load('src/utils/backupFile.ts', { '@/constants/calendar': CAL, '@/constants/storage': STORAGE, '@/types/localFirst': LOCAL, '@/utils/secureCrypto': load('src/utils/secureCrypto.ts') })
 } catch (e) {
   check('B1.0 src/utils/backupFile.ts tồn tại', false, e.message)
 }
 
 const T = '2026-10-29T03:15:00.000Z'
-const folder = (id, extra = {}) => ({ id, name: `F ${id}`, position: 0, is_secure: false, secure_salt: null, pbkdf2_iterations: 310000, secure_verifier_enc: null, created_at: T, updated_at: T, __synced: false, ...extra })
-const note = (id, folder_id = 'f1', extra = {}) => ({ id, folder_id, title: `N ${id}`, tags: [], created_at: T, updated_at: T, synced_at: null, __synced: false, ...extra })
-const body = (id, note_id, extra = {}) => ({ id, note_id, label: '', content: '<p>x</p>', position: 0, created_at: T, updated_at: T, synced_at: null, __synced: false, ...extra })
-const ev = (id, event_date = '2026-10-29', position = 0, extra = {}) => ({ id, event_date, title: `E ${id}`, description: '', is_done: false, position, color: null, start_time: null, end_time: null, created_at: T, updated_at: T, synced_at: null, __synced: false, ...extra })
-const bk = (id, tree, extra = {}) => ({ id, label: `bk ${id}`, tree_json: tree, browser_hint: 'chrome', created_at: T, encrypted: false, __synced: false, ...extra })
+/** id ngắn trong test → UUID ổn định (file thật chỉ nhận UUID). */
+const U = (s) => `00000000-0000-4000-8000-${Buffer.from(String(s)).toString('hex').padStart(12, '0').slice(-12)}`
+/** Bộ lọc HTML giả (thật: utils/noteHtmlSanitize.ts, cần DOM — kiểm trên Chromium): đánh dấu đã lọc. */
+const SAN = (html) => `[clean]${html.replace(/<script[\s\S]*?<\/script>/gi, '')}`
+const folder = (id, extra = {}) => ({ id: U(id), name: `F ${id}`, position: 0, is_secure: false, secure_salt: null, pbkdf2_iterations: 310000, secure_verifier_enc: null, created_at: T, updated_at: T, __synced: false, ...extra })
+const note = (id, folder_id = 'f1', extra = {}) => ({ id: U(id), folder_id: folder_id === null ? null : U(folder_id), title: `N ${id}`, tags: [], created_at: T, updated_at: T, synced_at: null, __synced: false, ...extra })
+const body = (id, note_id, extra = {}) => ({ id: U(id), note_id: U(note_id), label: '', content: '<p>x</p>', position: 0, created_at: T, updated_at: T, synced_at: null, __synced: false, ...extra })
+const ev = (id, event_date = '2026-10-29', position = 0, extra = {}) => ({ id: U(id), event_date, title: `E ${id}`, description: '', is_done: false, position, color: null, start_time: null, end_time: null, created_at: T, updated_at: T, synced_at: null, __synced: false, ...extra })
+const bk = (id, tree, extra = {}) => ({ id: U(id), label: `bk ${id}`, tree_json: tree, browser_hint: 'chrome', created_at: T, encrypted: false, __synced: false, ...extra })
 const tree = [{ id: '0', title: '', children: [{ id: '1', title: 'Bookmarks bar', children: [
   { id: '2', title: 'Good', url: 'https://ex.com/a' },
   { id: '3', title: 'Evil', url: 'javascript:alert(1)' },
@@ -69,7 +73,7 @@ const DATA = {
   folders: [folder('f1'), folder('fs', { is_secure: true, secure_salt: 'c2FsdA==', secure_verifier_enc: 'retronote:1:vvv' })],
   notes: [note('n1'), note('n2', 'fs', { title: 'retronote:1:ttt' })],
   note_bodies: [body('b1', 'n1'), body('b2', 'n2', { content: 'retronote:1:ccc' })],
-  calendar_events: [ev('e1', '2026-10-29', 0, { series_id: 's1' })],
+  calendar_events: [ev('e1', '2026-10-29', 0, { series_id: U('s1') })],
   bookmark_backups: [bk('k1', [{ id: '0', title: '', children: [{ id: '2', title: 'Good', url: 'https://ex.com/a' }] }])],
 }
 
@@ -88,7 +92,7 @@ if (B) {
     'B1.2 thư mục bảo mật giữ muối + bộ kiểm; ghi chú bảo mật giữ nguyên mã hóa; series_id giữ',
     file?.data.folders[1].secure_salt === 'c2FsdA==' && file.data.folders[1].secure_verifier_enc === 'retronote:1:vvv' &&
       file.data.notes[1].title === 'retronote:1:ttt' && file.data.note_bodies[1].content === 'retronote:1:ccc' &&
-      file.data.calendar_events[0].series_id === 's1',
+      file.data.calendar_events[0].series_id === U('s1'),
     JSON.stringify(file?.data.folders[1]),
   )
   check(
@@ -102,53 +106,60 @@ if (B) {
 
   console.log('\nT2 — đọc + kiểm file (dữ liệu ngoài, không tin cậy)')
   const text = B.serializeBackup?.(file) ?? ''
-  const ok = B.parseBackup?.(text)
+  const ok = B.parseBackup?.(text, SAN)
+  const sameExceptPlainBody = ok?.ok === true &&
+    JSON.stringify({ ...ok.file.data, note_bodies: [] }) === JSON.stringify({ ...file.data, note_bodies: [] }) &&
+    ok.file.data.note_bodies[0].content === '[clean]<p>x</p>' && ok.file.data.note_bodies[1].content === 'retronote:1:ccc'
   check(
-    'B1.4 file vừa tạo → đọc lại y nguyên dữ liệu (vòng tròn)',
-    ok?.ok === true && JSON.stringify(ok.file.data) === JSON.stringify(file.data),
-    JSON.stringify(ok?.error ?? ok?.dropped),
+    'B1.4 file vừa tạo → đọc lại y nguyên; ghi chú chữ đi qua bộ lọc HTML, bản mã hóa THẬT giữ nguyên',
+    sameExceptPlainBody,
+    JSON.stringify(ok?.error ?? ok?.file?.data?.note_bodies?.map((b) => b.content)),
   )
-  const err = (t) => B.parseBackup?.(t)
+  const err = (t) => B.parseBackup?.(t, SAN)
   check(
     'B1.5 lỗi: không phải JSON / app khác / thiếu data / format mới hơn / quá 50 MB',
     err('{oops')?.error === 'not_json' && err(JSON.stringify({ app: 'x', format: 1, data: {} }))?.error === 'not_bbqone' &&
       err(JSON.stringify({ app: 'bbqone', format: 1 }))?.error === 'invalid' &&
       err(JSON.stringify({ app: 'bbqone', format: 2, data: {} }))?.error === 'newer_format' &&
       B.BACKUP_MAX_BYTES === 50 * 1024 * 1024 && err('x'.repeat(10))?.ok === false &&
-      B.parseBackup?.(' '.repeat(B.BACKUP_MAX_BYTES + 1))?.error === 'too_large',
+      B.parseBackup?.(' '.repeat(B.BACKUP_MAX_BYTES + 1), SAN)?.error === 'too_large',
     [err('{oops')?.error, err(JSON.stringify({ app: 'x', format: 1, data: {} }))?.error, err(JSON.stringify({ app: 'bbqone', format: 2, data: {} }))?.error].join(','),
   )
   const dirty = {
     app: 'bbqone', format: 1, exported_at: T, app_version: '9.9.9', counts: {},
     data: {
-      folders: [folder('f1', { evil: '<script>' }), folder('f1'), { id: 5, name: 'bad' }],
-      notes: [note('n1'), note('n3', 'gone'), { id: 'x', title: 7 }],
+      folders: [folder('f1', { evil: '<script>' }), folder('f1'), { id: 5, name: 'bad' }, folder('slow', { pbkdf2_iterations: 1e12 })],
+      notes: [note('n1'), note('n3', 'gone'), { id: 'x', title: 7 }, { ...note('n4'), id: 'not-a-uuid' }],
       note_bodies: [body('b1', 'n1'), body('b9', 'nope')],
       calendar_events: [
         ...Array.from({ length: 7 }, (_, i) => ev(`c${i}`, '2026-11-01', 6 - i)),
         ev('long', '2026-11-02', 0, { title: 'x'.repeat(CAL.CALENDAR_TITLE_MAX + 1) }),
         ev('baddate', '01/11/2026'),
+        ev('css', '2026-11-03', 0, { color: 'red; background:url(https://evil.example/x)' }),
+        ev('time', '2026-11-03', 1, { start_time: '25:99' }),
       ],
       bookmark_backups: [bk('k1', tree), bk('k2', 'not-array')],
     },
   }
-  const p = B.parseBackup?.(JSON.stringify(dirty))
+  const p = B.parseBackup?.(JSON.stringify(dirty), SAN)
   const d = p?.file?.data
   check(
-    'B1.6 bỏ trường lạ; dòng sai kiểu / trùng id → bỏ + đếm',
-    p?.ok === true && d.folders.length === 1 && !('evil' in d.folders[0]) && d.notes.some((n) => n.id === 'n1') && !d.notes.some((n) => n.id === 'x') &&
-      p.dropped.duplicate === 1 && p.dropped.invalid >= 3,
+    'B1.6 bỏ trường lạ; sai kiểu / id không phải UUID / trùng id / PBKDF2 quá lớn (treo khi mở khóa) → bỏ + đếm',
+    p?.ok === true && d.folders.length === 1 && !('evil' in d.folders[0]) && d.notes.some((n) => n.id === U('n1')) && !d.notes.some((n) => n.id === 'x') &&
+      p.dropped.duplicate === 1 && p.dropped.invalid >= 5 && !d.folders.some((x) => x.pbkdf2_iterations === 1e12) &&
+      !d.notes.some((n) => n.id === 'not-a-uuid'),
     JSON.stringify(p?.dropped),
   )
   check(
     'B1.7 section không có ghi chú → bỏ; ghi chú trỏ thư mục không có → "không thư mục"',
-    d?.note_bodies.map((b) => b.id).join() === 'b1' && d.notes.find((n) => n.id === 'n3')?.folder_id === null && p.dropped.orphanBodies === 1,
+    d?.note_bodies.map((b) => b.id).join() === U('b1') && d.notes.find((n) => n.id === U('n3'))?.folder_id === null && p.dropped.orphanBodies === 1,
     JSON.stringify(d?.note_bodies.map((b) => b.id)),
   )
   check(
-    'B1.8 sự kiện: tối đa 6 / ngày (giữ theo position), tên > 64 / ngày sai dạng → bỏ',
+    'B1.8 sự kiện: tối đa 6 / ngày (giữ theo position); tên > 64 / ngày, giờ sai dạng → bỏ; màu không phải #hex (chèn CSS url()) → null',
     d?.calendar_events.filter((e) => e.event_date === '2026-11-01').length === CAL.CALENDAR_MAX_EVENTS_PER_DAY &&
-      !d.calendar_events.some((e) => e.id === 'c0') && !d.calendar_events.some((e) => e.id === 'long' || e.id === 'baddate') && p.dropped.overCap === 1,
+      !d.calendar_events.some((e) => e.id === U('c0')) && !d.calendar_events.some((e) => e.id === U('long') || e.id === U('baddate') || e.id === U('time')) &&
+      p.dropped.overCap === 1 && d.calendar_events.find((e) => e.id === U('css'))?.color === null,
     JSON.stringify(d?.calendar_events.map((e) => e.id)),
   )
   const urls = JSON.stringify(d?.bookmark_backups?.[0]?.tree_json ?? [])
@@ -160,8 +171,39 @@ if (B) {
   )
   let deep = { id: 'leaf', title: 'leaf', url: 'https://deep.ex' }
   for (let i = 0; i < 200; i++) deep = { id: `d${i}`, title: '', children: [deep] }
-  const deepRes = B.parseBackup?.(JSON.stringify({ ...dirty, data: { ...dirty.data, bookmark_backups: [bk('kd', [deep])] } }))
+  const deepRes = B.parseBackup?.(JSON.stringify({ ...dirty, data: { ...dirty.data, bookmark_backups: [bk('kd', [deep])] } }), SAN)
   check('B1.10 cây bookmark quá sâu (200 tầng) không làm sập — cắt ở 64 tầng', deepRes?.ok === true && !JSON.stringify(deepRes.file.data.bookmark_backups).includes('deep.ex'), String(deepRes?.ok))
+
+  console.log('\nT2b — tấn công có chủ đích')
+  const protoText = `{"app":"bbqone","format":1,"data":{"folders":[],"notes":[{"__proto__":{"polluted":"yes"},"constructor":{"prototype":{"polluted2":"yes"}},"id":"${U('pn')}","folder_id":null,"title":"t","tags":[],"created_at":"${T}","updated_at":"${T}"}],"note_bodies":[],"calendar_events":[],"bookmark_backups":[]}}`
+  const pr = B.parseBackup?.(protoText, SAN)
+  const row = pr?.file?.data?.notes?.[0]
+  check(
+    'B1.10a khóa __proto__ / constructor trong file: dòng vẫn nhận (bỏ khóa lạ), KHÔNG làm bẩn Object.prototype',
+    pr?.ok === true && row?.id === U('pn') && ({}).polluted === undefined && ({}).polluted2 === undefined &&
+      !Object.hasOwn(row, '__proto__') && Object.getPrototypeOf(row) === Object.prototype && !Object.hasOwn(row, 'constructor'),
+    JSON.stringify(row),
+  )
+  const xss = '<p>hi</p><script>alert(1)</script><img src=x onerror=alert(1)>'
+  const fakeEnv = 'retronote:1:<img src=x onerror=alert(1)>'
+  const xr = B.parseBackup?.(JSON.stringify({ app: 'bbqone', format: 1, data: { folders: [], notes: [note('xn', null)], note_bodies: [
+    body('x1', 'xn', { content: xss }), body('x2', 'xn', { content: fakeEnv, position: 1 }), body('x3', 'xn', { content: 'retronote:1:QUJDRA==', position: 2 }),
+  ], calendar_events: [], bookmark_backups: [] } }), SAN)
+  const cs = xr?.file?.data?.note_bodies?.map((b) => b.content) ?? []
+  check(
+    'B1.10b nội dung ghi chú LUÔN qua bộ lọc HTML; envelope giả dạng (có thẻ) cũng lọc; chỉ bản mã hóa thật giữ nguyên',
+    cs[0]?.startsWith('[clean]') && !cs[0].includes('<script') && cs[1]?.startsWith('[clean]') && cs[2] === 'retronote:1:QUJDRA==' &&
+      B.isCiphertext?.('retronote:1:QUJDRA==') === true && B.isCiphertext?.(fakeEnv) === false && B.isCiphertext?.('<p>retronote:1:x</p>') === false,
+    JSON.stringify(cs),
+  )
+  const wide = Array.from({ length: 2000 }, (_, i) => ({ id: String(i), title: `t${i}`, url: `https://ex.com/${i}` }))
+  const wr = B.parseBackup?.(JSON.stringify({ app: 'bbqone', format: 1, data: { folders: [], notes: [], note_bodies: [], calendar_events: [], bookmark_backups: [bk('kw', [{ id: '0', title: '', children: wide }])] } }), SAN)
+  check('B1.10c cây bookmark rộng vẫn đọc được (giới hạn tổng số nút, không treo)', wr?.ok === true && wr.file.data.bookmark_backups[0].tree_json[0].children.length === 2000, String(wr?.ok))
+  check(
+    'B1.10d bộ lọc HTML là tham số BẮT BUỘC của parseBackup (không ai quên lọc) — gọi thiếu thì lỗi',
+    (() => { try { B.parseBackup(JSON.stringify({ app: 'bbqone', format: 1, data: { notes: [note('q', null)], note_bodies: [body('q1', 'q')] } })); return false } catch { return true } })(),
+    'gọi không có bộ lọc vẫn chạy',
+  )
 
   console.log('\nT3 — ghi khi khôi phục (thay toàn bộ)')
   const w = B.restoreWrites?.(file.data) ?? {}
@@ -253,17 +295,35 @@ if (S && B) {
 
   store.set(STORAGE.BBQ_PENDING_DELETE_COMMITS_KEY, ['n1'])
   const before = setCalls
-  const fileData = B.parseBackup(B.serializeBackup(B.buildBackup({ ...DATA, notes: [note('nz')], note_bodies: [] }, { appVersion: '2.1.0', now: new Date() }))).file.data
+  const fileData = B.parseBackup(B.serializeBackup(B.buildBackup({ ...DATA, notes: [note('nz')], note_bodies: [] }, { appVersion: '2.1.0', now: new Date() })), SAN).file.data
   await S.applyRestore?.(fileData, { now: new Date(2026, 9, 29, 11, 0) })
   check(
     'B1.22 applyRestore: tải bản an toàn trước, MỘT lần ghi (local + cache + epoch), xóa hàng đợi xóa + nháp editor',
     downloads.at(-1)?.filename === 'bbqone-before-restore-2026-10-29-1100.json' && setCalls - before === 1 &&
-      store.get(LOCAL.LOCAL_STORAGE_KEYS.notes)?.map((n) => n.id).join() === 'nz' && store.get(STORAGE.NOTES_CACHE_KEY)?.[0]?.id === 'nz' &&
+      store.get(LOCAL.LOCAL_STORAGE_KEYS.notes)?.map((n) => n.id).join() === U('nz') && store.get(STORAGE.NOTES_CACHE_KEY)?.[0]?.id === U('nz') &&
       typeof store.get(STORAGE.BBQ_RESTORE_EPOCH_KEY) === 'number' && !store.has(STORAGE.BBQ_PENDING_DELETE_COMMITS_KEY) &&
       !session.has(STORAGE.BBQ_NOTE_DRAFT_SESSION_KEY),
     `${downloads.at(-1)?.filename} set×${setCalls - before}`,
   )
 }
+
+if (S && B) {
+  // Chrome ghi Proxy (ref của Vue) như object thường → mảng thành {"0": …}. Mock structuredClone ném lỗi với Proxy.
+  const proxied = { ...DATA, notes: [{ ...note('px'), tags: new Proxy(['a'], {}) }], note_bodies: [] }
+  let threw = null
+  try {
+    await S.applyRestore?.(proxied, { now: new Date(2026, 9, 29, 12, 0) })
+  } catch (e) {
+    threw = e
+  }
+  check(
+    'B1.22b applyRestore ghi bản thuần JSON (dữ liệu bọc Proxy / ref của Vue không thành object {"0": …})',
+    !threw && Array.isArray(store.get(LOCAL.LOCAL_STORAGE_KEYS.notes)?.[0]?.tags),
+    threw?.message ?? JSON.stringify(store.get(LOCAL.LOCAL_STORAGE_KEYS.notes)?.[0]?.tags),
+  )
+}
+const sectionSrc = read('src', 'components', 'backup', 'BackupSettingsSection.vue')
+check('B1.22c giao diện giữ dữ liệu file trong shallowRef (không bọc Proxy)', /const pendingData = shallowRef</.test(sectionSrc), 'pendingData là ref sâu')
 
 console.log('\nT6 — nối dây giao diện (tĩnh)')
 const features = read('src', 'constants', 'features.ts')
@@ -291,6 +351,20 @@ check(
   'B1.27 xác nhận 2 lần: hộp xem trước (BackupRestoreDialog → "Thay toàn bộ…") rồi RetroConfirm đỏ → applyRestore → tải lại trang',
   /<BackupRestoreDialog/.test(section) && /<RetroConfirm[\s\S]{0,400}danger/.test(section) && /applyRestore\(/.test(section) && /location\.reload\(\)/.test(section),
   'thiếu bước xác nhận',
+)
+const sanitizer = read('src', 'utils', 'noteHtmlSanitize.ts')
+const editor = read('src', 'components', 'notes', 'NoteEditor.vue')
+check(
+  'B1.27b nạp file: parseBackup(text, sanitizeNoteHtml) — lọc HTML ghi chú qua ĐÚNG schema trình soạn (dùng chung với NoteEditor)',
+  /parseBackup\(text, sanitizeNoteHtml\)/.test(section) && /getSchema\(noteEditorExtensions\(\)\)/.test(sanitizer) &&
+    /PmDOMParser\.fromSchema\(schema\)/.test(sanitizer) && /DOMSerializer\.fromSchema\(schema\)/.test(sanitizer) &&
+    /new window\.DOMParser\(\)\.parseFromString\(/.test(sanitizer) && /extensions: noteEditorExtensions\(\)/.test(editor) && !/StarterKit/.test(editor),
+  'bộ lọc chưa nối / lệch schema',
+)
+check(
+  'B1.27c Esc trong hộp xem trước / xác nhận không đóng cả Cài đặt (layer-open → backupLayerOpen)',
+  /emit\('layer-open'/.test(section) && /!backupLayerOpen\.value/.test(settings) && /@layer-open="backupLayerOpen = \$event"/.test(settings),
+  'Esc đóng nhầm Cài đặt',
 )
 const app = read('src', 'pages', 'App.vue')
 check(

@@ -1,8 +1,7 @@
 # B1 — Sao lưu ra file JSON + khôi phục (người không đăng nhập) — BẢN MÔ TẢ, chờ Sir chốt
 
-> **Trạng thái: chưa làm.** Sir (2026-10-29): "Quay lại chức năng download json cho user không login, nhờ bạn mô tả
-> giúp mình". Kế hoạch gốc: `ROADMAP-P.md` › "2.0.2 — B1 Sao lưu ra file". Sir chốt các câu hỏi ở cuối → viết spec +
-> failing test như thường lệ.
+> **Sir đã chốt (2026-10-29) → đã làm: `specs/B1-backup-file.spec.md` (bản 2.1.0).** Phần dưới giữ nguyên làm lịch
+> sử (một số đề xuất đã đổi theo Sir: khôi phục = thay toàn bộ; tự sao lưu khi mở; phiên bản 2.1.0).
 
 ## 1. Vì sao cần
 

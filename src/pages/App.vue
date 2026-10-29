@@ -25,6 +25,8 @@
   import { useLangStore } from '@/stores/uiLang'
   import { useCalendarEventsStore } from '@/stores/calendarEvents'
   import { useBookmarksStore } from '@/stores/bookmarks'
+  import { maybeAutoBackup } from '@/services/backupFile.service'
+  import { BBQ_RESTORE_EPOCH_KEY } from '@/constants/storage'
   import CloudSyncStatusBadge from '@/components/sync/CloudSyncStatusBadge.vue'
   import type { CloudSyncVariant } from '@/components/sync/CloudSyncStatusBadge.vue'
   import SyncStatusBadge from '@/components/sync/SyncStatusBadge.vue'
@@ -80,6 +82,8 @@
   const dataReady = ref(false)
   const networkOnline = ref(isOnline())
   const showSettings = ref(false)
+  /** B1: Cài đặt mở từ route `?restore=1` (chọn file trong tab) / `?restore=done` (vừa khôi phục). */
+  const backupFocus = ref<'restore' | 'done' | null>(null)
   const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('calendar')
   /** U16 / U20 / U28: 3 mục chính — trên thanh dọc bên trái, chỉ icon (tên ở tooltip). */
   const HEADER_TABS = [
@@ -234,6 +238,14 @@
    * định → ô tìm ghi chú điền sẵn). Áp một lần rồi xóa query (mở lại popup không áp lại).
    */
   function applyOmniboxRoute(): void {
+    // B1: "Khôi phục từ file…" trong popup mở tab tới đây; khôi phục xong trang tải lại với `restore=done`.
+    const restore = route.query.restore
+    if (restore === '1' || restore === 'done') {
+      backupFocus.value = restore === '1' ? 'restore' : 'done'
+      showSettings.value = true
+      void router.replace({ path: '/dashboard' })
+      return
+    }
     const noteId = typeof route.query.note === 'string' ? route.query.note : ''
     const q = typeof route.query.q === 'string' ? route.query.q.trim() : ''
     if (!noteId && !q) return
@@ -261,6 +273,12 @@
     ])
     dataReady.value = true
     applyOmniboxRoute()
+    // B1: tự sao lưu khi mở (kiểu Termius) — sau khi vẽ xong, không chặn lúc mở; service tự bỏ qua khi đã đăng nhập,
+    // công tắc tắt, hôm nay đã kiểm hoặc dữ liệu không đổi.
+    window.setTimeout(() => {
+      void maybeAutoBackup({ signedIn: !isAnonymous.value, now: new Date() }).catch((e) => console.error(e))
+    }, 1500)
+    chrome.storage.onChanged.addListener(onRestoreEpochChanged)
     chrome.storage.onChanged.addListener(onAccountSessionChanged)
     // Không có ai đăng nhập → không được còn trạng thái/DEK account trong session.
     if (auth.initialized && !isAuthenticated.value) await clearAccountSession()
@@ -286,8 +304,14 @@
     chrome.runtime.onMessage.addListener(onAutoSyncMessage)
   })
 
+  /** B1: trang khác vừa khôi phục từ file → tải lại; RAM cũ không được ghi đè dữ liệu mới (N5). */
+  function onRestoreEpochChanged(changes: Record<string, chrome.storage.StorageChange>, area: string): void {
+    if (area === 'local' && changes[BBQ_RESTORE_EPOCH_KEY]) location.reload()
+  }
+
   onUnmounted(() => {
     window.removeEventListener('keydown', onGlobalKeydown, true)
+    chrome.storage.onChanged.removeListener(onRestoreEpochChanged)
     stopAutoSyncListener?.()
     stopNetworkListener?.()
     chrome.runtime.onMessage.removeListener(onAutoSyncMessage)
@@ -773,7 +797,8 @@
 
     <SettingsModal
       v-if="showSettings"
-      @close="showSettings = false"
+      :backup-focus="backupFocus"
+      @close="showSettings = false; backupFocus = null"
       @lock-account="lockAccountNow()"
     />
 

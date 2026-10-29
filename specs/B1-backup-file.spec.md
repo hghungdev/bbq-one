@@ -68,17 +68,35 @@ khẩu → nạp ở máy khác mở bằng mật khẩu cũ). Bỏ cờ nội b
    khóa chỉ ở RAM) → mở Cài đặt › Sao lưu với dòng "✓ Đã khôi phục: …".
 5. Trang BBQOne khác đang mở (popup / tab) thấy `bbqone_restore_epoch` đổi → tự tải lại.
 
-## An toàn (file là dữ liệu ngoài, không tin cậy)
+## An toàn (file là dữ liệu ngoài, không tin cậy) — Sir: "user có thể là hacker chèn script / fake link…"
 
+Mô hình đe dọa: file bị sửa có chủ đích để (a) chạy mã trong trang extension (có quyền chrome.*), (b) cài link độc,
+(c) làm bẩn prototype / ghi khóa kho lạ, (d) làm treo trang. Biện pháp (utils/backupFile.ts `parseBackup`):
+
+- **Chỉ ghi 5 loại dữ liệu vào đúng khóa kho đã biết** — file không chọn được khóa nào khác (không ghi đè cài đặt,
+  phiên đăng nhập, hàng đợi đồng bộ…).
 - Lớn hơn **50 MB** → từ chối trước khi đọc. Không phải JSON / `app` ≠ `bbqone` / thiếu `data` → báo lỗi, **không ghi
-  gì**. `format` > 1 → "File từ bản BBQOne mới hơn — hãy cập nhật extension".
-- Từng dòng: kiểm kiểu từng trường, **bỏ trường lạ**; dòng sai kiểu / trùng id → bỏ + đếm. Section không có ghi chú →
-  bỏ; ghi chú trỏ thư mục không có → về "không thư mục". Sự kiện: ngày `YYYY-MM-DD`, tên ≤ 64, mô tả ≤ 5.000, tối đa
-  **6 / ngày** (giữ theo `position`).
-- Bookmark: chỉ giữ đường dẫn `http:` / `https:` / `ftp:` / `file:`; `javascript:`, `data:`… bị bỏ + báo (file bị sửa
-  có thể cài bookmark chạy mã khi bấm). Cây sâu quá 64 tầng → cắt.
-- Nội dung ghi chú vẫn đi qua trình soạn Tiptap (chỉ giữ định dạng nó hỗ trợ); CSP của extension không chạy script.
-- **Tốc độ:** 2.000 ghi chú + 11 bản bookmark ≈ 9 MB — đọc + kiểm < 0,5 s, ghi một lần; đo trên Chromium (Nghiệm thu).
+  gì**. `format` > 1 → "File từ bản BBQOne mới hơn".
+- **Danh sách trắng từng trường** + kiểu + độ dài; trường lạ bị bỏ. Chỉ nhận khóa có trong schema (`hasOwnProperty`)
+  → khóa `__proto__` / `constructor` trong file **không bao giờ được gán** (không làm bẩn prototype).
+- **id + tham chiếu (folder_id, note_id, series_id) phải là UUID**; trùng id → bỏ. Ngày `YYYY-MM-DD`, giờ `HH:MM`,
+  thời điểm ISO hợp lệ. Màu sự kiện chỉ `#hex` (chuỗi khác — vd `red;background:url(…)` chèn CSS — → `null`).
+- **PBKDF2 1.000 – 5.000.000 vòng** (file đặt 10¹² vòng sẽ treo máy khi mở khóa thư mục bảo mật).
+- **Nội dung ghi chú LUÔN qua bộ lọc HTML** `utils/noteHtmlSanitize.ts`: phân tích bằng DOMParser (tài liệu trơ —
+  không tải ảnh, không chạy mã) rồi đi qua **đúng schema của trình soạn** (`utils/noteEditorExtensions.ts`, dùng chung
+  với NoteEditor) → chỉ còn đoạn văn / tiêu đề / danh sách / trích dẫn / code / đậm-nghiêng-gạch / xuống dòng / kẻ
+  ngang; script, style, ảnh, iframe, form, link, thuộc tính `on*` / `style` / `src` bị bỏ. Bộ lọc là **tham số bắt
+  buộc** của `parseBackup`. Chỉ bỏ qua bộ lọc với **bản mã hóa thật** (envelope v1 = tiền tố + base64; v2 kiểm chặt
+  từng phần) — chuỗi giả dạng `retronote:1:<img …>` vẫn bị lọc.
+- Tiêu đề / nhãn là chữ thường, luôn hiển thị qua escape (`highlightQueryHtml`) — `<img onerror>` trong tiêu đề chỉ
+  hiện thành chữ.
+- Bookmark: chỉ `http:` / `https:` / `ftp:` / `file:` (danh sách trắng, không phân biệt hoa thường); `javascript:`,
+  `data:`… bị bỏ + báo. Cây sâu quá 64 tầng → cắt; tối đa 200.000 nút / bản; tối đa 100.000 dòng / loại.
+- Ghi: bản thuần JSON (dữ liệu bọc Proxy của Vue bị `chrome.storage` ghi mảng thành object — lỗi bắt được trên
+  Chromium khi kiểm); xóa hàng đợi xóa chờ hoàn tác **trước** khi ghi.
+- CSP extension (MV3) vẫn chặn script inline / `javascript:` — lớp phòng thủ thứ hai.
+- **Tốc độ** (Chromium, file 6,9 MB: 2.000 ghi chú × 2 section + 11 bản × 1.000 bookmark): đọc + kiểm + lọc → hộp xem
+  trước **~1,0 s** (bản đầu dựng schema mỗi section: 6,4 s → dựng một lần); ghi + tải lại ~2,5 s.
 
 ## Phát hành 2.1.0
 

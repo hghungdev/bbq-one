@@ -504,7 +504,7 @@ Before shipping a new screen or modal:
 ```yaml
 # Mirrors src/assets/styles/global.css — do not edit here without updating CSS
 product: BBQOne
-version: 2.0.1
+version: 2.1.0
 popup:
   minWidth: 720px
   height: 600px

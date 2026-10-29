@@ -34,7 +34,8 @@ check(
 check(
   // R5 (đổi có chủ đích): mục What's new là bản 2.0.x mới nhất (2.0.1), không cứng 2.0.0.
   "R2.2 có WHAT'S NEW IN 2.0.x (không còn mục What's new 1.x ở đầu)",
-  /WHAT'S NEW IN 2\.0\.\d+/.test(txt) && !/WHAT'S NEW IN 1\./.test(txt),
+  // B1 (đổi có chủ đích): bản mới nhất là 2.1.0.
+  /WHAT'S NEW IN 2\.\d+\.\d+/.test(txt) && !/WHAT'S NEW IN 1\./.test(txt),
   'chưa cập nhật mục mới',
 )
 check(

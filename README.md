@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.0.1
+**Version:** 2.1.0
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.1.0](#what-changed-in-210)
 - [What changed in 2.0.1](#what-changed-in-201)
 - [What changed in 2.0.0](#what-changed-in-200)
 - [What changed in 1.3.3](#what-changed-in-133)
@@ -49,11 +50,19 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Address bar search** | Type `bbq` + Space in Chrome's address bar, then a keyword: matching notes appear as suggestions. **Enter** opens the note in BBQOne; **Alt+Enter** copies the whole note to the clipboard (✓ flashes on the toolbar icon). Searches only the data on this device — no network request. |
 | **Secure folders** | Optional passphrase-protected folders; sensitive titles and bodies are AES-GCM encrypted client-side before leaving your device. |
 | **Bookmarks** | Snapshot your Chrome bookmark tree, browse, search, restore, and export as HTML; backups sync to your account when signed in. |
+| **Backup files** | Without an account: automatic backup to `Downloads/BBQOne` (once a day when you open BBQOne and your data changed; last 7 days kept), **Back up now**, and **Restore from file** (replace everything — preview, two confirmations, safety backup first). Settings › Backup. |
 | **Calendar** | Month grid with per-day events, today/tomorrow banner on the dashboard, search across all events, and local-first storage. Event chips use pastel fills in light mode and softer solid chips with a left color rail in dark mode. |
 | **Cloud sync (optional)** | Sign in via Supabase Auth (email + password) to sync notes, folders, bookmarks, and calendar events across devices, protected by Row Level Security. |
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.1.0
+
+- **New — backup files (not signed in):** Settings › Backup, Termius-style — an **automatic backup** switch (on by default), "Last backup" time and **Back up now**. Automatic backup runs at most once a day when you open BBQOne and your data changed, into `Downloads/BBQOne` (one file per weekday, overwritten the next week → the last 7 days are kept). Secure-folder notes stay encrypted in the file.
+- **New — restore from file:** replaces everything on this device. It opens in a tab (Chrome closes the popup when a file picker opens), shows a preview (what is in the file, what will be deleted, what was skipped), then asks twice; a safety backup of the current data is saved to Downloads first.
+- **Security:** a backup file is treated as untrusted input — only known fields with the right types and lengths are kept; ids must be UUIDs; note content goes through the editor's own schema (scripts, images, iframes, links, inline handlers and styles are removed); bookmark links other than http(s) / ftp / file (e.g. `javascript:`, `data:`) are dropped; `__proto__` keys cannot pollute objects; limits on file size (50 MB), rows, tree depth and PBKDF2 iterations.
+- **Versioning:** new features bump the middle number (2.0.1 → 2.1.0); big refactors / upgrades bump the first.
 
 ## What changed in 2.0.1
 
@@ -116,7 +125,7 @@ See [`docs/CHROME-STORE-PERMISSIONS.md`](docs/CHROME-STORE-PERMISSIONS.md) for t
 
 ## Privacy & data
 
-- **Anonymous / not signed in (default):** notes, bookmark snapshots, and calendar events are stored **locally** in `chrome.storage.local`. No account is required for core workflows. No network requests are made.
+- **Anonymous / not signed in (default):** notes, bookmark snapshots, and calendar events are stored **locally** in `chrome.storage.local`. No account is required for core workflows. No network requests are made. Backup files (Settings › Backup) are saved only to your own Downloads folder.
 - **Signed in:** data syncs to **your** configured Supabase project; access is gated per user by Row Level Security (`auth.uid() = user_id`).
 - **Encrypted surfaces:** Secure Folder notes (and notes of accounts that turned on account encryption) are encrypted client-side (AES-GCM) before upload. Other notes, folders, bookmark backups, and calendar events are stored as plaintext under your account (isolated by RLS, not end-to-end encrypted). Calendar events stay unencrypted on purpose so the optional Google Calendar link can work.
 - **Google Calendar link (optional):** a private, one-way iCalendar link (Settings › Google Calendar). Anyone with the link can read your calendar; create a new link or turn it off anytime.

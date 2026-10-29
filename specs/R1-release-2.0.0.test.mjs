@@ -40,7 +40,8 @@ check('R1.3 DESIGN.md token: version = phiên bản hiện tại (R5)', read('DE
 const pp = read('docs', 'privacy-policy.html')
 check(
   'R1.4 privacy policy: áp dụng từ 2.0.x (R5: 2.0.1 — bỏ Google Fonts); bỏ Bookmark PIN; có mục Google Calendar (link bí mật, một chiều, Google tải)',
-  /applies to extension version 2\.0\.\d+ and later/.test(pp) &&
+  // B1 (đổi có chủ đích): 2.1.0 thêm đoạn "Backup files" → policy áp dụng từ 2.1.0.
+  /applies to extension version 2\.\d+\.\d+ and later/.test(pp) &&
     !/protected by a PIN|PIN-protected/.test(pp) &&
     /Optional Google Calendar link/.test(pp) &&
     /Anyone who has the link can read your calendar/.test(pp) &&

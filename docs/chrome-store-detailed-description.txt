@@ -21,6 +21,9 @@ Month view with up to 6 events per day. Repeat events weekly, monthly, or yearly
 GOOGLE CALENDAR LINK (OPTIONAL)
 Signed in? Create a private, one-way link in Settings › Google Calendar and add it in Google Calendar ("From URL"). Your BBQOne events then appear in Google Calendar. Google decides when to refresh the link — usually within several hours. Turn the link off or replace it at any time.
 
+BACKUP FILES (NO ACCOUNT NEEDED)
+Without an account, everything lives in this browser — so BBQOne can save a backup file to your Downloads folder automatically (once a day, the last 7 days kept) or with "Back up now", and restore it on any computer. Notes in secure folders stay encrypted inside the file.
+
 CLOUD SYNC (OPTIONAL)
 Sign in with email and password to sync notes, bookmark backups, and events across devices. Changes made offline sync automatically when you're back online. Each account's data is isolated by server-side Row Level Security.
 
@@ -40,17 +43,12 @@ Encrypted before upload: notes in secure folders. Regular notes, folders, bookma
 Google Calendar link: created only if you ask for it. Anyone with the link can read your calendar, so keep it private — you can replace or turn it off in Settings.
 
 ═══════════════════════════════════════════════════
-WHAT'S NEW IN 2.0.1
+WHAT'S NEW IN 2.1.0
 ═══════════════════════════════════════════════════
 
-New: Search notes from the address bar — type "bbq", press Space, then a keyword (Enter opens, Alt+Enter copies the whole note)
-New: Edit or delete a whole repeating series (this event, this and following, or all)
-Improved: Much faster with thousands of notes — folders open and search finishes in a fraction of a second
-Improved: Up to 6 events per day; the header chip shows how many events today has
-Improved: Fonts bundled with the extension — works fully offline; smaller download (11 MB → 3 MB)
-Improved: Full-width header with the logo top-left; icon-only side rail with tooltips
-Improved: Esc never closes the extension, and clicking outside a dialog no longer closes it — no lost typing
-Fixed: Without signing in, deleted notes and events no longer come back after reopening
+New: Backup files for use without an account — automatic backup to Downloads/BBQOne (once a day when you open BBQOne and your data changed; the last 7 days are kept) and "Back up now" in Settings
+New: Restore from a backup file — preview first, confirm twice; your current data is saved to a safety file before it is replaced
+Security: Restored files are checked and cleaned — scripts, images, links and unsafe bookmark links (javascript:, data:) are removed
 
 ═══════════════════════════════════════════════════
 PRIVACY POLICY

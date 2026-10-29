@@ -1,7 +1,7 @@
 # BBQOne — Chrome Web Store Permissions Justification
 
 This document explains why each permission declared in `public/manifest.json`
-is required for BBQOne **v2.0.1** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 adds only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning). The content below is the **source of
+is required for BBQOne **v2.1.0** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 added only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning; v2.1.0 reuses `downloads` for JSON backup files — still no new permission). The content below is the **source of
 truth** when filling out the Chrome Web Store submission form's "Permission
 Justification" section.
 
@@ -71,7 +71,9 @@ Reads the user's Chrome bookmark tree to show, search and back it up in the Book
 ### `downloads`
 
 ```text
-Powers "Export as HTML" in the Bookmarks tab: the extension builds a standard Netscape bookmark HTML file in memory and saves it with chrome.downloads.download, so users can keep a backup or import it into another browser. Downloads happen only when the user clicks Export.
+Saves files the user keeps on their own computer, built in memory and written with chrome.downloads.download (no prompt, no network):
+1. "Export as HTML" in the Bookmarks tab — a standard Netscape bookmark HTML file to keep or import into another browser (only when the user clicks Export).
+2. Backup files (not signed in, since v2.1.0) — a JSON backup file of the user's own notes, calendar events and bookmark backups: "Back up now" in Settings, plus an optional automatic backup (Settings › Backup, can be turned off) at most once a day when BBQOne is opened and the data changed, into Downloads/BBQOne (one file per weekday, overwritten the next week). Before "Restore from file" replaces data, a safety backup file of the current data is saved the same way. Nothing is uploaded.
 ```
 
 ---

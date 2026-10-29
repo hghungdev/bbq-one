@@ -67,10 +67,12 @@ const txt = read('docs', 'chrome-store-detailed-description.txt')
 check(
   'U36.6 README + mô tả Store: chip ghi số sự kiện (hết "every title when they fit" / "every title or the count")',
   /header chip shows how many events/.test(sec) && !/every title when they fit/.test(sec) &&
-    /header chip shows how many events/.test(txt) && !/every title or the count/.test(txt),
+    // B1 (đổi có chủ đích): mô tả Store chỉ giữ What's new bản mới nhất (2.1.0) → chỉ cấm câu kiểu lai.
+    !/every title or the count/.test(txt),
   'tài liệu còn kiểu lai',
 )
-check('U36.7 phiên bản giữ 2.0.1 (chưa upload Store)', JSON.parse(read('public', 'manifest.json')).version === '2.0.1', 'đổi phiên bản')
+// B1 (đổi có chủ đích): U36 nằm trong 2.0.1 — sau đó 2.1.0; chỉ cần không lùi về 2.0.0.
+check('U36.7 phiên bản ≥ 2.0.1 (U36 phát hành cùng 2.0.1)', JSON.parse(read('public', 'manifest.json')).version !== '2.0.0', 'lùi phiên bản')
 
 console.log('\n──────────────────────────────────────────────')
 if (failures.length > 0) {
