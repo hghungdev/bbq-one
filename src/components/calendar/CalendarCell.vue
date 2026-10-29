@@ -215,19 +215,25 @@ function onMoreClick(e: Event): void {
   min-width: 0;
 }
 
-/* U30: thẻ "+n xem thêm" — nhỏ hơn pill sự kiện, bấm được cả ở ngày đã qua. */
+/* U32: thẻ "+n xem thêm" là một dòng của danh sách — rộng hết cột, cùng bo góc + lề chữ với pill (chữ thẳng cột
+   tên sự kiện); viền đứt, nền trong, thấp hơn pill để vẫn là nút phụ. Bấm được cả ở ngày đã qua (U30). */
 .cal-cell__more {
-  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 24px;
   margin: 0;
-  padding: 1px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  /* trái 10 px = vạch màu 3 px của pill + 8 px − viền 1 px → chữ thẳng cột tên sự kiện; phải 6 px + đậm 500 để
+     "+4 xem thêm" vừa cột ~90 px (đậm 600 / lề 8 px tràn 0,2 px → bị cắt "…") */
+  padding: 3px 6px 3px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-secondary);
   font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 18px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

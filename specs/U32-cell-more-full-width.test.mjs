@@ -33,7 +33,8 @@ check(
 )
 check(
   'U32.2 cùng bo góc + lề ngang với pill (chữ thẳng cột tên sự kiện), canh trái',
-  prop(more, 'border-radius') === prop(pill, 'border-radius') && /^\d+px 8px$/.test(prop(more, 'padding') ?? '') &&
+  // pill có vạch màu trái 3 px (calendar-events.css) → thẻ viền 1 px cần lề trái 10 px để chữ thẳng cột.
+    prop(more, 'border-radius') === prop(pill, 'border-radius') && /^(\d+)px 6px \1px 10px$/.test(prop(more, 'padding') ?? '') &&
     /8px$/.test(prop(pill, 'padding') ?? '') && prop(more, 'text-align') === 'left',
   `radius ${prop(more, 'border-radius')} vs ${prop(pill, 'border-radius')} · padding ${prop(more, 'padding')} · align ${prop(more, 'text-align')}`,
 )
@@ -44,8 +45,8 @@ check(
   `border ${prop(more, 'border')} · bg ${prop(more, 'background')} · min-height ${prop(more, 'min-height')}`,
 )
 check(
-  'U32.4 cỡ chữ như pill (--font-size-sm), cắt "…" khi hẹp',
-  prop(more, 'font-size') === 'var(--font-size-sm)' && prop(more, 'text-overflow') === 'ellipsis' && prop(more, 'white-space') === 'nowrap',
+  'U32.4 cỡ chữ như pill (--font-size-sm), đậm vừa (500), cắt "…" khi hẹp',
+  prop(more, 'font-size') === 'var(--font-size-sm)' && prop(more, 'font-weight') === '500' && prop(more, 'text-overflow') === 'ellipsis' && prop(more, 'white-space') === 'nowrap',
   `font-size ${prop(more, 'font-size')}`,
 )
 check(

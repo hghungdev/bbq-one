@@ -11,10 +11,12 @@ lạc chỗ chứ không phải "dòng thứ 3" của ô.
 
 ## Sửa (`CalendarCell.vue`, chỉ CSS)
 
-Thẻ thành **một dòng của danh sách**: rộng hết cột như pill sự kiện, cùng bo góc 6 px, cùng lề chữ (viền 1 px + 8 px)
-→ chữ "+4 xem thêm" thẳng cột với tên sự kiện. Vẫn là nút phụ nên khác pill ở:
+Thẻ thành **một dòng của danh sách**: rộng hết cột như pill sự kiện, cùng bo góc 6 px; lề trái 10 px (pill có vạch màu
+trái 3 px + lề 8 px, thẻ viền 1 px) → chữ "+4 xem thêm" thẳng cột với tên sự kiện. Vẫn là nút phụ nên khác pill ở:
 - viền **đứt** (`dashed`), nền trong suốt, chữ màu phụ — không nhầm với một sự kiện;
-- thấp hơn pill một chút (24 px so với 28 px) để hàng lịch không cao thêm nhiều.
+- thấp hơn pill một chút (24 px so với 28 px) để hàng lịch không cao thêm nhiều;
+- chữ đậm 500, lề phải 6 px: cột ~90 px, "+4 xem thêm" đậm 600 / lề 8 px tràn 0,2 px → bị cắt "+4 xem th…" (đo
+  Chromium); 500 / 6 px dư ~2,4 px. Lưới lịch ẩn thanh cuộn nên bề rộng cột như nhau trên mọi hệ điều hành.
 Rê chuột: viền + chữ màu nhấn, nền nhấn nhạt (như cũ). Ngày tháng khác giữ mờ như pill.
 
 ## KHÔNG được đổi

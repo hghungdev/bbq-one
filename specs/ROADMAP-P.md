@@ -66,6 +66,8 @@ Mức công: **S** ≤ ½ ngày · **M** 1–2 ngày · **L** ≥ 3 ngày.
 
 | **U31** | **Hộp thoại không đóng khi bấm ra ngoài** (Sir, 2026-10-29: "đang nhập title … lỡ click ra khỏi popup … popup tắt đi, phải nhập lại — chỉ được tắt bằng X hoặc ESC"): 15 hộp có nền mờ bỏ đóng-khi-bấm-nền; nền chặn mousedown để focus / con trỏ gõ ở nguyên trong hộp; menu / bảng nổi giữ nguyên | S | Thấp | Gõ dở → bấm nền → hộp + chữ còn; ✕ / Esc vẫn đóng; Esc hộp xác nhận không đóng hộp bên dưới |
 
+| **U32** | **Thẻ "+n xem thêm" rộng bằng dòng sự kiện** (Sir, 2026-10-29: "tag này width = với event"): một dòng của danh sách — rộng hết cột, cùng bo góc, chữ thẳng cột tên sự kiện; viền đứt, nền trong, 24 px | XS | Thấp | Cùng mép với pill, chữ thẳng cột, không bị cắt |
+
 **Thứ tự:** P1 → P2 (nhỏ, độc lập, ai cũng hưởng) → P3 → P4 (P4 dùng plain text nhớ sẵn của P3) → P5 → U28 → C16.
 **Phát hành 2.0.1:** 5 mục GREEN → `npm run sync-version` (2.0.1) → What's new trong README + mô tả Store →
 bảng số đo trước / sau → Sir verify tay → upload `dist/`. Quyền trong manifest **không đổi** (cập nhật không bị
@@ -99,7 +101,7 @@ gộp vào cuối 2.0.1.
 |---|---|---|---|
 | F1 | **Tìm từ thanh địa chỉ** (việc nhỏ số 6) — ✅ **Sir chốt + đã làm** (2026-10-29): từ khóa `bbq`, **Enter = mở**, **Alt+Enter = sao chép cả ghi chú**, không tìm lịch | S–M | Xem Trạng thái · spec `F1-omnibox-search.spec.md` (mô tả gốc `F1-omnibox-proposal.md`). Không thêm quyền |
 | ~~F2~~ | ~~Dời việc quá hạn sang hôm nay~~ — **BỎ** | — | Sir (2026-10-29): "Vẫn giữ việc overdue ngày setup" — việc quá hạn giữ nguyên ngày đã đặt, không dời |
-| F3 | **Sửa / xóa cả chuỗi sự kiện lặp** (số 7a) — ✅ **Sir duyệt (2026-10-29), đã làm** | M | Xem Trạng thái. **Sir chạy `supabase/migrations/018_calendar_series.sql` trước khi phát hành** (upsert đẩy mọi cột). Chuỗi tạo trước F3 không có `series_id` → vẫn sửa / xóa từng cái |
+| F3 | **Sửa / xóa cả chuỗi sự kiện lặp** (số 7a) — ✅ **Sir duyệt (2026-10-29), đã làm** | M | Xem Trạng thái. ✅ **Sir đã chạy `supabase/migrations/018_calendar_series.sql` (2026-10-29)** (upsert đẩy mọi cột). Chuỗi tạo trước F3 không có `series_id` → vẫn sửa / xóa từng cái |
 | — | Ghi nhanh từ trang web, giờ + nhắc việc, Side Panel (gợi ý 1–3 hôm 2026-10-29) | M mỗi mục | Nhắc việc cần quyền `notifications` → để ở `optional_permissions`, xin khi bật |
 
 ## Trạng thái
@@ -118,3 +120,4 @@ gộp vào cuối 2.0.1.
 | F1 | `1b79e51` → (commit này) | ✅ 15/15 (RED 7) | Chromium (gọi thẳng sự kiện omnibox trong service worker): `kafka` → "Kafka plan" (khớp tên, in đậm) trước "Other" (khớp nội dung), thư mục bảo mật không hiện; Alt+Enter → clipboard có cả ghi chú (2 section, SQL giữ thụt lề), icon ✓ rồi tự tắt; Enter → BBQOne mở tab Ghi chú đúng ghi chú; Enter dòng mặc định → ô tìm điền sẵn. `dist/manifest.json` có `omnibox.keyword = "bbq"`, quyền không đổi |
 | U30 | `2acb886` → (commit này) | ✅ 20/20 (RED 14) | Chromium (không đăng nhập, en / vi, sáng / tối): hôm nay 6 sự kiện → hộp `6/6`, hết nút ＋, "đã đủ tối đa 6"; ô `HSBC T1279 · OT - 2 Hours · +4 xem thêm`; ô ngày đã qua: bấm khoảng trống không mở, bấm "+3 xem thêm" → hộp liệt kê đủ 5; chip `Hôm nay · 6 sự kiện · Ngày mai 4`, 3 tên ngắn vẫn hiện `Gym · VIB · OT`; bảng: Hôm nay 6 dòng, Ngày mai 3 + "Xem thêm 1" → bấm ra đủ 4 (focus ở lại bảng, Esc đóng), mở lại thu về 3; bảng cao 400 px không cuộn; không lỗi console. Đổi assertion có chủ đích: U18 T1–T6 / S1 / S2, U3 T2.1–T2.3, R2.4 |
 | U31 | `3f1b88c` → (commit này) | ✅ 62/62 (RED 22 / 47; +15 ca U31.6) | Chromium (vi): form Thêm sự kiện gõ "Họp với khách hàng" → bấm nền 2 lần → hộp còn, gõ tiếp được ("… 2"); ✕ đóng; Esc đóng. Cài đặt: bấm nền không đóng, Esc đóng. Hộp xác nhận xóa: bấm nền → còn, sự kiện còn; Esc chỉ đóng hộp xác nhận, hộp ngày còn (C12). Hộp tạo thư mục: bấm nền → chữ còn, Esc đóng. Không lỗi console. Bổ sung test của chính U31 trước GREEN: chỉ bỏ `@click.self` thì focus rơi về `<body>` (Esc hộp tạo thư mục thôi chạy, Esc hộp xác nhận đóng luôn hộp ngày) → thêm U31.6 nền chặn mousedown, chốt chặn U31.4 cho phép `@mousedown(.self).prevent` trơn |
+| U32 | `1272fec` → (commit này) | ✅ 5/5 (RED 4) | Chromium (vi, sáng / tối): thẻ cùng mép trái / phải với pill (75–165 px), chữ thẳng cột tên sự kiện (86 px = 86 px, lề trái 10 px bù vạch màu 3 px của pill); "+4 xem thêm" đủ chữ trong ô hôm nay (đậm 600 / lề phải 8 px tràn 0,2 px → "+4 xem th…"; chốt 500 / 6 px, dư ~2,4 px); hàng không cắt; rê chuột viền + chữ màu nhấn |
