@@ -648,123 +648,127 @@
 
 <template>
   <div class="shell shell--dashboard">
-    <!-- U20 / U28: thanh điều hướng dọc — chỉ icon, rê chuột / focus bàn phím hiện tooltip tên mục. -->
-    <nav class="shell__rail">
-      <div
-        ref="tabsRef"
-        class="shell__rail-items"
-        role="tablist"
-        aria-orientation="vertical"
-        :aria-label="t('app.tabs.aria')"
-        @keydown="onTabsKeydown"
-      >
-        <button
-          v-for="tab in HEADER_TABS"
-          :key="tab.id"
-          type="button"
-          role="tab"
-          class="shell__rail-btn shell__rail-item"
-          :class="{ 'shell__rail-item--active': activeTab === tab.id }"
-          :aria-selected="activeTab === tab.id"
-          :tabindex="activeTab === tab.id ? 0 : -1"
-          :aria-label="t(tab.label)"
-          @click="activeTab = tab.id"
+    <!-- U34: header hết bề ngang, nổi trên thanh dọc; logo sát mép trái, cùng trục cột icon bên dưới. -->
+    <header class="shell__header">
+      <div class="shell__header-row shell__header-row--top">
+        <div class="shell__header-left">
+          <span class="shell__brand">
+            <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" />
+            <span class="shell__brand-name">BBQOne</span>
+          </span>
+        </div>
+        <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
+        <div class="shell__header-mid">
+          <CalendarAgendaChip
+            v-if="dataReady"
+            @open-calendar="onOpenCalendarFromAgenda"
+            @review-overdue="showOverdueReminder = true"
+          />
+        </div>
+        <div class="shell__header-right">
+          <!-- U27: ☀ giao diện đứng trước ⚙ (Sir: Dark/Light › Setting › User). -->
+          <ThemeModeToggle />
+          <!-- U24: ⚙ ngay trước tài khoản, như Gmail. -->
+          <IconButton :label="t('app.aria.settings')" @click="showSettings = true">
+            <AppIcon name="settings" :size="17" />
+          </IconButton>
+          <!-- U22: tài khoản đứng cuối, như avatar Gmail. -->
+          <AccountMenu
+            :signed-in="!isAnonymous"
+            :email="accountEmail"
+            @sign-in="onGoLogin"
+            @sign-out="onLogout"
+          />
+        </div>
+      </div>
+    </header>
+
+    <div class="shell__body">
+      <!-- U20 / U28: thanh điều hướng dọc — chỉ icon, rê chuột / focus bàn phím hiện tooltip tên mục. -->
+      <nav class="shell__rail">
+        <div
+          ref="tabsRef"
+          class="shell__rail-items"
+          role="tablist"
+          aria-orientation="vertical"
+          :aria-label="t('app.tabs.aria')"
+          @keydown="onTabsKeydown"
         >
-          <AppIcon :name="tab.icon" :size="20" />
-          <span class="shell__rail-tip" aria-hidden="true">{{ t(tab.label) }}</span>
-        </button>
-      </div>
-      <!-- U22 / U24 / U27: ☀ › ⚙ › tài khoản ở header (kiểu Gmail). U26: ☁ đồng bộ ở đáy thanh dọc. -->
-      <div class="shell__rail-bottom">
-        <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
-        <CloudSyncStatusBadge
-          v-if="!isAnonymous"
-          :variant="syncBadgeVariant"
-          :label="syncBadgeTitle"
-          :disabled="syncBusy"
-          @click="onSync"
-        />
-        <!-- Local pending badge: chỉ hiện khi anonymous -->
-        <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
-      </div>
-    </nav>
+          <button
+            v-for="tab in HEADER_TABS"
+            :key="tab.id"
+            type="button"
+            role="tab"
+            class="shell__rail-btn shell__rail-item"
+            :class="{ 'shell__rail-item--active': activeTab === tab.id }"
+            :aria-selected="activeTab === tab.id"
+            :tabindex="activeTab === tab.id ? 0 : -1"
+            :aria-label="t(tab.label)"
+            @click="activeTab = tab.id"
+          >
+            <AppIcon :name="tab.icon" :size="20" />
+            <span class="shell__rail-tip" aria-hidden="true">{{ t(tab.label) }}</span>
+          </button>
+        </div>
+        <!-- U22 / U24 / U27: ☀ › ⚙ › tài khoản ở header (kiểu Gmail). U26: ☁ đồng bộ ở đáy thanh dọc. -->
+        <div class="shell__rail-bottom">
+          <!-- Cloud sync badge: chỉ hiện khi đã đăng nhập -->
+          <CloudSyncStatusBadge
+            v-if="!isAnonymous"
+            :variant="syncBadgeVariant"
+            :label="syncBadgeTitle"
+            :disabled="syncBusy"
+            @click="onSync"
+          />
+          <!-- Local pending badge: chỉ hiện khi anonymous -->
+          <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
+        </div>
+      </nav>
 
-    <div class="shell__main">
-      <header class="shell__header">
-        <div class="shell__header-row shell__header-row--top">
-          <div class="shell__header-left">
-            <span class="shell__brand">
-              <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" />
-              <span class="shell__brand-name">BBQOne</span>
-            </span>
-          </div>
-          <!-- U6: lịch hôm nay / ngày mai gọn trong một chip (thay 2 banner xếp chồng dưới header). -->
-          <div class="shell__header-mid">
-            <CalendarAgendaChip
-              v-if="dataReady"
-              @open-calendar="onOpenCalendarFromAgenda"
-              @review-overdue="showOverdueReminder = true"
+      <div class="shell__main">
+
+        <OfflineBanner />
+
+        <p v-if="loadErrorLine" class="shell__error" role="alert">
+          {{ loadErrorLine }}
+        </p>
+
+        <template v-if="dataReady">
+          <!-- Tab: Notes (layout 3 cột hiện tại) -->
+          <div v-show="activeTab === 'notes'" class="shell__grid">
+            <Sidebar
+              v-model:renaming-folder-id="renamingFolderId"
+              class="shell__col shell__col--folders"
             />
-          </div>
-          <div class="shell__header-right">
-            <!-- U27: ☀ giao diện đứng trước ⚙ (Sir: Dark/Light › Setting › User). -->
-            <ThemeModeToggle />
-            <!-- U24: ⚙ ngay trước tài khoản, như Gmail. -->
-            <IconButton :label="t('app.aria.settings')" @click="showSettings = true">
-              <AppIcon name="settings" :size="17" />
-            </IconButton>
-            <!-- U22: tài khoản đứng cuối, như avatar Gmail. -->
-            <AccountMenu
-              :signed-in="!isAnonymous"
-              :email="accountEmail"
-              @sign-in="onGoLogin"
-              @sign-out="onLogout"
+            <NoteList
+              v-model:renaming-note-id="renamingNoteId"
+              class="shell__col shell__col--notes"
+              :class="{ 'shell__col--notes--search': isSearchActive }"
+              :style="noteListColumnStyle"
             />
+            <div
+              v-show="!isSearchActive"
+              class="shell__resize"
+              :title="t('app.dragResize')"
+              aria-hidden="true"
+              @mousedown="onResizeStart($event)"
+            />
+            <div v-show="!isSearchActive" class="shell__col shell__col--editor">
+              <NoteEditor ref="noteEditorRef" />
+            </div>
           </div>
-        </div>
-      </header>
 
-      <OfflineBanner />
-
-      <p v-if="loadErrorLine" class="shell__error" role="alert">
-        {{ loadErrorLine }}
-      </p>
-
-      <template v-if="dataReady">
-        <!-- Tab: Notes (layout 3 cột hiện tại) -->
-        <div v-show="activeTab === 'notes'" class="shell__grid">
-          <Sidebar
-            v-model:renaming-folder-id="renamingFolderId"
-            class="shell__col shell__col--folders"
-          />
-          <NoteList
-            v-model:renaming-note-id="renamingNoteId"
-            class="shell__col shell__col--notes"
-            :class="{ 'shell__col--notes--search': isSearchActive }"
-            :style="noteListColumnStyle"
-          />
-          <div
-            v-show="!isSearchActive"
-            class="shell__resize"
-            :title="t('app.dragResize')"
-            aria-hidden="true"
-            @mousedown="onResizeStart($event)"
-          />
-          <div v-show="!isSearchActive" class="shell__col shell__col--editor">
-            <NoteEditor ref="noteEditorRef" />
+          <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
+          <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
+            <BookmarkTab class="shell__col--full" />
           </div>
-        </div>
 
-        <!-- Tab: Bookmark — chỉ mount khi user mở tab (modal PIN không phủ lên Notes). -->
-        <div v-if="activeTab === 'bookmarks'" class="shell__grid shell__grid--full">
-          <BookmarkTab class="shell__col--full" />
-        </div>
-
-        <div v-if="activeTab === 'calendar'" class="shell__grid shell__grid--full">
-          <CalendarTab class="shell__col--full" />
-        </div>
-      </template>
-      <DashboardSkeleton v-else class="shell__loading-skel" />
+          <div v-if="activeTab === 'calendar'" class="shell__grid shell__grid--full">
+            <CalendarTab class="shell__col--full" />
+          </div>
+        </template>
+        <DashboardSkeleton v-else class="shell__loading-skel" />
+      </div>
     </div>
 
     <SettingsModal
@@ -801,11 +805,11 @@
 </template>
 
 <style scoped>
-  /* U20: hàng ngang = thanh dọc (rail) + cột nội dung (shell__main). */
+  /* U34: cột = header hết bề ngang + thân (U20: thanh dọc + cột nội dung). */
   .shell {
     position: relative;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     /* Bề rộng popup cố định: global.css (--popup-width); lưới có overflow-x khi hẹp hơn 3 cột */
     min-width: 0;
     min-height: 0;
@@ -829,11 +833,15 @@
     );
   }
 
+  /* U34: lề trái 12 px → logo 32 px có tâm 28 px = giữa thanh dọc 56 px (logo ở trên, các mục ngay dưới).
+     Nổi trên thanh dọc (z 30 > 20): bóng đổ rơi lên thanh dọc; bảng chip / menu tài khoản phủ lên nội dung. */
   .shell__header {
+    position: relative;
+    z-index: 30;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 12px 14px 10px;
+    padding: 12px 14px 10px 12px;
     border-bottom: 1px solid var(--border);
     font-size: var(--font-size-sm);
     flex: 0 0 auto;
@@ -871,6 +879,14 @@
     gap: 10px;
   }
 
+  .shell__body {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+  }
+
   .shell__main {
     display: flex;
     flex-direction: column;
@@ -895,7 +911,7 @@
     z-index: 20;
   }
 
-  /* U28: không còn ☰ phía trên — mục đầu thẳng hàng với logo header. */
+  /* U28: không còn ☰ phía trên. U34: thanh dọc nằm dưới header — mục đầu cách header 12 px (padding). */
   .shell__rail-items {
     display: flex;
     flex-direction: column;
