@@ -166,6 +166,7 @@ try {
       // C11: store đọc cache qua readCachedArray (mock chỉ vá API mới, dùng code thật).
       readCachedArray: loadTsModule(path.join(ROOT, 'src', 'utils', 'cacheWrite.ts')).readCachedArray,
     },
+    '@/utils/rowsEqual': loadTsModule(path.join(ROOT, 'src', 'utils', 'rowsEqual.ts')), // P5: import mới
   }).useCalendarEventsStore
 } catch (e) {
   check('T2.0 store load được', false, e.message)

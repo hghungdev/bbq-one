@@ -166,6 +166,7 @@ try {
     '@/stores/undoToast': { useUndoToastStore: () => ({}) },
     '@/stores/uiLang': { useLangStore: () => ({ t: (k) => k }) },
     '@/utils/cacheWrite': { safeCacheWrite: async () => {} },
+    '@/utils/rowsEqual': loadTsModule(path.join(ROOT, 'src', 'utils', 'rowsEqual.ts')), // P5: import mới
   }).useCalendarEventsStore()
 } catch (e) {
   check('U2.8 store load được', false, e.message)

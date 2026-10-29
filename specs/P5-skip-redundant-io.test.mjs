@@ -286,7 +286,7 @@ const badge = read('src', 'components', 'sync', 'SyncStatusBadge.vue')
 const handler = badge.match(/function onStorageChanged\([\s\S]*?\n}\n/)?.[0] ?? ''
 check(
   "T4.1 onStorageChanged(changes, area): bỏ qua area ≠ 'local' và khóa ngoài LOCAL_STORAGE_KEYS / BBQ_AUTH_LOGGED_IN_KEY",
-  /onStorageChanged\(\s*changes[^,]*,\s*area/.test(handler) && /area !== 'local'/.test(handler) &&
+  /onStorageChanged\(\s*changes[\s\S]*?,\s*area\s*:/.test(handler) && /area !== 'local'/.test(handler) &&
     /LOCAL_STORAGE_KEYS/.test(badge) && /BBQ_AUTH_LOGGED_IN_KEY/.test(badge),
   'badge vẫn đọc lại kho ở mọi thay đổi storage',
 )

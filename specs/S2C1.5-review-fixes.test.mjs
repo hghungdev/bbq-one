@@ -252,6 +252,7 @@ notesStore = loadTs('src/stores/notes.ts', {
   '@/utils/secureCache': cacheMod,
   '@/utils/noteBodyIndex': loadTs('src/utils/noteBodyIndex.ts'), // P3: import mới của notes.ts (code thật, thuần)
   '@/utils/noteSearch': loadTs('src/utils/noteSearch.ts', { '@/utils/text': loadTs('src/utils/text.ts') }), // P4: import mới của notes.ts
+  '@/utils/rowsEqual': loadTs('src/utils/rowsEqual.ts'), // P5: import mới của notes.ts
 }).useNotesStore
 
 const PASS = 'passphrase đúng 10+'

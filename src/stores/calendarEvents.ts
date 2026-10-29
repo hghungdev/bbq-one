@@ -19,6 +19,7 @@ import { isCalendarEventDirty, mergeFreshWithDirtyLocal, mergeSnapshotWithStored
 import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 import { readCachedArray, safeCacheWrite } from '@/utils/cacheWrite'
+import { sameRows } from '@/utils/rowsEqual'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -99,18 +100,25 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     })
   }
 
-  async function hydrateFromCache(): Promise<void> {
+  /**
+   * P5: trả mảng thô trên đĩa — CHỈ khi là mảng chuẩn (cache hỏng `{0:…}` của bản cũ → null → loadAll vẫn ghi lại
+   * dạng mảng, C11).
+   */
+  async function hydrateFromCache(): Promise<CalendarEvent[] | null> {
     const cached = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
-    const raw = readCachedArray<CalendarEvent>(cached[CALENDAR_EVENTS_CACHE_KEY])
+    const stored: unknown = cached[CALENDAR_EVENTS_CACHE_KEY]
+    const raw = readCachedArray<CalendarEvent>(stored)
     if (raw && raw.length > 0) {
-      events.value = withNormalizedDates(raw)
+      const normalized = withNormalizedDates(raw)
+      if (!sameRows(normalized, events.value)) events.value = normalized
     }
+    return Array.isArray(stored) ? (stored as CalendarEvent[]) : null
   }
 
   async function loadAll(): Promise<void> {
     loadError.value = null
     try {
-      await hydrateFromCache()
+      const disk = await hydrateFromCache()
       if (!isOnline()) return
       const fresh = await withTimeout(
         calendarEventsService.getAll(),
@@ -118,11 +126,14 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
         'Load calendar timed out',
       )
       // Không đè row đang dirty (sửa offline chưa push) bằng bản server cũ.
-      events.value = mergeFreshWithDirtyLocal(
+      const merged = mergeFreshWithDirtyLocal(
         withNormalizedDates(fresh),
         events.value,
         isCalendarEventDirty,
       )
+      // P5: không có gì mới (RAM lẫn đĩa đã đúng) → không gán lại, không ghi lại cache.
+      if (disk && sameRows(merged, events.value) && sameRows(merged, disk)) return
+      events.value = merged
       await persistCache()
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load calendar failed'

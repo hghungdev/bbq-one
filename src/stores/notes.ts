@@ -25,6 +25,7 @@ import { safeCacheWrite } from '@/utils/cacheWrite'
 import { sealSecureRowsForCache } from '@/utils/secureCache'
 import { indexBodiesByNote } from '@/utils/noteBodyIndex'
 import { filterNotesByText } from '@/utils/noteSearch'
+import { sameRows } from '@/utils/rowsEqual'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -234,25 +235,30 @@ export const useNotesStore = defineStore('notes', () => {
     })
   }
 
-  async function hydrateFromCache(): Promise<void> {
+  /** P5: trả ảnh chụp đĩa (khi cả hai là mảng) — loadAll so để biết có cần ghi lại cache không. */
+  async function hydrateFromCache(): Promise<{ notes: Note[]; bodies: NoteBody[] } | null> {
     const cached = await chrome.storage.local.get([
       NOTES_CACHE_KEY,
       NOTE_BODIES_CACHE_KEY,
     ])
     const rawNotes = cached[NOTES_CACHE_KEY] as Note[] | undefined
     const rawBodies = cached[NOTE_BODIES_CACHE_KEY] as NoteBody[] | undefined
-    if (Array.isArray(rawNotes) && rawNotes.length > 0) {
+    // P5: đĩa y hệt RAM (vd hydrate lần 2 khi mở popup) → giữ mảng RAM, danh sách không tính lại.
+    if (Array.isArray(rawNotes) && rawNotes.length > 0 && !sameRows(rawNotes, notes.value)) {
       notes.value = rawNotes
     }
-    if (Array.isArray(rawBodies) && rawBodies.length > 0) {
+    if (Array.isArray(rawBodies) && rawBodies.length > 0 && !sameRows(rawBodies, bodies.value)) {
       bodies.value = rawBodies
     }
+    return Array.isArray(rawNotes) && Array.isArray(rawBodies)
+      ? { notes: rawNotes, bodies: rawBodies }
+      : null
   }
 
   async function loadAll(): Promise<void> {
     loadError.value = null
     try {
-      await hydrateFromCache()
+      const disk = await hydrateFromCache()
       // S1: đĩa chỉ còn envelope — decrypt-overlay ngay cho folder đang unlock.
       // No-op khi chưa unlock (sessionKeys rỗng). PHẢI đứng TRƯỚC early-return offline.
       await useSecureFolderStore().decryptLoadedSecureRows()
@@ -264,8 +270,22 @@ export const useNotesStore = defineStore('notes', () => {
         'Load notes timed out',
       )
       // Không đè row đang dirty (sửa offline chưa push) bằng bản server cũ.
-      notes.value = mergeFreshWithDirtyLocal(freshNotes, notes.value, isRowDirty)
-      bodies.value = mergeFreshWithDirtyLocal(freshBodies, bodies.value, isRowDirty)
+      const mergedNotes = mergeFreshWithDirtyLocal(freshNotes, notes.value, isRowDirty)
+      const mergedBodies = mergeFreshWithDirtyLocal(freshBodies, bodies.value, isRowDirty)
+      // P5: lần tải không mang gì mới — RAM lẫn đĩa đã đúng như bản gộp → không gán lại (cả danh sách tính lại),
+      // không đọc-gộp-ghi lại cả cache (7 MB ở 2.000 ghi chú) mỗi lần mở popup. Thư mục đang mở khóa: RAM là
+      // bản rõ ≠ envelope → không vào nhánh này.
+      if (
+        disk &&
+        sameRows(mergedNotes, notes.value) &&
+        sameRows(mergedBodies, bodies.value) &&
+        sameRows(mergedNotes, disk.notes) &&
+        sameRows(mergedBodies, disk.bodies)
+      ) {
+        return
+      }
+      notes.value = mergedNotes
+      bodies.value = mergedBodies
       await persistCache()
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load notes failed'
