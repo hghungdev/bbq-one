@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.0.0
+**Version:** 2.0.1
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.0.1](#what-changed-in-201)
 - [What changed in 2.0.0](#what-changed-in-200)
 - [What changed in 1.3.3](#what-changed-in-133)
 - [What changed in 1.3.2](#what-changed-in-132)
@@ -53,6 +54,16 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.0.1
+
+- **Faster with large libraries:** opening a folder of 600 notes ~3 s → ~0.2 s; searching 2,000 notes ~12 s → ~0.3 s (searches the text you wrote, not the HTML markup); the popup no longer rewrites its cache on every open; the extension package shrank from 11 MB to 3.2 MB.
+- **Bundled font:** Inter ships with the extension — no Google Fonts request, so without signing in BBQOne makes no network requests at all, and the popup draws instantly on slow networks.
+- **New — address bar search:** type `bbq` + Space in Chrome's address bar, then a keyword. **Enter** opens the note in BBQOne; **Alt+Enter** copies the whole note.
+- **Calendar:** up to 6 events per day — a day cell shows 2 plus a full-width "+n more" row that opens the day; the header chip shows every title when they fit, otherwise the count ("6 events"); the Upcoming panel lists all of today and 3 of tomorrow with "Show n more". Edit or delete a whole repeating series (this event / this and following / all).
+- **Layout:** the header spans the full width with the logo top-left; the side rail below shows icons only, with a tooltip on hover. Bookmarks: backup is the ☁↑ icon in the Backups header, and the search box sits at the top of the browser column.
+- **Dialogs:** Esc closes only the innermost dialog or menu — never the extension; clicking outside a dialog no longer closes it (close with ✕ or Esc), so half-typed text is never lost.
+- **Fix:** without signing in, deleted notes, sections, and events no longer come back after reopening the popup.
 
 ## What changed in 2.0.0
 

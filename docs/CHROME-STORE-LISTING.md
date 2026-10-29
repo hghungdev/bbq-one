@@ -16,6 +16,8 @@ _(118 characters — fits the 132 limit.)_
 
 **BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a **calendar** — from one clean, compact popup dashboard (side rail for Calendar / Notes / Bookmarks; settings and account in the header).
 
+**Release 2.0.1 (highlights):** Much faster with large libraries (folders and search in a fraction of a second; package 11 MB → 3 MB, Inter font bundled — no network requests without sign-in); search notes from the address bar (`bbq` + Space — Enter opens, Alt+Enter copies); up to 6 events per day and edit / delete a whole repeating series; full-width header with an icon-only side rail; Esc and clicks outside never discard a half-filled dialog; fix for deleted items reappearing when not signed in.
+
 **Release 2.0.0 (highlights):** New vertical navigation rail and flat, modern UI with one icon set; redesigned calendar event dialog, per-item overdue check-off, and a private one-way Google Calendar link (Settings › Google Calendar); bookmark PIN removed so backups are never blocked.
 
 **Release 1.3.3 (highlights):** Notes settings menu (rename / move between regular folders / delete); deeper dark-mode UI and clearer calendar event chips.
