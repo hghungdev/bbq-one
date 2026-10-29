@@ -51,7 +51,7 @@ Mức công: **S** ≤ ½ ngày · **M** 1–2 ngày · **L** ≥ 3 ngày.
 | # | Việc | Công | Rủi ro | Mục tiêu đo được |
 |---|---|---|---|---|
 | **P1** | **Font Inter đóng gói kèm** (việc nhỏ số 5): woff2 latin + latin-ext + **vietnamese**, bỏ Google Fonts khỏi `index.html` + CSP (`style-src` / `font-src` / `connect-src`); privacy policy bỏ mục Google Fonts của extension; câu "No network requests" trong README thành đúng | S | Thấp | Font chậm 3 s → popup vẫn vẽ ~0,2 s; 0 request ra ngoài khi không đăng nhập |
-| **P2** | **Shiki gọn:** `shiki/core` + import riêng 10 ngôn ngữ + 2 theme. Giữ engine WASM (kết quả tô màu không đổi) | S | Thấp | `dist/` 11 MB / 295 file → ~1,5 MB / < 40 file |
+| **P2** | **Shiki gọn:** `shiki/core` + import riêng 10 ngôn ngữ + 2 theme. Giữ engine WASM (kết quả tô màu không đổi) | S | Thấp | `dist/` 11 MB / 295 file → ~3 MB / < 60 file |
 | **P3** | **Danh sách ghi chú nhanh:** chỉ mục `bodiesByNote` (Map tính 1 lần, O(N)) trong store; NoteItem tra Map; nhớ sẵn plain text theo (body id, `updated_at`); NoteList vẽ dần 50 dòng, cuộn tới đâu vẽ tới đó | M | Thấp | Thư mục 600 ghi chú < 300 ms; tự lưu không làm 600 dòng tính lại |
 | **P4** | **Tìm kiếm nhanh + đúng:** tìm trên RAM (bỏ đọc lại kho), tìm trên **chữ** chứ không trên thẻ HTML, đoạn trích lấy từ plain text đã nhớ (P3), kết quả vẽ dần. Đăng nhập: tìm full-text trên server giữ nguyên | M | Thấp–vừa (đổi kết quả: hết khớp nhầm thẻ HTML — ghi rõ trong spec) | 2.000 ghi chú < 300 ms, không đoạn đơ nào > 100 ms |
 | **P5** | **Bớt đọc / ghi thừa:** SyncStatusBadge chỉ nghe `local` + key `bbqone_local_*`, gộp nhịp; mở popup không ghi lại cache khi không đổi, bỏ các lần đọc cache trùng | M | Vừa (đụng luồng N4/N5 đọc-gộp-ghi — test đa ngữ cảnh cũ phải vẫn PASS) | Mở popup 2.000 ghi chú ≤ 450 ms; gõ ghi chú → 0 lần đọc toàn kho từ badge |
@@ -96,7 +96,7 @@ gộp vào cuối 2.0.1.
 | Mục | Commit (docs → perf) | Test | Số đo sau |
 |---|---|---|---|
 | P1 | `0ba90d0` → (commit này) | ✅ 8/8 (RED 7) | Google chậm 3 s: popup vẽ sau **144–236 ms** (trước 3.184 ms); 0 request ra ngoài; tiếng Việt đúng Inter (subset vietnamese) |
-| P2 | | | |
+| P2 | `36249c8` → (commit này) | ✅ 4/4 (RED 3) | `dist/` **11 MB / 295 file → 3,2 MB / 42 file** (còn lại: WASM 0,6 MB, font P1 0,46 MB, app 0,45 MB); HTML tô màu giống hệt (10 ngôn ngữ × 2 theme); Chromium: code block tô màu light + dark |
 | P3 | | | |
 | P4 | | | |
 | P5 | | | |

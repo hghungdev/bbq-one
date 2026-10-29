@@ -28,5 +28,5 @@ Kèm: hai lần gọi đồng thời trước khi highlighter tạo xong → t�
 ## Nghiệm thu
 
 Test GREEN (HTML từ highlighter mới === HTML từ bundle đầy đủ cho 10 ngôn ngữ × 2 theme + ngôn ngữ lạ); mọi harness
-khác PASS; `vue-tsc` sạch; build OK; `dist/` từ 11 MB / 295 file xuống ~1,5 MB / < 60 file; code block trong ghi
+khác PASS; `vue-tsc` sạch; build OK; `dist/` từ 11 MB / 295 file xuống ~3 MB / < 60 file (font P1 + WASM giữ lại); code block trong ghi
 chú vẫn tô màu (light + dark).
