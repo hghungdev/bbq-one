@@ -109,9 +109,11 @@ const tbStart = bm.indexOf('class="bm-tab__toolbar"')
 const toolbar = tbStart === -1 ? '' : bm.slice(tbStart, bm.indexOf('<InlineSearch', tbStart))
 // U15 (đổi có chủ đích): "Xóa tất cả" không còn là nút chữ đỏ trên thanh công cụ — thành icon 🗑 ở đầu
 // cột TRÌNH DUYỆT (specs/U15-icon-language.spec.md, quy tắc 3 + 6).
+// U33 (đổi có chủ đích): "Sao lưu ngay" không còn là nút đặc trên thanh công cụ — thành icon ☁↑ ở đầu cột SAO LƯU
+// (specs/U33-bookmark-backup-icon.spec.md).
 check(
-  'C1 thanh công cụ: nút chính đặc, bỏ RetroButton pill (Xuất / Tải lại / Xóa tất cả → icon ở đầu cột TRÌNH DUYỆT — U15)',
-  toolbar.length > 0 && !toolbar.includes('<RetroButton') && /ds-primary/.test(toolbar),
+  'C1 thanh công cụ: bỏ RetroButton pill, hết nút chữ (Sao lưu → icon đầu cột SAO LƯU — U33; Xuất / Tải lại / Xóa tất cả → icon đầu cột TRÌNH DUYỆT — U15)',
+  toolbar.length > 0 && !toolbar.includes('<RetroButton') && !/ds-primary/.test(toolbar),
   'còn nút pill',
 )
 check('C2 hai cột dùng SectionHeader', (template(bm).match(/<SectionHeader/g) ?? []).length >= 2, 'chưa dùng SectionHeader')

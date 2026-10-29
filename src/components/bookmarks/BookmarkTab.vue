@@ -142,12 +142,7 @@ async function onRefreshLive(): Promise<void> {
   <div class="bm-tab">
     <!-- Toolbar -->
     <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
-      <!-- U11 (ADN popover): một hành động chính đặc màu. U15: icon + chữ (hành động chính của tab);
-           Xuất / Tải lại / Xóa tất cả chỉ tác động cây trình duyệt → icon ở đầu cột TRÌNH DUYỆT. -->
-      <button type="button" class="ds-primary" :disabled="bm.loading" @click="bm.backup(backupLabel)">
-        <AppIcon name="upload-cloud" :size="15" />
-        {{ t('bookmark.backupNow') }}
-      </button>
+      <!-- U33: "Sao lưu ngay" là icon ☁↑ ở đầu cột SAO LƯU; Xuất / Tải lại / Xóa tất cả ở đầu cột TRÌNH DUYỆT (U15). -->
       <span v-if="bm.lastBackupAt" class="bm-tab__hint">
         {{ t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') }) }}
       </span>
@@ -171,7 +166,19 @@ async function onRefreshLive(): Promise<void> {
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
       <div class="bm-tab__backups" @click.self="bm.clearBookmarkSearch()">
-        <SectionHeader :label="t('bookmark.backups')" :meta="String(bm.backups.length)" />
+        <SectionHeader :label="t('bookmark.backups')" :meta="String(bm.backups.length)">
+          <!-- U33: thêm một bản sao lưu — như ＋ ở đầu mục Thư mục / Ghi chú (U15), icon màu nhấn = hành động chính. -->
+          <button
+            type="button"
+            class="ds-icon-action ds-icon-action--accent"
+            :aria-label="t('bookmark.backupNow')"
+            :title="t('bookmark.backupNow')"
+            :disabled="bm.loading"
+            @click="bm.backup(backupLabel)"
+          >
+            <AppIcon name="upload-cloud" />
+          </button>
+        </SectionHeader>
         <div
           v-if="bm.loading && bm.backups.length === 0"
           class="bm-tab__backups-skel"

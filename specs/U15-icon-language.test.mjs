@@ -180,9 +180,11 @@ const bm = read('src', 'components', 'bookmarks', 'BookmarkTab.vue')
 const bmT = template(bm)
 const tbStart = bmT.indexOf('class="bm-tab__toolbar"')
 const toolbar = bmT.slice(tbStart, bmT.indexOf('<InlineSearch', tbStart))
+// U33 (đổi có chủ đích): ☁↑ Sao lưu ngay là icon ở đầu cột SAO LƯU, không còn nút chữ trên thanh công cụ.
 check(
-  'M3 Bookmark: "☁↑ Sao lưu ngay"; ⤓ ⟳ 🗑 ở đầu cột TRÌNH DUYỆT; dòng sao lưu ↶ 🗑 kiểu chung; ✕ ở KẾT QUẢ',
-  /ds-primary[\s\S]{0,200}name="upload-cloud"/.test(toolbar) &&
+  'M3 Bookmark: ☁↑ Sao lưu ngay ở đầu cột SAO LƯU (U33); ⤓ ⟳ 🗑 ở đầu cột TRÌNH DUYỆT; dòng sao lưu ↶ 🗑 kiểu chung; ✕ ở KẾT QUẢ',
+  !/ds-primary|upload-cloud/.test(toolbar) &&
+    /<SectionHeader :label="t\('bookmark\.backups'\)"[^>]*?(?<!\/)>[\s\S]{0,400}ds-icon-action--accent[\s\S]{0,300}name="upload-cloud"/.test(bmT) &&
     !/exportHtml|deleteAll|bookmark\.refresh/.test(toolbar) &&
     ['download', 'refresh', 'trash', 'restore', 'close'].every((n) => bmT.includes(`name="${n}"`)) &&
     !/IconDeleteButton|IconRestoreButton/.test(bm) &&
