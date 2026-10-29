@@ -14,6 +14,7 @@ biến); (4) thư viện bên thứ ba có lỗ hổng; (5) lừa người dùng
 ## Bảng tóm tắt (ưu tiên từ trên xuống)
 
 > **2026-10-29:** SEC-1 (phần vá), 4, 5, 6, 7, 8 đã làm trong **2.1.1** — `specs/SEC1-hardening-2.1.1.spec.md`.
+> Phần còn lại (SEC-1 Tiptap 3, SEC-2, 3, 9, 10, 11, 12 + vite) → kế hoạch chi tiết `specs/ROADMAP-SEC.md`.
 
 | # | Mức | Tình huống | Trạng thái | Công |
 |---|---|---|---|---|

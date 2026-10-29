@@ -14,8 +14,11 @@ CSP cho `extension_pages` nằm trong `public/manifest.json`:
 - `style-src` — `'self'`, `'unsafe-inline'` (HTML từ Shiki, style scoped của Vue).
 - `font-src` — `'self'`, `data:` — font Inter đóng gói kèm (`src/assets/fonts/inter/`, P1), không gọi máy chủ font ngoài.
 - `connect-src` — `'self'` + Supabase HTTPS (see current `public/manifest.json`).
+- 2.1.1 (SEC-5) siết thêm: `default-src 'self'`, `img-src 'self' data:`, `object-src 'none'`, `frame-src 'none'`,
+  `base-uri 'none'`, `form-action 'none'` — ảnh / iframe / form / `<base>` từ ngoài bị chặn.
 
-Sau khi đổi CSP, load lại extension từ `dist/` và smoke test login, search, editor (Shiki).
+Sau khi đổi CSP, load lại extension từ `dist/` và smoke test login, search, editor (Shiki); chạy PoC hồi quy bảo mật
+(lệnh trong `specs/REDTEAM-PROFILE.md`). Kế hoạch bảo mật còn lại: `specs/ROADMAP-SEC.md`.
 
 ## Phạm vi mã hóa đầu-cuối (Encrypted account)
 
