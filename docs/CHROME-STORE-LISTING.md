@@ -51,7 +51,7 @@ _(118 characters — fits the 132 limit.)_
 
 **CALENDAR**
 
-- Month grid with events stored **locally** by default — up to 3 events per day  
+- Month grid with events stored **locally** by default — up to 6 events per day  
 - Repeat events weekly, monthly, or yearly; search across all events  
 - Today / tomorrow chip in the header; mark done with one click; tick off overdue items one by one  
 - Optional sync to your account when signed in (same Supabase backend as notes/bookmarks)  

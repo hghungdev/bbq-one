@@ -16,7 +16,7 @@ BOOKMARKS
 Snapshot, browse, search, and restore your Chrome bookmark tree. Export as HTML. Backups sync to your account when you sign in.
 
 CALENDAR
-Month view with up to 3 events per day. Repeat events weekly, monthly, or yearly. Search across all events. Today and tomorrow at a glance in the header. Mark an event done with one click, and tick off overdue items one by one.
+Month view with up to 6 events per day. Repeat events weekly, monthly, or yearly. Search across all events. Today and tomorrow at a glance in the header. Mark an event done with one click, and tick off overdue items one by one.
 
 GOOGLE CALENDAR LINK (OPTIONAL)
 Signed in? Create a private, one-way link in Settings › Google Calendar and add it in Google Calendar ("From URL"). Your BBQOne events then appear in Google Calendar. Google decides when to refresh the link — usually within several hours. Turn the link off or replace it at any time.

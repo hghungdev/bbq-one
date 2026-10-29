@@ -30,22 +30,20 @@ function loadTsModule(filePath) {
   return mod.exports
 }
 
-console.log('T — fitTitleCount (CODE THẬT)')
+// U30 (đổi có chủ đích): Sir — ngày 5–6 sự kiện chip không được gom một phần + "+n". Bỏ fitTitleCount; giờ
+// mọi tên vừa chỗ → hiện đủ, không vừa hết → ghi số ("6 sự kiện"). Các ca đo chỗ trống giữ nguyên ý.
+console.log('T — titlesNeedCount (CODE THẬT, U30 thay fitTitleCount)')
 const A = loadTsModule(path.join(ROOT, 'src', 'utils', 'calendarAgenda.ts'))
-const more = (n) => 20 + String(n).length * 6 // "+n" + lề
-if (typeof A.fitTitleCount !== 'function') {
-  check('T0 export fitTitleCount', false, 'chưa có')
+if (typeof A.titlesNeedCount !== 'function') {
+  check('T0 export titlesNeedCount', false, 'chưa có')
 } else {
-  const f = A.fitTitleCount
-  check('T1 đủ chỗ cho mọi tên → hiện hết, không "+n"', f([60, 70], 200, 10, more) === 2, String(f([60, 70], 200, 10, more)))
-  // 2 tên cần 60+10+70 = 140; chỉ có 120 → 1 tên + "+1" (60 + 26 = 86 ≤ 120)
-  check('T2 thiếu chỗ → bớt tên cuối, chừa chỗ cho "+n"', f([60, 70], 120, 10, more) === 1, String(f([60, 70], 120, 10, more)))
-  // 3 tên: [40, 40, 40], sep 10. 3 tên = 140 > 130 → thử 2 tên + "+1": 90 + 26 = 116 ≤ 130 → 2
-  check('T3 chừa chỗ "+n" đúng: 3 tên không vừa → 2 tên + "+1"', f([40, 40, 40], 130, 10, more) === 2, String(f([40, 40, 40], 130, 10, more)))
-  // 2 tên vừa khít KHÔNG cần "+n": 40+10+40 = 90 ≤ 90 → 2 (không bị trừ chỗ "+n" khi không cần)
-  check('T4 vừa khít mọi tên → không trừ chỗ cho "+n"', f([40, 40], 90, 10, more) === 2, String(f([40, 40], 90, 10, more)))
-  check('T5 tên đầu dài hơn chỗ → vẫn 1 (tên đầu được cắt "…")', f([400, 50], 120, 10, more) === 1, String(f([400, 50], 120, 10, more)))
-  check('T6 không có tên → 0', f([], 120, 10, more) === 0, String(f([], 120, 10, more)))
+  const f = A.titlesNeedCount
+  check('T1 đủ chỗ cho mọi tên → hiện hết tên', f([60, 70], 200, 10) === false, String(f([60, 70], 200, 10)))
+  check('T2 thiếu chỗ → ghi số (không còn bớt tên + "+n")', f([60, 70], 120, 10) === true, String(f([60, 70], 120, 10)))
+  check('T3 3 tên không vừa → ghi số', f([40, 40, 40], 130, 10) === true, String(f([40, 40, 40], 130, 10)))
+  check('T4 vừa khít mọi tên → hiện tên', f([40, 40], 90, 10) === false, String(f([40, 40], 90, 10)))
+  check('T5 một tên dài hơn chỗ → vẫn hiện tên (cắt "…")', f([400], 120, 10) === false, String(f([400], 120, 10)))
+  check('T6 không có tên → không ghi số', f([], 120, 10) === false, String(f([], 120, 10)))
 }
 
 console.log('\nS — CalendarAgendaChip')
@@ -54,14 +52,15 @@ const tpl = chip.slice(chip.indexOf('<template>'), chip.lastIndexOf('</template>
 const script = chip.slice(0, chip.indexOf('<template>'))
 const trigger = (/<button\s+ref="triggerRef"[\s\S]*?<\/button>/.exec(tpl) ?? [''])[0]
 check(
-  'S1 đo chữ thật (measureText) + chỗ trống thật (ResizeObserver) → fitTitleCount',
-  /fitTitleCount\(/.test(script) && /measureText\(/.test(script) && /ResizeObserver/.test(script),
+  'S1 đo chữ thật (measureText) + chỗ trống thật (ResizeObserver) → titlesNeedCount (U30, đổi có chủ đích)',
+  /titlesNeedCount\(/.test(script) && /measureText\(/.test(script) && /ResizeObserver/.test(script),
   'chưa đo',
 )
 check(
-  'S2 vùng tên chỉ vẽ các tên vừa chỗ + viên "+n"',
-  /class="agenda-chip__titles"[^>]*>\s*\{\{\s*shownTitles\s*\}\}/.test(trigger) && /agenda-chip__plus/.test(trigger) && /hiddenCount/.test(trigger),
-  'vẫn vẽ cả danh sách để CSS cắt',
+  'S2 vùng tên vẽ shownTitles: đủ tên hoặc số sự kiện — hết viên "+n" (U30, đổi có chủ đích)',
+  /class="agenda-chip__titles"[^>]*>\s*\{\{\s*shownTitles\s*\}\}/.test(trigger) && !/agenda-chip__plus|hiddenCount/.test(trigger) &&
+    /calendar\.agenda\.eventCount/.test(script),
+  'vẫn gom "+n"',
 )
 check(
   'S3 tooltip + aria-label vẫn đọc ĐỦ mọi tên (chipTitles)',

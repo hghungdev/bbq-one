@@ -42,8 +42,9 @@ check(
   'thiếu Google Calendar',
 )
 check(
-  'R2.4 lịch: lặp tuần / tháng / năm, tối đa 3 sự kiện / ngày, tìm kiếm; đúng sự thật quyền riêng tư',
-  /weekly, monthly( or|,) (and )?yearly|weekly, monthly, yearly/i.test(txt) && /3 events per day/.test(txt) &&
+  // U30 (đổi có chủ đích): giới hạn 3 → 6 sự kiện / ngày.
+  'R2.4 lịch: lặp tuần / tháng / năm, tối đa 6 sự kiện / ngày, tìm kiếm; đúng sự thật quyền riêng tư',
+  /weekly, monthly( or|,) (and )?yearly|weekly, monthly, yearly/i.test(txt) && /6 events per day/.test(txt) &&
     /No content scripts/i.test(txt) && /no analytics/i.test(txt) && /secure folders?/i.test(txt) &&
     /privacy-policy\.html/.test(txt),
   'thiếu tính năng / quyền riêng tư',

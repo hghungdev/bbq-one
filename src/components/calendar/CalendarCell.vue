@@ -37,6 +37,12 @@ function onEventClick(e: Event): void {
   e.stopPropagation()
   store.openModalForDate(dateKey.value)
 }
+
+/** U30: "+n xem thêm" → hộp của ngày liệt kê đủ — cả ngày đã qua (bấm khoảng trống ô đã qua vẫn không mở). */
+function onMoreClick(e: Event): void {
+  e.stopPropagation()
+  store.openModalForDate(dateKey.value)
+}
 </script>
 
 <template>
@@ -68,7 +74,16 @@ function onEventClick(e: Event): void {
       >
         <span class="cal-cell__event-title">{{ ev.title }}</span>
       </li>
-      <li v-if="overflowCount > 0" class="cal-cell__overflow">+{{ overflowCount }}</li>
+      <li v-if="overflowCount > 0" class="cal-cell__more-row">
+        <button
+          type="button"
+          class="cal-cell__more"
+          :title="t('calendar.cell.moreTitle', { n: events.length })"
+          @click="onMoreClick($event)"
+        >
+          {{ t('calendar.cell.more', { n: overflowCount }) }}
+        </button>
+      </li>
     </ul>
   </div>
 </template>
@@ -106,7 +121,7 @@ function onEventClick(e: Event): void {
 }
 
 .cal-cell--other-month .cal-cell__event,
-.cal-cell--other-month .cal-cell__overflow {
+.cal-cell--other-month .cal-cell__more {
   opacity: 0.62;
 }
 
@@ -194,11 +209,43 @@ function onEventClick(e: Event): void {
   text-decoration: line-through;
 }
 
-.cal-cell__overflow {
+.cal-cell__more-row {
   flex: 0 0 auto;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  padding: 2px 6px;
-  line-height: 1.3;
+  display: flex;
+  min-width: 0;
+}
+
+/* U30: thẻ "+n xem thêm" — nhỏ hơn pill sự kiện, bấm được cả ở ngày đã qua. */
+.cal-cell__more {
+  max-width: 100%;
+  margin: 0;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.cal-cell__more:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.cal-cell__more:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 </style>

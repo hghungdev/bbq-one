@@ -176,8 +176,9 @@ if (Store) {
   const s = Store()
   check('T2.0 store export createRecurringEvents', typeof s.createRecurringEvents === 'function', `typeof=${typeof s.createRecurringEvents}`)
   if (typeof s.createRecurringEvents === 'function') {
-    // 06/11 đã đủ 3 sự kiện
-    s.events.value = [0, 1, 2].map((p) => ({
+    // 06/11 đã đủ sự kiện — U30 (đổi có chủ đích): gài đúng CALENDAR_MAX_EVENTS_PER_DAY thay vì cứng 3
+    const FULL = calendarConst.CALENDAR_MAX_EVENTS_PER_DAY
+    s.events.value = Array.from({ length: FULL }, (_, p) => p).map((p) => ({
       id: `full-${p}`,
       user_id: 'u1',
       event_date: '2026-11-06',
@@ -198,7 +199,7 @@ if (Store) {
     )
     const createdDates = (out?.created ?? []).map((e) => e.event_date)
     check(
-      'T2.1 hằng tuần ×4: tạo 3 ngày còn chỗ, bỏ qua 06/11 (đã đủ 3)',
+      'T2.1 hằng tuần ×4: tạo 3 ngày còn chỗ, bỏ qua 06/11 (đã đủ)',
       eq(createdDates, ['2026-10-30', '2026-11-13', '2026-11-20']) && eq(out?.skipped, ['2026-11-06']),
       `created=${JSON.stringify(createdDates)} skipped=${JSON.stringify(out?.skipped)}`,
     )
@@ -209,7 +210,7 @@ if (Store) {
     )
     check(
       'T2.3 sự kiện đã có của ngày đầy không bị đụng',
-      s.events.value.filter((e) => e.event_date === '2026-11-06').length === 3,
+      s.events.value.filter((e) => e.event_date === '2026-11-06').length === FULL,
       `06/11 có ${s.events.value.filter((e) => e.event_date === '2026-11-06').length}`,
     )
 
