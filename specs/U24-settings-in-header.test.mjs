@@ -29,9 +29,10 @@ check(
   rail !== '' && !/name="settings"|showSettings/.test(rail),
   'thanh dọc còn ⚙',
 )
+// U28 (đổi có chủ đích): bảng ☰ đã gỡ hẳn — càng không có Cài đặt trong đó.
 check(
-  'U24.2 bảng mở rộng ☰: chỉ logo + 3 mục — không Cài đặt, không khối đáy',
-  drawer !== '' && !/name="settings"|showSettings|shell__drawer-bottom/.test(drawer),
+  'U24.2 bảng mở rộng ☰: đã gỡ (U28) — không Cài đặt, không khối đáy',
+  drawer === '' && !/shell__drawer-bottom/.test(tpl),
   'bảng mở rộng còn Cài đặt',
 )
 const gear = (/<IconButton\b[^>]*>\s*<AppIcon name="settings"[^>]*\/>\s*<\/IconButton>/.exec(headerRight) ?? [''])[0]

@@ -22,8 +22,6 @@ export const vi: Record<I18nKey, string> = {
   'app.tabs.bookmark': 'Bookmark',
   'app.tabs.calendar': 'Lịch',
   'app.tabs.aria': 'Khu vực chính',
-  'app.rail.expand': 'Mở rộng menu',
-  'app.rail.collapse': 'Thu gọn menu',
   'app.sync': 'ĐỒNG BỘ',
   'app.settings': 'CÀI ĐẶT',
   'app.aria.settings': 'Cài đặt',

@@ -20,8 +20,6 @@ export const en = {
   'app.tabs.bookmark': 'Bookmark',
   'app.tabs.calendar': 'Calendar',
   'app.tabs.aria': 'Main sections',
-  'app.rail.expand': 'Expand menu',
-  'app.rail.collapse': 'Collapse menu',
   'app.sync': 'SYNC',
   'app.settings': 'SETTINGS',
   'app.aria.settings': 'Settings',

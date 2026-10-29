@@ -52,7 +52,8 @@ check(
     headerRight.indexOf('name="settings"') >= 0 && headerRight.indexOf('name="settings"') < headerRight.indexOf('<AccountMenu'),
   'header còn ☀ / ☁',
 )
-check('U26.3 bảng ☰ vẫn chỉ điều hướng (không ☀ ☁ ⚙)', drawer !== '' && !/ThemeModeToggle|SyncStatusBadge|name="settings"/.test(drawer), 'bảng ☰ lẫn công cụ')
+// U28 (đổi có chủ đích): bảng ☰ đã gỡ hẳn.
+check('U26.3 bảng ☰ đã gỡ (U28) — không còn nơi lẫn ☀ ☁ ⚙', drawer === '' && !/ThemeModeToggle|SyncStatusBadge|name="settings"/.test(drawer), 'còn bảng ☰')
 check(
   'U26.4 CSS: khối đáy đẩy xuống cuối; nút ☀ ☁ cỡ mục thanh dọc (40 × 36, icon 20 px) qua :deep',
   /\.shell__rail-bottom \{[^}]*margin-top: auto/.test(css) &&

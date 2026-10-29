@@ -80,7 +80,7 @@
   const networkOnline = ref(isOnline())
   const showSettings = ref(false)
   const activeTab = ref<'notes' | 'bookmarks' | 'calendar'>('calendar')
-  /** U16 / U20: 3 mục chính — trên thanh dọc bên trái, chỉ icon (tên ở tooltip / bảng mở rộng). */
+  /** U16 / U20 / U28: 3 mục chính — trên thanh dọc bên trái, chỉ icon (tên ở tooltip). */
   const HEADER_TABS = [
     { id: 'calendar', label: 'app.tabs.calendar', icon: 'calendar' },
     { id: 'notes', label: 'app.tabs.notes', icon: 'notes' },
@@ -103,35 +103,6 @@
     void nextTick(() => tabsRef.value?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus())
   }
 
-  /**
-   * U20: bảng mở rộng của thanh dọc — NỔI ĐÈ (không đẩy nội dung: popup chỉ 800 px). Đóng khi chọn mục,
-   * Esc hoặc bấm ra ngoài; Esc / ☰ trả focus về nút ☰.
-   */
-  const railOpen = ref(false)
-  const railMenuRef = ref<HTMLButtonElement | null>(null)
-  const drawerRef = ref<HTMLElement | null>(null)
-
-  function openRail(): void {
-    railOpen.value = true
-    void nextTick(() => drawerRef.value?.querySelector<HTMLButtonElement>('.shell__drawer-item--active')?.focus())
-  }
-
-  function closeRail(returnFocus: boolean): void {
-    railOpen.value = false
-    if (returnFocus) void nextTick(() => railMenuRef.value?.focus())
-  }
-
-  function selectTab(id: (typeof HEADER_TABS)[number]['id']): void {
-    activeTab.value = id
-    closeRail(false)
-  }
-
-  function onDrawerKeydown(e: KeyboardEvent): void {
-    if (e.key !== 'Escape') return
-    e.preventDefault()
-    e.stopPropagation()
-    closeRail(true)
-  }
   const renamingFolderId = ref<string | null>(null)
   const renamingNoteId = ref<string | null>(null)
 
@@ -654,19 +625,8 @@
 
 <template>
   <div class="shell shell--dashboard">
-    <!-- U20: thanh điều hướng dọc — thu gọn chỉ icon; ☰ mở bảng nổi đè (icon + chữ). -->
+    <!-- U20 / U28: thanh điều hướng dọc — chỉ icon, rê chuột / focus bàn phím hiện tooltip tên mục. -->
     <nav class="shell__rail">
-      <button
-        ref="railMenuRef"
-        type="button"
-        class="shell__rail-btn"
-        :aria-label="t('app.rail.expand')"
-        :title="t('app.rail.expand')"
-        :aria-expanded="railOpen"
-        @click="openRail"
-      >
-        <AppIcon name="menu" :size="20" />
-      </button>
       <div
         ref="tabsRef"
         class="shell__rail-items"
@@ -685,10 +645,10 @@
           :aria-selected="activeTab === tab.id"
           :tabindex="activeTab === tab.id ? 0 : -1"
           :aria-label="t(tab.label)"
-          :title="t(tab.label)"
           @click="activeTab = tab.id"
         >
           <AppIcon :name="tab.icon" :size="20" />
+          <span class="shell__rail-tip" aria-hidden="true">{{ t(tab.label) }}</span>
         </button>
       </div>
       <!-- U22 / U24 / U27: ☀ › ⚙ › tài khoản ở header (kiểu Gmail). U26: ☁ đồng bộ ở đáy thanh dọc. -->
@@ -705,49 +665,6 @@
         <SyncStatusBadge v-if="isAnonymous" @sign-in="onGoLogin" />
       </div>
     </nav>
-
-    <Transition name="shell-drawer">
-      <div v-if="railOpen" class="shell__drawer-scrim" @click.self="closeRail(true)">
-        <div
-          ref="drawerRef"
-          class="shell__drawer"
-          role="dialog"
-          aria-modal="true"
-          :aria-label="t('app.tabs.aria')"
-          @keydown="onDrawerKeydown"
-        >
-          <div class="shell__drawer-head">
-            <button
-              type="button"
-              class="shell__rail-btn"
-              :aria-label="t('app.rail.collapse')"
-              :title="t('app.rail.collapse')"
-              aria-expanded="true"
-              @click="closeRail(true)"
-            >
-              <AppIcon name="menu" :size="20" />
-            </button>
-            <span class="shell__brand">
-              <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" />
-              <span class="shell__brand-name">BBQOne</span>
-            </span>
-          </div>
-          <button
-            v-for="tab in HEADER_TABS"
-            :key="tab.id"
-            type="button"
-            class="shell__drawer-item"
-            :class="{ 'shell__drawer-item--active': activeTab === tab.id }"
-            :aria-current="activeTab === tab.id ? 'page' : undefined"
-            @click="selectTab(tab.id)"
-          >
-            <AppIcon :name="tab.icon" :size="20" />
-            <span>{{ t(tab.label) }}</span>
-          </button>
-        </div>
-        <!-- /drawer -->
-      </div>
-    </Transition>
 
     <div class="shell__main">
       <header class="shell__header">
@@ -950,13 +867,16 @@
     padding: 12px 0 12px;
     border-right: 1px solid var(--border);
     background: var(--bg-secondary);
+    /* U28: tooltip của mục nổi trên cột nội dung. */
+    position: relative;
+    z-index: 20;
   }
 
+  /* U28: không còn ☰ phía trên — mục đầu thẳng hàng với logo header. */
   .shell__rail-items {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-top: 10px;
   }
 
   /* U26: ☁ ở đáy thanh — cỡ như mục thanh dọc (component giữ nguyên nhãn / màu trạng thái). */
@@ -1000,8 +920,7 @@
     background: color-mix(in srgb, var(--text-primary) 7%, transparent);
   }
 
-  .shell__rail-btn:focus-visible,
-  .shell__drawer-item:focus-visible {
+  .shell__rail-btn:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
   }
@@ -1013,90 +932,42 @@
     background: color-mix(in srgb, var(--accent) 14%, transparent);
   }
 
-  /* Bảng mở rộng: nổi đè, không đẩy nội dung. */
-  .shell__drawer-scrim {
+  /* U28: tooltip tên mục — bên phải icon, nền đảo màu (hợp sáng + tối); hiện khi rê chuột / focus bàn phím. */
+  .shell__rail-item {
+    position: relative;
+  }
+
+  .shell__rail-tip {
     position: absolute;
-    inset: 0;
-    z-index: 70;
-    background: color-mix(in srgb, #000 22%, transparent);
-  }
-
-  .shell__drawer {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    width: 220px;
-    padding: 12px 10px;
-    border-right: 1px solid var(--border);
-    background: var(--bg-panel);
-    box-shadow: 8px 0 28px var(--panel-ring);
-  }
-
-  .shell__drawer-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 12px -2px;
-  }
-
-  .shell__drawer-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    min-height: 40px;
-    padding: 0 14px;
-    border: none;
-    border-radius: var(--radius-pill);
-    background: transparent;
-    color: var(--text-primary);
-    font: inherit;
-    font-size: var(--font-size-sm);
+    top: 50%;
+    left: calc(100% + 10px);
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    font-size: var(--font-size-xs);
     font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .shell__drawer-item:hover {
-    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
-  }
-
-  .shell__drawer-item--active,
-  .shell__drawer-item--active:hover {
-    color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-  }
-
-  .shell-drawer-enter-active,
-  .shell-drawer-leave-active {
-    transition: opacity 0.15s ease;
-  }
-
-  .shell-drawer-enter-active .shell__drawer,
-  .shell-drawer-leave-active .shell__drawer {
-    transition: transform 0.15s ease;
-  }
-
-  .shell-drawer-enter-from,
-  .shell-drawer-leave-to {
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px color-mix(in srgb, #000 18%, transparent);
     opacity: 0;
+    pointer-events: none;
+    transform: translate(-4px, -50%);
+    transition:
+      opacity 0.1s linear,
+      transform 0.1s ease;
   }
 
-  .shell-drawer-enter-from .shell__drawer,
-  .shell-drawer-leave-to .shell__drawer {
-    transform: translateX(-100%);
+  .shell__rail-item:hover .shell__rail-tip,
+  .shell__rail-item:focus-visible .shell__rail-tip {
+    opacity: 1;
+    transform: translate(0, -50%);
+    transition-delay: 0.15s;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .shell__rail-btn,
-    .shell-drawer-enter-active,
-    .shell-drawer-leave-active,
-    .shell-drawer-enter-active .shell__drawer,
-    .shell-drawer-leave-active .shell__drawer {
+    .shell__rail-tip {
       transition: none;
     }
   }

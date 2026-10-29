@@ -33,10 +33,12 @@ check(
   rail !== '' && tpl.indexOf('class="shell__rail"') < tpl.indexOf('class="shell__main"'),
   'chưa có shell__rail / shell__main',
 )
+// U28 (đổi có chủ đích): tooltip riêng (shell__rail-tip) thay `title` gốc của trình duyệt.
 check(
   'U20.2 3 mục = tablist DỌC, chỉ icon (aria-label + tooltip theo tên mục)',
   /role="tablist"/.test(rail) && /aria-orientation="vertical"/.test(rail) && /v-for="tab in HEADER_TABS"/.test(rail) &&
-    /role="tab"/.test(rail) && /:aria-label="t\(tab\.label\)"/.test(rail) && /:title="t\(tab\.label\)"/.test(rail) &&
+    /role="tab"/.test(rail) && /:aria-label="t\(tab\.label\)"/.test(rail) &&
+    /<span class="shell__rail-tip" aria-hidden="true">\{\{ t\(tab\.label\) \}\}<\/span>/.test(rail) &&
     /<AppIcon :name="tab\.icon"/.test(rail),
   'tablist dọc / icon / tên chưa đủ',
 )
@@ -49,28 +51,28 @@ check(
     /<CalendarAgendaChip/.test(header),
   'chưa chuyển xuống đáy / header còn sót',
 )
+// U28 (đổi có chủ đích): Sir — "không cần bấm vào phóng to ra", mặc định chỉ icon + tooltip → bỏ ☰ và bảng.
 check(
-  'U20.4 ☰ mở bảng mở rộng NỔI ĐÈ: icon + chữ, chọn mục / Esc / bấm ra ngoài thì đóng',
-  /name="menu"/.test(rail) && /:aria-expanded="railOpen"/.test(rail) && drawer !== '' &&
-    /\{\{\s*t\(tab\.label\)\s*\}\}/.test(drawer) && /selectTab\(tab\.id\)/.test(drawer) &&
-    /function selectTab/.test(script) && /function onDrawerKeydown/.test(script) && /'Escape'/.test(script) &&
-    /class="shell__drawer-scrim"[^>]*@click/.test(tpl.replace(/\n\s*/g, ' ')),
-  'bảng mở rộng chưa đủ',
+  'U20.4 không còn ☰ / bảng mở rộng (U28 — chỉ icon + tooltip)',
+  !/name="menu"/.test(rail) && drawer === '' && !/railOpen|function selectTab|function onDrawerKeydown/.test(script),
+  'còn ☰ / bảng mở rộng',
 )
 check(
   'U20.5 bàn phím tablist dọc: ↑ ↓ (+ ← →) / Home / End',
   /'ArrowDown'/.test(script) && /'ArrowUp'/.test(script) && /'Home'/.test(script) && /'End'/.test(script),
   'thiếu ↑ ↓',
 )
+// U28 (đổi có chủ đích): icon menu (☰) gỡ cùng bảng mở rộng.
 check(
-  'U20.6 icon mới trong bộ chung: menu / calendar / notes / bookmark',
-  ['menu', 'calendar', 'notes', 'bookmark'].every((n) => new RegExp(`\\b${n}: \\[`).test(icons)),
+  'U20.6 icon mới trong bộ chung: calendar / notes / bookmark (menu đã gỡ — U28)',
+  ['calendar', 'notes', 'bookmark'].every((n) => new RegExp(`\\b${n}: \\[`).test(icons)) && !/\bmenu: \[/.test(icons),
   'thiếu icon',
 )
+// U28 (đổi có chủ đích): bỏ ☰ → bỏ luôn chuỗi mở rộng / thu gọn.
 check(
-  'U20.7 i18n mở rộng / thu gọn menu (vi + en)',
-  ['app.rail.expand', 'app.rail.collapse'].every((k) => vi.includes(`'${k}'`) && en.includes(`'${k}'`)),
-  'thiếu i18n',
+  'U20.7 i18n mở rộng / thu gọn menu đã gỡ (vi + en) — U28',
+  ['app.rail.expand', 'app.rail.collapse'].every((k) => !vi.includes(`'${k}'`) && !en.includes(`'${k}'`)),
+  'còn i18n chết',
 )
 
 console.log('\n──────────────────────────────────────────────')

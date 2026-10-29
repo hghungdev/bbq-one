@@ -66,7 +66,8 @@ const headerRight = (/<div class="shell__header-right">[\s\S]*?<\/header>/.exec(
 // U24 (đổi có chủ đích): ⚙ cũng rời thanh dọc / bảng mở rộng lên header (kiểu Gmail).
 check(
   'U22.1 thanh dọc + bảng mở rộng: không 👤 / ⇥ / onGoLogin / onLogout (⚙ lên header — U24)',
-  rail !== '' && drawer !== '' &&
+  // U28 (đổi có chủ đích): không còn bảng mở rộng — điều kiện trên `drawer` (rỗng) đúng hiển nhiên.
+  rail !== '' &&
     // U26 (đổi có chủ đích): ☁ chờ đồng bộ xuống đáy thanh — bấm nó mời đăng nhập (@sign-in="onGoLogin", có từ
     // trước); không còn NÚT đăng nhập / xuất nào trong thanh.
     !/name="user"|name="log-out"|onLogout/.test(rail) &&
