@@ -92,7 +92,7 @@ gộp vào cuối 2.0.1.
 | # | Việc | Công | Ghi chú |
 |---|---|---|---|
 | F1 | **Tìm từ thanh địa chỉ** (việc nhỏ số 6): gõ `bb <từ khóa>` | S–M (~1 ngày) | Khóa `omnibox` trong manifest — không hiện cảnh báo quyền. Service worker đọc `notes_cache` (bỏ qua mục mã hóa); Enter → mở popup đúng ghi chú qua `BBQ_PENDING_ROUTE_KEY` + `chrome.action.openPopup` (cách menu chuột phải đang dùng) — cần thêm route mở thẳng một ghi chú |
-| F2 | **Dời việc quá hạn sang hôm nay** (số 7b, theo sau U7) | S–M (~1 ngày) | Nút trong bảng "Quá hạn"; hôm nay đủ 3 sự kiện → dời tới đâu được tới đó, báo phần còn lại |
+| ~~F2~~ | ~~Dời việc quá hạn sang hôm nay~~ — **BỎ** | — | Sir (2026-10-29): "Vẫn giữ việc overdue ngày setup" — việc quá hạn giữ nguyên ngày đã đặt, không dời |
 | F3 | **Sửa / xóa cả chuỗi sự kiện lặp** (số 7a, theo sau U3) | M (~2 ngày) + migration | Cột `series_id` (migration 018). Đồng bộ đẩy lên bằng upsert mọi cột (`syncEngine.service.ts:258`) → **Sir phải chạy migration trước khi phát hành**, không thì đẩy sự kiện lỗi. Chuỗi tạo trước đó không có `series_id` → chỉ áp cho chuỗi tạo mới |
 | — | Ghi nhanh từ trang web, giờ + nhắc việc, Side Panel (gợi ý 1–3 hôm 2026-10-29) | M mỗi mục | Nhắc việc cần quyền `notifications` → để ở `optional_permissions`, xin khi bật |
 
