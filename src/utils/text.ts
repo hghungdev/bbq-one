@@ -16,6 +16,20 @@ export function plainTextFromHtml(html: string): string {
   return (div.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * P3: plain text của một body, nhớ theo chính object body (`WeakMap` — body bị thay / xóa thì tự giải phóng).
+ * Danh sách / kết quả tìm gọi lại liên tục mà không dựng DOM lại; content đổi tại chỗ → tính lại.
+ */
+const bodyPlainCache = new WeakMap<object, { html: string; text: string }>()
+
+export function bodyPlainText(body: Pick<NoteBody, 'content'>): string {
+  const hit = bodyPlainCache.get(body)
+  if (hit && hit.html === body.content) return hit.text
+  const text = plainTextFromHtml(body.content)
+  bodyPlainCache.set(body, { html: body.content, text })
+  return text
+}
+
 /** Plain text cho clipboard — giữ xuống dòng từ block (innerText). */
 export function htmlToClipboardPlain(html: string): string {
   if (typeof document === 'undefined') return ''
@@ -35,7 +49,7 @@ export function firstLinePreview(text: string, maxLen = 80): string {
 /** Nhãn trong list: title nếu có, không thì preview từ body đầu tiên. */
 export function noteListLabel(
   note: Note,
-  bodies?: NoteBody[],
+  bodies?: readonly NoteBody[],
   emptyLabel = 'UNTITLED_',
 ): string {
   const t = note.title.trim()
@@ -43,7 +57,7 @@ export function noteListLabel(
   const firstBody = bodies
     ?.slice()
     .sort((a, b) => a.position - b.position)[0]
-  const plain = plainTextFromHtml(firstBody?.content ?? '')
+  const plain = firstBody ? bodyPlainText(firstBody) : ''
   const first = firstLinePreview(plain, 80)
   return first || emptyLabel
 }
@@ -98,14 +112,14 @@ export function highlightQueryHtml(text: string, query: string): string {
  * Không khớp trong body (vd. chỉ trùng title) → dòng đầu của body.
  */
 export function searchBodySnippetPlain(
-  bodies: NoteBody[],
+  bodies: readonly NoteBody[],
   query: string,
   maxLen = 160,
 ): string {
   const q = query.trim()
   const ordered = bodies.slice().sort((a, b) => a.position - b.position)
   const collapsed = ordered
-    .map((b) => plainTextFromHtml(b.content))
+    .map((b) => bodyPlainText(b))
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim()

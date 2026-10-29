@@ -23,6 +23,7 @@ import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 import { safeCacheWrite } from '@/utils/cacheWrite'
 import { sealSecureRowsForCache } from '@/utils/secureCache'
+import { indexBodiesByNote } from '@/utils/noteBodyIndex'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -77,11 +78,14 @@ export const useNotesStore = defineStore('notes', () => {
       bodies.value.find((b) => b.id === activeBodyId.value) ?? null,
   )
 
+  /**
+   * P3: body theo ghi chú, sắp theo position — tính một lượt cho cả kho; nhóm không đổi giữ nguyên mảng (danh sách
+   * không tính lại dòng của ghi chú khác). Mảng trong chỉ mục là CHỈ ĐỌC.
+   */
+  const bodiesByNote = computed((prev?: Map<string, readonly NoteBody[]>) => indexBodiesByNote(bodies.value, prev))
+
   function bodiesForNote(noteId: string): NoteBody[] {
-    return bodies.value
-      .filter((b) => b.note_id === noteId)
-      .slice()
-      .sort((a, b) => a.position - b.position)
+    return (bodiesByNote.value.get(noteId) ?? []).slice()
   }
 
   function notesForFolder(folderId: string | null): Note[] {
@@ -876,6 +880,7 @@ export const useNotesStore = defineStore('notes', () => {
     searchResults,
     searchLoading,
     searchFocusRequest,
+    bodiesByNote,
     bodiesForNote,
     notesForFolder,
     runSearch,

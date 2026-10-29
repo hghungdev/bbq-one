@@ -10,6 +10,7 @@ import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
 import { useLangStore } from '@/stores/uiLang'
+import { useProgressiveList } from '@/composables/useProgressiveList'
 
 defineProps<{
   renamingNoteId: string | null
@@ -93,6 +94,13 @@ const displayedNotes = computed(() => {
     return sortNotesByUpdatedDesc(list)
   }
   return list
+})
+
+/** P3: vẽ dần — 60 dòng đầu, cuộn gần cuối thì vẽ thêm; ghi chú đang chọn nằm trong phần đã vẽ. */
+const { visible, hasMore, sentinel } = useProgressiveList(() => displayedNotes.value, {
+  resetKey: () => [folders.activeFolderId, notes.searchQuery, notes.filterTag],
+  // Đang tìm thì cột editor ẩn — không kéo dài danh sách tới ghi chú đang mở.
+  mustShowIndex: () => (searching.value ? -1 : displayedNotes.value.findIndex((n) => n.id === notes.activeNoteId)),
 })
 
 const highlightQuery = computed(() =>
@@ -216,7 +224,7 @@ async function onMovePick(folderId: string): Promise<void> {
     </SectionHeader>
     <div class="note-list__body">
       <NoteItem
-        v-for="n in displayedNotes"
+        v-for="n in visible"
         :key="n.id"
         :note="n"
         :selected="notes.activeNoteId === n.id"
@@ -229,6 +237,7 @@ async function onMovePick(folderId: string): Promise<void> {
         @request-rename="emit('update:renamingNoteId', $event)"
         @rename-done="emit('update:renamingNoteId', null)"
       />
+      <div v-if="hasMore" ref="sentinel" class="note-list__more" aria-hidden="true" />
       <p
         v-if="displayedNotes.length === 0 && folderLocked && !notes.searchQuery.trim()"
         class="note-list__empty retro-empty"
@@ -295,6 +304,11 @@ async function onMovePick(folderId: string): Promise<void> {
 /* Cùng hàng với ô tìm ở đầu cột Thư mục (10 px trên, cao 30 px). */
 .note-list__head {
   margin: 10px 4px 6px 0;
+}
+
+/* P3: phần tử canh cuối danh sách — lọt khung cuộn thì vẽ thêm dòng. */
+.note-list__more {
+  height: 1px;
 }
 
 .note-list__body {

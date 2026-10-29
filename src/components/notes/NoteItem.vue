@@ -15,8 +15,10 @@ import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useLangStore } from '@/stores/uiLang'
-import type { Note } from '@/types'
+import type { Note, NoteBody } from '@/types'
 import { isEncryptedEnvelope } from '@/utils/secureCrypto'
+
+const NO_BODIES: readonly NoteBody[] = []
 
 const props = defineProps<{
   note: Note
@@ -51,7 +53,8 @@ const canMove = computed(
 const draft = ref('')
 const inputRef = ref<InstanceType<typeof RetroInput> | null>(null)
 
-const bodies = computed(() => notes.bodiesForNote(props.note.id))
+/** P3: mảng dùng chung từ chỉ mục — không quét cả kho, không đổi tham chiếu khi body ghi chú khác thay đổi. */
+const bodies = computed(() => notes.bodiesByNote.get(props.note.id) ?? NO_BODIES)
 
 const label = computed(() => {
   if (rowLocked.value) return t('account.lockedNote')

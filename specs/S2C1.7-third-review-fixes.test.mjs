@@ -281,6 +281,7 @@ notesStore = loadTs('src/stores/notes.ts', {
     },
   },
   '@/utils/secureCache': cacheMod,
+  '@/utils/noteBodyIndex': loadTs('src/utils/noteBodyIndex.ts'), // P3: import mới của notes.ts (code thật, thuần)
 }).useNotesStore
 
 // ── router thật; withTimeout thật nhưng rút 1,5 s → 30 ms cho test nhanh ──
