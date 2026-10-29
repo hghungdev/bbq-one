@@ -119,11 +119,12 @@ const inlineSrc = read('src', 'components', 'ui', 'InlineSearch.vue')
   )
 
   const bmTabSrc = read('src', 'components', 'bookmarks', 'BookmarkTab.vue') ?? ''
-  const toolbarStart = bmTabSrc.indexOf('class="bm-tab__toolbar"')
-  const toolbar = toolbarStart === -1 ? '' : bmTabSrc.slice(toolbarStart, bmTabSrc.indexOf('</div>', toolbarStart))
+  // U35 (đổi có chủ đích): hàng thanh công cụ đã bỏ — ô tìm luôn hiện ở đầu cột Bookmark trình duyệt.
+  const treeColStart = bmTabSrc.indexOf('class="bm-tab__tree-col"')
+  const treeColHead = treeColStart === -1 ? '' : bmTabSrc.slice(treeColStart, bmTabSrc.indexOf('<SectionHeader', treeColStart))
   check(
-    'U5.9 BookmarkTab: InlineSearch trong thanh công cụ → setSearchQuery / clearBookmarkSearch / searchFocusRequest',
-    toolbar.includes('<InlineSearch') &&
+    'U5.9 BookmarkTab: InlineSearch ở đầu cột Bookmark trình duyệt (U35) → setSearchQuery / clearBookmarkSearch / searchFocusRequest',
+    treeColHead.includes('<InlineSearch') &&
       bmTabSrc.includes('setSearchQuery(') &&
       bmTabSrc.includes('bm.searchFocusRequest'),
     'thanh công cụ bookmark chưa có 🔍',

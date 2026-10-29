@@ -72,7 +72,7 @@ export const en = {
   'search.ariaCalendar': 'Search calendar events',
   'search.placeholder': 'Search…',
   'search.placeholderNotes': 'Search notes…',
-  'search.placeholderBookmarks': 'Search bookmarks…',
+  'search.placeholderBookmarks': 'Search bookmarks & backups…',
   'search.placeholderCalendar': 'Search events…',
   'search.placeholderAllNotes': 'Search all notes…',
   'search.openNotes': 'Search notes (Ctrl+F)',
@@ -270,7 +270,6 @@ export const en = {
     'This action needs the internet. Your live bookmarks still work offline.',
   'bookmark.rstTitle': 'Restore this backup to the browser',
   'bookmark.delTitle': 'Delete backup',
-  'bookmark.clearTitle': 'Clear search',
   'bookmark.treeTitle': 'Open this source in tree view',
 
   // ── Account password validation ──

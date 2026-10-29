@@ -74,7 +74,7 @@ export const vi: Record<I18nKey, string> = {
   'search.ariaCalendar': 'Tìm sự kiện lịch',
   'search.placeholder': 'Tìm…',
   'search.placeholderNotes': 'Tìm ghi chú…',
-  'search.placeholderBookmarks': 'Tìm bookmark…',
+  'search.placeholderBookmarks': 'Tìm trong bookmark và bản sao lưu…',
   'search.placeholderCalendar': 'Tìm sự kiện…',
   'search.placeholderAllNotes': 'Tìm trong tất cả ghi chú…',
   'search.openNotes': 'Tìm ghi chú (Ctrl+F)',
@@ -272,7 +272,6 @@ export const vi: Record<I18nKey, string> = {
     'Thao tác này cần mạng. Bookmark trên trình duyệt vẫn xem được khi ngoại tuyến.',
   'bookmark.rstTitle': 'Khôi phục bản sao lưu này vào trình duyệt',
   'bookmark.delTitle': 'Xóa bản sao lưu',
-  'bookmark.clearTitle': 'Xóa tìm kiếm',
   'bookmark.treeTitle': 'Mở trong chế độ xem cây',
 
   // ── Account password validation ──
