@@ -51,11 +51,6 @@ function submit(): void {
   if (!canSubmit.value) return
   emit('confirm')
 }
-
-function onBackdropClick(): void {
-  if (isSubmitting.value) return
-  emit('close')
-}
 </script>
 
 <template>
@@ -64,7 +59,7 @@ function onBackdropClick(): void {
       v-if="open"
       class="delete-folder-modal__backdrop bbqone-overlay"
       role="presentation"
-      @click.self="onBackdropClick"
+      @mousedown.self.prevent
     >
       <div
         ref="panelRef"

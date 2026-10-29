@@ -51,6 +51,21 @@ export function parseUndoDeleteActionId(
   return null
 }
 
+/**
+ * F3: mọi thực thể của một lượt xóa — lượt xóa nhiều sự kiện (cả chuỗi) có id `calendar:<id1>,<id2>,…` (UUID không
+ * chứa dấu phẩy). Lượt một thực thể → mảng một phần tử, như parseUndoDeleteActionId.
+ */
+export function parseUndoDeleteTargets(
+  actionId: string,
+): Array<{ kind: PendingDeleteKind; entityId: string }> {
+  const parsed = parseUndoDeleteActionId(actionId)
+  if (!parsed) return []
+  return parsed.entityId
+    .split(',')
+    .filter((id) => id.length > 0)
+    .map((entityId) => ({ kind: parsed.kind, entityId }))
+}
+
 function normalizeQueueEntry(raw: unknown): PendingDeleteCommitEntry | null {
   // Legacy (bản < fix): entry là string actionId → coi như đã hết hạn để flush xử lý ngay.
   if (typeof raw === 'string' && raw.length > 0) return { id: raw, expiresAt: 0 }
@@ -110,20 +125,21 @@ export async function unregisterPendingDeleteCommit(actionId: string): Promise<v
 }
 
 async function executePendingDelete(actionId: string): Promise<void> {
-  const parsed = parseUndoDeleteActionId(actionId)
-  if (!parsed) return
-  switch (parsed.kind) {
-    case 'note':
-      await notesService.delete(parsed.entityId)
-      break
-    case 'calendar':
-      await calendarEventsService.delete(parsed.entityId)
-      break
-    case 'bookmark-backup':
-      await bookmarksService.deleteBackup(parsed.entityId)
-      break
-    default:
-      break
+  // F3: lượt xóa nhiều sự kiện — xóa từng cái (xóa lại cái đã xóa không lỗi → lỗi giữa chừng thì cả lượt thử lại sau).
+  for (const target of parseUndoDeleteTargets(actionId)) {
+    switch (target.kind) {
+      case 'note':
+        await notesService.delete(target.entityId)
+        break
+      case 'calendar':
+        await calendarEventsService.delete(target.entityId)
+        break
+      case 'bookmark-backup':
+        await bookmarksService.deleteBackup(target.entityId)
+        break
+      default:
+        break
+    }
   }
 }
 
@@ -168,8 +184,7 @@ export async function listUnexpiredPendingDeletes(): Promise<
   const now = Date.now()
   return queue
     .filter((e) => now < e.expiresAt + FLUSH_EXPIRY_GRACE_MS)
-    .map((e) => parseUndoDeleteActionId(e.id))
-    .filter((p): p is { kind: PendingDeleteKind; entityId: string } => p !== null)
+    .flatMap((e) => parseUndoDeleteTargets(e.id))
 }
 
 /**

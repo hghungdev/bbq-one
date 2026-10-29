@@ -1,7 +1,7 @@
 # BBQOne — Chrome Web Store Permissions Justification
 
 This document explains why each permission declared in `public/manifest.json`
-is required for BBQOne **v2.0.0** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar). The content below is the **source of
+is required for BBQOne **v2.0.1** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 adds only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning). The content below is the **source of
 truth** when filling out the Chrome Web Store submission form's "Permission
 Justification" section.
 
@@ -86,7 +86,7 @@ https://*.supabase.co/* is used only after the user chooses to sign in. It is ne
 2. Sync the user's notes, folders, bookmark backups and calendar events with BBQOne's Supabase backend. Each account's rows are isolated by Row Level Security (auth.uid() = user_id); notes in secure folders are encrypted on the device before upload.
 3. Create, replace or turn off the optional private Google Calendar link (stored in the same backend). Google Calendar fetches that link from the server; the extension never contacts Google.
 4. Run the daily background refresh (chrome.alarms).
-Users who are not signed in never send requests to Supabase. There are no content scripts. Apart from Supabase, the only network request is loading the Inter font from Google Fonts for the extension pages.
+Users who are not signed in never send requests to Supabase. There are no content scripts. Apart from Supabase there are no network requests: the Inter font is bundled with the extension.
 ```
 
 > The wildcard `*.supabase.co` is used because the project URL is set at build time (`VITE_SUPABASE_URL`); at
@@ -107,8 +107,8 @@ Users who are not signed in never send requests to Supabase. There are no conten
   translation/dictionary API (these features and the associated
   `api.dictionaryapi.dev` host permission were **removed in v1.2.0**).
 - **No** remote code execution — all JavaScript and WebAssembly is bundled
-  with the extension at build time. Google Fonts loads font files (CSS +
-  font binaries), which Chrome does not classify as remote code.
+  with the extension at build time. Fonts (Inter) are bundled too — no
+  external font or stylesheet requests.
 
 ---
 
@@ -119,9 +119,9 @@ The CSP declared in `public/manifest.json` for extension pages is:
 ```
 script-src 'self' 'wasm-unsafe-eval';
 object-src 'self';
-style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-font-src 'self' https://fonts.gstatic.com data:;
-connect-src 'self' https://*.supabase.co https://fonts.googleapis.com;
+style-src 'self' 'unsafe-inline';
+font-src 'self' data:;
+connect-src 'self' https://*.supabase.co;
 ```
 
 - `'wasm-unsafe-eval'` is required by **Shiki** (syntax highlighter used in
@@ -130,8 +130,8 @@ connect-src 'self' https://*.supabase.co https://fonts.googleapis.com;
   Single-File Component scoped styles and Shiki's inline highlight output).
   Chrome Web Store policy permits `'unsafe-inline'` in `style-src`; it is
   not allowed in `script-src`, which BBQOne does **not** use.
-- `https://fonts.googleapis.com` and `https://fonts.gstatic.com` are
-  required to load the **Inter** UI font (see `index.html`).
+- `font-src 'self'`: the **Inter** UI font ships inside the extension
+  (`src/assets/fonts/inter/`); no external font hosts are allowed.
 
 ---
 
@@ -143,9 +143,6 @@ connect-src 'self' https://*.supabase.co https://fonts.googleapis.com;
 All JavaScript and WebAssembly is bundled into the extension at build time
 via Vite + `@crxjs/vite-plugin`. The extension loads only:
 
-- **Google Fonts** (`fonts.googleapis.com` / `fonts.gstatic.com`) — CSS
-  stylesheet and font binary files. These are not executable code under
-  Chrome's definition.
 - **Supabase REST / Auth endpoints** (`*.supabase.co`) — data
   endpoints, not code endpoints.
 
@@ -164,6 +161,10 @@ BBQOne follows a **privacy-first, local-first** philosophy:
   Google Calendar link, which Google fetches from the server — not from
   the extension).
 - No content scripts on third-party sites.
+- Address-bar search uses the manifest **`omnibox`** key (keyword `bbq`) — not a
+  permission, no install warning. Text typed after `bbq` goes only to the
+  extension, which searches notes stored on the device (no network request);
+  copying a note reuses `clipboardWrite` + `offscreen`.
 - No tracking, no analytics, no advertising.
 - All permissions are scoped to features that are actually present in the
   build — anything that previously required broader permissions (in-page

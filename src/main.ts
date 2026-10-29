@@ -8,10 +8,24 @@ import {
   isRecoverableRefreshTokenAuthError,
   recoverSupabaseAuthFromStaleSession,
 } from '@/services/supabaseAuthRecovery.service'
+import './assets/styles/fonts.css'
 import './assets/styles/global.css'
 import './assets/styles/calendar-events.css'
 import './assets/styles/retro.css'
 import './assets/styles/ds.css'
+
+/**
+ * U29: Chrome đóng popup khi phím Esc không được trang xử lý — Sir: popup chỉ đóng khi bấm chuột ra ngoài, Esc chỉ đóng
+ * lớp trong cùng (hộp thoại, menu, ô tìm). Đánh dấu đã xử lý ở mức trang (pha capture: chạy trước cả lớp nào chặn lan
+ * truyền); KHÔNG chặn lan truyền → các lớp vẫn nhận Esc như cũ. Bỏ qua khi đang gõ IME (Esc hủy phần đang soạn).
+ */
+window.addEventListener(
+  'keydown',
+  (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !e.isComposing) e.preventDefault()
+  },
+  { capture: true },
+)
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
   if (!isRecoverableRefreshTokenAuthError(event.reason)) return
@@ -30,7 +44,8 @@ async function bootstrap(): Promise<void> {
     await chrome.storage.local.remove(BBQ_PENDING_ROUTE_KEY)
     const normalized = routePath.startsWith('/') ? routePath : `/${routePath}`
     window.location.hash = `#${normalized}`
-  } else {
+  } else if (!window.location.hash.startsWith('#/')) {
+    // F1: tab mở từ thanh địa chỉ đã mang sẵn route (vd #/dashboard?note=…) — giữ nguyên.
     window.location.hash = '#/dashboard'
   }
   app.use(router)

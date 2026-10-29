@@ -58,10 +58,11 @@ const tpl = app.slice(app.indexOf('<template>'), app.lastIndexOf('</template>'))
 const brand = /<span class="shell__brand"> <img class="shell__brand-logo" :src="brandLogo" :srcset="brandLogoSrcset" alt="" width="32" height="32" \/> <span class="shell__brand-name">BBQOne<\/span> <\/span>/g
 const headerLeft = (/<div class="shell__header-left">[\s\S]*?<\/div>/.exec(tpl) ?? [''])[0]
 const drawerHead = (/<div class="shell__drawer-head">[\s\S]*?<\/span> <\/span> <\/div>/.exec(tpl) ?? [''])[0]
+// U28 (đổi có chủ đích): bảng ☰ đã gỡ → cụm logo chỉ còn ở header (2 → 1).
 check(
-  'U23.4 header + đầu bảng ☰: cụm logo (alt="" — trang trí) + tên "BBQOne"',
-  (tpl.match(brand) ?? []).length === 2 &&
-    /shell__brand-logo/.test(headerLeft) && /shell__brand-logo/.test(drawerHead) &&
+  'U23.4 header: cụm logo (alt="" — trang trí) + tên "BBQOne"; bảng ☰ đã gỡ (U28)',
+  (tpl.match(brand) ?? []).length === 1 &&
+    /shell__brand-logo/.test(headerLeft) && drawerHead === '' &&
     /import brandLogo from '@\/assets\/brand\/bbqone-logo\.png'/.test(app),
   `số cụm logo: ${(tpl.match(brand) ?? []).length}`,
 )

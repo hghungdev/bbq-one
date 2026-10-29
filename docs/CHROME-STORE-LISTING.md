@@ -16,6 +16,8 @@ _(118 characters — fits the 132 limit.)_
 
 **BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a **calendar** — from one clean, compact popup dashboard (side rail for Calendar / Notes / Bookmarks; settings and account in the header).
 
+**Release 2.0.1 (highlights):** Much faster with large libraries (folders and search in a fraction of a second; package 11 MB → 3 MB, Inter font bundled — no network requests without sign-in); search notes from the address bar (`bbq` + Space — Enter opens, Alt+Enter copies); up to 6 events per day and edit / delete a whole repeating series; full-width header with an icon-only side rail; Esc and clicks outside never discard a half-filled dialog; fix for deleted items reappearing when not signed in.
+
 **Release 2.0.0 (highlights):** New vertical navigation rail and flat, modern UI with one icon set; redesigned calendar event dialog, per-item overdue check-off, and a private one-way Google Calendar link (Settings › Google Calendar); bookmark PIN removed so backups are never blocked.
 
 **Release 1.3.3 (highlights):** Notes settings menu (rename / move between regular folders / delete); deeper dark-mode UI and clearer calendar event chips.
@@ -39,6 +41,7 @@ _(118 characters — fits the 132 limit.)_
 - Rich text editing with sensible formatting for everyday writing and technical notes  
 - Code-friendly highlighting for many languages (bundled with the in-app editor)  
 - Folders + full-text search  
+- **Address bar search:** type `bbq` + Space, then a keyword — Enter opens the note, Alt+Enter copies the whole note  
 - Rename, move between regular folders, and delete from a compact settings menu on each row  
 - Optional **encrypted secure folders** (passphrase-gated content; AES‑GCM client-side where applicable)  
 
@@ -50,7 +53,7 @@ _(118 characters — fits the 132 limit.)_
 
 **CALENDAR**
 
-- Month grid with events stored **locally** by default — up to 3 events per day  
+- Month grid with events stored **locally** by default — up to 6 events per day  
 - Repeat events weekly, monthly, or yearly; search across all events  
 - Today / tomorrow chip in the header; mark done with one click; tick off overdue items one by one  
 - Optional sync to your account when signed in (same Supabase backend as notes/bookmarks)  
@@ -68,7 +71,7 @@ By default BBQOne keeps **notes, bookmark backups, and calendar events** on your
 - **Optional sync:** Sign in through **Supabase** when you want multi-device continuity — **HTTPS** in transit plus **Row Level Security** so only your account can read/write your rows.  
 
 **Network use (plain language):**  
-Without signing in, the extension does **not** need your browsing history as a feature. Normal use talks to **`*.supabase.co`** only when you opt into cloud sync (auth + sync). Extension pages may load **Google Fonts** (`fonts.googleapis.com` / `fonts.gstatic.com`) for typography — see the Privacy Policy.  
+Without signing in, the extension does **not** need your browsing history as a feature. Normal use talks to **`*.supabase.co`** only when you opt into cloud sync (auth + sync). Fonts (Inter) are bundled with the extension, so without sign-in it makes **no** network requests — see the Privacy Policy.  
 
 BBQOne does **not** run a behavioral ad network inside the extension. Read the Privacy Policy below for hosting, accountability, and what Supabase sign-in implies.
 
@@ -102,7 +105,7 @@ Clean, flat layout: a compact **side rail** for Calendar / Notes / Bookmarks (�
 **Authoritative policy:**  
 https://hghungdev.github.io/bbq-one/privacy-policy.html  
 
-The policy names **Supabase** (auth + optional sync), **Google Fonts**, **clipboard/offscreen** (copy-to-clipboard helper), **`downloads`** (e.g. bookmark export), **`bookmarks`** and **`chrome.storage`** — aligned with current permissions.
+The policy names **Supabase** (auth + optional sync), the optional **Google Calendar** link, **clipboard/offscreen** (copy-to-clipboard helper), **`downloads`** (e.g. bookmark export), **`bookmarks`** and **`chrome.storage`** — aligned with current permissions.
 
 ---
 

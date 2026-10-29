@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import { useLangStore } from '@/stores/uiLang'
@@ -7,18 +8,28 @@ import { isEncryptedEnvelope } from '@/utils/secureCrypto'
 
 const { t } = useLangStore()
 
-defineProps<{
+const props = defineProps<{
   entries: ConflictBackupEntry[]
   visible: boolean
   /** id các entry được phép Restore (row còn tồn tại + không thuộc secure folder). */
   restorableIds: Set<string>
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   restore: [entry: ConflictBackupEntry]
   dismiss: [entry: ConflictBackupEntry]
   close: []
 }>()
+
+/** U29: Esc = Đóng (như bấm ra ngoài) — không đóng cả extension. */
+function onKeydown(e: KeyboardEvent): void {
+  if (!props.visible || e.key !== 'Escape') return
+  e.preventDefault()
+  emit('close')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 function kindLabel(kind: ConflictBackupEntry['kind']): string {
   if (kind === 'note_body') return t('sync.backups.kindNoteBody')
@@ -38,7 +49,7 @@ function snippet(entry: ConflictBackupEntry): string {
 
 <template>
   <Transition name="dialog">
-    <div v-if="visible" class="conflict-backups-overlay" @click.self="$emit('close')">
+    <div v-if="visible" class="conflict-backups-overlay" @mousedown.self.prevent>
       <div class="conflict-backups-dialog" role="dialog" aria-modal="true" aria-labelledby="conflict-backups-title">
         <header class="conflict-backups-dialog__header">
           <h2 id="conflict-backups-title" class="conflict-backups-dialog__title">

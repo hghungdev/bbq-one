@@ -61,7 +61,7 @@ async function onSubmit(): Promise<void> {
 
 <template>
   <Transition name="login-modal">
-    <div class="lm-overlay" @click.self="emit('close')">
+    <div class="lm-overlay" @mousedown.self.prevent>
       <div class="lm-panel" role="dialog" aria-modal="true" aria-labelledby="lm-title">
         <header class="lm-header">
           <h2 id="lm-title" class="lm-title">

@@ -10,12 +10,13 @@ KEY FEATURES
 
 NOTES
 Rich text editing with code syntax highlighting, folders, and full-text search. Rename, move, or delete from each row's menu. Optional passphrase-protected secure folders (client-side AES-GCM encryption).
+Search from the address bar: type "bbq", press Space, then a keyword. Enter opens the note; Alt+Enter copies the whole note.
 
 BOOKMARKS
 Snapshot, browse, search, and restore your Chrome bookmark tree. Export as HTML. Backups sync to your account when you sign in.
 
 CALENDAR
-Month view with up to 3 events per day. Repeat events weekly, monthly, or yearly. Search across all events. Today and tomorrow at a glance in the header. Mark an event done with one click, and tick off overdue items one by one.
+Month view with up to 6 events per day. Repeat events weekly, monthly, or yearly. Search across all events. Today and tomorrow at a glance in the header. Mark an event done with one click, and tick off overdue items one by one.
 
 GOOGLE CALENDAR LINK (OPTIONAL)
 Signed in? Create a private, one-way link in Settings › Google Calendar and add it in Google Calendar ("From URL"). Your BBQOne events then appear in Google Calendar. Google decides when to refresh the link — usually within several hours. Turn the link off or replace it at any time.
@@ -32,23 +33,24 @@ PRIVACY-FIRST
 
 No account required. No ads, no analytics, no tracking.
 No content scripts — BBQOne cannot read or modify the pages you visit.
-Without sign-in, your notes, bookmarks, and events stay on your device; the only network request is the Inter font from Google Fonts. After sign-in, BBQOne talks only to its Supabase backend for sign-in and sync.
+Without sign-in, your notes, bookmarks, and events stay on your device and BBQOne makes no network requests (fonts are bundled). After sign-in, BBQOne talks only to its Supabase backend for sign-in and sync.
 
 Encrypted before upload: notes in secure folders. Regular notes, folders, bookmark backups, and calendar events are stored under your account, isolated by Row Level Security.
 
 Google Calendar link: created only if you ask for it. Anyone with the link can read your calendar, so keep it private — you can replace or turn it off in Settings.
 
 ═══════════════════════════════════════════════════
-WHAT'S NEW IN 2.0.0
+WHAT'S NEW IN 2.0.1
 ═══════════════════════════════════════════════════
 
-New: Clean layout — side rail for Calendar, Notes, and Bookmarks; settings and account in the header
-New: Refreshed icon and logo
-New: Private one-way Google Calendar link
-New: Repeating events (weekly, monthly, yearly) and a redesigned event dialog
-Improved: Tick off overdue events one by one; mark events done with one click
-Improved: One consistent icon set and simpler dialogs
-Changed: Bookmark PIN removed — the Bookmarks tab opens directly and automatic backups are never blocked
+New: Search notes from the address bar — type "bbq", press Space, then a keyword (Enter opens, Alt+Enter copies the whole note)
+New: Edit or delete a whole repeating series (this event, this and following, or all)
+Improved: Much faster with thousands of notes — folders open and search finishes in a fraction of a second
+Improved: Up to 6 events per day; the header chip shows every title or the count
+Improved: Fonts bundled with the extension — works fully offline; smaller download (11 MB → 3 MB)
+Improved: Full-width header with the logo top-left; icon-only side rail with tooltips
+Improved: Esc never closes the extension, and clicking outside a dialog no longer closes it — no lost typing
+Fixed: Without signing in, deleted notes and events no longer come back after reopening
 
 ═══════════════════════════════════════════════════
 PRIVACY POLICY

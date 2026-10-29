@@ -84,8 +84,19 @@ function toggle(e: MouseEvent): void {
       if (menuRef.value?.contains(t) || triggerRef.value?.contains(t)) return
       close()
     }
+    // U29: Esc đóng menu (không đóng cả extension) và trả focus về nút ⚙.
+    const onKey = (ev: KeyboardEvent): void => {
+      if (ev.key !== 'Escape') return
+      ev.preventDefault()
+      close()
+      triggerRef.value?.focus()
+    }
     document.addEventListener('mousedown', onDoc)
-    removeOutside = () => document.removeEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    removeOutside = () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
   })
 }
 

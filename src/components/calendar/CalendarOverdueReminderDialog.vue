@@ -104,10 +104,6 @@ async function onConfirm(): Promise<void> {
   }
 }
 
-function onBackdropClick(): void {
-  onClose()
-}
-
 function onKeydown(e: KeyboardEvent): void {
   if (!props.visible) return
   if (e.key === 'Escape') {
@@ -137,7 +133,7 @@ onUnmounted(() => {
       v-if="visible"
       class="cal-overdue__backdrop"
       role="presentation"
-      @click.self="onBackdropClick"
+      @mousedown.self.prevent
     >
       <div
         class="cal-overdue"

@@ -80,6 +80,8 @@ export const calendarEventsService = {
           description: input.description ?? '',
           position: input.position ?? 0,
           color: input.color ?? null,
+          // F3: chỉ gửi khi có — sự kiện đơn vẫn tạo được dù server chưa chạy migration 018.
+          ...(input.series_id ? { series_id: input.series_id } : {}),
           user_id: user.id,
         })
         .select()

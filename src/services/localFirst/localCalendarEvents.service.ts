@@ -37,6 +37,8 @@ export const localCalendarEventsService = {
       updated_at: now,
       synced_at: null,
       __synced: false,
+      // F3: chỉ ghi khi có — đẩy lên server (upsert mọi trường) không gửi cột mới cho sự kiện đơn.
+      ...(input.series_id ? { series_id: input.series_id } : {}),
     }
     await localStore.pushItem(LOCAL_STORAGE_KEYS.calendarEvents, event)
     return event

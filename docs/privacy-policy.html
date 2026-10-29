@@ -190,7 +190,7 @@
   <main>
     <article class="content">
       <h1>Privacy Policy</h1>
-      <p class="meta">Last updated: October 2026 — applies to extension version 2.0.0 and later.</p>
+      <p class="meta">Last updated: October 2026 — applies to extension version 2.0.1 and later.</p>
 
       <p>
         BBQOne is a Chrome extension for personal <strong>notes</strong>,
@@ -220,6 +220,14 @@
         <li>Calendar events</li>
         <li>Extension preferences (theme, UI language, layout, banner dismissals)</li>
       </ul>
+
+      <p>
+        <strong>Address bar search.</strong> When you type <code>bbq</code>
+        and a space in Chrome's address bar, the words you type next go only to
+        BBQOne, which matches them against the notes already stored on your
+        device. That text is not sent to any server — ours, Supabase, or Google
+        — and is not stored.
+      </p>
 
       <p>
         In addition, BBQOne uses <code>chrome.storage.session</code> to hold the
@@ -348,6 +356,13 @@
         background service worker.
       </p>
 
+      <p>
+        <strong>Address bar search:</strong> after you type <code>bbq</code> and a
+        space in Chrome's address bar, the text you type next is sent only to
+        BBQOne (not to your search engine). BBQOne searches the notes stored on
+        your device and never sends that text over the network.
+      </p>
+
       <h2>How data is used</h2>
 
       <p>
@@ -404,13 +419,13 @@
           link: Google&apos;s servers (not the extension) fetch the link from
           Supabase. Google&apos;s terms and privacy policy apply.
         </li>
-        <li>
-          <strong>Google Fonts</strong>
-          (<code>fonts.googleapis.com</code> / <code>fonts.gstatic.com</code>) —
-          Loading the <strong>Inter</strong> UI font for extension pages.
-          Google&apos;s terms and privacy policy apply to those requests.
-        </li>
       </ul>
+
+      <p>
+        The <strong>Inter</strong> UI font is bundled with the extension, so no
+        font requests leave your device. Without signing in, the extension makes
+        no network requests.
+      </p>
 
       <p>
         The extension does not load remote scripts or remote code from any

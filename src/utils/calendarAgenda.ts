@@ -152,23 +152,22 @@ export function overduePanelRows(
 }
 
 /**
- * U18: chip header hiện bao nhiêu tên TRỌN VẸN thì vừa `available` px — còn lại gom thành "+n"
- * (cách Gmail hiện người nhận). Chỉ chừa chỗ cho "+n" khi thật sự có tên bị ẩn. Ít nhất 1: tên đầu dài
- * hơn cả chỗ trống thì để CSS cắt riêng nó ("…"), vẫn kèm "+n".
+ * U30 (thay U18 "vài tên + +n"): chip header hiện ĐỦ tên khi tất cả vừa `available` px; không vừa hết thì
+ * ghi số ("6 sự kiện") — Sir: ngày 5–6 sự kiện không được gom một phần. Một tên dài quá chỗ vẫn hiện tên
+ * (CSS cắt "…"), ghi "1 sự kiện" thì mất thông tin.
  */
-export function fitTitleCount(
-  widths: number[],
-  available: number,
-  sepWidth: number,
-  moreWidth: (hidden: number) => number,
-): number {
-  const n = widths.length
-  if (n === 0) return 0
-  for (let k = n; k >= 1; k--) {
-    let need = sepWidth * (k - 1)
-    for (let i = 0; i < k; i++) need += widths[i]
-    if (k < n) need += moreWidth(n - k)
-    if (need <= available) return k
-  }
-  return 1
+export function titlesNeedCount(widths: number[], available: number, sepWidth: number): boolean {
+  if (widths.length < 2) return false
+  let need = sepWidth * (widths.length - 1)
+  for (const w of widths) need += w
+  return need > available
+}
+
+/** U30: số sự kiện ngày mai liệt kê trong bảng trước nút "Xem thêm n". */
+export const AGENDA_TOMORROW_PREVIEW = 3
+
+/** U30: `limit` mục đầu + số mục còn ẩn; `expanded` → đủ cả. Không sửa mảng gốc. */
+export function previewItems<T>(items: readonly T[], limit: number, expanded: boolean): { shown: T[]; more: number } {
+  if (expanded || items.length <= limit) return { shown: items.slice(), more: 0 }
+  return { shown: items.slice(0, limit), more: items.length - limit }
 }

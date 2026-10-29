@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import type { ConflictReport } from '@/services/localFirst/conflictDetector'
@@ -7,19 +8,29 @@ import { useLangStore } from '@/stores/uiLang'
 
 const { t } = useLangStore()
 
-defineProps<{
+const props = defineProps<{
   report: ConflictReport
   visible: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   resolve: [strategy: SyncStrategy]
 }>()
+
+/** U29: Esc = Hủy (như bấm ra ngoài) — không đóng cả extension. */
+function onKeydown(e: KeyboardEvent): void {
+  if (!props.visible || e.key !== 'Escape') return
+  e.preventDefault()
+  emit('resolve', 'cancel')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
   <Transition name="dialog">
-    <div v-if="visible" class="conflict-overlay" @click.self="$emit('resolve', 'cancel')">
+    <div v-if="visible" class="conflict-overlay" @mousedown.self.prevent>
       <div class="conflict-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-conflict-title">
         <header class="conflict-dialog__header">
           <h2 id="sync-conflict-title" class="conflict-dialog__title">{{ t('sync.conflict.title') }}</h2>

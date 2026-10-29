@@ -24,15 +24,17 @@ const shortDesc = txt.split('\n')[0].trim()
 
 check(
   'R2.1 bỏ chỗ sai: PIN Bookmark, "retro" / "vintage terminal", "your Supabase project", "today/tomorrow banner"',
-  // Được nhắc PIN đã gỡ (What's new); cấm mô tả PIN như tính năng còn có.
-  !/PIN encryption|PIN-protected|protected by a PIN/i.test(txt) && /PIN removed/.test(txt) &&
+  // Cấm mô tả PIN như tính năng còn có. R5 (đổi có chủ đích): mục What's new chỉ giữ bản mới nhất (2.0.1) nên câu
+  // "Bookmark PIN removed" của 2.0.0 không còn bắt buộc.
+  !/PIN encryption|PIN-protected|protected by a PIN/i.test(txt) &&
     !/retro|vintage terminal/i.test(txt + md) && !/your Supabase project/i.test(txt) &&
     !/tomorrow banner/i.test(txt),
   'còn mô tả cũ',
 )
 check(
-  "R2.2 có WHAT'S NEW IN 2.0.0 (không còn mục What's new 1.2.1 ở đầu)",
-  /WHAT'S NEW IN 2\.0\.0/.test(txt) && !/WHAT'S NEW IN 1\./.test(txt),
+  // R5 (đổi có chủ đích): mục What's new là bản 2.0.x mới nhất (2.0.1), không cứng 2.0.0.
+  "R2.2 có WHAT'S NEW IN 2.0.x (không còn mục What's new 1.x ở đầu)",
+  /WHAT'S NEW IN 2\.0\.\d+/.test(txt) && !/WHAT'S NEW IN 1\./.test(txt),
   'chưa cập nhật mục mới',
 )
 check(
@@ -42,8 +44,11 @@ check(
   'thiếu Google Calendar',
 )
 check(
-  'R2.4 lịch: lặp tuần / tháng / năm, tối đa 3 sự kiện / ngày, tìm kiếm; đúng sự thật quyền riêng tư',
-  /weekly, monthly( or|,) (and )?yearly|weekly, monthly, yearly/i.test(txt) && /3 events per day/.test(txt) &&
+  // U30 (đổi có chủ đích): giới hạn 3 → 6 sự kiện / ngày.
+  'R2.4 lịch: lặp tuần / tháng / năm, tối đa 6 sự kiện / ngày, tìm kiếm; đúng sự thật quyền riêng tư',
+  // R5 (đổi có chủ đích): trước đây chỉ khớp nhờ dòng "(weekly, monthly, yearly)" của What's new 2.0.0 — nhận cả
+  // câu ở mục CALENDAR "weekly, monthly, or yearly".
+  /weekly, monthly,? (or |and )?yearly/i.test(txt) && /6 events per day/.test(txt) &&
     /No content scripts/i.test(txt) && /no analytics/i.test(txt) && /secure folders?/i.test(txt) &&
     /privacy-policy\.html/.test(txt),
   'thiếu tính năng / quyền riêng tư',

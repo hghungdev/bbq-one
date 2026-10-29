@@ -129,6 +129,13 @@ async function onDeleteAllConfirm(): Promise<void> {
 
 const backupLabel = computed(() => buildBookmarkBackupLabel('manual'))
 
+/** U35: "Sao lưu lần cuối" (chỉ trong phiên, sau khi bấm ☁↑) nằm trong tooltip ☁↑ thay vì một hàng riêng. */
+const backupTitle = computed(() =>
+  bm.lastBackupAt
+    ? `${t('bookmark.backupNow')} · ${t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') })}`
+    : t('bookmark.backupNow'),
+)
+
 /** REFRESH = đọc lại cây bookmark từ trình duyệt (chrome.bookmarks) và hiển thị LIVE — không tải lại danh sách backup từ server. */
 async function onRefreshLive(): Promise<void> {
   await bm.loadLive()
@@ -140,38 +147,24 @@ async function onRefreshLive(): Promise<void> {
 
 <template>
   <div class="bm-tab">
-    <!-- Toolbar -->
-    <div class="bm-tab__toolbar" @click.self="bm.clearBookmarkSearch()">
-      <!-- U11 (ADN popover): một hành động chính đặc màu. U15: icon + chữ (hành động chính của tab);
-           Xuất / Tải lại / Xóa tất cả chỉ tác động cây trình duyệt → icon ở đầu cột TRÌNH DUYỆT. -->
-      <button type="button" class="ds-primary" :disabled="bm.loading" @click="bm.backup(backupLabel)">
-        <AppIcon name="upload-cloud" :size="15" />
-        {{ t('bookmark.backupNow') }}
-      </button>
-      <span v-if="bm.lastBackupAt" class="bm-tab__hint">
-        {{ t('bookmark.lastBackup', { date: new Date(bm.lastBackupAt).toLocaleString('sv') }) }}
-      </span>
-      <!-- U5: tìm bookmark thu vào nút 🔍 cuối thanh công cụ (giống Calendar). -->
-      <InlineSearch
-        class="bm-tab__search"
-        input-id="bbqone-bookmark-search"
-        :query="bm.searchQuery"
-        :focus-request="bm.searchFocusRequest"
-        :placeholder="t('search.placeholderBookmarks')"
-        :input-label="t('search.ariaBookmarks')"
-        :open-label="t('search.openBookmarks')"
-        :close-label="t('search.close')"
-        @search="(q) => bm.setSearchQuery(q)"
-        @clear="bm.clearBookmarkSearch()"
-      />
-    </div>
-
     <p v-if="bm.error" class="bm-tab__error">{{ t('common.error') }} {{ bm.error }}</p>
 
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
       <div class="bm-tab__backups" @click.self="bm.clearBookmarkSearch()">
-        <SectionHeader :label="t('bookmark.backups')" :meta="String(bm.backups.length)" />
+        <SectionHeader :label="t('bookmark.backups')" :meta="String(bm.backups.length)">
+          <!-- U33: thêm một bản sao lưu — như ＋ ở đầu mục Thư mục / Ghi chú (U15), icon màu nhấn = hành động chính. -->
+          <button
+            type="button"
+            class="ds-icon-action ds-icon-action--accent"
+            :aria-label="backupTitle"
+            :title="backupTitle"
+            :disabled="bm.loading"
+            @click="bm.backup(backupLabel)"
+          >
+            <AppIcon name="upload-cloud" />
+          </button>
+        </SectionHeader>
         <div
           v-if="bm.loading && bm.backups.length === 0"
           class="bm-tab__backups-skel"
@@ -224,21 +217,27 @@ async function onRefreshLive(): Promise<void> {
 
       <!-- Cột phải: tree viewer -->
       <div class="bm-tab__tree-col">
+        <!-- U35: ô tìm luôn hiện, ngay trên cây / KẾT QUẢ nó lọc (kiểu ô "Tìm trong tất cả ghi chú" — U11); tìm cả
+             cây trình duyệt lẫn mọi bản sao lưu. ✕ của ô thay ✕ ở đầu KẾT QUẢ. Ctrl+F vẫn focus (U5). -->
+        <div class="bm-tab__search">
+          <InlineSearch
+            persistent
+            input-id="bbqone-bookmark-search"
+            :query="bm.searchQuery"
+            :focus-request="bm.searchFocusRequest"
+            :placeholder="t('search.placeholderBookmarks')"
+            :input-label="t('search.ariaBookmarks')"
+            :open-label="t('search.openBookmarks')"
+            :close-label="t('search.close')"
+            @search="(q) => bm.setSearchQuery(q)"
+            @clear="bm.clearBookmarkSearch()"
+          />
+        </div>
         <SectionHeader
           v-if="isBookmarkSearchActive"
           :label="t('bookmark.results')"
           :meta="String(globalHits.length)"
-        >
-          <button
-            type="button"
-            class="ds-icon-action"
-            :aria-label="t('bookmark.clearTitle')"
-            :title="t('bookmark.clearTitle')"
-            @click="bm.clearBookmarkSearch()"
-          >
-            <AppIcon name="close" />
-          </button>
-        </SectionHeader>
+        />
         <SectionHeader
           v-else
           :label="viewMode === 'live' ? t('bookmark.live') : t('bookmark.backupView')"
@@ -420,30 +419,6 @@ async function onRefreshLive(): Promise<void> {
   background: var(--bg-primary);
 }
 /* U11: hàng phẳng (không khung) — nút chính đặc + nút chữ. */
-.bm-tab__toolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 4px;
-  margin: 8px 12px 6px;
-  flex-shrink: 0;
-}
-.bm-tab__toolbar > button {
-  flex-shrink: 0;
-}
-.bm-tab__hint {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
-.bm-tab__search {
-  margin-left: auto;
-  flex: 0 0 auto;
-}
 .bm-tab__error {
   margin: 0;
   padding: 6px 12px;
@@ -456,7 +431,8 @@ async function onRefreshLive(): Promise<void> {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  padding: 0 12px 12px;
+  /* U35: không còn hàng thanh công cụ — hai cột bắt đầu ngay dưới header. */
+  padding: 12px;
   gap: 10px;
 }
 .bm-tab__backups {
@@ -475,6 +451,16 @@ async function onRefreshLive(): Promise<void> {
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+}
+
+/* U35: ô tìm dính đầu khung khi cuộn cây dài (top −6px = lấp phần đệm của khung, cây không lộ phía trên). */
+.bm-tab__search {
+  position: sticky;
+  top: -6px;
+  z-index: 2;
+  margin: -6px -6px 0;
+  padding: 10px 8px 6px;
   background: var(--bg-panel);
 }
 .bm-tab__empty {

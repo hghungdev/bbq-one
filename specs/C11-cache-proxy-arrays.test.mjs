@@ -224,6 +224,7 @@ try {
     '@/stores/undoToast': { useUndoToastStore: () => ({}) },
     '@/stores/uiLang': { useLangStore: () => ({ t: (k) => k }) },
     '@/utils/cacheWrite': cacheMod,
+    '@/utils/rowsEqual': loadTs('src/utils/rowsEqual.ts'), // P5: import mới (code thật, thuần)
   }).useCalendarEventsStore
 } catch (e) {
   check('C11.5 calendar store load được', false, e.message)

@@ -37,11 +37,6 @@ watch(
   },
 )
 
-function onBackdropClick(): void {
-  if (props.busy) return
-  emit('close')
-}
-
 function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape' && !props.busy) {
     e.preventDefault()
@@ -62,7 +57,7 @@ function onSubmit(): void {
         v-if="open"
         class="quick-create__backdrop bbqone-overlay"
         role="presentation"
-        @click.self="onBackdropClick"
+        @mousedown.self.prevent
       >
         <div
           ref="panelRef"

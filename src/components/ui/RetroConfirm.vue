@@ -80,7 +80,7 @@ onUnmounted(() => {
         v-if="open"
         class="retro-confirm__backdrop bbqone-overlay"
         role="presentation"
-        @click.self="dismiss"
+        @mousedown.self.prevent
       >
         <div
           ref="panelRef"
@@ -115,6 +115,11 @@ onUnmounted(() => {
           <template v-else>
             <p class="retro-confirm__msg">{{ message }}</p>
           </template>
+
+          <!-- F3: nội dung thêm của nơi gọi (vd chọn phạm vi khi xóa sự kiện lặp). -->
+          <div v-if="$slots.default" class="retro-confirm__extra">
+            <slot />
+          </div>
 
           <!-- U15: quyết định = chữ (quy tắc 4) — "Hủy" nút chữ, "Xóa" nút đặc màu đỏ ghi rõ bằng chữ. -->
           <footer class="retro-confirm__actions">
@@ -213,6 +218,10 @@ onUnmounted(() => {
   line-height: 1.5;
   color: var(--text-primary);
   white-space: pre-wrap;
+}
+
+.retro-confirm__extra {
+  padding: 12px 16px 0;
 }
 
 .retro-confirm__actions {

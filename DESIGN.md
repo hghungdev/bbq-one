@@ -108,7 +108,7 @@ Search focus intentionally uses **yellow**; “today” in the grid uses **blue*
 - **Letter-spacing:** body text uses normal/tight spacing; headings and tabs use `-0.012em` to `-0.035em`. Avoid wide terminal-style tracking except for monospace metadata.
 - **Weights:** 400 body, 600 labels/buttons, 700 section/card headings. Avoid 500 unless a component already uses it intentionally.
 - **Brand line:** `BBQOne` in header — `font-size: 17px`, `font-weight: 700`, `letter-spacing: -0.035em`, `color: var(--accent)`.
-- **Google Fonts:** Inter loaded on extension pages per CSP (`fonts.googleapis.com`).
+- **Font files:** Inter is bundled with the extension (`src/assets/fonts/inter/`, declared in `src/assets/styles/fonts.css`) — no external font requests.
 
 ---
 
@@ -121,18 +121,20 @@ min-width: 720px (--popup-min-width)
 height:     600px (fixed; overflow hidden on html/body/#app)
 ```
 
-The shell is a **single column flex column**: header → optional error strip → tab content.
+The shell is a **flex column**: full-width header → body row (56 px icon rail + content column: optional offline / error strip → tab content). The header sits above the rail (`z-index` 30 > 20) and the logo shares the rail's vertical axis (centre x = 28 px), so the nav icons read as sitting under the brand.
 
 ### Dashboard shell (`App.vue` — `.shell.shell--dashboard`)
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ BBQOne │ [Calendar] [Notes] [Bookmark]     🌓 🕐 ☁ ⚙ 🔒/↪ │
-│ CalendarTodayBanner (conditional)                           │
-│ SearchBar (mode: calendar | notes | bookmarks)              │
-├─────────────────────────────────────────────────────────────┤
-│ Tab content (notes 3-col grid | bookmarks full | calendar)  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ [logo] BBQOne     [● Today titles | count · Tomorrow n ⌄]   ☀ ⚙ 👤│  ← header, full width
+├────┬─────────────────────────────────────────────────────────┤
+│ 📅 │ OfflineBanner / error strip (conditional)                │
+│ 📝 │ Tab content (calendar | notes 3-col grid | bookmarks)    │
+│ 🔖 │                                                         │
+│    │                                                         │
+│ ☁  │  ← rail: icons only + tooltip; sync badge at the bottom  │
+└────┴─────────────────────────────────────────────────────────┘
 ```
 
 **Header toolbar (right):**
@@ -502,7 +504,7 @@ Before shipping a new screen or modal:
 ```yaml
 # Mirrors src/assets/styles/global.css — do not edit here without updating CSS
 product: BBQOne
-version: 2.0.0
+version: 2.0.1
 popup:
   minWidth: 720px
   height: 600px

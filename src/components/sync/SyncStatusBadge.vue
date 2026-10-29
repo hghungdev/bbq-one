@@ -5,6 +5,8 @@ import { localBookmarksService } from '@/services/localFirst/localBookmarks.serv
 import { localCalendarEventsService } from '@/services/localFirst/localCalendarEvents.service'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { useLangStore } from '@/stores/uiLang'
+import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
+import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
 
 const emit = defineEmits<{
   'sign-in': []
@@ -36,8 +38,21 @@ async function refresh(): Promise<void> {
   visible.value = pendingCount.value > 0
 }
 
-function onStorageChanged(): void {
-  void refresh()
+/** P5: chỉ kho máy (`bbqone_local_*`) và cờ đăng nhập mới đổi số mục chờ — không phải cache, bản nháp (session)… */
+const WATCHED_KEYS = new Set<string>([...Object.values(LOCAL_STORAGE_KEYS), BBQ_AUTH_LOGGED_IN_KEY])
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+
+function onStorageChanged(
+  changes: Record<string, chrome.storage.StorageChange>,
+  area: string,
+): void {
+  if (area !== 'local' || !Object.keys(changes).some((k) => WATCHED_KEYS.has(k))) return
+  // Gộp nhịp: một thao tác thường ghi nhiều khóa liền nhau → đọc lại kho một lần.
+  if (refreshTimer) clearTimeout(refreshTimer)
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null
+    void refresh()
+  }, 250)
 }
 
 function onActivate(): void {
@@ -51,6 +66,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   chrome.storage.onChanged.removeListener(onStorageChanged)
+  if (refreshTimer) clearTimeout(refreshTimer)
 })
 </script>
 

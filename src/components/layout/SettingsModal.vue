@@ -171,7 +171,7 @@ onUnmounted(() => {
     aria-modal="true"
     aria-labelledby="settings-title"
   >
-    <div class="settings-backdrop" @click="emit('close')" />
+    <div class="settings-backdrop" @mousedown.prevent />
     <div class="settings-panel">
       <div class="settings-header">
         <h2 id="settings-title" class="settings-title">

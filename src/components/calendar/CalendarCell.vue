@@ -37,6 +37,12 @@ function onEventClick(e: Event): void {
   e.stopPropagation()
   store.openModalForDate(dateKey.value)
 }
+
+/** U30: "+n xem thêm" → hộp của ngày liệt kê đủ — cả ngày đã qua (bấm khoảng trống ô đã qua vẫn không mở). */
+function onMoreClick(e: Event): void {
+  e.stopPropagation()
+  store.openModalForDate(dateKey.value)
+}
 </script>
 
 <template>
@@ -68,7 +74,16 @@ function onEventClick(e: Event): void {
       >
         <span class="cal-cell__event-title">{{ ev.title }}</span>
       </li>
-      <li v-if="overflowCount > 0" class="cal-cell__overflow">+{{ overflowCount }}</li>
+      <li v-if="overflowCount > 0" class="cal-cell__more-row">
+        <button
+          type="button"
+          class="cal-cell__more"
+          :title="t('calendar.cell.moreTitle', { n: events.length })"
+          @click="onMoreClick($event)"
+        >
+          {{ t('calendar.cell.more', { n: overflowCount }) }}
+        </button>
+      </li>
     </ul>
   </div>
 </template>
@@ -106,7 +121,7 @@ function onEventClick(e: Event): void {
 }
 
 .cal-cell--other-month .cal-cell__event,
-.cal-cell--other-month .cal-cell__overflow {
+.cal-cell--other-month .cal-cell__more {
   opacity: 0.62;
 }
 
@@ -194,11 +209,49 @@ function onEventClick(e: Event): void {
   text-decoration: line-through;
 }
 
-.cal-cell__overflow {
+.cal-cell__more-row {
   flex: 0 0 auto;
+  display: flex;
+  min-width: 0;
+}
+
+/* U32: thẻ "+n xem thêm" là một dòng của danh sách — rộng hết cột, cùng bo góc + lề chữ với pill (chữ thẳng cột
+   tên sự kiện); viền đứt, nền trong, thấp hơn pill để vẫn là nút phụ. Bấm được cả ở ngày đã qua (U30). */
+.cal-cell__more {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 24px;
+  margin: 0;
+  /* trái 10 px = vạch màu 3 px của pill + 8 px − viền 1 px → chữ thẳng cột tên sự kiện; phải 6 px + đậm 500 để
+     "+4 xem thêm" vừa cột ~90 px (đậm 600 / lề 8 px tràn 0,2 px → bị cắt "…") */
+  padding: 3px 6px 3px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  padding: 2px 6px;
+  font-weight: 500;
   line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.cal-cell__more:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.cal-cell__more:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 </style>

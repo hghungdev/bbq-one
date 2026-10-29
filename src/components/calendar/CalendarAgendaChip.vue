@@ -6,10 +6,12 @@
   import { useLangStore } from '@/stores/uiLang'
   import { addDaysToLocalKey, formatCalendarBannerDate, todayLocalKey } from '@/utils/calendarDate'
   import {
+    AGENDA_TOMORROW_PREVIEW,
     agendaChip,
     buildAgenda,
-    fitTitleCount,
     overduePanelRows,
+    previewItems,
+    titlesNeedCount,
     type AgendaDay,
     type AgendaItem,
   } from '@/utils/calendarAgenda'
@@ -67,10 +69,16 @@
     () => overdueOpenCount.value - overdueRows.value.filter((r) => !r.done).length,
   )
 
+  /** U30: Ngày mai trong bảng — 3 dòng đầu + "Xem thêm n" (mở đủ ngay trong bảng); mở lại bảng thu về 3. */
+  const tomorrowExpanded = ref(false)
   const days = computed(() => {
-    const out: { tone: 'today' | 'tomorrow'; day: AgendaDay }[] = []
-    if (agenda.value.today) out.push({ tone: 'today', day: agenda.value.today })
-    if (agenda.value.tomorrow) out.push({ tone: 'tomorrow', day: agenda.value.tomorrow })
+    const out: { tone: 'today' | 'tomorrow'; day: AgendaDay; items: AgendaItem[]; more: number }[] = []
+    const { today, tomorrow } = agenda.value
+    if (today) out.push({ tone: 'today', day: today, items: today.items, more: 0 })
+    if (tomorrow) {
+      const p = previewItems(tomorrow.items, AGENDA_TOMORROW_PREVIEW, tomorrowExpanded.value)
+      out.push({ tone: 'tomorrow', day: tomorrow, items: p.shown, more: p.more })
+    }
     return out
   })
 
@@ -93,22 +101,18 @@
   )
 
   /**
-   * U18: chỉ vẽ các tên TRỌN VẸN vừa chỗ, còn lại "+n" — trước đây nối hết rồi để CSS cắt giữa chữ
-   * ("HSBC T1279, OT -…"). null = chưa đo → vẽ hết (lần đầu), đo xong mới rút.
+   * U30 (thay U18 "vài tên + +n"): mọi tên vừa chỗ → hiện đủ tên; không vừa hết → ghi số ("6 sự kiện"),
+   * bảng liệt kê đủ. null = chưa đo → vẽ tên (lần đầu), đo xong mới đổi sang số nếu cần.
    */
-  const fitCount = ref<number | null>(null)
+  const useCount = ref<boolean | null>(null)
   const titlesRef = ref<HTMLElement | null>(null)
-  const plusRef = ref<HTMLElement | null>(null)
   const listTitles = computed(() => (chip.value && chip.value.tone !== 'overdue' ? chip.value.titles : []))
-  const shownCount = computed(() => Math.min(fitCount.value ?? listTitles.value.length, listTitles.value.length))
-  const hiddenCount = computed(() => listTitles.value.length - shownCount.value)
-  const shownTitles = computed(() =>
-    chip.value?.tone === 'overdue'
-      ? chipTitles.value
-      : listTitles.value.slice(0, shownCount.value).join(separator.value),
-  )
-  /** Lề ngang của viên "+n" (padding 0 6px). */
-  const PLUS_PAD_X = 12
+  const shownTitles = computed(() => {
+    if (chip.value?.tone === 'overdue') return chipTitles.value
+    return useCount.value
+      ? t('calendar.agenda.eventCount', { n: listTitles.value.length })
+      : listTitles.value.join(separator.value)
+  })
 
   let measureCtx: CanvasRenderingContext2D | null = null
   function textWidth(text: string, el: Element): number {
@@ -127,14 +131,11 @@
     const trigger = triggerRef.value
     const mid = rootRef.value?.parentElement
     if (!c || c.tone === 'overdue' || !titlesEl || !trigger || !mid) return
-    const gap = parseFloat(getComputedStyle(trigger).columnGap) || 0
-    const plusOuter = plusRef.value ? plusRef.value.getBoundingClientRect().width + gap : 0
-    const fixed = trigger.getBoundingClientRect().width - titlesEl.getBoundingClientRect().width - plusOuter
+    const fixed = trigger.getBoundingClientRect().width - titlesEl.getBoundingClientRect().width
     const available = mid.clientWidth - fixed - 2
     const widths = c.titles.map((title) => Math.ceil(textWidth(title, titlesEl)))
     const sep = textWidth(separator.value, titlesEl)
-    const more = (n: number): number => Math.ceil(textWidth(`+${n}`, titlesEl) + PLUS_PAD_X + gap)
-    fitCount.value = fitTitleCount(widths, available, sep, more)
+    useCount.value = titlesNeedCount(widths, available, sep)
   }
 
   function scheduleMeasure(): void {
@@ -157,7 +158,7 @@
   watch(
     () => [listTitles.value.join('\u0000'), separator.value, chipLabel.value, overdueShort.value, chip.value?.tomorrowCount],
     () => {
-      fitCount.value = null
+      useCount.value = null
       scheduleMeasure()
     },
     { flush: 'post' },
@@ -183,6 +184,7 @@
 
   async function openPanel(): Promise<void> {
     todayKey.value = todayLocalKey()
+    tomorrowExpanded.value = false
     open.value = true
     await nextTick()
     panelRef.value?.focus()
@@ -248,6 +250,12 @@
     }
   }
 
+  /** Nút "Xem thêm" biến mất sau khi bấm → giữ focus trong bảng (Esc / Tab vẫn chạy). */
+  function expandTomorrow(): void {
+    tomorrowExpanded.value = true
+    void nextTick(() => panelRef.value?.focus({ preventScroll: true }))
+  }
+
   function reviewOverdue(): void {
     closePanel(false)
     emit('review-overdue')
@@ -282,7 +290,6 @@
       <span class="agenda-chip__dot" :class="`agenda-chip__dot--${chip.tone}`" aria-hidden="true" />
       <span class="agenda-chip__label">{{ chipLabel }}</span>
       <span ref="titlesRef" class="agenda-chip__titles">{{ shownTitles }}</span>
-      <span v-if="hiddenCount > 0" ref="plusRef" class="agenda-chip__plus" aria-hidden="true">+{{ hiddenCount }}</span>
       <span v-if="overdueShort" class="agenda-chip__more agenda-chip__more--overdue">
         <span class="agenda-chip__dot agenda-chip__dot--overdue" aria-hidden="true" />
         {{ overdueShort }}
@@ -381,7 +388,7 @@
           </button>
         </div>
         <ul class="agenda-chip__items">
-          <li v-for="item in d.day.items" :key="item.id">
+          <li v-for="item in d.items" :key="item.id">
             <button
               type="button"
               class="agenda-chip__item"
@@ -395,6 +402,11 @@
               />
               <span v-if="item.time" class="agenda-chip__time">{{ item.time }}</span>
               <span class="agenda-chip__item-title">{{ item.title }}</span>
+            </button>
+          </li>
+          <li v-if="d.more > 0">
+            <button type="button" class="agenda-chip__item agenda-chip__item--more" @click="expandTomorrow">
+              {{ t('calendar.agenda.showMore', { n: d.more }) }}
             </button>
           </li>
         </ul>
@@ -510,7 +522,7 @@
     white-space: nowrap;
   }
 
-  /* U18: ôm sát chữ (không giãn) để "+n" đứng ngay sau tên cuối. */
+  /* Ôm sát chữ (không giãn): đủ tên, hoặc số sự kiện (U30). */
   .agenda-chip__titles {
     flex: 0 1 auto;
     min-width: 0;
@@ -518,17 +530,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text-secondary);
-  }
-
-  .agenda-chip__plus {
-    flex: 0 0 auto;
-    padding: 0 6px;
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    line-height: 18px;
-    white-space: nowrap;
   }
 
   .agenda-chip__more {
@@ -559,7 +560,8 @@
     right: 0;
     z-index: 10002;
     width: 360px;
-    max-height: 380px;
+    /* U30: Hôm nay đủ 6 dòng + Ngày mai 3 + Quá hạn — popup cao 600 px, dài hơn thì cuộn. */
+    max-height: min(520px, calc(100vh - 72px));
     overflow-y: auto;
     padding: 10px;
     border: 1px solid var(--border);

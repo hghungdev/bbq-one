@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { NOTE_BODIES_CACHE_KEY, NOTES_CACHE_KEY } from '@/constants/storage'
 import { noteBodiesService } from '@/services/noteBodies.service'
-import { filterNotesBySubstring, notesService } from '@/services/notes.service'
+import { notesService } from '@/services/notes.service'
 import {
   localNoteBodiesService,
   localNotesService,
@@ -23,6 +23,9 @@ import { useUndoToastStore } from '@/stores/undoToast'
 import { useLangStore } from '@/stores/uiLang'
 import { safeCacheWrite } from '@/utils/cacheWrite'
 import { sealSecureRowsForCache } from '@/utils/secureCache'
+import { indexBodiesByNote } from '@/utils/noteBodyIndex'
+import { filterNotesByText } from '@/utils/noteSearch'
+import { sameRows } from '@/utils/rowsEqual'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -77,11 +80,14 @@ export const useNotesStore = defineStore('notes', () => {
       bodies.value.find((b) => b.id === activeBodyId.value) ?? null,
   )
 
+  /**
+   * P3: body theo ghi chú, sắp theo position — tính một lượt cho cả kho; nhóm không đổi giữ nguyên mảng (danh sách
+   * không tính lại dòng của ghi chú khác). Mảng trong chỉ mục là CHỈ ĐỌC.
+   */
+  const bodiesByNote = computed((prev?: Map<string, readonly NoteBody[]>) => indexBodiesByNote(bodies.value, prev))
+
   function bodiesForNote(noteId: string): NoteBody[] {
-    return bodies.value
-      .filter((b) => b.note_id === noteId)
-      .slice()
-      .sort((a, b) => a.position - b.position)
+    return (bodiesByNote.value.get(noteId) ?? []).slice()
   }
 
   function notesForFolder(folderId: string | null): Note[] {
@@ -94,28 +100,55 @@ export const useNotesStore = defineStore('notes', () => {
       )
   }
 
+  /**
+   * C16: id ghi chú + body mà context này cố ý xóa — persistCache không kéo chúng về từ đĩa (N5 giữ row dirty vắng
+   * trong snapshot). Khôi phục (hoàn tác / commit lỗi) thì gỡ ra. Id là UUID không tái dùng → không cần dọn.
+   */
+  const removedIds = new Set<string>()
+  function markRemoved(noteIds: string[], bodyIds: string[]): void {
+    for (const id of [...noteIds, ...bodyIds]) removedIds.add(id)
+  }
+
+  /** P4: lần tìm mới nhất — kết quả server về muộn của lần cũ bị bỏ. */
+  let searchSeq = 0
+
   async function runSearch(query: string): Promise<void> {
     const q = query.trim()
+    const seq = ++searchSeq
     searchQuery.value = q
     if (!q) {
       searchResults.value = []
+      searchLoading.value = false
       return
     }
-    searchLoading.value = true
-    try {
-      const fromApi = await notesService.searchFullText(q)
-      const fromStore = filterNotesBySubstring(notes.value, bodies.value, q)
-      const byId = new Map<string, Note>()
-      for (const n of fromApi) byId.set(n.id, n)
-      for (const n of fromStore) byId.set(n.id, n)
-      searchResults.value = [...byId.values()]
+    const setSearchResults = (list: Note[]): void => {
+      searchResults.value = list
         .filter((n) => !isEncryptedEnvelope(n.title))
         .sort(
           (a, b) =>
             new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
         )
-    } finally {
+    }
+    // P4: RAM có đủ ghi chú (cache + kho máy) → tìm ngay trên chữ, không đọc lại kho từ đĩa.
+    const fromStore = filterNotesByText(notes.value, bodiesByNote.value, q)
+    setSearchResults(fromStore)
+    if (!useAuthStore().isAuthenticated) {
       searchLoading.value = false
+      return
+    }
+    // Đăng nhập: gộp thêm full-text server (gốc từ tiếng Anh). Lỗi → giữ kết quả RAM.
+    searchLoading.value = true
+    try {
+      const fromApi = await notesService.searchFullText(q)
+      if (seq !== searchSeq) return
+      const byId = new Map<string, Note>()
+      for (const n of fromApi) byId.set(n.id, n)
+      for (const n of fromStore) byId.set(n.id, n)
+      setSearchResults([...byId.values()])
+    } catch (e) {
+      console.warn('[notes] server search failed — showing local results', e)
+    } finally {
+      if (seq === searchSeq) searchLoading.value = false
     }
   }
 
@@ -161,8 +194,8 @@ export const useNotesStore = defineStore('notes', () => {
     const diskBodies = Array.isArray(stored[NOTE_BODIES_CACHE_KEY])
       ? (stored[NOTE_BODIES_CACHE_KEY] as NoteBody[])
       : []
-    notes.value = mergeSnapshotWithStored(notes.value, diskNotes, isRowDirty)
-    bodies.value = mergeSnapshotWithStored(bodies.value, diskBodies, isRowDirty)
+    notes.value = mergeSnapshotWithStored(notes.value, diskNotes, isRowDirty, removedIds)
+    bodies.value = mergeSnapshotWithStored(bodies.value, diskBodies, isRowDirty, removedIds)
 
     // S1: merge có thể kéo row CIPHERTEXT từ đĩa vào RAM (context khác vừa ghi bản niêm phong)
     // → decrypt lại cho folder đang unlock, nếu không UI hiện chuỗi `retronote:1:…`.
@@ -211,25 +244,30 @@ export const useNotesStore = defineStore('notes', () => {
     })
   }
 
-  async function hydrateFromCache(): Promise<void> {
+  /** P5: trả ảnh chụp đĩa (khi cả hai là mảng) — loadAll so để biết có cần ghi lại cache không. */
+  async function hydrateFromCache(): Promise<{ notes: Note[]; bodies: NoteBody[] } | null> {
     const cached = await chrome.storage.local.get([
       NOTES_CACHE_KEY,
       NOTE_BODIES_CACHE_KEY,
     ])
     const rawNotes = cached[NOTES_CACHE_KEY] as Note[] | undefined
     const rawBodies = cached[NOTE_BODIES_CACHE_KEY] as NoteBody[] | undefined
-    if (Array.isArray(rawNotes) && rawNotes.length > 0) {
+    // P5: đĩa y hệt RAM (vd hydrate lần 2 khi mở popup) → giữ mảng RAM, danh sách không tính lại.
+    if (Array.isArray(rawNotes) && rawNotes.length > 0 && !sameRows(rawNotes, notes.value)) {
       notes.value = rawNotes
     }
-    if (Array.isArray(rawBodies) && rawBodies.length > 0) {
+    if (Array.isArray(rawBodies) && rawBodies.length > 0 && !sameRows(rawBodies, bodies.value)) {
       bodies.value = rawBodies
     }
+    return Array.isArray(rawNotes) && Array.isArray(rawBodies)
+      ? { notes: rawNotes, bodies: rawBodies }
+      : null
   }
 
   async function loadAll(): Promise<void> {
     loadError.value = null
     try {
-      await hydrateFromCache()
+      const disk = await hydrateFromCache()
       // S1: đĩa chỉ còn envelope — decrypt-overlay ngay cho folder đang unlock.
       // No-op khi chưa unlock (sessionKeys rỗng). PHẢI đứng TRƯỚC early-return offline.
       await useSecureFolderStore().decryptLoadedSecureRows()
@@ -241,8 +279,22 @@ export const useNotesStore = defineStore('notes', () => {
         'Load notes timed out',
       )
       // Không đè row đang dirty (sửa offline chưa push) bằng bản server cũ.
-      notes.value = mergeFreshWithDirtyLocal(freshNotes, notes.value, isRowDirty)
-      bodies.value = mergeFreshWithDirtyLocal(freshBodies, bodies.value, isRowDirty)
+      const mergedNotes = mergeFreshWithDirtyLocal(freshNotes, notes.value, isRowDirty)
+      const mergedBodies = mergeFreshWithDirtyLocal(freshBodies, bodies.value, isRowDirty)
+      // P5: lần tải không mang gì mới — RAM lẫn đĩa đã đúng như bản gộp → không gán lại (cả danh sách tính lại),
+      // không đọc-gộp-ghi lại cả cache (7 MB ở 2.000 ghi chú) mỗi lần mở popup. Thư mục đang mở khóa: RAM là
+      // bản rõ ≠ envelope → không vào nhánh này.
+      if (
+        disk &&
+        sameRows(mergedNotes, notes.value) &&
+        sameRows(mergedBodies, bodies.value) &&
+        sameRows(mergedNotes, disk.notes) &&
+        sameRows(mergedBodies, disk.bodies)
+      ) {
+        return
+      }
+      notes.value = mergedNotes
+      bodies.value = mergedBodies
       await persistCache()
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : 'Load notes failed'
@@ -651,6 +703,7 @@ export const useNotesStore = defineStore('notes', () => {
       return
     }
     await noteBodiesService.delete(id)
+    markRemoved([], [id])
     bodies.value = bodies.value.filter((b) => b.id !== id)
     if (activeBodyId.value === id) {
       const rest = bodiesForNote(prev.note_id)
@@ -673,6 +726,7 @@ export const useNotesStore = defineStore('notes', () => {
 
   async function deleteNoteImmediately(id: string): Promise<void> {
     await notesService.delete(id)
+    markRemoved([id], bodies.value.filter((b) => b.note_id === id).map((b) => b.id))
     notes.value = notes.value.filter((n) => n.id !== id)
     bodies.value = bodies.value.filter((b) => b.note_id !== id)
     if (activeNoteId.value === id) activeNoteId.value = null
@@ -725,6 +779,7 @@ export const useNotesStore = defineStore('notes', () => {
     const prevActiveNoteId = activeNoteId.value
     const prevActiveBodyId = activeBodyId.value
 
+    markRemoved([id], noteBodies.map(({ body }) => body.id))
     notes.value = notes.value.filter((n) => n.id !== id)
     bodies.value = bodies.value.filter((b) => b.note_id !== id)
     searchResults.value = searchResults.value.filter((n) => n.id !== id)
@@ -796,6 +851,9 @@ export const useNotesStore = defineStore('notes', () => {
     noteIndex: number,
     noteBodies: { body: NoteBody; index: number }[],
   ): void {
+    // C16: khôi phục → lần persist sau phải ghi lại row này.
+    removedIds.delete(note.id)
+    for (const { body } of noteBodies) removedIds.delete(body.id)
     if (!notes.value.some((n) => n.id === note.id)) {
       const nextNotes = notes.value.slice()
       nextNotes.splice(Math.min(Math.max(noteIndex, 0), nextNotes.length), 0, note)
@@ -876,6 +934,7 @@ export const useNotesStore = defineStore('notes', () => {
     searchResults,
     searchLoading,
     searchFocusRequest,
+    bodiesByNote,
     bodiesForNote,
     notesForFolder,
     runSearch,
