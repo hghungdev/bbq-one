@@ -100,6 +100,15 @@ export const useNotesStore = defineStore('notes', () => {
       )
   }
 
+  /**
+   * C16: id ghi chú + body mà context này cố ý xóa — persistCache không kéo chúng về từ đĩa (N5 giữ row dirty vắng
+   * trong snapshot). Khôi phục (hoàn tác / commit lỗi) thì gỡ ra. Id là UUID không tái dùng → không cần dọn.
+   */
+  const removedIds = new Set<string>()
+  function markRemoved(noteIds: string[], bodyIds: string[]): void {
+    for (const id of [...noteIds, ...bodyIds]) removedIds.add(id)
+  }
+
   /** P4: lần tìm mới nhất — kết quả server về muộn của lần cũ bị bỏ. */
   let searchSeq = 0
 
@@ -185,8 +194,8 @@ export const useNotesStore = defineStore('notes', () => {
     const diskBodies = Array.isArray(stored[NOTE_BODIES_CACHE_KEY])
       ? (stored[NOTE_BODIES_CACHE_KEY] as NoteBody[])
       : []
-    notes.value = mergeSnapshotWithStored(notes.value, diskNotes, isRowDirty)
-    bodies.value = mergeSnapshotWithStored(bodies.value, diskBodies, isRowDirty)
+    notes.value = mergeSnapshotWithStored(notes.value, diskNotes, isRowDirty, removedIds)
+    bodies.value = mergeSnapshotWithStored(bodies.value, diskBodies, isRowDirty, removedIds)
 
     // S1: merge có thể kéo row CIPHERTEXT từ đĩa vào RAM (context khác vừa ghi bản niêm phong)
     // → decrypt lại cho folder đang unlock, nếu không UI hiện chuỗi `retronote:1:…`.
@@ -694,6 +703,7 @@ export const useNotesStore = defineStore('notes', () => {
       return
     }
     await noteBodiesService.delete(id)
+    markRemoved([], [id])
     bodies.value = bodies.value.filter((b) => b.id !== id)
     if (activeBodyId.value === id) {
       const rest = bodiesForNote(prev.note_id)
@@ -716,6 +726,7 @@ export const useNotesStore = defineStore('notes', () => {
 
   async function deleteNoteImmediately(id: string): Promise<void> {
     await notesService.delete(id)
+    markRemoved([id], bodies.value.filter((b) => b.note_id === id).map((b) => b.id))
     notes.value = notes.value.filter((n) => n.id !== id)
     bodies.value = bodies.value.filter((b) => b.note_id !== id)
     if (activeNoteId.value === id) activeNoteId.value = null
@@ -768,6 +779,7 @@ export const useNotesStore = defineStore('notes', () => {
     const prevActiveNoteId = activeNoteId.value
     const prevActiveBodyId = activeBodyId.value
 
+    markRemoved([id], noteBodies.map(({ body }) => body.id))
     notes.value = notes.value.filter((n) => n.id !== id)
     bodies.value = bodies.value.filter((b) => b.note_id !== id)
     searchResults.value = searchResults.value.filter((n) => n.id !== id)
@@ -839,6 +851,9 @@ export const useNotesStore = defineStore('notes', () => {
     noteIndex: number,
     noteBodies: { body: NoteBody; index: number }[],
   ): void {
+    // C16: khôi phục → lần persist sau phải ghi lại row này.
+    removedIds.delete(note.id)
+    for (const { body } of noteBodies) removedIds.delete(body.id)
     if (!notes.value.some((n) => n.id === note.id)) {
       const nextNotes = notes.value.slice()
       nextNotes.splice(Math.min(Math.max(noteIndex, 0), nextNotes.length), 0, note)

@@ -67,6 +67,11 @@ export function mergeSnapshotWithStored<T extends { id: string; updated_at: stri
   snapshot: T[],
   stored: T[],
   isDirty: (row: T) => boolean,
+  /**
+   * C16: id mà CHÍNH context này cố ý xóa — row đĩa có id ở đây không được giữ dù dirty (không đăng nhập mọi row
+   * `synced_at = null` → luôn dirty → row vừa xóa bị kéo về).
+   */
+  dropIds?: ReadonlySet<string>,
 ): T[] {
   if (stored.length === 0) return snapshot
   const storedById = new Map(stored.map((r) => [r.id, r]))
@@ -79,7 +84,7 @@ export function mergeSnapshotWithStored<T extends { id: string; updated_at: stri
   })
   const mineIds = new Set(snapshot.map((r) => r.id))
   for (const disk of stored) {
-    if (mineIds.has(disk.id)) continue
+    if (mineIds.has(disk.id) || dropIds?.has(disk.id)) continue
     if (isDirty(disk)) out.push(disk)
   }
   return out

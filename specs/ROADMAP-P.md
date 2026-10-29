@@ -58,7 +58,9 @@ Mức công: **S** ≤ ½ ngày · **M** 1–2 ngày · **L** ≥ 3 ngày.
 
 | **U28** | **Thanh dọc chỉ icon + tooltip** (Sir, 2026-10-29: "không cần bấm vào phóng to ra mà mặc định là những icon category, rê chuột vào sẽ là tooltip"): bỏ ☰ + bảng nổi có chữ; mỗi icon Lịch / Ghi chú / Bookmark có tooltip khi rê chuột hoặc focus bằng bàn phím | S | Thấp | Không còn ☰ / bảng nổi; tooltip hiện khi hover + focus |
 
-**Thứ tự:** P1 → P2 (nhỏ, độc lập, ai cũng hưởng) → P3 → P4 (P4 dùng plain text nhớ sẵn của P3) → P5 → U28.
+| **C16** | **Lỗi có từ bản trên Store** (phát hiện khi smoke test đợt này, tái hiện trên 2.0.0 gốc): **không đăng nhập, xóa ghi chú / section / sự kiện lịch thì dòng không mất** — kho máy đã xóa nhưng cache giữ, mở lại popup vẫn còn. Gốc: N5 giữ row dirty vắng trong snapshot, mà row không đăng nhập luôn dirty. Sửa: store nhớ id mình cố ý xóa, `persistCache` không kéo về | S | Vừa (đụng N5 — harness đa ngữ cảnh phải PASS) | Xóa → mất ngay, hết 5 s + mở lại vẫn mất; hoàn tác vẫn chạy |
+
+**Thứ tự:** P1 → P2 (nhỏ, độc lập, ai cũng hưởng) → P3 → P4 (P4 dùng plain text nhớ sẵn của P3) → P5 → U28 → C16.
 **Phát hành 2.0.1:** 5 mục GREEN → `npm run sync-version` (2.0.1) → What's new trong README + mô tả Store →
 bảng số đo trước / sau → Sir verify tay → upload `dist/`. Quyền trong manifest **không đổi** (cập nhật không bị
 Chrome tạm tắt).
@@ -101,3 +103,4 @@ gộp vào cuối 2.0.1.
 | P4 | `0177ab1` → (commit này) | ✅ 8/8 (RED 5) | Tìm 2.000 ghi chú, khớp tất cả: **11.741 ms (đơ 8 s) → ~340 ms**, chỉ lần đầu một đoạn 165 ms (dựng plain text), sau đó 0 đoạn đơ; "kafka" 40 kết quả, "strong" 0 kết quả (trước: khớp mọi ghi chú có chữ đậm). Đăng nhập: hết tải cả kho từ Supabase khi full-text không khớp / lỗi. Giữ W3 của S2C1 (lọc khóa nằm trong `runSearch`); vá mock `@/utils/noteSearch` cho S2C1.5 / 1.6 / 1.7. Sửa kỳ vọng sai của chính test P4 (ca "o" → "e": ghi chú E không có chữ o) |
 | P5 | `3571bb4` → (commit này) | ✅ 12/12 (RED 7, 5 ca chốt chặn) | Mở popup ổn định (2.000 ghi chú): **hết ghi lại cache** (trước: `set` 7,2 MB + 267 KB mỗi lần mở), storage ops 27 → 23, đoạn đơ 190 → 122 ms, tới lịch ~505–559 ms (2.0.0: 790–880 ms). Gõ 24 ký tự: đọc lớn **10 → 2** (badge hết đọc lại kho). Vá mock `@/utils/rowsEqual` cho C11, U1-U2, U3, S2C1.5 / 1.6 / 1.7 (không đổi assertion); sửa regex T4.1 của chính test P5 (chữ ký hàm nhiều dòng) |
 | U28 | `c92031e` → (commit này) | ✅ 5/5 (RED 4) | Chromium: thanh dọc 3 icon (hết ☰ / bảng nổi), icon đầu thẳng hàng logo (tâm 30 px); rê chuột / Tab → tooltip tên mục bên phải, sáng + tối; không lỗi console. Đổi assertion có chủ đích: U20.2, U20.4, U20.6, U20.7, U22.1, U23.4, U24.2, U26.3 |
+| C16 | `eacb85d` → (commit này) | ✅ 9/9 (RED 6) | Chromium, không đăng nhập: xóa ghi chú → mất ngay (trước: vẫn hiện), hết 5 s + mở lại popup vẫn mất (đĩa: kho máy = cache); xóa sự kiện lịch / section tương tự; hoàn tác vẫn chạy; smoke test 7/7, không lỗi console |

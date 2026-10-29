@@ -91,10 +91,13 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     gridFocusDateKey.value = null
   }
 
+  /** C16: id sự kiện context này cố ý xóa — persistCache không kéo về từ đĩa; khôi phục thì gỡ ra. */
+  const removedIds = new Set<string>()
+
   async function persistCache(): Promise<void> {
     const stored = await chrome.storage.local.get(CALENDAR_EVENTS_CACHE_KEY)
     const disk = readCachedArray<CalendarEvent>(stored[CALENDAR_EVENTS_CACHE_KEY]) ?? []
-    events.value = mergeSnapshotWithStored(events.value, disk, isCalendarEventDirty)
+    events.value = mergeSnapshotWithStored(events.value, disk, isCalendarEventDirty, removedIds)
     await safeCacheWrite({ [CALENDAR_EVENTS_CACHE_KEY]: events.value }, (e) => {
       loadError.value = e instanceof Error ? e.message : 'Cache write failed'
     })
@@ -246,6 +249,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     const prevActiveDate = activeDate.value
     const prevActiveEventId = activeEventId.value
 
+    removedIds.add(id)
     events.value = events.value.filter((e) => e.id !== id)
     if (activeEventId.value === id) activeEventId.value = null
     await persistCache()
@@ -287,6 +291,7 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   }
 
   function restoreEventSnapshot(event: CalendarEvent, index: number): void {
+    removedIds.delete(event.id)
     if (events.value.some((e) => e.id === event.id)) return
     const next = events.value.slice()
     next.splice(Math.min(Math.max(index, 0), next.length), 0, event)
