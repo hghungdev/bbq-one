@@ -1,6 +1,5 @@
 import { supabase } from './supabase'
-import { noteBodiesService } from './noteBodies.service'
-import type { Note, NoteBody } from '@/types'
+import type { Note } from '@/types'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localNotesService } from '@/services/localFirst/localNotes.service'
 import {
@@ -121,85 +120,39 @@ export const notesService = {
   },
 
   /**
-   * Full-text search: title/tags trên notes + label/content trên note_bodies.
-   * Cloud: FTS với fallback substring. Local: substring search.
+   * Full-text phía server (đăng nhập): title/tags trên notes + label/content trên note_bodies, gốc từ tiếng Anh.
+   * P4: không đăng nhập / lỗi / không khớp → [] — store đã tìm trên RAM (filterNotesByText); không tải cả kho
+   * (getAll) về lọc ở mỗi nhịp gõ nữa.
    */
   async searchFullText(query: string): Promise<Note[]> {
     const q = query.trim()
-    if (!q) return notesService.getAll()
+    if (!q || !(await isAuthenticated())) return []
 
-    if (await isAuthenticated()) {
-      const { data: titleRows, error: errTitle } = await supabase
-        .from('notes')
-        .select('*')
-        .textSearch('fts', q, { type: 'plain', config: 'english' })
-        .order('updated_at', { ascending: false })
+    const { data: titleRows, error: errTitle } = await supabase
+      .from('notes')
+      .select('*')
+      .textSearch('fts', q, { type: 'plain', config: 'english' })
+      .order('updated_at', { ascending: false })
 
-      const { data: bodyIdRows, error: errBody } = await supabase
-        .from('note_bodies')
-        .select('note_id')
-        .textSearch('fts', q, { type: 'plain', config: 'english' })
+    const { data: bodyIdRows, error: errBody } = await supabase
+      .from('note_bodies')
+      .select('note_id')
+      .textSearch('fts', q, { type: 'plain', config: 'english' })
 
-      if (errTitle || errBody) {
-        const all = await notesService.getAll()
-        const bodies = await noteBodiesService.getAll()
-        return filterNotesBySubstring(all, bodies, q)
-      }
+    if (errTitle || errBody) return []
 
-      const ids = new Set<string>()
-      for (const n of titleRows ?? []) ids.add(n.id)
-      for (const b of bodyIdRows ?? []) ids.add(b.note_id)
+    const ids = new Set<string>()
+    for (const n of titleRows ?? []) ids.add(n.id)
+    for (const b of bodyIdRows ?? []) ids.add(b.note_id)
+    if (ids.size === 0) return []
 
-      if (ids.size === 0) {
-        const all = await notesService.getAll()
-        const bodies = await noteBodiesService.getAll()
-        return filterNotesBySubstring(all, bodies, q)
-      }
+    const { data: merged, error: errIn } = await supabase
+      .from('notes')
+      .select('*')
+      .in('id', [...ids])
+      .order('updated_at', { ascending: false })
 
-      const idList = [...ids]
-      const { data: merged, error: errIn } = await supabase
-        .from('notes')
-        .select('*')
-        .in('id', idList)
-        .order('updated_at', { ascending: false })
-
-      if (errIn) {
-        const all = await notesService.getAll()
-        const bodies = await noteBodiesService.getAll()
-        return filterNotesBySubstring(all, bodies, q)
-      }
-      return (merged ?? []).map(acceptServerRow)
-    }
-
-    // Local mode: substring search
-    const allNotes = await notesService.getAll()
-    const allBodies = await noteBodiesService.getAll()
-    return filterNotesBySubstring(allNotes, allBodies, q)
+    if (errIn) return []
+    return (merged ?? []).map(acceptServerRow)
   },
-}
-
-/** Lọc title/tags + nội dung body (substring). Dùng chung API + store. */
-export function filterNotesBySubstring(
-  notes: Note[],
-  bodies: NoteBody[],
-  query: string,
-): Note[] {
-  const lower = query.trim().toLowerCase()
-  if (!lower) return []
-  const byNote = new Map<string, NoteBody[]>()
-  for (const b of bodies) {
-    const list = byNote.get(b.note_id) ?? []
-    list.push(b)
-    byNote.set(b.note_id, list)
-  }
-  return notes.filter((n) => {
-    if (n.title.toLowerCase().includes(lower)) return true
-    if (n.tags.some((t) => t.toLowerCase().includes(lower))) return true
-    const bs = byNote.get(n.id) ?? []
-    for (const b of bs) {
-      if (b.label.toLowerCase().includes(lower)) return true
-      if (b.content.toLowerCase().includes(lower)) return true
-    }
-    return false
-  })
 }

@@ -98,6 +98,6 @@ gộp vào cuối 2.0.1.
 | P1 | `0ba90d0` → (commit này) | ✅ 8/8 (RED 7) | Google chậm 3 s: popup vẽ sau **144–236 ms** (trước 3.184 ms); 0 request ra ngoài; tiếng Việt đúng Inter (subset vietnamese) |
 | P2 | `36249c8` → (commit này) | ✅ 4/4 (RED 3) | `dist/` **11 MB / 295 file → 3,2 MB / 42 file** (còn lại: WASM 0,6 MB, font P1 0,46 MB, app 0,45 MB); HTML tô màu giống hệt (10 ngôn ngữ × 2 theme); Chromium: code block tô màu light + dark |
 | P3 | `86789b5` → (commit này) | ✅ 18/18 (RED 6) | Thư mục 600 ghi chú **3.020 → 193 ms** (vẽ 60 dòng, cuộn tới đâu vẽ tới đó); gõ ghi chú 0 longtask; mở ghi chú 128 → 74 ms; tìm 2.000 ghi chú 11,7 → 2,8 s (phần còn lại: P4). Vá mock `@/utils/noteBodyIndex` cho S2C1.5 / 1.6 / 1.7 (không đổi assertion) |
-| P4 | | | |
+| P4 | `0177ab1` → (commit này) | ✅ 8/8 (RED 5) | Tìm 2.000 ghi chú, khớp tất cả: **11.741 ms (đơ 8 s) → ~340 ms**, chỉ lần đầu một đoạn 165 ms (dựng plain text), sau đó 0 đoạn đơ; "kafka" 40 kết quả, "strong" 0 kết quả (trước: khớp mọi ghi chú có chữ đậm). Đăng nhập: hết tải cả kho từ Supabase khi full-text không khớp / lỗi. Giữ W3 của S2C1 (lọc khóa nằm trong `runSearch`); vá mock `@/utils/noteSearch` cho S2C1.5 / 1.6 / 1.7. Sửa kỳ vọng sai của chính test P4 (ca "o" → "e": ghi chú E không có chữ o) |
 | P5 | | | |
 | U28 | | | |

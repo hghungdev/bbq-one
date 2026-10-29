@@ -91,7 +91,7 @@ if (NS?.filterNotesByText && TX?.bodySearchText) {
     ['ĐƯỜNG', 'E'],
     ['select 1', 'E'],
     ['   meeting  ', 'A'],
-    ['o', 'A,B,C,D,E'],
+    ['e', 'A,B,C,D,E'],
   ]
   const bad = cases.filter(([q, want]) => ids(q) !== want).map(([q, want]) => `"${q}" → [${ids(q)}] (cần [${want}])`)
   check('T1.1 khớp tên / thẻ / nhãn / CHỮ trong body; KHÔNG khớp thẻ HTML; giữ thứ tự; hoa thường như nhau', bad.length === 0, bad.join('; '))
@@ -135,10 +135,17 @@ check(
     /\.map\(acceptServerRow\)/.test(sft),
   'searchFullText vẫn tải cả kho / còn filterNotesBySubstring',
 )
+let parses = 0
+const countingDocument = { createElement: () => { parses++; return fakeDocument.createElement() } }
+const TX2 = load('src/utils/text.ts', {}, { document: countingDocument })
+const shared = { content: '<p>Xin <b>Chào</b></p>' }
+const plain = TX2.bodyPlainText?.(shared)
+const lower = TX2.bodySearchText?.(shared)
+const again = TX2.bodySearchText?.(shared)
 check(
-  'T2.4 text.ts: bodySearchText (chữ thường) nhớ cùng chỗ với bodyPlainText',
-  /export function bodySearchText\(/.test(read('src', 'utils', 'text.ts')) && /bodyPlainCache/.test(read('src', 'utils', 'text.ts').match(/export function bodySearchText[\s\S]*?\n}\n/)?.[0] ?? ''),
-  'chưa có bodySearchText dùng chung bodyPlainCache',
+  'T2.4 text.ts: bodySearchText = chữ thường của bodyPlainText, dùng chung bộ nhớ (cả hai chỉ dựng DOM 1 lần)',
+  plain === 'Xin Chào' && lower === 'xin chào' && again === lower && parses === 1,
+  `plain=${plain} lower=${lower} parses=${parses}`,
 )
 
 console.log('\n──────────────────────────────────────────────')

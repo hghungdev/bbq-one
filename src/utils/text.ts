@@ -20,14 +20,25 @@ export function plainTextFromHtml(html: string): string {
  * P3: plain text của một body, nhớ theo chính object body (`WeakMap` — body bị thay / xóa thì tự giải phóng).
  * Danh sách / kết quả tìm gọi lại liên tục mà không dựng DOM lại; content đổi tại chỗ → tính lại.
  */
-const bodyPlainCache = new WeakMap<object, { html: string; text: string }>()
+const bodyPlainCache = new WeakMap<object, { html: string; text: string; lower?: string }>()
+
+function bodyPlainEntry(body: Pick<NoteBody, 'content'>): { html: string; text: string; lower?: string } {
+  const hit = bodyPlainCache.get(body)
+  if (hit && hit.html === body.content) return hit
+  const entry = { html: body.content, text: plainTextFromHtml(body.content) }
+  bodyPlainCache.set(body, entry)
+  return entry
+}
 
 export function bodyPlainText(body: Pick<NoteBody, 'content'>): string {
-  const hit = bodyPlainCache.get(body)
-  if (hit && hit.html === body.content) return hit.text
-  const text = plainTextFromHtml(body.content)
-  bodyPlainCache.set(body, { html: body.content, text })
-  return text
+  return bodyPlainEntry(body).text
+}
+
+/** P4: plain text chữ thường để tìm — nhớ cùng chỗ (bodyPlainCache), không lowercase lại mỗi lần gõ. */
+export function bodySearchText(body: Pick<NoteBody, 'content'>): string {
+  const entry = bodyPlainEntry(body)
+  entry.lower ??= entry.text.toLowerCase()
+  return entry.lower
 }
 
 /** Plain text cho clipboard — giữ xuống dòng từ block (innerText). */

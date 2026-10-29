@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { NOTE_BODIES_CACHE_KEY, NOTES_CACHE_KEY } from '@/constants/storage'
 import { noteBodiesService } from '@/services/noteBodies.service'
-import { filterNotesBySubstring, notesService } from '@/services/notes.service'
+import { notesService } from '@/services/notes.service'
 import {
   localNoteBodiesService,
   localNotesService,
@@ -24,6 +24,7 @@ import { useLangStore } from '@/stores/uiLang'
 import { safeCacheWrite } from '@/utils/cacheWrite'
 import { sealSecureRowsForCache } from '@/utils/secureCache'
 import { indexBodiesByNote } from '@/utils/noteBodyIndex'
+import { filterNotesByText } from '@/utils/noteSearch'
 
 const NETWORK_LOAD_MS = 12_000
 
@@ -98,28 +99,46 @@ export const useNotesStore = defineStore('notes', () => {
       )
   }
 
+  /** P4: lần tìm mới nhất — kết quả server về muộn của lần cũ bị bỏ. */
+  let searchSeq = 0
+
   async function runSearch(query: string): Promise<void> {
     const q = query.trim()
+    const seq = ++searchSeq
     searchQuery.value = q
     if (!q) {
       searchResults.value = []
+      searchLoading.value = false
       return
     }
-    searchLoading.value = true
-    try {
-      const fromApi = await notesService.searchFullText(q)
-      const fromStore = filterNotesBySubstring(notes.value, bodies.value, q)
-      const byId = new Map<string, Note>()
-      for (const n of fromApi) byId.set(n.id, n)
-      for (const n of fromStore) byId.set(n.id, n)
-      searchResults.value = [...byId.values()]
+    const setSearchResults = (list: Note[]): void => {
+      searchResults.value = list
         .filter((n) => !isEncryptedEnvelope(n.title))
         .sort(
           (a, b) =>
             new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
         )
-    } finally {
+    }
+    // P4: RAM có đủ ghi chú (cache + kho máy) → tìm ngay trên chữ, không đọc lại kho từ đĩa.
+    const fromStore = filterNotesByText(notes.value, bodiesByNote.value, q)
+    setSearchResults(fromStore)
+    if (!useAuthStore().isAuthenticated) {
       searchLoading.value = false
+      return
+    }
+    // Đăng nhập: gộp thêm full-text server (gốc từ tiếng Anh). Lỗi → giữ kết quả RAM.
+    searchLoading.value = true
+    try {
+      const fromApi = await notesService.searchFullText(q)
+      if (seq !== searchSeq) return
+      const byId = new Map<string, Note>()
+      for (const n of fromApi) byId.set(n.id, n)
+      for (const n of fromStore) byId.set(n.id, n)
+      setSearchResults([...byId.values()])
+    } catch (e) {
+      console.warn('[notes] server search failed — showing local results', e)
+    } finally {
+      if (seq === searchSeq) searchLoading.value = false
     }
   }
 
