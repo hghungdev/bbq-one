@@ -4,6 +4,8 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 **Version:** 2.0.0
 
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
+
 ---
 
 ## Table of contents
@@ -115,7 +117,7 @@ Full policy: [`docs/privacy-policy.html`](docs/privacy-policy.html) — also hos
 
 ## Install
 
-**End users:** install from the **Chrome Web Store** when the listing is published, then pin the extension and open it from the toolbar.
+**End users:** install BBQOne from the [**Chrome Web Store**](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll), then pin the extension and open it from the toolbar.
 
 **Developers / testers:** see [Development](#development) to load an unpacked build from `dist/`.
 

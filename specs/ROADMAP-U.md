@@ -342,3 +342,7 @@ các khối (`spaceBlockBoundaries`); C14 Esc đóng hộp Đăng nhập + focus
 tên "(no name)" khi hiển thị / đường dẫn tìm kiếm (`unwrapBookmarkRoot`). S3a thêm mock cho import mới (không đổi
 assertion). Ảnh Store `design/store/` chụp lại. 63 harness PASS.
 
+
+**R4 (2026-10-29 — Sir: "Extension đã đưa release lên chrome store rùi"):** README trỏ tới listing Store — link ở mục
+Install (bỏ "when the listing is published") + badge tĩnh đầu trang; link không mang `authuser` / `hl`. Test 3/3
+(RED 3). 65 harness PASS.
