@@ -84,7 +84,10 @@ gộp vào cuối 2.0.1.
   đang dùng (không thêm thư viện).
 - Công **M–L** (~2–3 ngày), rủi ro vừa: test file hỏng / sai định dạng / rất lớn / hết quota, gộp trùng id.
 
-## 2.1 — chức năng mới (đánh giá trước, làm sau 2.0.x)
+## 2.1 — chức năng mới: CHỈ LÀ ĐÁNH GIÁ, CHƯA DUYỆT
+
+> **Sir (2026-10-29): chưa chốt mục nào cho 2.1.** Bảng dưới chỉ ghi mức công để tham khảo — **không làm, không viết
+> spec** mục nào cho tới khi Sir yêu cầu cụ thể.
 
 | # | Việc | Công | Ghi chú |
 |---|---|---|---|
