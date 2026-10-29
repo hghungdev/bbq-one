@@ -1,4 +1,7 @@
-# F1 — Tìm ghi chú từ thanh địa chỉ (gõ `bb …`) + sao chép thẳng — BẢN MÔ TẢ, CHỜ SIR DUYỆT
+# F1 — Tìm ghi chú từ thanh địa chỉ (gõ `bb …`) + sao chép thẳng — BẢN MÔ TẢ (đã chốt → `F1-omnibox-search.spec.md`)
+
+> **Sir chốt 2026-10-29:** từ khóa `bbq`; **Enter = mở, Alt+Enter = sao chép** (đảo so với đề xuất dưới); sao chép
+> **cả ghi chú**; không tìm lịch. Bản làm theo: `specs/F1-omnibox-search.spec.md`. Phần dưới giữ nguyên làm lịch sử.
 
 > **Trạng thái: chưa làm.** Sir (2026-10-29): "Tìm từ thanh địa chỉ … mình thực hiện như thế nào", "có copy được
 > không", "nhờ bạn mô tả giúp" — đã chọn hướng **cách 2: Enter = sao chép thẳng**. Khi Sir chốt các câu hỏi ở cuối →
