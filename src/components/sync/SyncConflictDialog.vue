@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import type { ConflictReport } from '@/services/localFirst/conflictDetector'
@@ -7,14 +8,24 @@ import { useLangStore } from '@/stores/uiLang'
 
 const { t } = useLangStore()
 
-defineProps<{
+const props = defineProps<{
   report: ConflictReport
   visible: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   resolve: [strategy: SyncStrategy]
 }>()
+
+/** U29: Esc = Hủy (như bấm ra ngoài) — không đóng cả extension. */
+function onKeydown(e: KeyboardEvent): void {
+  if (!props.visible || e.key !== 'Escape') return
+  e.preventDefault()
+  emit('resolve', 'cancel')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>

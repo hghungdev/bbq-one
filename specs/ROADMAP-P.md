@@ -60,6 +60,8 @@ Mức công: **S** ≤ ½ ngày · **M** 1–2 ngày · **L** ≥ 3 ngày.
 
 | **C16** | **Lỗi có từ bản trên Store** (phát hiện khi smoke test đợt này, tái hiện trên 2.0.0 gốc): **không đăng nhập, xóa ghi chú / section / sự kiện lịch thì dòng không mất** — kho máy đã xóa nhưng cache giữ, mở lại popup vẫn còn. Gốc: N5 giữ row dirty vắng trong snapshot, mà row không đăng nhập luôn dirty. Sửa: store nhớ id mình cố ý xóa, `persistCache` không kéo về | S | Vừa (đụng N5 — harness đa ngữ cảnh phải PASS) | Xóa → mất ngay, hết 5 s + mở lại vẫn mất; hoàn tác vẫn chạy |
 
+| **U29** | **Esc không đóng extension** (Sir, 2026-10-29: "bấm ESC bị tự động tắt … khi nào click chuột ra ngoài extension thì mới đóng"): chặn Esc ở mức trang (`main.ts`, pha capture, không chặn lan truyền); 4 lớp chưa nghe Esc (menu ⚙, 3 hộp thoại đồng bộ) → Esc = hành động bấm ra ngoài | S | Thấp | Popup thật: Esc ở màn hình chính không đóng; Esc chỉ đóng lớp trong cùng |
+
 **Thứ tự:** P1 → P2 (nhỏ, độc lập, ai cũng hưởng) → P3 → P4 (P4 dùng plain text nhớ sẵn của P3) → P5 → U28 → C16.
 **Phát hành 2.0.1:** 5 mục GREEN → `npm run sync-version` (2.0.1) → What's new trong README + mô tả Store →
 bảng số đo trước / sau → Sir verify tay → upload `dist/`. Quyền trong manifest **không đổi** (cập nhật không bị
@@ -108,3 +110,4 @@ gộp vào cuối 2.0.1.
 | U28 | `c92031e` → (commit này) | ✅ 5/5 (RED 4) | Chromium: thanh dọc 3 icon (hết ☰ / bảng nổi), icon đầu thẳng hàng logo (tâm 30 px); rê chuột / Tab → tooltip tên mục bên phải, sáng + tối; không lỗi console. Đổi assertion có chủ đích: U20.2, U20.4, U20.6, U20.7, U22.1, U23.4, U24.2, U26.3 |
 | C16 | `eacb85d` → (commit này) | ✅ 9/9 (RED 6) | Chromium, không đăng nhập: xóa ghi chú → mất ngay (trước: vẫn hiện), hết 5 s + mở lại popup vẫn mất (đĩa: kho máy = cache); xóa sự kiện lịch / section tương tự; hoàn tác vẫn chạy; smoke test 7/7, không lỗi console |
 | F3 | `6c5d80c` → (commit này) | ✅ 15/15 (RED 15) | Chromium (không đăng nhập): "Họp tuần" hằng tuần × 4 → cùng `series_id`, dấu ↻ cạnh tên; sửa lần 2 "Từ đây về sau" → lần 2–4 đổi, lần 1 giữ ("Sẽ sửa 3 sự kiện"); xóa "Cả chuỗi" → 1 lượt hoàn tác cho 4 sự kiện, hoàn tác về đủ; xóa lại + hết 5 s + mở lại popup → chỉ còn sự kiện đơn; nhãn phạm vi không bị cắt (en / vi, sáng / tối) |
+| U29 | `32a9a63` → (commit này) | ✅ 6/6 (RED 6) | Popup thật (CDP): màn hình chính Esc → popup **vẫn mở** (trước: đóng); form Thêm sự kiện → Esc đóng form, Esc lần 2 popup vẫn mở; menu ⚙ → Esc đóng menu, popup còn |

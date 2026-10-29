@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { CALENDAR_MAX_EVENTS_PER_DAY } from '@/constants/calendar'
 import RetroButton from '@/components/ui/RetroButton.vue'
@@ -21,6 +21,16 @@ const emit = defineEmits<{
   save: [selections: CalendarDayKeepSelection[]]
   cancel: []
 }>()
+
+/** U29: Esc = Hủy (như bấm ra ngoài) — không đóng cả extension. */
+function onKeydown(e: KeyboardEvent): void {
+  if (!props.visible || e.key !== 'Escape') return
+  e.preventDefault()
+  emit('cancel')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 const langStore = useLangStore()
 const { t } = langStore
