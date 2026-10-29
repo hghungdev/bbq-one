@@ -93,7 +93,7 @@ gộp vào cuối 2.0.1.
 
 | # | Việc | Công | Ghi chú |
 |---|---|---|---|
-| F1 | **Tìm từ thanh địa chỉ** (việc nhỏ số 6): gõ `bb <từ khóa>` | S–M (~1 ngày) | Khóa `omnibox` trong manifest — không hiện cảnh báo quyền. Service worker đọc `notes_cache` (bỏ qua mục mã hóa); Enter → mở popup đúng ghi chú qua `BBQ_PENDING_ROUTE_KEY` + `chrome.action.openPopup` (cách menu chuột phải đang dùng) — cần thêm route mở thẳng một ghi chú |
+| F1 | **Tìm từ thanh địa chỉ** (việc nhỏ số 6): gõ `bb <từ khóa>` — Sir chọn **cách 2: Enter = sao chép thẳng**, Alt+Enter = mở | S–M (~1–1,5 ngày) | **Bản mô tả: `specs/F1-omnibox-proposal.md` — chờ Sir chốt 4 câu hỏi.** Không thêm quyền (omnibox không cảnh báo; sao chép dùng clipboardWrite + offscreen sẵn có) |
 | ~~F2~~ | ~~Dời việc quá hạn sang hôm nay~~ — **BỎ** | — | Sir (2026-10-29): "Vẫn giữ việc overdue ngày setup" — việc quá hạn giữ nguyên ngày đã đặt, không dời |
 | F3 | **Sửa / xóa cả chuỗi sự kiện lặp** (số 7a) — ✅ **Sir duyệt (2026-10-29), đã làm** | M | Xem Trạng thái. **Sir chạy `supabase/migrations/018_calendar_series.sql` trước khi phát hành** (upsert đẩy mọi cột). Chuỗi tạo trước F3 không có `series_id` → vẫn sửa / xóa từng cái |
 | — | Ghi nhanh từ trang web, giờ + nhắc việc, Side Panel (gợi ý 1–3 hôm 2026-10-29) | M mỗi mục | Nhắc việc cần quyền `notifications` → để ở `optional_permissions`, xin khi bật |
