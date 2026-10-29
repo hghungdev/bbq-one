@@ -93,7 +93,7 @@ const titleText = (): string => {
       v-if="open"
       class="secure-modal__backdrop bbqone-overlay"
       role="presentation"
-      @click.self="emit('close')"
+      @mousedown.self.prevent
     >
       <div
         ref="panelRef"

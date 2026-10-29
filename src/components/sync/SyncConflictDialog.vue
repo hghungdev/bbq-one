@@ -30,7 +30,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 <template>
   <Transition name="dialog">
-    <div v-if="visible" class="conflict-overlay" @click.self="$emit('resolve', 'cancel')">
+    <div v-if="visible" class="conflict-overlay" @mousedown.self.prevent>
       <div class="conflict-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-conflict-title">
         <header class="conflict-dialog__header">
           <h2 id="sync-conflict-title" class="conflict-dialog__title">{{ t('sync.conflict.title') }}</h2>

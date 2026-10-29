@@ -239,10 +239,6 @@ watch(
   },
 )
 
-function onBackdropClick(): void {
-  store.closeModal()
-}
-
 function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     e.preventDefault()
@@ -380,10 +376,12 @@ async function saveForm(): Promise<void> {
 
 <template>
   <Teleport to="body">
+    <!-- U31: bấm nền KHÔNG đóng (đang gõ dở thì mất chữ) — chỉ ✕ hoặc Esc; chặn mousedown để focus / con trỏ gõ ở
+         nguyên trong hộp (Esc vẫn tới đúng hộp). -->
     <div
       class="cal-modal__backdrop bbqone-overlay"
       role="presentation"
-      @click.self="onBackdropClick"
+      @mousedown.self.prevent
     >
       <div
         class="cal-modal"

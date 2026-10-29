@@ -49,7 +49,7 @@ function snippet(entry: ConflictBackupEntry): string {
 
 <template>
   <Transition name="dialog">
-    <div v-if="visible" class="conflict-backups-overlay" @click.self="$emit('close')">
+    <div v-if="visible" class="conflict-backups-overlay" @mousedown.self.prevent>
       <div class="conflict-backups-dialog" role="dialog" aria-modal="true" aria-labelledby="conflict-backups-title">
         <header class="conflict-backups-dialog__header">
           <h2 id="conflict-backups-title" class="conflict-backups-dialog__title">

@@ -135,7 +135,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
       v-if="open"
       class="account-modal__backdrop bbqone-overlay"
       role="presentation"
-      @click.self="emit('close')"
+      @mousedown.self.prevent
     >
       <div
         ref="panelRef"

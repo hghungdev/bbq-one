@@ -164,7 +164,7 @@ function sourceLabel(source: 'local' | 'cloud'): string {
         v-if="visible && currentDay"
         class="cal-overflow-overlay bbqone-overlay"
         role="presentation"
-        @click.self="emit('cancel')"
+        @mousedown.self.prevent
       >
         <div
           class="cal-overflow-dialog"

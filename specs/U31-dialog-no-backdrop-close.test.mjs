@@ -58,6 +58,13 @@ for (const [rel, closeBtn] of Object.entries(DIALOGS)) {
   const backdropClose = /@click\.self=/.test(tpl) || /class="settings-backdrop"[^>]*@click/.test(tpl)
   check(`U31.1 ${name}: không còn đóng khi bấm nền`, !backdropClose, (/[^\n]*@click\.self=[^\n]*/.exec(tpl) ?? ['settings-backdrop @click'])[0].trim())
   check(`U31.2 ${name}: hết hàm onBackdropClick thừa`, !/onBackdropClick/.test(src), 'còn onBackdropClick')
+  // Bấm nền mà để focus rơi về <body> thì Esc của hộp nghe trên panel không chạy nữa, và Esc của hộp xác nhận
+  // (C12 — chặn lan trên panel) lọt xuống hộp bên dưới → lớp nền phải chặn mousedown (giữ focus trong hộp).
+  check(
+    `U31.6 ${name}: lớp nền chặn mousedown (focus + con trỏ gõ ở nguyên trong hộp)`,
+    /<div\b[^>]*class="[^"]*(backdrop|overlay)[^"]*"[^>]*@mousedown(\.self)?\.prevent[\s/>]/.test(tpl),
+    'bấm nền làm mất focus',
+  )
   check(
     `U31.3 ${name}: vẫn đóng được bằng Esc + nút ✕ / Hủy / Đóng`,
     /'Escape'/.test(scriptOf(src)) && closeBtn.test(tpl),
@@ -76,7 +83,8 @@ function walk(dir) {
       for (const tag of tpl.match(/<[a-zA-Z][^>]*>/g) ?? []) {
         // `bbqone-overlay` là class xếp lớp dùng chung (cả menu nổi) — chỉ xét lớp nền thật: …backdrop / …-overlay.
         const classes = (/\bclass="([^"]*)"/.exec(tag)?.[1] ?? '').split(/\s+/).filter((c) => c !== 'bbqone-overlay')
-        if (classes.some((c) => /backdrop|overlay/.test(c)) && /@(click|mousedown|pointerdown)\b/.test(tag)) {
+        // `@mousedown(.self).prevent` không kèm hàm (chỉ giữ focus) được phép; mọi trình xử lý có hàm thì không.
+        if (classes.some((c) => /backdrop|overlay/.test(c)) && (/@(click|pointerdown)\b/.test(tag) || /@mousedown[.\w]*=/.test(tag))) {
           offenders.push(`${path.relative(ROOT, p)}: ${tag.replace(/\s+/g, ' ').slice(0, 120)}`)
         }
       }
@@ -84,7 +92,7 @@ function walk(dir) {
   }
 }
 walk(path.join(ROOT, 'src'))
-check('U31.4 không lớp nền / overlay nào gắn @click / @mousedown / @pointerdown', offenders.length === 0, offenders.join(' | '))
+check('U31.4 không lớp nền / overlay nào gắn @click / @pointerdown / @mousedown="…" (đóng hộp)', offenders.length === 0, offenders.join(' | '))
 
 console.log('\nT3 — menu / bảng nổi vẫn đóng khi bấm ra ngoài (KHÔNG đổi)')
 check(

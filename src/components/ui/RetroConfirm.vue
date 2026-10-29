@@ -80,7 +80,7 @@ onUnmounted(() => {
         v-if="open"
         class="retro-confirm__backdrop bbqone-overlay"
         role="presentation"
-        @click.self="dismiss"
+        @mousedown.self.prevent
       >
         <div
           ref="panelRef"

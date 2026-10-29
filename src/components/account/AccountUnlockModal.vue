@@ -82,7 +82,7 @@ function onClose(): void {
       v-if="open"
       class="account-modal__backdrop bbqone-overlay"
       role="presentation"
-      @click.self="onClose"
+      @mousedown.self.prevent
     >
       <div
         ref="panelRef"
