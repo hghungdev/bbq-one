@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch, useId } from 'vue'
 import { storeToRefs } from 'pinia'
 import { CALENDAR_MAX_EVENTS_PER_DAY, CALENDAR_TITLE_MAX } from '@/constants/calendar'
-import { useCalendarEventsStore } from '@/stores/calendarEvents'
+import { useCalendarEventsStore, type SeriesScope } from '@/stores/calendarEvents'
 import { useLangStore } from '@/stores/uiLang'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
@@ -45,6 +45,24 @@ const REPEAT_LABEL: Record<RecurrenceFreq, I18nKey> = {
 }
 const repeatFreq = ref<RecurrenceFreq>('none')
 const repeatCount = ref(RECURRENCE_DEFAULT_COUNT.weekly)
+/** F3: phạm vi sửa / xóa sự kiện thuộc chuỗi lặp — segmented như "Lặp lại"; mặc định chỉ sự kiện này. */
+const SERIES_SCOPES: SeriesScope[] = ['one', 'following', 'all']
+const SERIES_LABEL: Record<SeriesScope, I18nKey> = {
+  one: 'calendar.series.one',
+  following: 'calendar.series.following',
+  all: 'calendar.series.all',
+}
+const editScope = ref<SeriesScope>('one')
+const deleteScope = ref<SeriesScope>('one')
+const editSeriesSize = computed(() => (store.activeEventId ? store.seriesSize(store.activeEventId) : 1))
+const deleteSeriesSize = computed(() => (pendingDeleteId.value ? store.seriesSize(pendingDeleteId.value) : 1))
+const editScopeCount = computed(() =>
+  store.activeEventId ? store.seriesTargets(store.activeEventId, editScope.value).length : 0,
+)
+const deleteScopeCount = computed(() =>
+  pendingDeleteId.value ? store.seriesTargets(pendingDeleteId.value, deleteScope.value).length : 0,
+)
+
 /** Báo sau khi lưu (vd ngày bị bỏ qua vì đã đủ) — sống qua cancelForm. */
 const resultInfo = ref<string | null>(null)
 
@@ -144,6 +162,22 @@ function stepRepeat(delta: number): void {
   repeatCount.value = clampRepeatCount(repeatCount.value + delta)
 }
 
+/** F3: radiogroup phạm vi — ← → / ↑ ↓ / Home / End đổi lựa chọn + dời focus (như "Lặp lại"). */
+function nextScope(e: KeyboardEvent, current: SeriesScope): SeriesScope {
+  const n = SERIES_SCOPES.length
+  const i = SERIES_SCOPES.indexOf(current)
+  let next: number
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % n
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + n) % n
+  else if (e.key === 'Home') next = 0
+  else if (e.key === 'End') next = n - 1
+  else return current
+  e.preventDefault()
+  const group = e.currentTarget as HTMLElement
+  void nextTick(() => group.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus())
+  return SERIES_SCOPES[next]
+}
+
 /** Radiogroup: ← → / ↑ ↓ / Home / End đổi tần suất và dời focus theo (roving tabindex). */
 function onRepeatKeydown(e: KeyboardEvent): void {
   const n = REPEAT_OPTIONS.length
@@ -183,6 +217,7 @@ watch(
   () => store.activeEventId,
   (id) => {
     validationError.value = null
+    editScope.value = 'one'
     if (!id) {
       formTitle.value = ''
       return
@@ -267,6 +302,8 @@ async function onToggleDone(id: string, e: Event): Promise<void> {
 
 function requestDelete(id: string, e: Event): void {
   e.stopPropagation()
+  // F3: xóa từ form sửa → mặc định theo phạm vi đang chọn trong form.
+  deleteScope.value = showForm.value && id === store.activeEventId ? editScope.value : 'one'
   pendingDeleteId.value = id
   confirmOpen.value = true
 }
@@ -276,7 +313,7 @@ async function confirmDelete(): Promise<void> {
   pendingDeleteId.value = null
   if (!id) return
   try {
-    await store.deleteEvent(id)
+    await store.deleteSeries(id, deleteScope.value)
     if (store.activeEventId === id && store.activeDate) store.openModalForDate(store.activeDate)
     isCreating.value = false
   } catch (e) {
@@ -324,7 +361,7 @@ async function saveForm(): Promise<void> {
       }
       cancelForm()
     } else if (store.activeEventId) {
-      await store.updateEvent(store.activeEventId, { title })
+      await store.updateSeries(store.activeEventId, editScope.value, { title })
       cancelForm()
     }
   } catch (e) {
@@ -425,6 +462,13 @@ async function saveForm(): Promise<void> {
                 />
                 <span class="cal-modal__swatch" aria-hidden="true" />
                 <span class="cal-modal__row-title">{{ ev.title }}</span>
+                <span
+                  v-if="store.seriesSize(ev.id) > 1"
+                  class="cal-modal__series"
+                  role="img"
+                  :aria-label="t('calendar.series.badge')"
+                  :title="t('calendar.series.badge')"
+                ><AppIcon name="repeat" :size="13" /></span>
               </label>
               <!-- U15: ✎ / 🗑 như menu ⚙ của thư mục, ghi chú — hiện khi rê chuột / focus. -->
               <button
@@ -468,6 +512,33 @@ async function saveForm(): Promise<void> {
               @update:model-value="formTitle = $event"
             />
             <p v-if="validationError" class="cal-form__error" role="alert">{{ validationError }}</p>
+          </div>
+
+          <!-- F3: sự kiện thuộc chuỗi lặp — chọn sửa riêng lần này, từ đây về sau, hay cả chuỗi. -->
+          <div v-if="!isCreating && editSeriesSize > 1" class="cal-form__group">
+            <span :id="`${headingId}-scope`" class="ds-label">{{ t('calendar.series.applyTo') }}</span>
+            <div
+              class="cal-form__segmented cal-form__segmented--3"
+              role="radiogroup"
+              :aria-labelledby="`${headingId}-scope`"
+              @keydown="editScope = nextScope($event, editScope)"
+            >
+              <button
+                v-for="s in SERIES_SCOPES"
+                :key="s"
+                type="button"
+                role="radio"
+                class="cal-form__segment"
+                :class="{ 'cal-form__segment--on': editScope === s }"
+                :aria-checked="editScope === s"
+                :tabindex="editScope === s ? 0 : -1"
+                :disabled="busy"
+                @click="editScope = s"
+              >
+                {{ t(SERIES_LABEL[s]) }}
+              </button>
+            </div>
+            <p class="cal-form__scope-hint">{{ t('calendar.series.willChange', { n: editScopeCount }) }}</p>
           </div>
 
           <div v-if="isCreating" class="cal-form__group">
@@ -606,11 +677,39 @@ async function saveForm(): Promise<void> {
   <RetroConfirm
     v-model:open="confirmOpen"
     variant="danger"
-    :title="t('calendar.modal.confirmDeleteTitle')"
-    :message="t('calendar.modal.confirmDeleteDetail')"
+    :title="deleteSeriesSize > 1 ? t('calendar.series.deleteTitle') : t('calendar.modal.confirmDeleteTitle')"
+    :message="
+      deleteSeriesSize > 1
+        ? t('calendar.series.willDelete', { n: deleteScopeCount })
+        : t('calendar.modal.confirmDeleteDetail')
+    "
     @confirm="confirmDelete"
     @cancel="onCancelDelete"
-  />
+  >
+    <!-- F3: xóa sự kiện thuộc chuỗi lặp — chọn phạm vi ngay trong hộp xác nhận. -->
+    <template v-if="deleteSeriesSize > 1" #default>
+      <div
+        class="cal-form__segmented cal-form__segmented--3"
+        role="radiogroup"
+        :aria-label="t('calendar.series.applyTo')"
+        @keydown="deleteScope = nextScope($event, deleteScope)"
+      >
+        <button
+          v-for="s in SERIES_SCOPES"
+          :key="s"
+          type="button"
+          role="radio"
+          class="cal-form__segment"
+          :class="{ 'cal-form__segment--on': deleteScope === s }"
+          :aria-checked="deleteScope === s"
+          :tabindex="deleteScope === s ? 0 : -1"
+          @click="deleteScope = s"
+        >
+          {{ t(SERIES_LABEL[s]) }}
+        </button>
+      </div>
+    </template>
+  </RetroConfirm>
 </template>
 
 <style scoped>
@@ -734,8 +833,9 @@ async function saveForm(): Promise<void> {
   cursor: pointer;
 }
 
+/* F3: không giãn hết hàng — dấu ↻ đứng ngay sau tên (nhãn bao ngoài vẫn chiếm cả hàng để bấm). */
 .cal-modal__row-title {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   color: var(--text-primary);
   font-size: var(--font-size-sm);
@@ -837,6 +937,15 @@ async function saveForm(): Promise<void> {
   padding: 3px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+/* F3: nhóm phạm vi chỉ 3 lựa chọn — chia 3 cột (lưới 4 cột của "Lặp lại" làm nhãn bị cắt). */
+.cal-form__segmented--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cal-form__segmented--3 .cal-form__segment {
+  padding-inline: 4px;
 }
 
 .cal-form__segment {
@@ -944,6 +1053,19 @@ html[data-theme='dark'] .cal-form__segment--on {
 .cal-form__count::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* F3: dấu ↻ của sự kiện thuộc chuỗi lặp + dòng "Sẽ sửa n sự kiện". */
+.cal-modal__series {
+  display: inline-flex;
+  flex: none;
+  color: var(--text-muted);
+}
+
+.cal-form__scope-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .cal-form__until {

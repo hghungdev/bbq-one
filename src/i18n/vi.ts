@@ -15,6 +15,7 @@ export const vi: Record<I18nKey, string> = {
   'undo.noFolder': 'Không có thư mục',
   'undo.noteDeleted': 'Đã xóa ghi chú “{title}” · Thư mục: {folder}',
   'undo.calendarEventDeleted': 'Đã xóa sự kiện “{title}” · Ngày: {date}',
+  'undo.calendarSeriesDeleted': 'Đã xóa {n} sự kiện “{title}”',
   'undo.bookmarkBackupDeleted': 'Đã xóa backup bookmark “{label}”',
 
   // ── App header ──
@@ -371,6 +372,14 @@ export const vi: Record<I18nKey, string> = {
   'calendar.repeat.increase': 'Thêm một lần',
   'calendar.repeat.skipChip': 'Ngày này đã đủ {max} sự kiện — bỏ qua',
   'calendar.repeat.moreDates': 'và {n} ngày khác',
+  'calendar.series.applyTo': 'Áp dụng cho',
+  'calendar.series.one': 'Sự kiện này',
+  'calendar.series.following': 'Từ đây về sau',
+  'calendar.series.all': 'Cả chuỗi',
+  'calendar.series.willChange': 'Sẽ sửa {n} sự kiện',
+  'calendar.series.willDelete': 'Sẽ xóa {n} sự kiện. Bạn có thể hoàn tác trong 5 giây.',
+  'calendar.series.deleteTitle': 'Xóa sự kiện lặp?',
+  'calendar.series.badge': 'Sự kiện lặp',
   'calendar.modal.field.titlePlaceholder': 'Tiêu đề sự kiện',
   'calendar.modal.field.descPlaceholder': 'Ghi chú (tuỳ chọn)',
   'calendar.modal.btn.add': '+ Thêm sự kiện',

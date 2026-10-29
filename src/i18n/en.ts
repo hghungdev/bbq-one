@@ -13,6 +13,7 @@ export const en = {
   'undo.noFolder': 'No folder',
   'undo.noteDeleted': 'Deleted note “{title}” · Folder: {folder}',
   'undo.calendarEventDeleted': 'Deleted event “{title}” · Date: {date}',
+  'undo.calendarSeriesDeleted': 'Deleted {n} events “{title}”',
   'undo.bookmarkBackupDeleted': 'Deleted bookmark backup “{label}”',
 
   // ── App header ──
@@ -369,6 +370,14 @@ export const en = {
   'calendar.repeat.increase': 'One more',
   'calendar.repeat.skipChip': 'Already {max} events — skipped',
   'calendar.repeat.moreDates': 'and {n} more dates',
+  'calendar.series.applyTo': 'Apply to',
+  'calendar.series.one': 'This event',
+  'calendar.series.following': 'This & following',
+  'calendar.series.all': 'All events',
+  'calendar.series.willChange': 'Will update {n} events',
+  'calendar.series.willDelete': 'Will delete {n} events. You can undo within 5 seconds.',
+  'calendar.series.deleteTitle': 'Delete repeating event?',
+  'calendar.series.badge': 'Repeating event',
   'calendar.modal.field.titlePlaceholder': 'Event title',
   'calendar.modal.field.descPlaceholder': 'Optional notes',
   'calendar.modal.btn.add': '+ Add event',

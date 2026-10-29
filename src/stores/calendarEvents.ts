@@ -23,6 +23,9 @@ import { sameRows } from '@/utils/rowsEqual'
 
 const NETWORK_LOAD_MS = 12_000
 
+/** F3: phạm vi khi sửa / xóa sự kiện thuộc chuỗi lặp. */
+export type SeriesScope = 'one' | 'following' | 'all'
+
 export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   const events = ref<CalendarEvent[]>([])
   const loadError = ref<string | null>(null)
@@ -192,13 +195,15 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
   ): Promise<{ created: CalendarEvent[]; skipped: string[] }> {
     const created: CalendarEvent[] = []
     const skipped: string[] = []
+    // F3: mọi lần lặp tạo cùng lúc có chung series_id → sửa / xóa được cả chuỗi.
+    const seriesId = crypto.randomUUID()
     for (const dateKey of recurrenceDates(input.event_date, rule.freq, rule.count)) {
       if (eventsForDate(dateKey).length >= CALENDAR_MAX_EVENTS_PER_DAY) {
         skipped.push(dateKey)
         continue
       }
       try {
-        created.push(await createEvent({ ...input, event_date: dateKey }))
+        created.push(await createEvent({ ...input, event_date: dateKey, series_id: seriesId }))
       } catch (e) {
         if (e instanceof Error && e.message === 'MAX_EVENTS_PER_DAY') {
           skipped.push(dateKey)
@@ -242,48 +247,113 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     }
   }
 
+  /** F3: số sự kiện cùng chuỗi (đếm một lượt cho cả kho). */
+  const seriesCounts = computed(() => {
+    const map = new Map<string, number>()
+    for (const e of events.value) {
+      if (e.series_id) map.set(e.series_id, (map.get(e.series_id) ?? 0) + 1)
+    }
+    return map
+  })
+
+  /** F3: số sự kiện trong chuỗi của `id` — không thuộc chuỗi = 1. */
+  function seriesSize(id: string): number {
+    const sid = events.value.find((e) => e.id === id)?.series_id
+    return sid ? seriesCounts.value.get(sid) ?? 1 : 1
+  }
+
+  /**
+   * F3: sự kiện bị ảnh hưởng khi sửa / xóa `id` theo phạm vi — `one` hoặc không thuộc chuỗi → chỉ chính nó;
+   * `following` → cùng chuỗi từ ngày của nó trở đi; `all` → cả chuỗi. Sắp theo ngày.
+   */
+  function seriesTargets(id: string, scope: SeriesScope): CalendarEvent[] {
+    const ev = events.value.find((e) => e.id === id)
+    if (!ev) return []
+    const sid = ev.series_id
+    if (scope === 'one' || !sid) return [ev]
+    return events.value
+      .filter((e) => e.series_id === sid && (scope === 'all' || e.event_date >= ev.event_date))
+      .sort((a, b) => a.event_date.localeCompare(b.event_date) || a.position - b.position)
+  }
+
+  /** F3: sửa theo phạm vi — từng sự kiện đi qua updateEvent (offline / xung đột như sửa đơn lẻ). */
+  async function updateSeries(id: string, scope: SeriesScope, updates: CalendarEventUpdateInput): Promise<void> {
+    for (const ev of seriesTargets(id, scope)) {
+      await updateEvent(ev.id, updates)
+    }
+  }
+
+  /** F3: xóa theo phạm vi — một lượt hoàn tác cho cả nhóm. */
+  async function deleteSeries(id: string, scope: SeriesScope): Promise<void> {
+    await deleteEvents(seriesTargets(id, scope).map((e) => e.id))
+  }
+
   async function deleteEvent(id: string): Promise<void> {
-    const eventIndex = events.value.findIndex((e) => e.id === id)
-    const event = eventIndex === -1 ? null : { ...events.value[eventIndex] }
-    if (!event) return
+    await deleteEvents([id])
+  }
+
+  /**
+   * Xóa (có hoàn tác 5 s) một hoặc nhiều sự kiện. F3: nhiều sự kiện = MỘT lượt hoàn tác, id hành động
+   * `calendar:<id1>,<id2>,…` (hàng đợi xóa tách từng id khi popup đóng giữa chừng).
+   */
+  async function deleteEvents(ids: string[]): Promise<void> {
+    const snaps: { event: CalendarEvent; index: number }[] = []
+    for (const id of ids) {
+      const index = events.value.findIndex((e) => e.id === id)
+      if (index !== -1) snaps.push({ event: { ...events.value[index] }, index })
+    }
+    if (snaps.length === 0) return
+    const idSet = new Set(snaps.map((s) => s.event.id))
     const prevActiveDate = activeDate.value
     const prevActiveEventId = activeEventId.value
 
-    removedIds.add(id)
-    events.value = events.value.filter((e) => e.id !== id)
-    if (activeEventId.value === id) activeEventId.value = null
+    for (const id of idSet) removedIds.add(id)
+    events.value = events.value.filter((e) => !idSet.has(e.id))
+    if (activeEventId.value && idSet.has(activeEventId.value)) activeEventId.value = null
     await persistCache()
 
+    // Khôi phục theo vị trí cũ tăng dần — chèn lại đúng chỗ.
+    const restore = (list: { event: CalendarEvent; index: number }[]): void => {
+      for (const s of [...list].sort((a, b) => a.index - b.index)) restoreEventSnapshot(s.event, s.index)
+      if (activeDate.value === null) activeDate.value = prevActiveDate
+      if (activeEventId.value === null && prevActiveEventId && list.some((s) => s.event.id === prevActiveEventId)) {
+        activeEventId.value = prevActiveEventId
+      }
+    }
+
+    const first = snaps[0].event
     const undoToast = useUndoToastStore()
     const { t } = useLangStore()
     await undoToast.schedule({
-      id: `calendar:${id}`,
-      message: t('undo.calendarEventDeleted', {
-        title: event.title,
-        date: event.event_date,
-      }),
+      id: `calendar:${snaps.map((s) => s.event.id).join(',')}`,
+      message:
+        snaps.length === 1
+          ? t('undo.calendarEventDeleted', {
+              title: first.title,
+              date: first.event_date,
+            })
+          : t('undo.calendarSeriesDeleted', { n: snaps.length, title: first.title }),
       undo: async () => {
-        restoreEventSnapshot(event, eventIndex)
-        if (activeDate.value === null) activeDate.value = prevActiveDate
-        if (activeEventId.value === null && prevActiveEventId === id) {
-          activeEventId.value = prevActiveEventId
-        }
+        restore(snaps)
         await persistCache()
       },
       commit: async () => {
-        try {
-          await calendarEventsService.delete(id)
-        } catch (e) {
-          if (isNetworkError(e)) {
+        const failed: { event: CalendarEvent; index: number }[] = []
+        for (const s of snaps) {
+          try {
+            await calendarEventsService.delete(s.event.id)
+          } catch (e) {
+            if (isNetworkError(e)) {
+              // Giữ hàng đợi xóa (C3) — flush sau xóa lại cả lượt (xóa lại cái đã xóa không lỗi).
+              loadError.value = e instanceof Error ? e.message : 'Delete calendar event failed'
+              throw e
+            }
             loadError.value = e instanceof Error ? e.message : 'Delete calendar event failed'
-            throw e
+            failed.push(s)
           }
-          restoreEventSnapshot(event, eventIndex)
-          if (activeDate.value === null) activeDate.value = prevActiveDate
-          if (activeEventId.value === null && prevActiveEventId === id) {
-            activeEventId.value = prevActiveEventId
-          }
-          loadError.value = e instanceof Error ? e.message : 'Delete calendar event failed'
+        }
+        if (failed.length > 0) {
+          restore(failed)
           await persistCache()
         }
       },
@@ -355,6 +425,10 @@ export const useCalendarEventsStore = defineStore('calendarEvents', () => {
     createRecurringEvents,
     updateEvent,
     deleteEvent,
+    seriesSize,
+    seriesTargets,
+    updateSeries,
+    deleteSeries,
     toggleDone,
     markEventsDone,
     openModalForDate,

@@ -278,7 +278,7 @@ check(
 )
 check(
   'T4.6 danh sách ngày: dấu ↻ (icon repeat) cho sự kiện thuộc chuỗi; icon repeat trong bộ chung',
-  /v-if="store\.seriesSize\(ev\.id\) > 1"[\s\S]{0,200}name="repeat"/.test(modal) && /\brepeat: \[/.test(read2('src', 'components', 'ui', 'icons.ts')),
+  /v-if="store\.seriesSize\(ev\.id\) > 1"[\s\S]{0,300}name="repeat"/.test(modal) && /\brepeat: \[/.test(read2('src', 'components', 'ui', 'icons.ts')),
   'thiếu dấu ↻',
 )
 const vi = read2('src', 'i18n', 'vi.ts')

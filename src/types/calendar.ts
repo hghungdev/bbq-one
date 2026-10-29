@@ -19,6 +19,11 @@ export interface CalendarEvent {
   created_at: string
   updated_at: string
   synced_at: string | null
+  /**
+   * F3: chuỗi sự kiện lặp — các lần lặp tạo cùng lúc có chung id. Không có / null = sự kiện đơn (hoặc chuỗi tạo
+   * trước F3, khi chưa có cột này).
+   */
+  series_id?: string | null
 }
 
 /** Input shape when creating a new event */
@@ -28,6 +33,7 @@ export type CalendarEventCreateInput = Pick<
 > & {
   position?: number
   color?: string | null
+  series_id?: string | null
 }
 
 /** Input shape when updating */
