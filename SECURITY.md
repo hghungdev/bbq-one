@@ -11,9 +11,9 @@
 CSP cho `extension_pages` nằm trong `public/manifest.json`:
 
 - `script-src 'self' 'wasm-unsafe-eval'` — cho phép bundle extension + WebAssembly (Shiki highlight).
-- `style-src` — `'self'`, `'unsafe-inline'` (HTML từ Shiki), và `https://fonts.googleapis.com` (stylesheet IBM Plex Mono).
-- `font-src` — `self`, `https://fonts.gstatic.com`, `data:`.
-- `connect-src` — Supabase HTTPS + Google Fonts (see current `public/manifest.json`).
+- `style-src` — `'self'`, `'unsafe-inline'` (HTML từ Shiki, style scoped của Vue).
+- `font-src` — `'self'`, `data:` — font Inter đóng gói kèm (`src/assets/fonts/inter/`, P1), không gọi máy chủ font ngoài.
+- `connect-src` — `'self'` + Supabase HTTPS (see current `public/manifest.json`).
 
 Sau khi đổi CSP, load lại extension từ `dist/` và smoke test login, search, editor (Shiki).
 

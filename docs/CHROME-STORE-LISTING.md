@@ -68,7 +68,7 @@ By default BBQOne keeps **notes, bookmark backups, and calendar events** on your
 - **Optional sync:** Sign in through **Supabase** when you want multi-device continuity — **HTTPS** in transit plus **Row Level Security** so only your account can read/write your rows.  
 
 **Network use (plain language):**  
-Without signing in, the extension does **not** need your browsing history as a feature. Normal use talks to **`*.supabase.co`** only when you opt into cloud sync (auth + sync). Extension pages may load **Google Fonts** (`fonts.googleapis.com` / `fonts.gstatic.com`) for typography — see the Privacy Policy.  
+Without signing in, the extension does **not** need your browsing history as a feature. Normal use talks to **`*.supabase.co`** only when you opt into cloud sync (auth + sync). Fonts (Inter) are bundled with the extension, so without sign-in it makes **no** network requests — see the Privacy Policy.  
 
 BBQOne does **not** run a behavioral ad network inside the extension. Read the Privacy Policy below for hosting, accountability, and what Supabase sign-in implies.
 
@@ -102,7 +102,7 @@ Clean, flat layout: a compact **side rail** for Calendar / Notes / Bookmarks (�
 **Authoritative policy:**  
 https://hghungdev.github.io/bbq-one/privacy-policy.html  
 
-The policy names **Supabase** (auth + optional sync), **Google Fonts**, **clipboard/offscreen** (copy-to-clipboard helper), **`downloads`** (e.g. bookmark export), **`bookmarks`** and **`chrome.storage`** — aligned with current permissions.
+The policy names **Supabase** (auth + optional sync), the optional **Google Calendar** link, **clipboard/offscreen** (copy-to-clipboard helper), **`downloads`** (e.g. bookmark export), **`bookmarks`** and **`chrome.storage`** — aligned with current permissions.
 
 ---
 

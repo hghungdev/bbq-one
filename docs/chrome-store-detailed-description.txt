@@ -32,7 +32,7 @@ PRIVACY-FIRST
 
 No account required. No ads, no analytics, no tracking.
 No content scripts — BBQOne cannot read or modify the pages you visit.
-Without sign-in, your notes, bookmarks, and events stay on your device; the only network request is the Inter font from Google Fonts. After sign-in, BBQOne talks only to its Supabase backend for sign-in and sync.
+Without sign-in, your notes, bookmarks, and events stay on your device and BBQOne makes no network requests (fonts are bundled). After sign-in, BBQOne talks only to its Supabase backend for sign-in and sync.
 
 Encrypted before upload: notes in secure folders. Regular notes, folders, bookmark backups, and calendar events are stored under your account, isolated by Row Level Security.
 

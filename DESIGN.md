@@ -108,7 +108,7 @@ Search focus intentionally uses **yellow**; “today” in the grid uses **blue*
 - **Letter-spacing:** body text uses normal/tight spacing; headings and tabs use `-0.012em` to `-0.035em`. Avoid wide terminal-style tracking except for monospace metadata.
 - **Weights:** 400 body, 600 labels/buttons, 700 section/card headings. Avoid 500 unless a component already uses it intentionally.
 - **Brand line:** `BBQOne` in header — `font-size: 17px`, `font-weight: 700`, `letter-spacing: -0.035em`, `color: var(--accent)`.
-- **Google Fonts:** Inter loaded on extension pages per CSP (`fonts.googleapis.com`).
+- **Font files:** Inter is bundled with the extension (`src/assets/fonts/inter/`, declared in `src/assets/styles/fonts.css`) — no external font requests.
 
 ---
 

@@ -95,7 +95,7 @@ gộp vào cuối 2.0.1.
 
 | Mục | Commit (docs → perf) | Test | Số đo sau |
 |---|---|---|---|
-| P1 | | | |
+| P1 | `0ba90d0` → (commit này) | ✅ 8/8 (RED 7) | Google chậm 3 s: popup vẽ sau **144–236 ms** (trước 3.184 ms); 0 request ra ngoài; tiếng Việt đúng Inter (subset vietnamese) |
 | P2 | | | |
 | P3 | | | |
 | P4 | | | |
