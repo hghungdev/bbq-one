@@ -105,6 +105,14 @@ gộp vào cuối 2.0.1.
   đang dùng (không thêm thư viện).
 - Công **M–L** (~2–3 ngày), rủi ro vừa: test file hỏng / sai định dạng / rất lớn / hết quota, gộp trùng id.
 
+## 2.1.1 — SEC1 Bản vá bảo mật (✅ đã làm — `specs/SEC1-hardening-2.1.1.spec.md`)
+
+Từ rà soát `specs/SEC-REDTEAM-2026-10-29.md` (Sir duyệt 2026-10-29): SEC-1 (vá thư viện, phần không đổi bản lớn),
+SEC-7 (escape `HREF` khi xuất HTML), SEC-8 (lọc `\r` / ký tự điều khiển trong lịch ICS + khi nạp file), SEC-4 (lọc
+link `javascript:` / `data:` khi khôi phục bookmark), SEC-6 (đọc HTML trên tài liệu trơ → ảnh không tự tải), SEC-5
+(siết CSP). Quyền không đổi. **Sir deploy lại Edge Function `calendar-feed`.** Còn mở: Tiptap v3 (24 cảnh báo vừa),
+vite dev, SEC-2 / 3 / 9 / 10 / 11 / 12.
+
 ## Ý tưởng chức năng sau (trước gọi "2.1"): CHỈ LÀ ĐÁNH GIÁ, CHƯA DUYỆT
 
 > **Sir (2026-10-29): chưa chốt mục nào trong danh sách này** (bản 2.1.0 là B1). Bảng dưới chỉ ghi mức công để tham khảo — **không làm, không viết
@@ -140,3 +148,4 @@ gộp vào cuối 2.0.1.
 | R5 | `2265bc1` → (commit này) | ✅ 7/7 (RED 6) | Phiên bản 2.0.1: manifest / package.json / package-lock.json; `dist/manifest.json` 2.0.1, quyền = 2.0.0 + khóa `omnibox` (không cảnh báo); `dist/` 3,2 MB / 42 file. README "What changed in 2.0.1"; Store: "Release 2.0.1 (highlights)" + "WHAT'S NEW IN 2.0.1"; permissions doc v2.0.1; privacy policy áp dụng từ 2.0.1 + đoạn Address bar search; DESIGN.md sơ đồ khung mới. Đổi assertion có chủ đích: R1.1–R1.5 (phiên bản hiện tại thay cứng 2.0.0), R2.1 / R2.2 / R2.4 |
 | U36 | `9a86634` → (commit này) | ✅ 7/7 (RED 5) | Chromium: 5 sự kiện tên ngắn (như ảnh Sir) → `Today 5 events` / `Hôm nay 5 sự kiện · Ngày mai 2` (trước: tên); 1 sự kiện → tên; chỉ ngày mai 3 → `Ngày mai 3 sự kiện`; tooltip đọc đủ tên; không lỗi console. Đổi assertion có chủ đích: U18 T0–T6 / S1, U30.4–U30.8 / U30.15. Từ U36: làm thẳng trên `main` (Sir) |
 | B1 | `17d89bc` → (commit này) | ✅ 40/40 (RED 12) | Phiên bản **2.1.0**. Chromium (không đăng nhập): mở popup có dữ liệu → tự tải file (counts đúng), mở lại cùng ngày → không tải thêm; công tắc tắt / bật lưu đúng; "Sao lưu ngay" → `bbqone-backup-…json`; file không phải JSON / app khác → báo lỗi, không ghi; **file độc** (script, `<img onerror>`, iframe, `onclick`/`style`, link `javascript:`, envelope giả, `__proto__`, id `../../etc/passwd`, 8 sự kiện / ngày, màu `url()`, bookmark `javascript:` / `data:`) → xem trước báo bỏ 3 mục + 3 bookmark; sau 2 lần xác nhận: nội dung chỉ còn `<p>`/`<strong>`/`<pre><code>`, envelope thật giữ nguyên, 6 sự kiện, màu `null`, chỉ còn link https, Object.prototype sạch, không `alert` nào chạy, không lỗi console; tiêu đề độc hiện thành chữ; bản an toàn trước khôi phục chứa dữ liệu cũ; Esc trong hộp xem trước không đóng Cài đặt. File 6,9 MB (2.000 ghi chú + 11 bản bookmark): xem trước 1,0 s, ghi + tải lại 2,5 s. Lỗi bắt được khi kiểm: mảng thành object (Proxy Vue) → `shallowRef` + bản thuần JSON; 6,4 s → 1,0 s (dựng schema một lần). Đổi assertion có chủ đích: R1.4, R2.2, R5.1 / R5.3 / R5.5 / R5.6 / R5.7, U36.6 / U36.7 |
+| SEC1 | `3df95b5` → (commit này) | ✅ 16/16 (RED 13) | Phiên bản **2.1.1**. `npm audit --omit=dev`: 9 cao → **0 cao** (prosemirror-view 1.42.8, vue 3.5.44, Tiptap 2.27.3 đồng bộ…). Chromium (không đăng nhập, CSP mới): font Inter + logo tải, code SQL tô màu Shiki (9 span); ghi chú có `<img src=https://evil.example/…>` → editor không có ảnh, tìm "tracking" ra đúng; dán HTML có `<img>` + `<iframe>` ngoài → chỉ còn chữ; **0 request ra ngoài**, 0 vi phạm CSP, console không nhắc evil.example; khôi phục bản bookmark có `javascript:` + `data:` → hộp xác nhận báo "2 bookmark dạng javascript: / data: sẽ không được khôi phục", cây Chrome sau đó chỉ còn link https; xuất HTML `HREF="https://good.example/?a=1&amp;b=%222%22"`; B1 xem trước file độc vẫn chạy; không lỗi console. Đổi assertion có chủ đích: B1.30 / B1.31 / B1.32 (phiên bản hiện tại thay cứng 2.1.0) |

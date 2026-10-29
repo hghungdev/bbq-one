@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.1.0
+**Version:** 2.1.1
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.1.1](#what-changed-in-211)
 - [What changed in 2.1.0](#what-changed-in-210)
 - [What changed in 2.0.1](#what-changed-in-201)
 - [What changed in 2.0.0](#what-changed-in-200)
@@ -56,6 +57,16 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.1.1
+
+Security hardening (from an internal "think like an attacker" review — `specs/SEC-REDTEAM-2026-10-29.md`). No new permission.
+
+- **Libraries patched:** `prosemirror-view` 1.42.8 (fixes an XSS in paste handling of the note editor), Vue 3.5.44, Tiptap 2.27.3 and build tools — `npm audit --omit=dev` has no high-severity issue left. (Remaining: moderate Tiptap advisories that need the Tiptap 3 upgrade; a `vite` dev-server advisory that does not affect the built extension.)
+- **Stricter Content Security Policy (CSP):** `default-src 'self'`; images only from the extension or `data:`; no frames, `<base>` or form posts.
+- **Bookmarks:** restoring a backup never re-creates `javascript:` / `data:` links (the confirmation tells you how many are skipped); exported HTML escapes every link.
+- **Calendar link (Google Calendar):** control characters in event titles / descriptions can no longer inject lines into the calendar file (redeploy the `calendar-feed` Edge Function).
+- **No silent image loads:** note HTML is parsed in an inert document when extracting text or pasting, so images inside notes or pasted content are never fetched in the background.
 
 ## What changed in 2.1.0
 

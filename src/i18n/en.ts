@@ -289,6 +289,7 @@ export const en = {
   'bookmark.tree': 'Tree',
   'bookmark.liveSwitchBtn': 'Live',
   'bookmark.confirmRestore': 'Restore will OVERWRITE all current bookmarks. Continue?',
+  'bookmark.restoreUnsafe': '{n} bookmarks with javascript: / data: links will not be restored — bookmarklets are blocked for safety.',
   'bookmark.deleteBackup.title': 'Delete backup',
   'bookmark.deleteBackup.warn':
     'This will delete the backup «{label}». You can undo within 5 seconds.',

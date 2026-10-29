@@ -48,7 +48,9 @@ const LOCAL = load('src/types/localFirst.ts')
 
 let B = null
 try {
-  B = load('src/utils/backupFile.ts', { '@/constants/calendar': CAL, '@/constants/storage': STORAGE, '@/types/localFirst': LOCAL, '@/utils/secureCrypto': load('src/utils/secureCrypto.ts') })
+  B = load('src/utils/backupFile.ts', { '@/constants/calendar': CAL, '@/constants/storage': STORAGE, '@/types/localFirst': LOCAL, '@/utils/secureCrypto': load('src/utils/secureCrypto.ts'),
+    // SEC1: import mới của backupFile (lọc ký tự điều khiển + danh sách trắng link) — không đổi assertion.
+    '@/utils/controlChars': load('src/utils/controlChars.ts'), '@/utils/safeUrl': load('src/utils/safeUrl.ts') })
 } catch (e) {
   check('B1.0 src/utils/backupFile.ts tồn tại', false, e.message)
 }
@@ -381,25 +383,28 @@ const missing = KEYS.filter((k) => !vi.includes(`'${k}'`) || !en.includes(`'${k}
 check('B1.29 i18n vi + en đủ chuỗi Sao lưu', missing.length === 0, missing.join(', '))
 
 console.log('\nT7 — phát hành 2.1.0')
-const V = '2.1.0'
+// SEC1 (đổi có chủ đích): 2.1.1 đã nâng — chỗ ghi "phiên bản hiện tại" kiểm theo manifest (≥ 2.1.0); phần lịch sử
+// 2.1.0 (mục README, "Release 2.1.0 (highlights)", privacy policy 2.1.0, đoạn Backup files) vẫn kiểm như cũ.
+const V = JSON.parse(read('public', 'manifest.json') || '{}').version ?? ''
+const atLeast210 = /^2\.(1\.\d+|[2-9]\d*\.\d+)$|^[3-9]\.\d+\.\d+$/.test(V)
 const manifest = JSON.parse(read('public', 'manifest.json') || '{}')
 const pkg = JSON.parse(read('package.json') || '{}')
 const lock = JSON.parse(read('package-lock.json') || '{}')
-check('B1.30 manifest / package.json / lock = 2.1.0; quyền không đổi', manifest.version === V && pkg.version === V && lock.version === V && lock.packages?.['']?.version === V &&
+check('B1.30 manifest / package.json / lock cùng phiên bản ≥ 2.1.0 (SEC1); quyền không đổi', atLeast210 && manifest.version === V && pkg.version === V && lock.version === V && lock.packages?.['']?.version === V &&
   JSON.stringify(manifest.permissions) === JSON.stringify(['storage', 'unlimitedStorage', 'contextMenus', 'alarms', 'clipboardWrite', 'offscreen', 'bookmarks', 'downloads']),
   `${manifest.version}/${pkg.version}/${lock.version}`)
 const readme = read('README.md')
-check('B1.31 README: Version 2.1.0, "What changed in 2.1.0" (mục lục, trước 2.0.1) nói sao lưu tự động + khôi phục',
+check('B1.31 README: Version = phiên bản hiện tại (SEC1), "What changed in 2.1.0" (mục lục, trước 2.0.1) nói sao lưu tự động + khôi phục',
   readme.includes(`**Version:** ${V}`) && /\[What changed in 2\.1\.0\]\(#what-changed-in-210\)/.test(readme) &&
     readme.indexOf('## What changed in 2.1.0') < readme.indexOf('## What changed in 2.0.1') && /automatic backup/i.test(readme) && /restore/i.test(readme),
   'README')
 const txt = read('docs', 'chrome-store-detailed-description.txt')
 const pp = read('docs', 'privacy-policy.html')
 check(
-  "B1.32 Store: WHAT'S NEW IN 2.1.0 + Release 2.1.0 (highlights); privacy policy áp dụng từ 2.1.0 + đoạn Backup files; permissions doc: downloads cho file sao lưu",
-  /WHAT'S NEW IN 2\.1\.0/.test(txt) && /Release 2\.1\.0 \(highlights\)/.test(read('docs', 'CHROME-STORE-LISTING.md')) &&
+  "B1.32 Store: WHAT'S NEW bản mới nhất (SEC1: 2.1.1) có sao lưu ra file + Release 2.1.0 (highlights); privacy policy áp dụng từ 2.1.0 + đoạn Backup files; permissions doc: downloads cho file sao lưu",
+  txt.includes(`WHAT'S NEW IN ${V}`) && /Backup files for use without an account/.test(txt) && /Release 2\.1\.0 \(highlights\)/.test(read('docs', 'CHROME-STORE-LISTING.md')) &&
     /applies to extension version 2\.1\.0 and later/.test(pp) && /Backup files/.test(pp) && /Downloads/.test(pp) &&
-    /\*\*v2\.1\.0\*\*/.test(read('docs', 'CHROME-STORE-PERMISSIONS.md')) && /backup file/i.test(read('docs', 'CHROME-STORE-PERMISSIONS.md')),
+    read('docs', 'CHROME-STORE-PERMISSIONS.md').includes(`**v${V}**`) && /backup file/i.test(read('docs', 'CHROME-STORE-PERMISSIONS.md')),
   'docs',
 )
 

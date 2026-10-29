@@ -12,6 +12,8 @@ import {
 } from '@/constants/storage'
 import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
 import { parseEnvelopeV2 } from '@/utils/secureCrypto'
+import { stripControlChars } from '@/utils/controlChars'
+import { isSafeBookmarkUrl } from '@/utils/safeUrl'
 
 /**
  * B1: sao lưu ra file JSON + khôi phục — phần thuần (không đụng chrome.*), test được.
@@ -310,8 +312,6 @@ export function isCiphertext(value: string): boolean {
   return ENVELOPE_V1_RE.test(value) || parseEnvelopeV2(value) !== null
 }
 
-const SAFE_URL = /^(https?|ftp|file):/i
-
 /** Cây bookmark: danh sách trắng trường; chỉ đường dẫn http(s) / ftp / file (javascript:, data: … chạy mã khi bấm). */
 function sanitizeTree(nodes: unknown[], depth: number, report: DroppedReport, budget: { left: number }): Row[] {
   if (depth > BOOKMARK_MAX_DEPTH) return []
@@ -320,11 +320,12 @@ function sanitizeTree(nodes: unknown[], depth: number, report: DroppedReport, bu
     if (budget.left <= 0) break
     const p = pick(n, NODE)
     if (!p) continue
-    if (typeof p.url === 'string' && !SAFE_URL.test(p.url.trim())) {
+    if (typeof p.url === 'string' && !isSafeBookmarkUrl(p.url)) {
       report.unsafeBookmarks++
       continue
     }
     budget.left--
+    p.title = stripControlChars(p.title as string)
     if (Array.isArray(p.children)) p.children = sanitizeTree(p.children, depth + 1, report, budget)
     out.push(p)
   }
@@ -351,11 +352,13 @@ export function parseBackup(text: string, sanitizeHtml: (html: string) => string
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return { ok: false, error: 'invalid' }
 
   const dropped: DroppedReport = { invalid: 0, duplicate: 0, orphanBodies: 0, overCap: 0, unsafeBookmarks: 0 }
-  const folders = pickAll(data.folders, FOLDER, dropped)
+  // SEC-8: tên / nhãn một dòng — ký tự điều khiển → khoảng trắng (mô tả sự kiện: giữ xuống dòng).
+  const oneLine = (r: Row, k: string): Row => ({ ...r, [k]: stripControlChars(r[k] as string) })
+  const folders = pickAll(data.folders, FOLDER, dropped).map((x) => oneLine(x, 'name'))
   const folderIds = new Set(folders.map((x) => x.id as string))
-  const notes = pickAll(data.notes, NOTE, dropped).map((n) =>
-    n.folder_id !== null && !folderIds.has(n.folder_id as string) ? { ...n, folder_id: null } : n,
-  )
+  const notes = pickAll(data.notes, NOTE, dropped)
+    .map((n) => oneLine(n, 'title'))
+    .map((n) => (n.folder_id !== null && !folderIds.has(n.folder_id as string) ? { ...n, folder_id: null } : n))
   const noteIds = new Set(notes.map((n) => n.id as string))
   const note_bodies = pickAll(data.note_bodies, NOTE_BODY, dropped)
     .filter((b) => {
@@ -363,11 +366,15 @@ export function parseBackup(text: string, sanitizeHtml: (html: string) => string
       dropped.orphanBodies++
       return false
     })
+    .map((b) => oneLine(b, 'label'))
     .map((b) => (isCiphertext(b.content as string) ? b : { ...b, content: sanitizeHtml(b.content as string) }))
 
-  const events = pickAll(data.calendar_events, EVENT, dropped).map((e) =>
-    e.color !== null && !COLOR_RE.test(e.color as string) ? { ...e, color: null } : e,
-  )
+  const events = pickAll(data.calendar_events, EVENT, dropped).map((e): Row => ({
+    ...e,
+    title: stripControlChars(e.title as string),
+    description: stripControlChars(e.description as string, true),
+    color: e.color !== null && !COLOR_RE.test(e.color as string) ? null : e.color,
+  }))
   // Tối đa CALENDAR_MAX_EVENTS_PER_DAY / ngày — giữ theo position.
   const keep = new Set<Row>()
   const byDay = new Map<string, Row[]>()
@@ -384,7 +391,7 @@ export function parseBackup(text: string, sanitizeHtml: (html: string) => string
   const calendar_events = events.filter((e) => keep.has(e))
 
   const bookmark_backups = pickAll(data.bookmark_backups, BOOKMARK_BACKUP, dropped).map((b) => ({
-    ...b,
+    ...oneLine(b, 'label'),
     tree_json: sanitizeTree(b.tree_json as unknown[], 0, dropped, { left: MAX_TREE_NODES }),
   }))
 

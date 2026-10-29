@@ -27,9 +27,18 @@ const CRLF = '\r\n'
 const TZ_RE = /^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+){0,2}$/
 const encoder = new TextEncoder()
 
-/** Escape TEXT theo RFC 5545 §3.3.11. */
+/**
+ * Escape TEXT theo RFC 5545 §3.3.11. SEC-8: `\r\n` / `\r` → xuống dòng (escape thành `\n`), MỌI ký tự điều khiển khác bị
+ * bỏ — `\r` đơn lẻ trong tên sự kiện không chèn được dòng / thuộc tính mới (URL:, BEGIN:VALARM…) vào file của Google.
+ */
 function escapeText(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
+  return s
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n')
 }
 
 /** Gập dòng ≤ 75 BYTE UTF-8 (§3.1) — không cắt giữa một ký tự nhiều byte (tiếng Việt, ✓). */

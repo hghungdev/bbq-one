@@ -291,6 +291,7 @@ export const vi: Record<I18nKey, string> = {
   'bookmark.tree': 'Cây',
   'bookmark.liveSwitchBtn': 'Trình duyệt',
   'bookmark.confirmRestore': 'Khôi phục sẽ GHI ĐÈ toàn bộ bookmark hiện tại. Tiếp tục?',
+  'bookmark.restoreUnsafe': '{n} bookmark dạng javascript: / data: sẽ không được khôi phục — bookmarklet bị chặn vì an toàn.',
   'bookmark.deleteBackup.title': 'Xóa bản sao lưu',
   'bookmark.deleteBackup.warn':
     'Thao tác này sẽ xóa bản sao lưu «{label}». Bạn có thể hoàn tác trong 5 giây.',

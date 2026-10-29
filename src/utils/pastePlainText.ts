@@ -1,5 +1,6 @@
 import { DOMParser as PMDOMParser } from 'prosemirror-model'
 import type { EditorView } from 'prosemirror-view'
+import { inertElement } from '@/utils/text'
 
 function escapeHtml(text: string): string {
   return text
@@ -71,7 +72,8 @@ export function isInternalNoteClipboardHtml(html: string): boolean {
  */
 export function sanitizeHtmlToNoteContent(html: string): string {
   if (typeof document === 'undefined') return '<p></p>'
-  const wrap = document.createElement('div')
+  // SEC-6: tài liệu trơ — HTML dán từ trang ngoài không tải được ảnh / iframe khi đang phân tích.
+  const wrap = inertElement()
   wrap.innerHTML = html
   const chunks: string[] = []
 
@@ -130,7 +132,7 @@ export function noteHtmlToPlainParagraphs(html: string): string {
 export function insertHtmlIntoEditor(view: EditorView, html: string): void {
   const { state, dispatch } = view
   const parser = PMDOMParser.fromSchema(state.schema)
-  const dom = document.createElement('div')
+  const dom = inertElement()
   dom.innerHTML = html
   const slice = parser.parseSlice(dom, { preserveWhitespace: 'full' })
   dispatch(state.tr.replaceSelection(slice).scrollIntoView())

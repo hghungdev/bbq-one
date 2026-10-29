@@ -4,6 +4,7 @@ import { unwrapBookmarkRoot } from '@/utils/bookmarkTree'
 import type { BookmarkBackup, BookmarkGlobalHit, BookmarkNode } from '@/types/bookmark'
 import { isAuthenticated } from '@/services/localFirst/authMode'
 import { localBookmarksService } from '@/services/localFirst/localBookmarks.service'
+import { filterUnsafeBookmarks } from '@/utils/safeUrl'
 
 /** Hàng raw từ Supabase (`encrypted` / `payload_*`: di sản Bookmark PIN đã gỡ — S3a). */
 interface BookmarkBackupRow {
@@ -111,13 +112,15 @@ export const bookmarksService = {
    *  trong profile đã chụp; profile/trình duyệt khác có ID khác → Chrome lỗi "Can't find parent bookmark for id".
    *  Ghép từng folder top của backup với folder top của cây live theo đúng thứ tự `getTree()` (ổn định trong Chromium).
    */
-  async restoreToChrome(tree: BookmarkNode[]): Promise<void> {
+  async restoreToChrome(input: BookmarkNode[]): Promise<{ skipped: number }> {
+    // SEC-4: chỉ tạo lại link http(s) / ftp / file — bản sao lưu (Supabase / kho máy) có thể bị cài bookmarklet độc.
+    const { tree, skipped } = filterUnsafeBookmarks(input)
     await removeChildrenOfRootTopFolders()
     const liveRoots = (
       (await chrome.bookmarks.getTree()) as unknown as BookmarkNode[]
     )[0]
     const backupRoot = tree[0]
-    if (!liveRoots?.children?.length || !backupRoot?.children?.length) return
+    if (!liveRoots?.children?.length || !backupRoot?.children?.length) return { skipped }
 
     const liveTop = liveRoots.children
     const backupTop = backupRoot.children
@@ -130,6 +133,7 @@ export const bookmarksService = {
         await importChildren(liveFolderId, backupFolder.children)
       }
     }
+    return { skipped }
   },
 
   /** Export ra file HTML (Netscape Bookmark Format) — compatible mọi browser */
@@ -146,7 +150,8 @@ export const bookmarksService = {
       const pad = '    '.repeat(indent)
       for (const n of nodes) {
         if (n.url) {
-          lines.push(`${pad}<DT><A HREF="${n.url}">${escHtml(n.title)}</A>`)
+          // SEC-7: link cũng escape — `"` trong bookmarklet không thoát được khỏi thuộc tính của file xuất.
+          lines.push(`${pad}<DT><A HREF="${escHtml(n.url)}">${escHtml(n.title)}</A>`)
         } else {
           lines.push(`${pad}<DT><H3>${escHtml(n.title)}</H3>`)
           lines.push(`${pad}<DL><p>`)

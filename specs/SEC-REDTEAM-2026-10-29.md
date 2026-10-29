@@ -13,16 +13,18 @@ biến); (4) thư viện bên thứ ba có lỗ hổng; (5) lừa người dùng
 
 ## Bảng tóm tắt (ưu tiên từ trên xuống)
 
+> **2026-10-29:** SEC-1 (phần vá), 4, 5, 6, 7, 8 đã làm trong **2.1.1** — `specs/SEC1-hardening-2.1.1.spec.md`.
+
 | # | Mức | Tình huống | Trạng thái | Công |
 |---|---|---|---|---|
-| SEC-1 | **Cao** | Thư viện trình soạn có lỗ hổng đã công bố (XSS khi dán — prosemirror-view; `__proto__` — Tiptap) | Mở | S (vá) + L (Tiptap v3) |
+| SEC-1 | **Cao** | Thư viện trình soạn có lỗ hổng đã công bố (XSS khi dán — prosemirror-view; `__proto__` — Tiptap) | ✅ 2.1.1 phần vá (0 cao); còn Tiptap v3 | S (vá) + L (Tiptap v3) |
 | SEC-2 | **Cao** | Chiếm tài khoản (đoán / lộ mật khẩu) → đọc hết + cài nội dung độc lên mọi máy | Mở một phần | M |
 | SEC-3 | **Cao** | Mã độc trên máy đọc trộm kho Chrome + file sao lưu tự động (chữ thường) | Mở | M–L |
-| SEC-4 | Vừa | Khôi phục bản sao lưu bookmark tạo lại link `javascript:` (bookmark độc tồn tại lâu dài) | Mở | S |
-| SEC-5 | Vừa | CSP thiếu `img-src` / `frame-src` / `base-uri` / `form-action` → HTML lọt vào DOM tải được tài nguyên ngoài | Mở | S |
-| SEC-6 | Vừa | Phân tích HTML trên tài liệu "sống" (innerHTML) → ảnh trong ghi chú / nội dung dán tự tải (lộ IP, theo dõi) | Mở | S |
-| SEC-7 | Vừa | Xuất bookmark HTML không escape `HREF` → file xuất mở ra chạy mã | Mở | XS |
-| SEC-8 | Vừa | Tên sự kiện có ký tự CR (`\r`) chèn được thuộc tính vào link Google Calendar (ICS) | Mở | XS |
+| SEC-4 | Vừa | Khôi phục bản sao lưu bookmark tạo lại link `javascript:` (bookmark độc tồn tại lâu dài) | ✅ 2.1.1 (SEC1) | S |
+| SEC-5 | Vừa | CSP thiếu `img-src` / `frame-src` / `base-uri` / `form-action` → HTML lọt vào DOM tải được tài nguyên ngoài | ✅ 2.1.1 (SEC1) | S |
+| SEC-6 | Vừa | Phân tích HTML trên tài liệu "sống" (innerHTML) → ảnh trong ghi chú / nội dung dán tự tải (lộ IP, theo dõi) | ✅ 2.1.1 (SEC1) | S |
+| SEC-7 | Vừa | Xuất bookmark HTML không escape `HREF` → file xuất mở ra chạy mã | ✅ 2.1.1 (SEC1) | XS |
+| SEC-8 | Vừa | Tên sự kiện có ký tự CR (`\r`) chèn được thuộc tính vào link Google Calendar (ICS) | ✅ 2.1.1 (SEC1) | XS |
 | SEC-9 | Vừa | PBKDF2 310.000 vòng cho thư mục bảo mật — dưới mức khuyến nghị 600.000 (dò mật khẩu offline khi lộ DB) | Mở | M |
 | SEC-10 | Vừa | Chuỗi cung ứng: 33 cảnh báo `npm audit`, không có kiểm tra tự động | Mở | S |
 | SEC-11 | Thấp | "Xóa tất cả bookmark của Chrome" chỉ cách 1 lần xác nhận | Mở | S |

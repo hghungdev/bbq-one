@@ -8,10 +8,25 @@ export function spaceBlockBoundaries(html: string): string {
   return html.replace(/<\/(?:p|div|li|pre|blockquote|h[1-6]|tr|td|th)\s*>|<br\s*\/?>/gi, '$& ')
 }
 
+let inertDoc: Document | null = null
+
+/**
+ * SEC-6: phần tử thuộc tài liệu TRƠ (`createHTMLDocument` — không gắn cửa sổ): gán `innerHTML` không tải ảnh / iframe,
+ * không chạy gì. Phần tử của `document` đang mở thì `<img src=…>` tự tải dù không hiển thị (lộ IP, theo dõi).
+ * Không có `document.implementation` (document giả trong test) → về `document` như cũ.
+ */
+export function inertElement(): HTMLElement {
+  if (typeof document.implementation?.createHTMLDocument === 'function') {
+    inertDoc ??= document.implementation.createHTMLDocument('')
+    return inertDoc.createElement('div')
+  }
+  return document.createElement('div')
+}
+
 /** Plain text từ HTML (dùng trong extension, có document). */
 export function plainTextFromHtml(html: string): string {
   if (typeof document === 'undefined') return ''
-  const div = document.createElement('div')
+  const div = inertElement()
   div.innerHTML = spaceBlockBoundaries(html)
   return (div.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
@@ -44,7 +59,7 @@ export function bodySearchText(body: Pick<NoteBody, 'content'>): string {
 /** Plain text cho clipboard — giữ xuống dòng từ block (innerText). */
 export function htmlToClipboardPlain(html: string): string {
   if (typeof document === 'undefined') return ''
-  const div = document.createElement('div')
+  const div = inertElement()
   div.innerHTML = html
   return (div.innerText ?? div.textContent ?? '').trim()
 }

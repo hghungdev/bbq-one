@@ -97,6 +97,8 @@ try {
     '@/utils/bookmarkTree': { unwrapBookmarkRoot: (nodes) => nodes },
     '@/services/localFirst/authMode': { isAuthenticated: async () => true },
     '@/services/localFirst/localBookmarks.service': { localBookmarksService: {} },
+    // SEC1: import mới (lọc link khi khôi phục) — không đổi assertion.
+    '@/utils/safeUrl': loadTs('src/utils/safeUrl.ts'),
   }).bookmarksService
 } catch (e) {
   check('S3a.3 bookmarks.service load được không cần code PIN', false, e.message)

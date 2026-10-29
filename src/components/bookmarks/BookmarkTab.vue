@@ -11,6 +11,7 @@ import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkGlobalHit } from '@/types/bookmark'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
 import { unwrapBookmarkRoot } from '@/utils/bookmarkTree'
+import { countUnsafeBookmarks } from '@/utils/safeUrl'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
@@ -47,6 +48,13 @@ const displayTree = computed(() =>
 const globalHits = computed(() =>
   bookmarksService.searchBookmarkGlobalHits(bm.searchQuery, bm.liveTree, bm.backups),
 )
+
+/** SEC-4: khôi phục bỏ link javascript: / data: — báo trước trong hộp xác nhận (cây hiện tại bị xóa rồi tạo lại). */
+const pendingRestoreUnsafe = computed(() => {
+  const id = pendingRestoreId.value
+  const bk = id ? bm.backups.find((b) => b.id === id) : undefined
+  return bk ? countUnsafeBookmarks(bk.tree_json ?? []) : 0
+})
 
 const pendingDeleteBackupLabel = computed(() => {
   const id = pendingDeleteBackupId.value
@@ -352,7 +360,14 @@ async function onRefreshLive(): Promise<void> {
       v-model:open="confirmRestore"
       :message="t('bookmark.confirmRestore')"
       @confirm="onRestoreConfirm"
-    />
+    >
+      <template v-if="pendingRestoreUnsafe > 0" #default>
+        <p class="bm-tab__restore-unsafe" role="note">
+          <AppIcon name="alert" :size="14" />
+          {{ t('bookmark.restoreUnsafe', { n: pendingRestoreUnsafe }) }}
+        </p>
+      </template>
+    </RetroConfirm>
     <DeleteBackupModal
       :open="confirmDeleteBackup"
       :backup-label="pendingDeleteBackupLabel"
@@ -368,6 +383,16 @@ async function onRefreshLive(): Promise<void> {
 </template>
 
 <style scoped>
+.bm-tab__restore-unsafe {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  color: var(--danger);
+}
+
 .bm-tab__tree-skel {
   display: flex;
   flex-direction: column;
