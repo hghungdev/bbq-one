@@ -161,7 +161,6 @@ if (N_NOTES > 0) {
   await page.waitForTimeout(800)
   const s = await page.evaluate(() => ({ long: window.__long.slice(), res: document.querySelectorAll('.note-item').length }))
   console.log(`[search "trading"] ${Date.now() - t}ms · ${s.res} kết quả trong DOM · longtask ${s.long.length}× ${Math.round(s.long.reduce((a, x) => a + x.d, 0))}ms (max ${Math.round(Math.max(0, ...s.long.map((x) => x.d)))})`)
-  await page.screenshot({ path: 'large-search.png' })
 }
 
 if (process.env.BOOKMARKS) {
@@ -184,7 +183,6 @@ if (process.env.BOOKMARKS) {
   const tl = Date.now() - t
   let b = await page.evaluate(() => ({ long: window.__long.slice(), nodes: document.querySelectorAll('.shell__grid--full *').length }))
   console.log(`[bookmark tab] (gồm chờ 1500) ${tl}ms · ${b.nodes} phần tử DOM · longtask ${b.long.length}× ${Math.round(b.long.reduce((a, x) => a + x.d, 0))}ms`)
-  await page.screenshot({ path: 'bookmarks.png' })
   await page.evaluate(() => { window.__long.length = 0 })
   await page.locator('.shell__grid--full .inline-search__open, .shell__grid--full button[aria-label*="earch"]').first().click().catch(() => {})
   const bin = page.locator('.shell__grid--full input').first()
