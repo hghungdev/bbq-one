@@ -75,18 +75,18 @@ console.log('\nT2 — kho máy (CODE THẬT): thêm đủ 6, cái thứ 7 bị c
   check('U30.3 6 sự kiện cùng ngày → OK; thứ 7 → MAX_EVENTS_PER_DAY', !err && arr.length === 6 && seventh?.message === 'MAX_EVENTS_PER_DAY', `${err?.message ?? ''} / ${arr.length} / ${seventh?.message}`)
 }
 
-console.log('\nT3 — chip: tên vừa hết thì hiện tên, không thì ghi số (CODE THẬT)')
+// U36 (đổi có chủ đích): Sir — chip ghi SỐ từ 2 sự kiện, không còn kiểu lai "tên vừa chỗ thì hiện tên".
+console.log('\nT3 — chip: từ 2 sự kiện ghi số, 1 sự kiện hiện tên (CODE THẬT, U36)')
 const A = load('src/utils/calendarAgenda.ts')
-const need = A.titlesNeedCount
-if (typeof need !== 'function') {
-  check('U30.4 export titlesNeedCount', false, 'chưa có')
+const uses = A.chipUsesCount
+if (typeof uses !== 'function') {
+  check('U30.4 export chipUsesCount (U36)', false, 'chưa có')
 } else {
-  check('U30.4 mọi tên vừa (60+10+70 ≤ 200) → không ghi số', need([60, 70], 200, 10) === false, String(need([60, 70], 200, 10)))
-  check('U30.5 không vừa hết (140 > 120) → ghi số', need([60, 70], 120, 10) === true, String(need([60, 70], 120, 10)))
-  check('U30.6 vừa khít (90 ≤ 90) → không ghi số', need([40, 40], 90, 10) === false, String(need([40, 40], 90, 10)))
-  check('U30.7 1 tên dài quá chỗ → vẫn hiện tên (CSS cắt "…"); 0 tên → không ghi số', need([400], 120, 10) === false && need([], 120, 10) === false, `${need([400], 120, 10)} / ${need([], 120, 10)}`)
-  const six = [30, 30, 30, 30, 30, 30] // 180 + 5×10 = 230
-  check('U30.8 6 tên: 230 ≤ 230 → hiện đủ 6 tên; 229 → ghi số (không còn "vài tên + +n")', need(six, 230, 10) === false && need(six, 229, 10) === true, `${need(six, 230, 10)} / ${need(six, 229, 10)}`)
+  check('U30.4 2 sự kiện → ghi số (U36)', uses(2) === true, String(uses(2)))
+  check('U30.5 5 sự kiện tên ngắn → vẫn ghi số (U36: không theo bề rộng)', uses(5) === true, String(uses(5)))
+  check('U30.6 6 sự kiện → ghi số', uses(6) === true, String(uses(6)))
+  check('U30.7 1 sự kiện → hiện tên (CSS cắt "…"); 0 → không ghi số', uses(1) === false && uses(0) === false, `${uses(1)} / ${uses(0)}`)
+  check('U30.8 bỏ titlesNeedCount (U36)', !('titlesNeedCount' in A), 'còn titlesNeedCount')
 }
 check('U30.9 bỏ fitTitleCount (không còn hiện một phần + "+n")', !('fitTitleCount' in A), 'vẫn export fitTitleCount')
 
@@ -134,8 +134,8 @@ const chipScript = chip.slice(0, chip.indexOf('<template>'))
 const chipTpl = chip.slice(chip.indexOf('<template>'), chip.lastIndexOf('</template>'))
 const trigger = (/<button\s+ref="triggerRef"[\s\S]*?<\/button>/.exec(chipTpl) ?? [''])[0]
 check(
-  'U30.15 chip đo thật (measureText + ResizeObserver) → titlesNeedCount; ghi số qua calendar.agenda.eventCount; hết viên "+n"',
-  /titlesNeedCount\(/.test(chipScript) && /measureText\(/.test(chipScript) && /ResizeObserver/.test(chipScript) &&
+  'U30.15 chip ghi số qua chipUsesCount → calendar.agenda.eventCount (U36: không còn đo chữ); hết viên "+n"',
+  /chipUsesCount\(/.test(chipScript) && !/measureText\(|ResizeObserver/.test(chipScript) &&
     /t\('calendar\.agenda\.eventCount', \{ n: /.test(chipScript) && !/agenda-chip__plus|hiddenCount|fitTitleCount/.test(chip),
   'chip vẫn gom "+n"',
 )

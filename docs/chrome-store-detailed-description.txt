@@ -46,7 +46,7 @@ WHAT'S NEW IN 2.0.1
 New: Search notes from the address bar — type "bbq", press Space, then a keyword (Enter opens, Alt+Enter copies the whole note)
 New: Edit or delete a whole repeating series (this event, this and following, or all)
 Improved: Much faster with thousands of notes — folders open and search finishes in a fraction of a second
-Improved: Up to 6 events per day; the header chip shows every title or the count
+Improved: Up to 6 events per day; the header chip shows how many events today has
 Improved: Fonts bundled with the extension — works fully offline; smaller download (11 MB → 3 MB)
 Improved: Full-width header with the logo top-left; icon-only side rail with tooltips
 Improved: Esc never closes the extension, and clicking outside a dialog no longer closes it — no lost typing

@@ -152,15 +152,11 @@ export function overduePanelRows(
 }
 
 /**
- * U30 (thay U18 "vài tên + +n"): chip header hiện ĐỦ tên khi tất cả vừa `available` px; không vừa hết thì
- * ghi số ("6 sự kiện") — Sir: ngày 5–6 sự kiện không được gom một phần. Một tên dài quá chỗ vẫn hiện tên
- * (CSS cắt "…"), ghi "1 sự kiện" thì mất thông tin.
+ * U36 (thay kiểu lai U30 / "vài tên + +n" U18): từ 2 sự kiện chip ghi SỐ ("Hôm nay · 5 sự kiện") — Sir chọn "chip
+ * ghi số, bảng liệt kê đủ". 1 sự kiện vẫn hiện tên (ghi "1 sự kiện" mất thông tin; CSS cắt "…" khi dài).
  */
-export function titlesNeedCount(widths: number[], available: number, sepWidth: number): boolean {
-  if (widths.length < 2) return false
-  let need = sepWidth * (widths.length - 1)
-  for (const w of widths) need += w
-  return need > available
+export function chipUsesCount(titleCount: number): boolean {
+  return titleCount >= 2
 }
 
 /** U30: số sự kiện ngày mai liệt kê trong bảng trước nút "Xem thêm n". */

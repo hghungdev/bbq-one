@@ -10,8 +10,8 @@
     agendaChip,
     buildAgenda,
     overduePanelRows,
+    chipUsesCount,
     previewItems,
-    titlesNeedCount,
     type AgendaDay,
     type AgendaItem,
   } from '@/utils/calendarAgenda'
@@ -101,69 +101,16 @@
   )
 
   /**
-   * U30 (thay U18 "vài tên + +n"): mọi tên vừa chỗ → hiện đủ tên; không vừa hết → ghi số ("6 sự kiện"),
-   * bảng liệt kê đủ. null = chưa đo → vẽ tên (lần đầu), đo xong mới đổi sang số nếu cần.
+   * U36: từ 2 sự kiện chip ghi SỐ ("Hôm nay · 5 sự kiện"), 1 sự kiện hiện tên — không đo chữ nên không đổi qua lại
+   * theo bề rộng. Tooltip / aria-label vẫn đọc đủ mọi tên (chipTitles); bảng mở từ chip liệt kê đủ (U30).
    */
-  const useCount = ref<boolean | null>(null)
-  const titlesRef = ref<HTMLElement | null>(null)
   const listTitles = computed(() => (chip.value && chip.value.tone !== 'overdue' ? chip.value.titles : []))
   const shownTitles = computed(() => {
     if (chip.value?.tone === 'overdue') return chipTitles.value
-    return useCount.value
+    return chipUsesCount(listTitles.value.length)
       ? t('calendar.agenda.eventCount', { n: listTitles.value.length })
       : listTitles.value.join(separator.value)
   })
-
-  let measureCtx: CanvasRenderingContext2D | null = null
-  function textWidth(text: string, el: Element): number {
-    measureCtx ??= document.createElement('canvas').getContext('2d')
-    if (!measureCtx) return 0
-    const cs = getComputedStyle(el)
-    measureCtx.font = cs.font
-    if ('letterSpacing' in measureCtx) measureCtx.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing
-    return measureCtx.measureText(text).width
-  }
-
-  /** Chỗ trống thật = bề rộng vùng giữa header − phần cố định của chip (chấm, nhãn, "Mai 3", ⌄, lề). */
-  function measureTitles(): void {
-    const c = chip.value
-    const titlesEl = titlesRef.value
-    const trigger = triggerRef.value
-    const mid = rootRef.value?.parentElement
-    if (!c || c.tone === 'overdue' || !titlesEl || !trigger || !mid) return
-    const fixed = trigger.getBoundingClientRect().width - titlesEl.getBoundingClientRect().width
-    const available = mid.clientWidth - fixed - 2
-    const widths = c.titles.map((title) => Math.ceil(textWidth(title, titlesEl)))
-    const sep = textWidth(separator.value, titlesEl)
-    useCount.value = titlesNeedCount(widths, available, sep)
-  }
-
-  function scheduleMeasure(): void {
-    void nextTick(measureTitles)
-  }
-
-  let midObserver: ResizeObserver | null = null
-  watch(
-    rootRef,
-    (el) => {
-      midObserver?.disconnect()
-      midObserver = null
-      const mid = el?.parentElement
-      if (!mid || typeof ResizeObserver === 'undefined') return
-      midObserver = new ResizeObserver(scheduleMeasure)
-      midObserver.observe(mid)
-    },
-    { flush: 'post' },
-  )
-  watch(
-    () => [listTitles.value.join('\u0000'), separator.value, chipLabel.value, overdueShort.value, chip.value?.tomorrowCount],
-    () => {
-      useCount.value = null
-      scheduleMeasure()
-    },
-    { flush: 'post' },
-  )
-  void document.fonts?.ready.then(scheduleMeasure)
 
   /** Ngày ngắn cho dòng quá hạn: 20/10 · Oct 20. */
   function shortDate(dateKey: string): string {
@@ -231,7 +178,6 @@
   })
 
   onBeforeUnmount(() => {
-    midObserver?.disconnect()
     document.removeEventListener('pointerdown', onDocPointerDown, true)
   })
 
@@ -289,7 +235,7 @@
     >
       <span class="agenda-chip__dot" :class="`agenda-chip__dot--${chip.tone}`" aria-hidden="true" />
       <span class="agenda-chip__label">{{ chipLabel }}</span>
-      <span ref="titlesRef" class="agenda-chip__titles">{{ shownTitles }}</span>
+      <span class="agenda-chip__titles">{{ shownTitles }}</span>
       <span v-if="overdueShort" class="agenda-chip__more agenda-chip__more--overdue">
         <span class="agenda-chip__dot agenda-chip__dot--overdue" aria-hidden="true" />
         {{ overdueShort }}
