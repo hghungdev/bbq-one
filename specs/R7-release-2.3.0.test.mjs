@@ -26,18 +26,21 @@ const read = (...p) => {
 }
 
 console.log('R7 — phát hành 2.3.0')
-const V = '2.3.0'
+// R8 (đổi có chủ đích, 2.3.1): chỗ ghi "phiên bản hiện tại" kiểm theo manifest (≥ 2.3.0); phần lịch sử 2.3.0 (README
+// "What changed in 2.3.0", "Release 2.3.0 (highlights)", dòng 2FA trong WHAT'S NEW) vẫn kiểm như cũ.
 const manifest = JSON.parse(read('public', 'manifest.json') || '{}')
+const V = manifest.version ?? ''
+const atLeast230 = /^2\.([3-9]|\d\d+)\.\d+$|^([3-9]|\d\d+)\.\d+\.\d+$/.test(V)
 const pkg = JSON.parse(read('package.json') || '{}')
 const lockRoot = JSON.parse(read('package-lock.json') || '{}')
-check('R7.1 manifest / package.json / lock = 2.3.0; quyền không đổi',
-  manifest.version === V && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
+check('R7.1 manifest / package.json / lock cùng phiên bản ≥ 2.3.0 (R8); quyền không đổi',
+  atLeast230 && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
     JSON.stringify(manifest.permissions) === JSON.stringify(['storage', 'unlimitedStorage', 'contextMenus', 'alarms', 'clipboardWrite', 'offscreen', 'bookmarks', 'downloads']),
   `${manifest.version}/${pkg.version}/${lockRoot.version}`)
 
 const readme = read('README.md')
 const sec = readme.slice(readme.indexOf('## What changed in 2.3.0'), readme.indexOf('## What changed in 2.2.0'))
-check('R7.2 README: Version 2.3.0 + "What changed in 2.3.0" (mục lục, trước 2.2.0) nói two-step / authenticator / optional / migration 019',
+check('R7.2 README: Version = phiên bản hiện tại (R8) + "What changed in 2.3.0" (mục lục, trước 2.2.0) nói two-step / authenticator / optional / migration 019',
   readme.includes(`**Version:** ${V}`) && /\[What changed in 2\.3\.0\]\(#what-changed-in-230\)/.test(readme) &&
     readme.indexOf('## What changed in 2.3.0') > 0 && sec.length > 0 && /two-step/i.test(sec) && /authenticator/i.test(sec) &&
     /optional/i.test(sec) && /019_mfa_enforce/.test(sec),
@@ -45,10 +48,10 @@ check('R7.2 README: Version 2.3.0 + "What changed in 2.3.0" (mục lục, trư�
 
 const txt = read('docs', 'chrome-store-detailed-description.txt')
 const news = txt.slice(txt.indexOf("WHAT'S NEW"), txt.indexOf("WHAT'S NEW") + 2200)
-check("R7.3 Store: WHAT'S NEW IN 2.3.0 có xác thực 2 bước, vẫn giữ các dòng 2.2.0 + sao lưu ra file",
+check("R7.3 Store: WHAT'S NEW bản hiện tại (R8) còn xác thực 2 bước, vẫn giữ các dòng 2.2.0 + sao lưu ra file",
   txt.includes(`WHAT'S NEW IN ${V}`) && /two-step verification/i.test(news) && /bookmark/i.test(news) && /Backup files for use without an account/.test(news),
   'chrome-store-detailed-description.txt')
-check('R7.4 Release 2.3.0 (highlights); permissions doc **v2.3.0**; DESIGN 2.3.0',
+check('R7.4 Release 2.3.0 (highlights); permissions doc / DESIGN = phiên bản hiện tại (R8)',
   /Release 2\.3\.0 \(highlights\)/.test(read('docs', 'CHROME-STORE-LISTING.md')) && read('docs', 'CHROME-STORE-PERMISSIONS.md').includes(`**v${V}**`) &&
     read('DESIGN.md').includes(`\nversion: ${V}\n`),
   'docs')
