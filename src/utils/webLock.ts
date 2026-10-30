@@ -17,18 +17,3 @@ export const SYNC_LOCK = 'bbqone-sync'
 
 /** N13: serialize luồng copy qua offscreen document (create → sendMessage → close). */
 export const OFFSCREEN_CLIPBOARD_LOCK = 'bbqone-offscreen-clipboard'
-
-/**
- * N6: lock function cho @supabase/auth-js (GoTrueClient `options.auth.lock`): serialize
- * token refresh giữa popup và service worker. auth-js chỉ tự dùng navigator.locks khi
- * isBrowser() (window+document) — SW không có → phải truyền tường minh.
- */
-export async function supabaseAuthLock<R>(
-  name: string,
-  _acquireTimeout: number,
-  fn: () => Promise<R>,
-): Promise<R> {
-  const locks = (globalThis as { navigator?: { locks?: LockManager } }).navigator?.locks
-  if (!locks) return fn()
-  return locks.request(name, { mode: 'exclusive' }, fn) as Promise<R>
-}
