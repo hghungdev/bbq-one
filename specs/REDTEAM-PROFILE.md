@@ -6,7 +6,7 @@ cảnh; không cần dò lại repo.
 ## Quy ước
 
 - Trả lời + báo cáo **tiếng Việt**; tài liệu gọi người dùng là **"Sir"**.
-- Báo cáo: `specs/SEC-REDTEAM-<YYYY-MM-DD>.md`, đánh số tiếp **SEC-19** trở đi (SEC-1…12: 2026-10-29; SEC-13…18: 2026-10-30).
+- Báo cáo: `specs/SEC-REDTEAM-<YYYY-MM-DD>.md`, đánh số tiếp **SEC-20** trở đi (SEC-1…12: 2026-10-29; SEC-13…18: 2026-10-30; SEC-19: Security Advisor 2026-10-30).
 - Kế hoạch vá: `specs/ROADMAP-SEC.md` (thêm mục + bảng Trạng thái).
 - Khi Sir duyệt vá: `specs/<ID>-<slug>.spec.md` + `specs/<ID>-<slug>.test.mjs` → commit `docs(<ID>): spec + failing
   test` (RED) → code → `feat/fix(<ID>): …` (GREEN); làm thẳng trên `main`. Phiên bản: vá = số cuối, chức năng mới = số
