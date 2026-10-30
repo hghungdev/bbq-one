@@ -197,44 +197,20 @@ console.log('\nT2 — 2 context (popup + SW) chạy runBackgroundAutoSync ĐỒN
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-console.log('\nT3 — supabaseAuthLock (CODE THẬT webLock.ts)')
-if (!webLockMod || typeof webLockMod.supabaseAuthLock !== 'function') {
-  check('T3.0 webLock.ts export supabaseAuthLock', false,
-    'chưa tồn tại — SW refresh token không lock → race rotate refresh token → user bị logout ngẫu nhiên')
-} else {
-  const { supabaseAuthLock } = webLockMod
-  const order = []
-  await Promise.all([
-    supabaseAuthLock('sb-auth', -1, async () => {
-      order.push('a-start')
-      await sleep(30)
-      order.push('a-end')
-    }),
-    (async () => {
-      await sleep(5)
-      await supabaseAuthLock('sb-auth', -1, async () => {
-        order.push('b-start')
-        order.push('b-end')
-      })
-    })(),
-  ])
-  check('T3.1 2 refresh cùng lúc serialize (a xong mới tới b)',
-    order.join(',') === 'a-start,a-end,b-start,b-end', `order=${order.join(',')}`)
-  // fallback không có locks
-  const savedNav = globalThis.navigator
-  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: undefined })
-  let ran = false
-  await supabaseAuthLock('sb-auth', -1, async () => { ran = true })
-  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: savedNav })
-  check('T3.2 không có navigator.locks → vẫn chạy fn', ran, 'fallback vỡ — unit test/Chrome cũ chết')
-}
+// (đổi có chủ đích — N6.1, 2.2.0) @supabase/auth-js ≥ 2.107 tự điều phối refresh token giữa các ngữ cảnh (single-flight +
+// commit guard đọc lại kho chung + máy chủ trả token đang hiệu lực) — `lock` deprecated, có cảnh báo từ 2.112.4, bỏ ở v3.
+// Race rotate refresh token mà N6 chặn giờ do auth-js lo; chốt phiên bản nằm ở specs/N6.1-supabase-lockless.test.mjs.
+console.log('\nT3 — (N6.1) không còn supabaseAuthLock — auth-js tự điều phối refresh token')
+check('T3.0 webLock.ts không còn supabaseAuthLock (N6.1)',
+  !!webLockMod && typeof webLockMod.supabaseAuthLock === 'undefined',
+  'còn supabaseAuthLock — supabase.ts có thể vẫn truyền lock (deprecated)')
 
 // ═════════════════════════════════════════════════════════════════════════════
 console.log('\nW — wiring checks')
 const supabaseSrc = fs.readFileSync(path.join(ROOT, 'src', 'services', 'supabase.ts'), 'utf8')
-check('W1 supabase.ts: auth.lock = supabaseAuthLock',
-  /lock:\s*supabaseAuthLock/.test(supabaseSrc),
-  'GoTrueClient trong SW vẫn refresh token không lock')
+check('W1 supabase.ts: KHÔNG truyền auth.lock (N6.1 — đổi có chủ đích; trước: lock = supabaseAuthLock)',
+  !/\block\s*:/.test(supabaseSrc) && !/supabaseAuthLock/.test(supabaseSrc),
+  'còn lock trong createClient → cảnh báo deprecated, vỡ khi lên supabase-js v3')
 
 const bgSrc = fs.readFileSync(path.join(ROOT, 'src', 'background.ts'), 'utf8')
 check('W2.1 background.ts có alarm bbqone-autosync-retry',
