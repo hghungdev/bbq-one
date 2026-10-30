@@ -93,6 +93,10 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   khác (tab / popup / SW) cũng nhận ra. Rủi ro còn lại: máy chưa đồng bộ về salt mới mà **tạo** ghi chú mới → ghi chú đó
   mã hóa bằng khóa cũ (sửa ghi chú cũ bị khóa lạc quan C9 chặn). Muốn đóng hẳn cần máy chủ so salt khi ghi.
 - Mật khẩu mới ≥ 10 ký tự, chặn mật khẩu phổ biến (`utils/passwordStrength.ts`).
+- **Đổi khóa nguyên tử (SEC-13, 2.3.1):** Bật bảo mật / Nâng cấp / Đổi mật khẩu tính sẵn mọi bản mã rồi ghi **một lần** —
+  đã đăng nhập: RPC `bbq_rekey_secure_folder` (`supabase/migrations/020_secure_folder_rekey.sql`, một giao dịch, SECURITY
+  INVOKER, khóa dòng thư mục, từ chối salt lệch / thiếu ghi chú); chưa đăng nhập: một `chrome.storage.local.set`. Lỗi →
+  không gì đổi (trước đây mất mạng giữa chừng = ghi chú mất vĩnh viễn).
 
 ## Xác thực 2 bước (S2, 2.3.0)
 

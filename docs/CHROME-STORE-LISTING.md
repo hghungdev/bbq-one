@@ -16,6 +16,8 @@ _(118 characters — fits the 132 limit.)_
 
 **BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a **calendar** — from one clean, compact popup dashboard (side rail for Calendar / Notes / Bookmarks; settings and account in the header).
 
+**Release 2.3.1 (highlights):** Reliability fix for secure folders — turning protection on, upgrading and changing the folder password are saved in a single step, so a dropped connection can no longer leave notes unreadable. No new permission.
+
 **Release 2.3.0 (highlights):** Optional two-step verification (TOTP authenticator apps) for signed-in accounts, enforced on the server so a leaked password alone is not enough; changing the password and turning it off ask for a code. No new permission.
 
 **Release 2.2.0 (highlights):** Safer actions — "Delete all bookmarks" backs up first and requires typing DELETE; address-bar search privacy modes (Title + snippet / Title only / Off); secure folders use 600,000 PBKDF2 iterations with an in-place upgrade for older folders, refuse weak passwords, and lock themselves when the password was changed on another device. No new permission.

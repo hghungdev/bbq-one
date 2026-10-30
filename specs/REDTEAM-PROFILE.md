@@ -75,7 +75,7 @@ phiên Supabase, cây bookmark Chrome của người dùng.
 
 ## Còn mở (xem `specs/ROADMAP-SEC.md` + `specs/SEC-REDTEAM-2026-10-30.md`)
 
-SEC-13 (Cao — đổi khóa thư mục không nguyên tử, mất ghi chú khi mạng rớt), SEC-14 (Store còn 2.0.1, báo cáo công khai),
+SEC-13 ✅ 2.3.1 (đổi khóa nguyên tử — RPC `bbq_rekey_secure_folder` migration 020 / một lần ghi local), SEC-14 (Store còn 2.0.1, báo cáo công khai),
 SEC-15…18 (thấp / thông tin), SEC-3 (file sao lưu chữ thường → 2.4.0).
 
 ## Còn mở trước 2026-10-30 (lịch sử)

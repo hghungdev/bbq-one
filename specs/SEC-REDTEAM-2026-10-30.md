@@ -19,7 +19,7 @@
 
 | # | Mức | Tình huống | Trạng thái | Công |
 |---|---|---|---|---|
-| SEC-13 | **Cao** | Mạng rớt (hoặc kẻ ở cùng Wi-Fi cắt kết nối) giữa lúc "Nâng cấp" / "Đổi mật khẩu thư mục" → ghi chú đã mã hóa lại bằng salt mới **không được lưu** → **mất vĩnh viễn** sau lần đồng bộ kế tiếp | Mở | M |
+| SEC-13 | **Cao** | Mạng rớt (hoặc kẻ ở cùng Wi-Fi cắt kết nối) giữa lúc "Nâng cấp" / "Đổi mật khẩu thư mục" → ghi chú đã mã hóa lại bằng salt mới **không được lưu** → **mất vĩnh viễn** sau lần đồng bộ kế tiếp | ✅ 2.3.1 (`specs/SEC13-atomic-rekey.spec.md`, migration 020) | M |
 | SEC-14 | **Vừa** | Store vẫn phát **2.0.1** (thiếu vá SEC-1/4/5/6/7/8 — XSS khi dán, link `javascript:` khi khôi phục bookmark, chèn dòng ICS…) trong khi repo **công khai** có báo cáo chi tiết cách khai thác | Mở — cần phát hành | XS |
 | SEC-15 | Thấp | Đổi mật khẩu kiểm mật khẩu cũ bằng cách **đăng nhập lại** → phiên tụt về aal1 giữa chừng; nhập sai mã là bị đẩy về bước 2FA | Mở | S |
 | SEC-16 | Thấp | 2FA **không có mã khôi phục**: mất điện thoại mà không lưu chuỗi bí mật → chỉ admin gỡ được | Mở | M |

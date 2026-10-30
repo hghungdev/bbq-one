@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.3.0
+**Version:** 2.3.1
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.3.1](#what-changed-in-231)
 - [What changed in 2.3.0](#what-changed-in-230)
 - [What changed in 2.2.0](#what-changed-in-220)
 - [What changed in 2.1.2](#what-changed-in-212)
@@ -60,6 +61,13 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.3.1
+
+Fix from the pre-release security review (`specs/SEC-REDTEAM-2026-10-30.md` SEC-13). No new permission.
+
+- **Secure folders — no more lost notes on a bad connection:** turning protection on, *Upgrade* and changing a folder's password now re-encrypt everything first and save it in **one** step (a single database transaction when signed in, a single storage write otherwise). If the connection drops, nothing changes and you can simply try again — before, notes saved before the drop could become unreadable.
+- Signed-in users need the server function from `supabase/migrations/020_secure_folder_rekey.sql` (run it once in the Supabase SQL editor; the file ends with a self-test that leaves no data behind).
 
 ## What changed in 2.3.0
 
