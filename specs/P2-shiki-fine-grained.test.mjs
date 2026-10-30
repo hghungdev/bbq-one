@@ -7,7 +7,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -42,7 +42,7 @@ const missing = [
 check('P2.2 import riêng: 10 ngôn ngữ, 2 theme, shiki/core + engine oniguruma + shiki/wasm', missing.length === 0, missing.join(', '))
 
 // ─── Chạy CODE THẬT: HTML phải giống bundle đầy đủ ───────────────────────────
-const esm = async (spec) => ({ __esModule: true, ...(await import(require.resolve(spec))) })
+const esm = async (spec) => ({ __esModule: true, ...(await import(pathToFileURL(require.resolve(spec)).href)) })
 function loadTsModule(code, mocks) {
   const js = ts.transpileModule(code, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
