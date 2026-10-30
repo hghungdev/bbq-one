@@ -65,7 +65,11 @@ const MIN = {
   'prosemirror-view': '1.42.3', vue: '3.5.42', '@vue/server-renderer': '3.5.42', 'markdown-it': '14.3.3',
   'linkify-it': '5.0.2', nanoid: '3.3.18', postcss: '8.5.23', ws: '8.20.2', 'source-map-js': '1.2.2',
 }
-const low = Object.entries(MIN).filter(([n, m]) => !gte(ver(n), m)).map(([n, m]) => `${n}@${ver(n)} < ${m}`)
+// (đổi có chủ đích — T1, 2.1.2) Tiptap 3 bỏ markdown-it / linkify-it: gói không còn trong lock = đạt; còn thì phải ≥ bản vá.
+const GONE_OK = new Set(['markdown-it', 'linkify-it'])
+const low = Object.entries(MIN)
+  .filter(([n, m]) => !(GONE_OK.has(n) && !lock[`node_modules/${n}`]) && !gte(ver(n), m))
+  .map(([n, m]) => `${n}@${ver(n)} < ${m}`)
 check('SEC1.1 bản đã vá: prosemirror-view ≥ 1.42.3 (XSS khi dán), vue ≥ 3.5.42, markdown-it, linkify-it, postcss, ws, nanoid, source-map-js', low.length === 0, low.join(', '))
 const tiptap = Object.entries(lock).filter(([k]) => k.startsWith('node_modules/@tiptap/')).map(([, x]) => x.version)
 check('SEC1.2 mọi gói Tiptap cùng một bản (không lệch sau khi vá)', tiptap.length > 0 && new Set(tiptap).size === 1, [...new Set(tiptap)].join(', '))
