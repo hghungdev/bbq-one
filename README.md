@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.1.1
+**Version:** 2.1.2
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.1.2](#what-changed-in-212)
 - [What changed in 2.1.1](#what-changed-in-211)
 - [What changed in 2.1.0](#what-changed-in-210)
 - [What changed in 2.0.1](#what-changed-in-201)
@@ -57,6 +58,14 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.1.2
+
+Clean libraries and automated security checks (`specs/ROADMAP-SEC.md` T1–T3). No new permission, no change to how notes are stored.
+
+- **Editor: Tiptap 3** (3.32.1) — clears the remaining moderate Tiptap advisories (`mergeAttributes` / `__proto__`). The note schema is unchanged (links and underline stay off, so pasted / synced / restored `<a href>` is still removed); opening a note still never triggers a save.
+- **Build tools: vite 6** (6.4.5, esbuild 0.25) — fixes the dev-server advisories. `npm audit` now reports **0 vulnerabilities**.
+- **CI (GitHub Actions) + Dependabot:** every push, pull request and a weekly run check `npm audit`, build (`vue-tsc`) and run every `specs/*.test.mjs`; Dependabot proposes library and action updates.
 
 ## What changed in 2.1.1
 

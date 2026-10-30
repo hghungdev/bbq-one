@@ -16,6 +16,8 @@ _(118 characters — fits the 132 limit.)_
 
 **BBQOne** is a privacy-minded productivity extension with **local-first defaults**: notes, bookmark backups, and a **calendar** — from one clean, compact popup dashboard (side rail for Calendar / Notes / Bookmarks; settings and account in the header).
 
+**Release 2.1.2 (highlights):** Security maintenance — the note editor moves to Tiptap 3 and the build tools to vite 6, so `npm audit` reports no known vulnerabilities; automated checks (audit, build, tests) now run on every change and weekly. Notes look and behave the same. No new permission.
+
 **Release 2.1.1 (highlights):** Security hardening — patched editor libraries (paste XSS fix in ProseMirror), stricter content security policy (no external images, frames or form posts), unsafe bookmark links (`javascript:`, `data:`) never restored and exported links escaped, calendar-link hardening against injected control characters, note HTML parsed without loading images. No new permission.
 
 **Release 2.1.0 (highlights):** Backup files for use without an account — automatic daily backup to Downloads/BBQOne (last 7 days kept), "Back up now", and "Restore from file" with a preview, two confirmations and a safety backup of the current data; restored files are validated and cleaned (no scripts, images, links or unsafe bookmark links). No new permission.

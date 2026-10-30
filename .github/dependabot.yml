@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      tiptap:
+        patterns: ['@tiptap/*']
+      build-tools:
+        patterns: ['vite', '@vitejs/*', '@crxjs/*', 'typescript', 'vue-tsc']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

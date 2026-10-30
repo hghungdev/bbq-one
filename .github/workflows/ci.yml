@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 2 * * 1' # thứ Hai hằng tuần: bắt lỗ hổng mới công bố dù không ai push
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Lỗ hổng — bản đóng gói (chặn từ mức vừa)
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Lỗ hổng — công cụ build (chặn từ mức cao)
+        run: npm audit --audit-level=high
+      - name: Build (gồm vue-tsc)
+        run: cp .env.example .env && npm run build
+      - name: Test harness (specs/*.test.mjs)
+        run: |
+          fail=0
+          for f in specs/*.test.mjs; do
+            if ! node "$f" > /tmp/harness.log 2>&1; then
+              echo "::group::FAIL $f"; cat /tmp/harness.log; echo "::endgroup::"
+              fail=1
+            fi
+          done
+          exit $fail

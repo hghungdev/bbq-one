@@ -506,5 +506,7 @@ của parseBackup. Nâng 2.4.0, push.
 
 | Mục | Commit | Test | Ghi chú |
 |---|---|---|---|
-| Plan | (commit này) | — | Chạy thử T1 (Tiptap 3.32.1) + T2 (vite 6.4.5) trên bản sao: audit 0, build OK, Chromium OK — chưa áp vào `main` |
-| Skill | (commit này) | PoC ✅ | `.claude/skills/redteam-hacker/` dùng cho mọi dự án (recon tự nhận stack, 12 nhóm chung + 5 module stack, PoC trình duyệt web / extension). Thử: BBQOne → 0 dấu hiệu khai thác; trang web cố ý có lỗ → bắt được alert + request ra ngoài (thoát mã 1); dự án Express mẫu có lỗ → recon chỉ ra khóa AWS, `exec`, SQL ghép chuỗi, SSRF, CORS, mass assignment, Docker root. Hồ sơ BBQOne: `specs/REDTEAM-PROFILE.md` + `specs/redteam/` |
+| Plan | `df9b000` | — | Chạy thử T1 (Tiptap 3.32.1) + T2 (vite 6.4.5) trên bản sao: audit 0, build OK, Chromium OK — chưa áp vào `main` |
+| T1 + T2 | `1f3a8bc` docs → `7153340` feat | T1 6/6 | Tiptap 3.32.1 + vite 6.4.5: `npm audit` 0; schema y 2.x; Chromium so 2.x vs 3.x (mở không tự lưu, gõ / Ctrl+B / danh sách / khối code / hoàn tác / dán code) giống hệt; bundle +93 KB. Kèm `aaf064b`: harness P2 import qua `file://` (chạy được trên Windows) |
+| T3 + 2.1.2 | `31955ab` docs → (commit này) | T3 8/8 | `.github/workflows/ci.yml` (`checkout@v7` / `setup-node@v7`, node 24) + `dependabot.yml`; chạy lại đúng các bước CI trên máy: audit 0 / 0, build OK, 87/87 harness, PoC ✅. SEC1.14–16 đổi có chủ đích (phiên bản hiện tại ≥ 2.1.1). **Chưa chạy trên GitHub** — xem tab Actions sau lần push đầu |
+| Skill | `df9b000` | PoC ✅ | `.claude/skills/redteam-hacker/` dùng cho mọi dự án (recon tự nhận stack, 12 nhóm chung + 5 module stack, PoC trình duyệt web / extension). Thử: BBQOne → 0 dấu hiệu khai thác; trang web cố ý có lỗ → bắt được alert + request ra ngoài (thoát mã 1); dự án Express mẫu có lỗ → recon chỉ ra khóa AWS, `exec`, SQL ghép chuỗi, SSRF, CORS, mass assignment, Docker root. Hồ sơ BBQOne: `specs/REDTEAM-PROFILE.md` + `specs/redteam/` |
