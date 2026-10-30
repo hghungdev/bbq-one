@@ -297,7 +297,10 @@ export const en = {
   'bookmark.deleteBackup.instrPost': 'to confirm:',
   'bookmark.deleteBackup.confirmBtn': 'Delete',
   'bookmark.deleteBackup.cancelBtn': 'Cancel',
-  'bookmark.confirmDeleteAll': 'DELETE ALL bookmarks from browser? This cannot be undone. Create or export a backup first if you need a recovery point.',
+  'bookmark.confirmDeleteAll': 'Every bookmark in this browser will be deleted. BBQOne saves a backup right before deleting — you can restore it from the backup list.',
+  'bookmark.deleteAllConfirmBtn': 'Delete all',
+  'bookmark.deleteAllBackupFailed': 'Could not create a backup — nothing was deleted. Check your connection and try again.',
+  'bookmark.deleteAllDone': 'Deleted {n} bookmarks. Backup «{label}» was saved first — select it and click Restore to bring them back.',
   'bookmark.loading': 'Loading…',
   'bookmark.errorOfflineCloud':
     'This action needs the internet. Your live bookmarks still work offline.',

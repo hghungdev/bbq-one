@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import InlineSearch from '@/components/ui/InlineSearch.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -12,11 +13,15 @@ import type { BookmarkGlobalHit } from '@/types/bookmark'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
 import { unwrapBookmarkRoot } from '@/utils/bookmarkTree'
 import { countUnsafeBookmarks } from '@/utils/safeUrl'
+import { deleteAllWord, isDeleteAllWordTyped } from '@/utils/deleteAllConfirm'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import RetroInput from '@/components/ui/RetroInput.vue'
 import BookmarkTree from './BookmarkTree.vue'
 
 const bm = useBookmarksStore()
-const { t } = useLangStore()
+const langStore = useLangStore()
+const { t } = langStore
+const { lang } = storeToRefs(langStore)
 const confirmRestore = ref(false)
 const pendingRestoreId = ref<string | null>(null)
 const confirmDeleteBackup = ref(false)
@@ -130,9 +135,23 @@ async function onRestoreConfirm(): Promise<void> {
   viewMode.value = 'live'
 }
 
+/** S11: gõ XOA / DELETE mới mở nút "Xóa tất cả"; xong báo số đã xóa + tên bản sao lưu tự tạo trước đó. */
+const deleteAllTyped = ref('')
+const deleteAllWordOk = computed(() => isDeleteAllWordTyped(deleteAllTyped.value, lang.value))
+const deleteAllNotice = ref('')
+
+function openDeleteAll(): void {
+  deleteAllTyped.value = ''
+  deleteAllNotice.value = ''
+  confirmDeleteAll.value = true
+}
+
 async function onDeleteAllConfirm(): Promise<void> {
-  await bm.deleteAllFromBrowser()
+  if (!deleteAllWordOk.value) return
   confirmDeleteAll.value = false
+  deleteAllTyped.value = ''
+  const res = await bm.deleteAllFromBrowser()
+  if (res) deleteAllNotice.value = t('bookmark.deleteAllDone', { n: res.deleted, label: res.label })
 }
 
 const backupLabel = computed(() => buildBookmarkBackupLabel('manual'))
@@ -146,6 +165,7 @@ const backupTitle = computed(() =>
 
 /** REFRESH = đọc lại cây bookmark từ trình duyệt (chrome.bookmarks) và hiển thị LIVE — không tải lại danh sách backup từ server. */
 async function onRefreshLive(): Promise<void> {
+  deleteAllNotice.value = ''
   await bm.loadLive()
   viewMode.value = 'live'
   bm.selectedBackupId = null
@@ -156,6 +176,7 @@ async function onRefreshLive(): Promise<void> {
 <template>
   <div class="bm-tab">
     <p v-if="bm.error" class="bm-tab__error">{{ t('common.error') }} {{ bm.error }}</p>
+    <p v-else-if="deleteAllNotice" class="bm-tab__notice" role="status">{{ deleteAllNotice }}</p>
 
     <div class="bm-tab__body">
       <!-- Cột trái: danh sách backup -->
@@ -286,7 +307,7 @@ async function onRefreshLive(): Promise<void> {
               :aria-label="t('bookmark.deleteAll')"
               :title="t('bookmark.deleteAll')"
               :disabled="bm.loading"
-              @click="confirmDeleteAll = true"
+              @click="openDeleteAll"
             >
               <AppIcon name="trash" />
             </button>
@@ -376,9 +397,27 @@ async function onRefreshLive(): Promise<void> {
     />
     <RetroConfirm
       v-model:open="confirmDeleteAll"
+      variant="danger"
+      :title="t('bookmark.deleteAll')"
       :message="t('bookmark.confirmDeleteAll')"
+      :confirm-label="t('bookmark.deleteAllConfirmBtn')"
+      :confirm-disabled="!deleteAllWordOk"
       @confirm="onDeleteAllConfirm"
-    />
+    >
+      <label class="bm-tab__type-confirm" for="bm-delete-all-word">
+        {{ t('bookmark.deleteBackup.instrPre') }}
+        <strong class="bm-tab__type-word">{{ deleteAllWord(lang) }}</strong>
+        {{ t('bookmark.deleteBackup.instrPost') }}
+      </label>
+      <RetroInput
+        id="bm-delete-all-word"
+        v-model="deleteAllTyped"
+        type="text"
+        autocomplete="off"
+        :placeholder="deleteAllWord(lang)"
+        @keydown.enter.prevent="onDeleteAllConfirm"
+      />
+    </RetroConfirm>
   </div>
 </template>
 
@@ -450,6 +489,23 @@ async function onRefreshLive(): Promise<void> {
   font-size: var(--font-size-sm);
   color: var(--danger);
   border-bottom: 1px solid var(--border);
+}
+.bm-tab__notice {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.bm-tab__type-confirm {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+.bm-tab__type-word {
+  font-family: var(--font-mono);
+  color: var(--danger);
 }
 .bm-tab__body {
   display: flex;

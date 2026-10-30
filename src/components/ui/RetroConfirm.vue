@@ -13,6 +13,8 @@ const props = defineProps<{
   variant?: 'default' | 'danger'
   /** Chữ nút xác nhận — mặc định "Xóa" (danger) / "Xác nhận"; B1: "Thay toàn bộ". */
   confirmLabel?: string
+  /** S11: khóa nút xác nhận (vd tới khi gõ đúng chữ xác nhận trong slot). */
+  confirmDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -33,6 +35,7 @@ function dismiss(): void {
 }
 
 function confirm(): void {
+  if (props.confirmDisabled) return
   emit('update:open', false)
   emit('confirm')
 }
@@ -132,6 +135,7 @@ onUnmounted(() => {
               type="button"
               class="ds-primary retro-confirm__confirm-btn"
               :class="{ 'retro-confirm__confirm-btn--danger': variant === 'danger' }"
+              :disabled="confirmDisabled"
               @click="confirm"
             >
               {{ confirmLabel ?? (variant === 'danger' ? t('common.delete') : t('common.confirm')) }}

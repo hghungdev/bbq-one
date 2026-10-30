@@ -10,3 +10,13 @@ export function unwrapBookmarkRoot(nodes: BookmarkNode[]): BookmarkNode[] {
   if (only.url || (only.title ?? '').trim() || !only.children) return nodes
   return only.children
 }
+
+/** S11: số bookmark (nút có `url`) trong cây — đếm trước khi "Xóa tất cả" để báo lại người dùng. */
+export function countBookmarkUrls(nodes: BookmarkNode[]): number {
+  let n = 0
+  for (const node of nodes) {
+    if (node.url) n++
+    if (node.children) n += countBookmarkUrls(node.children)
+  }
+  return n
+}

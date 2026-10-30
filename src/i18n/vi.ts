@@ -299,7 +299,10 @@ export const vi: Record<I18nKey, string> = {
   'bookmark.deleteBackup.instrPost': 'để xác nhận:',
   'bookmark.deleteBackup.confirmBtn': 'Xóa',
   'bookmark.deleteBackup.cancelBtn': 'Hủy',
-  'bookmark.confirmDeleteAll': 'XÓA TẤT CẢ bookmark khỏi trình duyệt? Thao tác này không thể hoàn tác. Hãy tạo hoặc xuất bản sao lưu trước nếu cần điểm khôi phục.',
+  'bookmark.confirmDeleteAll': 'Mọi bookmark trong trình duyệt sẽ bị xóa. BBQOne tự tạo một bản sao lưu ngay trước khi xóa — khôi phục được từ danh sách sao lưu.',
+  'bookmark.deleteAllConfirmBtn': 'Xóa tất cả',
+  'bookmark.deleteAllBackupFailed': 'Không tạo được bản sao lưu — chưa xóa gì. Kiểm tra mạng rồi thử lại.',
+  'bookmark.deleteAllDone': 'Đã xóa {n} bookmark. Đã lưu bản sao «{label}» trước khi xóa — chọn bản đó rồi bấm Khôi phục để lấy lại.',
   'bookmark.loading': 'Đang tải…',
   'bookmark.errorOfflineCloud':
     'Thao tác này cần mạng. Bookmark trên trình duyệt vẫn xem được khi ngoại tuyến.',

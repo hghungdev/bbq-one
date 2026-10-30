@@ -1,5 +1,5 @@
-/** Nguồn backup: nút tay vs debounce trong background. */
-export type BookmarkBackupLabelSource = 'manual' | 'auto'
+/** Nguồn backup: nút tay vs debounce trong background; S11: tự sao lưu ngay trước khi "Xóa tất cả". */
+export type BookmarkBackupLabelSource = 'manual' | 'auto' | 'before-delete'
 
 /** Ngày theo Calendar sv → YYYY-mm-dd */
 function bookmarkBackupDateSv(d: Date): string {

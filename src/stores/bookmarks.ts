@@ -8,6 +8,8 @@ import { useLangStore } from '@/stores/uiLang'
 import type { BookmarkBackup, BookmarkNode } from '@/types/bookmark'
 import { isNetworkError } from '@/utils/networkErrors'
 import { safeCacheWrite, stripEncryptedBackupTrees } from '@/utils/cacheWrite'
+import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
+import { countBookmarkUrls } from '@/utils/bookmarkTree'
 
 export const useBookmarksStore = defineStore('bookmarks', () => {
   const liveTree = ref<BookmarkNode[]>([])
@@ -190,15 +192,32 @@ export const useBookmarksStore = defineStore('bookmarks', () => {
     searchFocusRequest.value++
   }
 
-  /** Xóa mọi bookmark trên trình duyệt (folder gốc Chromium giữ nguyên). */
-  async function deleteAllFromBrowser(): Promise<void> {
+  /**
+   * Xóa mọi bookmark trên trình duyệt (folder gốc Chromium giữ nguyên).
+   * S11: Chrome không có thùng rác bookmark → LUÔN sao lưu trước; sao lưu lỗi thì không xóa gì (trả null).
+   */
+  async function deleteAllFromBrowser(): Promise<{ deleted: number; label: string } | null> {
     loading.value = true
     error.value = null
     try {
+      const tree = await bookmarksService.getFromBrowser()
+      const label = buildBookmarkBackupLabel('before-delete')
+      let saved: BookmarkBackup
+      try {
+        saved = await bookmarksService.saveBackup(tree, label)
+      } catch {
+        error.value = useLangStore().t('bookmark.deleteAllBackupFailed')
+        return null
+      }
+      backups.value.unshift(saved)
+      await persistBackupsCache()
+      const deleted = countBookmarkUrls(tree)
       await bookmarksService.deleteAllFromBrowser()
       await loadLive()
+      return { deleted, label: saved.label ?? label }
     } catch (e) {
       setErrorFromCaught(e)
+      return null
     } finally {
       loading.value = false
     }

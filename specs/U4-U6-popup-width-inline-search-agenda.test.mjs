@@ -178,6 +178,9 @@ const inlineSrc = read('src', 'components', 'ui', 'InlineSearch.vue')
       '@/stores/uiLang': { useLangStore: () => ({ t: (k) => k }) },
       '@/utils/networkErrors': { isNetworkError: () => false },
       '@/utils/cacheWrite': { safeCacheWrite: async () => true, stripEncryptedBackupTrees: (x) => x },
+      // S11: store import thêm nhãn sao lưu + đếm bookmark (chỉ vá mock, không đổi assertion).
+      '@/utils/bookmarkBackupLabel': { buildBookmarkBackupLabel: (s) => `${s}_backup` },
+      '@/utils/bookmarkTree': { countBookmarkUrls: () => 0 },
     }).useBookmarksStore()
   } catch (e) {
     check('U5.13 bookmarks store load được', false, e.message)
