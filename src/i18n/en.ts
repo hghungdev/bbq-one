@@ -176,6 +176,8 @@ export const en = {
   'secureFolder.saltChanged': 'This folder’s password was changed on another device — enter the new password.',
   'secureFolder.err.tooShort': 'Use at least 10 characters.',
   'secureFolder.err.common': 'This password is too common or easy to guess — choose another one.',
+  'secureFolder.err.rekeyFailed': 'Could not save (offline?) — nothing was changed, your notes are safe. Try again on a stable connection.',
+  'secureFolder.err.rekeyStale': 'This folder just changed on another device — nothing was changed here. Unlock it again and retry.',
 
   // ── Encrypted account (S2C1) ──
   'account.settingsTitle': 'Encrypted account',

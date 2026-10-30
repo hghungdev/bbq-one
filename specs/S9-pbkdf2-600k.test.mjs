@@ -135,6 +135,22 @@ const mocks = {
   '@/stores/uiLang': { useLangStore: () => ({ t: (k) => k }) },
   '@/utils/secureCrypto': C,
   '@/utils/passwordStrength': PW,
+  // SEC-13 (2.3.1): đổi khóa đi qua MỘT lần secureRekeyService.apply — mock ghi vào CÙNG folderUpdates / noteUpdates và phát
+  // onChanged như local-first (chỉ vá mock, không đổi assertion).
+  '@/services/secureRekey.service': {
+    secureRekeyService: {
+      async apply(p) {
+        const f = foldersState.folders.find((x) => x.id === p.folderId)
+        const row = { ...f, is_secure: true, secure_salt: p.secure.salt, pbkdf2_iterations: p.secure.iterations, secure_verifier_enc: p.secure.verifier, updated_at: new Date().toISOString() }
+        folderUpdates.push({ id: p.folderId, is_secure: true, secure_salt: p.secure.salt, pbkdf2_iterations: p.secure.iterations, secure_verifier_enc: p.secure.verifier })
+        for (const n of p.notes) noteUpdates.push({ id: n.id, title: n.title })
+        const rows = foldersState.folders.map((x) => (x.id === p.folderId ? row : x))
+        for (const fn of storageListeners) fn({ bbqone_local_folders: { newValue: rows } }, 'local')
+        const now = new Date().toISOString()
+        return { folder: row, notes: p.notes.map((n) => ({ id: n.id, updated_at: now, synced_at: now })), bodies: p.bodies.map((b) => ({ id: b.id, updated_at: now, synced_at: now })) }
+      },
+    },
+  },
   '@/constants/storage': { FOLDERS_CACHE_KEY: 'folders_cache' },
   '@/types/localFirst': { LOCAL_STORAGE_KEYS: { folders: 'bbqone_local_folders' } },
 }

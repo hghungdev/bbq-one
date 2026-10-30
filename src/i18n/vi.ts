@@ -178,6 +178,8 @@ export const vi: Record<I18nKey, string> = {
   'secureFolder.saltChanged': 'Mật khẩu thư mục này đã được đổi trên máy khác — nhập mật khẩu mới.',
   'secureFolder.err.tooShort': 'Mật khẩu cần ít nhất 10 ký tự.',
   'secureFolder.err.common': 'Mật khẩu quá phổ biến hoặc dễ đoán — hãy chọn mật khẩu khác.',
+  'secureFolder.err.rekeyFailed': 'Không lưu được (mất mạng?) — chưa có gì thay đổi, ghi chú vẫn an toàn. Thử lại khi mạng ổn định.',
+  'secureFolder.err.rekeyStale': 'Thư mục vừa thay đổi ở máy khác — chưa có gì thay đổi ở đây. Mở khóa lại rồi thử.',
 
   // ── Encrypted account (S2C1) ──
   'account.settingsTitle': 'Mã hóa tài khoản',

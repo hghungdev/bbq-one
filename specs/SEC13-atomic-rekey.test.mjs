@@ -177,7 +177,10 @@ if (!storeMod.useSecureFolderStore) {
   let lockedDec = false
   try {
     const k = await C.deriveKeyFromPassword('New-Strong-22', C.saltFromBase64(p2.secure.salt), 600_000)
-    lockedDec = (await C.decryptField(notesState.notes.find((n) => n.id === 'f2-n1').title, k)) === 'Một' || notesState.notes.find((n) => n.id === 'f2-n1').title === 'Một'
+    const ramTitle = notesState.notes.find((n) => n.id === 'f2-n1').title
+    // loadAll (giải mã đè) chạy sau khi đổi khóa → RAM có thể đã là bản rõ; còn là bản mã thì phải mở bằng khóa mới.
+    lockedDec = ramTitle === 'Một' || (await C.decryptField(ramTitle, k)) === 'Một'
+    lockedDec = lockedDec && (await C.decryptField(p2.notes.find((n) => n.id === 'f2-n1').title, k)) === 'Một'
   } catch {}
   check('SEC13.4 đổi mật khẩu khi đang khóa: một lần apply, RAM giữ dạng đúng (bản mã mới hoặc bản rõ khi đã mở bằng khóa mới) và mở được bằng mật khẩu mới',
     lockedErr === null && applyCalls.length === 1 && lockedDec, `err=${lockedErr} apply=${applyCalls.length} dec=${lockedDec}`)

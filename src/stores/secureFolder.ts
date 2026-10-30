@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 import { shallowRef, watch } from 'vue'
 import { FOLDERS_CACHE_KEY } from '@/constants/storage'
-import { foldersService } from '@/services/folders.service'
-import { noteBodiesService } from '@/services/noteBodies.service'
-import { notesService } from '@/services/notes.service'
+import { secureRekeyService, type RekeyResult } from '@/services/secureRekey.service'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useLangStore } from '@/stores/uiLang'
@@ -241,46 +239,107 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
 
     const salt = generateSalt16()
     const saltB64 = saltToBase64(salt)
-    const iterations = DEFAULT_PBKDF2_ITERATIONS
-    const key = await deriveKeyFromPassword(password, salt, iterations)
+    const key = await deriveKeyFromPassword(password, salt, DEFAULT_PBKDF2_ITERATIONS)
 
     const notes = useNotesStore()
     const list = notes.notes.filter((n) => n.folder_id === folderId)
     for (const n of list) {
-      let title = n.title
-      if (isEncryptedEnvelope(title)) {
+      const bs = notes.bodiesForNote(n.id)
+      if (isEncryptedEnvelope(n.title) || bs.some((b) => isEncryptedEnvelope(b.label) || isEncryptedEnvelope(b.content))) {
         throw new Error('Note already encrypted')
       }
-      title = await encryptField(title, key)
-      await notesService.update(n.id, { title }, { row: n, retryOnConflictWithServerState: true })
-      const bs = notes.bodiesForNote(n.id)
-      for (const b of bs) {
-        if (isEncryptedEnvelope(b.label) || isEncryptedEnvelope(b.content)) {
-          throw new Error('Note already encrypted')
-        }
-        const label = await encryptField(b.label, key)
-        const content = await encryptField(b.content, key)
-        await noteBodiesService.update(b.id, { label, content }, {
-          row: b,
-          retryOnConflictWithServerState: true,
-        })
+    }
+    rekeying.add(folderId)
+    try {
+      await commitFolderKey(folder, key, saltB64, async (v) => v)
+    } finally {
+      rekeying.delete(folderId)
+    }
+  }
+
+  /**
+   * SEC-13: mã hóa sẵn MỌI ghi chú + section của thư mục bằng khóa mới (chưa ghi gì) rồi MỘT lần
+   * secureRekeyService.apply (RPC giao dịch / một lô ghi local). Lỗi → ném, KHÔNG đổi RAM / khóa / thư mục — thử lại an
+   * toàn. `plainOf`: bản rõ của một trường (đang khóa → giải bằng khóa cũ; đang mở / thư mục thường → giữ nguyên).
+   */
+  async function commitFolderKey(
+    folder: Folder,
+    newKey: CryptoKey,
+    newSaltB64: string,
+    plainOf: (v: string) => Promise<string>,
+  ): Promise<void> {
+    const folders = useFoldersStore()
+    const notes = useNotesStore()
+    const list = notes.notes.filter((n) => n.folder_id === folder.id)
+    const noteRows: { id: string; title: string }[] = []
+    const bodyRows: { id: string; label: string; content: string }[] = []
+    const plain = new Map<string, string>()
+    for (const n of list) {
+      const title = await plainOf(n.title)
+      plain.set(`n:${n.id}`, title)
+      noteRows.push({ id: n.id, title: await encryptField(title, newKey) })
+      for (const b of notes.bodiesForNote(n.id)) {
+        const label = await plainOf(b.label)
+        const content = await plainOf(b.content)
+        plain.set(`l:${b.id}`, label)
+        plain.set(`c:${b.id}`, content)
+        bodyRows.push({ id: b.id, label: await encryptField(label, newKey), content: await encryptField(content, newKey) })
       }
     }
+    const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, newKey)
 
-    const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, key)
-    const updated = await foldersService.update(folderId, {
-      is_secure: true,
-      secure_salt: saltB64,
-      pbkdf2_iterations: iterations,
-      secure_verifier_enc: verifier,
-    })
-    // S9: khóa + salt mới TRƯỚC khi thư mục mới vào store (không await ở giữa) → chốt salt không báo nhầm.
-    setKey(folderId, key, saltB64)
-    const idx = folders.folders.findIndex((f) => f.id === folderId)
-    if (idx !== -1) folders.folders[idx] = updated
+    let res: RekeyResult
+    try {
+      res = await secureRekeyService.apply({
+        folderId: folder.id,
+        expectedSalt: folder.secure_salt,
+        secure: { salt: newSaltB64, iterations: DEFAULT_PBKDF2_ITERATIONS, verifier },
+        notes: noteRows,
+        bodies: bodyRows,
+      })
+    } catch (e) {
+      const { t } = useLangStore()
+      if (/BBQ_REKEY_(STALE|INCOMPLETE)/.test(e instanceof Error ? e.message : '')) {
+        // Máy khác vừa đổi khóa / thêm ghi chú → nạp lại để lần sau đủ dữ liệu.
+        void folders.loadAll()
+        void notes.loadAll()
+        throw new Error(t('secureFolder.err.rekeyStale'))
+      }
+      throw new Error(t('secureFolder.err.rekeyFailed'))
+    }
+
+    // Đã ghi xong — giờ mới đổi khóa + RAM. S9: setKey TRƯỚC khi thư mục mới vào store (chốt salt không báo nhầm).
+    setKey(folder.id, newKey, newSaltB64)
+    const fIdx = folders.folders.findIndex((f) => f.id === folder.id)
+    if (fIdx !== -1) folders.folders[fIdx] = res.folder
+    const meta = new Map([...res.notes, ...res.bodies].map((m) => [m.id, { updated_at: m.updated_at, synced_at: m.synced_at }]))
+    const newTitle = new Map(noteRows.map((r) => [r.id, r.title]))
+    const newBody = new Map(bodyRows.map((r) => [r.id, r]))
+    // RAM giữ đúng dạng cũ: đang là bản rõ → bản rõ; đang là bản mã (thư mục khóa) → bản mã mới.
+    for (let i = 0; i < notes.notes.length; i++) {
+      const n = notes.notes[i]
+      if (n.folder_id !== folder.id || !newTitle.has(n.id)) continue
+      notes.notes[i] = {
+        ...n,
+        ...meta.get(n.id),
+        title: isEncryptedEnvelope(n.title) ? newTitle.get(n.id)! : plain.get(`n:${n.id}`)!,
+      }
+    }
+    for (let j = 0; j < notes.bodies.length; j++) {
+      const b = notes.bodies[j]
+      const nb = newBody.get(b.id)
+      if (!nb) continue
+      notes.bodies[j] = {
+        ...b,
+        ...meta.get(b.id),
+        label: isEncryptedEnvelope(b.label) ? nb.label : plain.get(`l:${b.id}`)!,
+        content: isEncryptedEnvelope(b.content) ? nb.content : plain.get(`c:${b.id}`)!,
+      }
+    }
     folders.reorderFoldersByUpdated()
     await folders.persistCache()
-
+    // Cache trên đĩa niêm phong lại bằng khóa mới (seal memo theo CryptoKey → không dùng lại bản mã của khóa cũ).
+    await notes.persistCache()
     await notes.loadAll()
   }
 
@@ -363,54 +422,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
       /** Bản rõ của một trường: RAM là bản mã (đang khóa) → giải bằng khóa cũ; đang mở → RAM đã là bản rõ. */
       const plainOf = async (v: string): Promise<string> => (isEncryptedEnvelope(v) ? decryptField(v, oldKey) : v)
 
-      for (const n of list) {
-        const titlePlain = await plainOf(n.title)
-        const saved = await notesService.update(n.id, { title: await encryptField(titlePlain, newKey) }, {
-          row: n,
-          retryOnConflictWithServerState: true,
-        })
-        // RAM giữ đúng dạng cũ (đang mở: bản rõ; đang khóa: bản mã mới) + updated_at mới cho khóa lạc quan (C9).
-        const at = notes.notes.findIndex((x) => x.id === n.id)
-        if (at !== -1) {
-          notes.notes[at] = { ...notes.notes[at], ...saved, title: isEncryptedEnvelope(n.title) ? saved.title : titlePlain }
-        }
-        for (const b of notes.bodiesForNote(n.id)) {
-          const labelPlain = await plainOf(b.label)
-          const contentPlain = await plainOf(b.content)
-          const savedBody = await noteBodiesService.update(b.id, {
-            label: await encryptField(labelPlain, newKey),
-            content: await encryptField(contentPlain, newKey),
-          }, {
-            row: b,
-            retryOnConflictWithServerState: true,
-          })
-          const bi = notes.bodies.findIndex((x) => x.id === b.id)
-          if (bi !== -1) {
-            notes.bodies[bi] = {
-              ...notes.bodies[bi],
-              ...savedBody,
-              label: isEncryptedEnvelope(b.label) ? savedBody.label : labelPlain,
-              content: isEncryptedEnvelope(b.content) ? savedBody.content : contentPlain,
-            }
-          }
-        }
-      }
-
-      const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, newKey)
-      const updatedFolder = await foldersService.update(folderId, {
-        secure_salt: newSaltB64,
-        pbkdf2_iterations: DEFAULT_PBKDF2_ITERATIONS,
-        secure_verifier_enc: verifier,
-      })
-      setKey(folderId, newKey, newSaltB64)
-      const fIdx = folders.folders.findIndex((f) => f.id === folderId)
-      if (fIdx !== -1) folders.folders[fIdx] = updatedFolder
-      folders.reorderFoldersByUpdated()
-      await folders.persistCache()
-
-      // Cache trên đĩa niêm phong lại bằng khóa mới (seal memo theo CryptoKey → không dùng lại bản mã của khóa cũ).
-      await notes.persistCache()
-      await notes.loadAll()
+      await commitFolderKey(folder, newKey, newSaltB64, plainOf)
     } finally {
       rekeying.delete(folderId)
     }
