@@ -9,11 +9,11 @@ KEY FEATURES
 ═══════════════════════════════════════════════════
 
 NOTES
-Rich text editing with code syntax highlighting, folders, and full-text search. Rename, move, or delete from each row's menu. Optional passphrase-protected secure folders (client-side AES-GCM encryption).
-Search from the address bar: type "bbq", press Space, then a keyword. Enter opens the note; Alt+Enter copies the whole note.
+Rich text editing with code syntax highlighting, folders, and full-text search. Rename, move, or delete from each row's menu. Optional passphrase-protected secure folders (client-side AES-GCM encryption, 600,000 PBKDF2 iterations).
+Search from the address bar: type "bbq", press Space, then a keyword. Enter opens the note; Alt+Enter copies the whole note. In Settings, choose whether suggestions show Title + snippet or Title only, or turn address-bar search off.
 
 BOOKMARKS
-Snapshot, browse, search, and restore your Chrome bookmark tree. Export as HTML. Backups sync to your account when you sign in.
+Snapshot, browse, search, and restore your Chrome bookmark tree. Export as HTML. Delete all browser bookmarks safely: BBQOne saves a backup first and asks you to type DELETE. Backups sync to your account when you sign in.
 
 CALENDAR
 Month view with up to 6 events per day. Repeat events weekly, monthly, or yearly. Search across all events. Today and tomorrow at a glance in the header. Mark an event done with one click, and tick off overdue items one by one.
@@ -25,7 +25,7 @@ BACKUP FILES (NO ACCOUNT NEEDED)
 Without an account, everything lives in this browser — so BBQOne can save a backup file to your Downloads folder automatically (once a day, the last 7 days kept) or with "Back up now", and restore it on any computer. Notes in secure folders stay encrypted inside the file.
 
 CLOUD SYNC (OPTIONAL)
-Sign in with email and password to sync notes, bookmark backups, and events across devices. Changes made offline sync automatically when you're back online. Each account's data is isolated by server-side Row Level Security.
+Sign in with email and password to sync notes, bookmark backups, and events across devices. Changes made offline sync automatically when you're back online. Each account's data is isolated by server-side Row Level Security. Optional two-step verification: a 6-digit code from your authenticator app, enforced on the server.
 
 DESIGN
 Clean layout with a compact side rail for Calendar, Notes, and Bookmarks. Light and dark themes. English and Vietnamese interface. Undo for deletes.
@@ -51,11 +51,11 @@ New: Optional two-step verification for signed-in accounts — a 6-digit code fr
 Safer: Delete all bookmarks backs up first and asks you to type DELETE — you can restore from the backup list
 Privacy: Address-bar search can show Title + snippet, Title only, or be turned off (Settings)
 Security: Stronger secure folders (600,000 PBKDF2 iterations, upgrade older folders, weak passwords refused); a password changed on another device is detected
-Security: Editor and build libraries updated (no known vulnerabilities); automated security checks on every change
+Security: Editor and build libraries updated (no known vulnerabilities, fixes a paste issue); automated security checks on every change
 New: Backup files for use without an account — automatic backup to Downloads/BBQOne (once a day when you open BBQOne and your data changed; the last 7 days are kept) and "Back up now" in Settings
 New: Restore from a backup file — preview first, confirm twice; your current data is saved to a safety file before it is replaced
 Security: Restored files are checked and cleaned — scripts, images, links and unsafe bookmark links (javascript:, data:) are removed
-Security: Updated editor libraries (fixes a paste issue), a stricter content security policy, unsafe bookmark links are never restored, and the Google Calendar link is hardened
+Security: A stricter content security policy, unsafe bookmark links are never restored, and the Google Calendar link is hardened
 
 ═══════════════════════════════════════════════════
 PRIVACY POLICY

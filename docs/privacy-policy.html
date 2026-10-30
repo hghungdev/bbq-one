@@ -241,7 +241,9 @@
         and a space in Chrome's address bar, the words you type next go only to
         BBQOne, which matches them against the notes already stored on your
         device. That text is not sent to any server — ours, Supabase, or Google
-        — and is not stored.
+        — and is not stored. In Settings you can choose whether suggestions show
+        a note&apos;s title and a short snippet or the title only, or turn
+        address-bar search off.
       </p>
 
       <p>
@@ -360,6 +362,16 @@
         permission). Your email and password are used only at the moment of
         sign-in. Passwords are never stored by the extension — Supabase handles
         password hashing and credential security on its side.
+      </p>
+      <p>
+        <strong>Optional two-step verification</strong> (version 2.3.0 and
+        later). If you turn it on in Settings, Supabase Auth creates and keeps a
+        TOTP secret for your account so it can check the 6-digit codes from your
+        authenticator app. BBQOne shows that secret (as a QR code and as text you
+        can copy) only while you set it up, and does not store it or send it
+        anywhere else. The codes you type are sent only to Supabase Auth. While
+        two-step verification is on, the server returns your synced data only
+        after a valid code. Turning it off in Settings removes the secret.
       </p>
 
       <h2>No content scripts, no in-page features</h2>

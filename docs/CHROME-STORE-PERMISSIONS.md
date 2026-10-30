@@ -1,7 +1,7 @@
 # BBQOne — Chrome Web Store Permissions Justification
 
 This document explains why each permission declared in `public/manifest.json`
-is required for BBQOne **v2.3.1** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 added only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning; v2.1.0 reuses `downloads` for JSON backup files — still no new permission). The content below is the **source of
+is required for BBQOne **v2.3.1** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 added only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning; v2.1.0 reuses `downloads` for JSON backup files; v2.2.0–v2.3.1 add a safer "Delete all" for bookmarks (backup first), address-bar privacy modes and optional two-step verification (TOTP) through the existing Supabase host — still no new permission). The content below is the **source of
 truth** when filling out the Chrome Web Store submission form's "Permission
 Justification" section.
 
@@ -29,7 +29,7 @@ BBQOne is a local-first personal productivity dashboard: notes, Chrome bookmark 
 ### `storage`
 
 ```text
-Persist user-created data (notes, folders, bookmark backups, calendar events) and preferences (theme, language) in chrome.storage.local. This is the basis of BBQOne's local-first design: by default no data leaves the user's device. chrome.storage.session (in memory, cleared when the browser closes) holds only short-lived state: the sign-in session token, a safety copy of the note draft being edited (so an unsaved edit survives the popup closing), and, for accounts that turned on note encryption, the unlocked key until it auto-locks. Without this permission no data can be saved.
+Persist user-created data (notes, folders, bookmark backups, calendar events) and preferences (theme, language, what address-bar suggestions show) in chrome.storage.local. This is the basis of BBQOne's local-first design: by default no data leaves the user's device. chrome.storage.session (in memory, cleared when the browser closes) holds only short-lived state: the sign-in session token, a safety copy of the note draft being edited (so an unsaved edit survives the popup closing), and, for accounts that turned on note encryption, the unlocked key until it auto-locks. Without this permission no data can be saved.
 ```
 
 ### `unlimitedStorage`
@@ -53,7 +53,7 @@ BBQOne uses chrome.alarms for background housekeeping only: (1) a 24-hour sync r
 ### `clipboardWrite`
 
 ```text
-Powers the copy buttons the user clicks: "Copy note" in the note editor (copies the note's plain text) and the copy button next to the private Google Calendar link in Settings. The extension writes only the text the user chose to copy, only on click, and never reads from the clipboard.
+Powers the copy buttons the user clicks: "Copy note" in the note editor (copies the note's plain text), the copy button next to the private Google Calendar link in Settings, and the copy button for the setup secret when the user turns on two-step verification (so they can keep it in a password manager). The extension writes only the text the user chose to copy, only on click, and never reads from the clipboard.
 ```
 
 ### `offscreen`
@@ -65,7 +65,7 @@ Fallback for the copy buttons above. The popup first copies with navigator.clipb
 ### `bookmarks`
 
 ```text
-Reads the user's Chrome bookmark tree to show, search and back it up in the Bookmarks tab, and listens to bookmarks.onCreated / onRemoved / onChanged / onMoved to keep the automatic backup snapshot up to date. Bookmarks are changed only when the user clicks Restore on a backup and confirms it; the bookmark tree is then rebuilt from that snapshot. Bookmark backups stay in chrome.storage.local unless the user signs in to sync them.
+Reads the user's Chrome bookmark tree to show, search and back it up in the Bookmarks tab, and listens to bookmarks.onCreated / onRemoved / onChanged / onMoved to keep the automatic backup snapshot up to date. Bookmarks are changed only by two explicit user actions: (1) Restore on a backup, after the user confirms it — the bookmark tree is rebuilt from that snapshot; (2) "Delete all browser bookmarks", after the user types DELETE to confirm — BBQOne first saves a backup snapshot (nothing is deleted if that fails), so the user can restore it. Bookmark backups stay in chrome.storage.local unless the user signs in to sync them.
 ```
 
 ### `downloads`
@@ -84,7 +84,7 @@ Saves files the user keeps on their own computer, built in memory and written wi
 
 ```text
 https://*.supabase.co/* is used only after the user chooses to sign in. It is needed to:
-1. Sign in with Supabase Auth (email + password; no OAuth, no chrome.identity).
+1. Sign in with Supabase Auth (email + password, plus an optional two-step verification code from an authenticator app, checked by the server; no OAuth, no chrome.identity).
 2. Sync the user's notes, folders, bookmark backups and calendar events with BBQOne's Supabase backend. Each account's rows are isolated by Row Level Security (auth.uid() = user_id); notes in secure folders are encrypted on the device before upload.
 3. Create, replace or turn off the optional private Google Calendar link (stored in the same backend). Google Calendar fetches that link from the server; the extension never contacts Google.
 4. Run the daily background refresh (chrome.alarms).
@@ -119,13 +119,20 @@ Users who are not signed in never send requests to Supabase. There are no conten
 The CSP declared in `public/manifest.json` for extension pages is:
 
 ```
+default-src 'self';
 script-src 'self' 'wasm-unsafe-eval';
-object-src 'self';
+object-src 'none';
 style-src 'self' 'unsafe-inline';
+img-src 'self' data:;
 font-src 'self' data:;
 connect-src 'self' https://*.supabase.co;
+frame-src 'none';
+base-uri 'none';
+form-action 'none'
 ```
 
+- `default-src 'self'`: anything not listed below loads only from the
+  extension package.
 - `'wasm-unsafe-eval'` is required by **Shiki** (syntax highlighter used in
   note code blocks), which loads a bundled WebAssembly module.
 - `'unsafe-inline'` is restricted to **`style-src` only** (required by Vue
@@ -134,6 +141,12 @@ connect-src 'self' https://*.supabase.co;
   not allowed in `script-src`, which BBQOne does **not** use.
 - `font-src 'self'`: the **Inter** UI font ships inside the extension
   (`src/assets/fonts/inter/`); no external font hosts are allowed.
+- `img-src 'self' data:`: bundled icons and the QR code (an SVG `data:` image
+  returned by Supabase Auth) shown while turning on two-step verification;
+  no remote images.
+- `object-src 'none'`, `frame-src 'none'`, `base-uri 'none'`,
+  `form-action 'none'`: no plugins, no frames, no `<base>` rewriting and no
+  HTML form posts — defense in depth against injected markup.
 
 ---
 
@@ -166,7 +179,10 @@ BBQOne follows a **privacy-first, local-first** philosophy:
 - Address-bar search uses the manifest **`omnibox`** key (keyword `bbq`) — not a
   permission, no install warning. Text typed after `bbq` goes only to the
   extension, which searches notes stored on the device (no network request);
-  copying a note reuses `clipboardWrite` + `offscreen`.
+  users choose in Settings whether suggestions show title + snippet or title
+  only, or turn it off; copying a note reuses `clipboardWrite` + `offscreen`.
+- Optional two-step verification (TOTP) uses the same Supabase Auth host; once
+  turned on, the server returns the account's data only after a valid code.
 - No tracking, no analytics, no advertising.
 - All permissions are scoped to features that are actually present in the
   build — anything that previously required broader permissions (in-page
