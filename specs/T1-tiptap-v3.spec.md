@@ -58,6 +58,15 @@ Gỡ trước (cài đè thẳng → `ERESOLVE`). Khai thẳng `@tiptap/core` + 
 | T1.4 | Không `from 'prosemirror-…'` trong `src/`; `pastePlainText.ts` + `NoteEditor.vue` dùng `@tiptap/pm/*` | FAIL |
 | T1.5 | Không quy tắc `parseDOM` nào của schema nhận `<a> <u> <img> <iframe> <script> <style> <form> <svg>…` → bộ lọc B1 bỏ chúng (kiểm thật trên Chromium: PoC hồi quy) | PASS (chốt chặn) |
 | T1.6 | `devDependencies.vite = ^6.4.5`; lock vite ≥ 6.4.4 và < 7; esbuild ≥ 0.25.0 | FAIL |
+| T1.7 | `devDependencies` khai thẳng `@types/node`, lock có gói — thêm 2026-10-30 sau PR Dependabot #4 | FAIL |
+
+### T1.7 — `@types/node` khai thẳng (thêm sau khi CI chạy)
+
+`vite.config.ts` dùng `import … from 'node:url'` + `import.meta.url` → cần kiểu Node cho `vue-tsc -b`. Trên 2.1.2,
+`@types/node` chỉ có nhờ cài kèm (`@supabase/supabase-js` → `realtime-js` → `@types/ws`). PR Dependabot #4
+(supabase-js 2.103.2 → 2.118.0) bỏ `@types/ws` → CI đỏ ở bước Build (`TS2307 Cannot find module 'node:url'`).
+Sửa: `npm install -D @types/node@^24` (Node 24 = bản CI + máy làm). Kèm `SEC1.1` (đổi có chủ đích): `ws` không còn
+trong lock = đạt (supabase-js ≥ 2.118 dùng WebSocket có sẵn).
 
 ## Đổi assertion có chủ đích
 

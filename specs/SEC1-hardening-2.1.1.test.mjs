@@ -65,8 +65,9 @@ const MIN = {
   'prosemirror-view': '1.42.3', vue: '3.5.42', '@vue/server-renderer': '3.5.42', 'markdown-it': '14.3.3',
   'linkify-it': '5.0.2', nanoid: '3.3.18', postcss: '8.5.23', ws: '8.20.2', 'source-map-js': '1.2.2',
 }
-// (đổi có chủ đích — T1, 2.1.2) Tiptap 3 bỏ markdown-it / linkify-it: gói không còn trong lock = đạt; còn thì phải ≥ bản vá.
-const GONE_OK = new Set(['markdown-it', 'linkify-it'])
+// (đổi có chủ đích — T1, 2.1.2) Tiptap 3 bỏ markdown-it / linkify-it; supabase-js ≥ 2.118 bỏ ws (realtime dùng WebSocket
+// có sẵn): gói không còn trong lock = đạt; còn thì phải ≥ bản vá.
+const GONE_OK = new Set(['markdown-it', 'linkify-it', 'ws'])
 const low = Object.entries(MIN)
   .filter(([n, m]) => !(GONE_OK.has(n) && !lock[`node_modules/${n}`]) && !gte(ver(n), m))
   .map(([n, m]) => `${n}@${ver(n)} < ${m}`)

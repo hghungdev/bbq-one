@@ -128,6 +128,11 @@ const viteRange = pkg.devDependencies?.vite ?? '(thiếu)'
 check('T1.6 vite ^6.4.5 (lock ≥ 6.4.4, < 7), esbuild trong lock ≥ 0.25.0',
   viteRange === '^6.4.5' && gte(lockVer('vite'), '6.4.4') && !gte(lockVer('vite'), '7.0.0') && gte(lockVer('esbuild'), '0.25.0'),
   `package.json vite=${viteRange} · lock vite=${lockVer('vite')} esbuild=${lockVer('esbuild')}`)
+// T1.7: vite.config.ts import 'node:url' + import.meta.url → cần kiểu Node. Trước đây @types/node chỉ có nhờ cài kèm
+// (supabase-js → realtime-js → @types/ws); supabase-js 2.118 bỏ @types/ws → vue-tsc -b gãy (PR Dependabot #4).
+check('T1.7 devDependencies khai thẳng @types/node (không dựa vào gói cài kèm)',
+  /^\^?\d+/.test(pkg.devDependencies?.['@types/node'] ?? '') && !!lock['node_modules/@types/node'],
+  `package.json @types/node=${pkg.devDependencies?.['@types/node'] ?? '(thiếu)'}`)
 
 console.log('\n──────────────────────────────────────────────')
 if (failures.length > 0) {
