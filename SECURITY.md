@@ -83,6 +83,17 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   `chrome.storage.local` chạy trên LevelDB — giá trị đã bị đè có thể còn nằm trong file `.ldb`
   cũ tới khi compaction; extension API không có cách xóa forensic.
 
+## Secure folder — khóa, salt, số vòng (S9, 2.2.0)
+
+- Khóa dẫn thẳng từ mật khẩu + `secure_salt` (PBKDF2-HMAC-SHA256 → AES-GCM 256). Thư mục mới / đổi mật khẩu:
+  **600.000 vòng** (`DEFAULT_PBKDF2_ITERATIONS`); thư mục cũ mở bằng `pbkdf2_iterations` của chính nó, nâng cấp do người
+  dùng bấm (giữ mật khẩu).
+- **Chốt salt:** khóa trong RAM nhớ salt đã dẫn ra nó; thư mục mang salt khác (đổi mật khẩu ở máy / tab khác) → `getKey`
+  trả null ngay (mọi đường ghi từ chối), khóa bị quên, hộp mở khóa báo lý do. Nghe `chrome.storage.onChanged` để ngữ cảnh
+  khác (tab / popup / SW) cũng nhận ra. Rủi ro còn lại: máy chưa đồng bộ về salt mới mà **tạo** ghi chú mới → ghi chú đó
+  mã hóa bằng khóa cũ (sửa ghi chú cũ bị khóa lạc quan C9 chặn). Muốn đóng hẳn cần máy chủ so salt khi ghi.
+- Mật khẩu mới ≥ 10 ký tự, chặn mật khẩu phổ biến (`utils/passwordStrength.ts`).
+
 ## Encrypted account (S2C1)
 
 - Bật (opt-in) qua ceremony: passphrase (≥10, PBKDF2-SHA256 600k) + recovery key 160-bit hiện

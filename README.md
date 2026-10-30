@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.1.2
+**Version:** 2.2.0
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.2.0](#what-changed-in-220)
 - [What changed in 2.1.2](#what-changed-in-212)
 - [What changed in 2.1.1](#what-changed-in-211)
 - [What changed in 2.1.0](#what-changed-in-210)
@@ -58,6 +59,16 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.2.0
+
+Safer actions and stronger secure folders (`specs/ROADMAP-SEC.md` S11, S12, S9). No new permission.
+
+- **Delete all bookmarks is no longer one click away:** BBQOne first saves a `before-delete` backup (if the backup fails, nothing is deleted), the button stays disabled until you type **DELETE** (Vietnamese UI: **XOA**), and afterwards it tells you how many bookmarks were removed and which backup restores them.
+- **Address-bar search privacy (`bbq` + Space):** Settings › Address-bar search — *Title + snippet* (default, as before), *Title only* (no folder or note text in the suggestions — safer when sharing your screen) or *Off*.
+- **Secure folders:** new folders and password changes use PBKDF2 with **600,000** iterations (older folders keep opening with their own setting; an *Upgrade* strip re-encrypts them with the same password). New passwords need at least 10 characters and common passwords are refused.
+- **Password changed on another device:** a device that still holds the old key in memory now locks the folder and asks for the new password instead of saving notes with the old key (which made them unreadable). This also works between two tabs on the same computer.
+- **Fixes:** changing a secure folder's password while it is unlocked no longer fails with "Current passphrase is wrong"; the Supabase "lock option is deprecated" warning on chrome://extensions is gone.
 
 ## What changed in 2.1.2
 

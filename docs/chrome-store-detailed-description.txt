@@ -43,9 +43,12 @@ Encrypted before upload: notes in secure folders. Regular notes, folders, bookma
 Google Calendar link: created only if you ask for it. Anyone with the link can read your calendar, so keep it private — you can replace or turn it off in Settings.
 
 ═══════════════════════════════════════════════════
-WHAT'S NEW IN 2.1.2
+WHAT'S NEW IN 2.2.0
 ═══════════════════════════════════════════════════
 
+Safer: Delete all bookmarks backs up first and asks you to type DELETE — you can restore from the backup list
+Privacy: Address-bar search can show Title + snippet, Title only, or be turned off (Settings)
+Security: Stronger secure folders (600,000 PBKDF2 iterations, upgrade older folders, weak passwords refused); a password changed on another device is detected
 Security: Editor and build libraries updated (no known vulnerabilities); automated security checks on every change
 New: Backup files for use without an account — automatic backup to Downloads/BBQOne (once a day when you open BBQOne and your data changed; the last 7 days are kept) and "Back up now" in Settings
 New: Restore from a backup file — preview first, confirm twice; your current data is saved to a safety file before it is replaced
