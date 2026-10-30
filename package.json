@@ -18,8 +18,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "@tiptap/starter-kit": "^2.11.5",
-    "@tiptap/vue-3": "^2.11.5",
+    "@tiptap/core": "^3.32.1",
+    "@tiptap/pm": "^3.32.1",
+    "@tiptap/starter-kit": "^3.32.1",
+    "@tiptap/vue-3": "^3.32.1",
     "pinia": "^2.3.1",
     "shiki": "^1.29.2",
     "vue": "^3.5.13",
@@ -30,7 +32,7 @@
     "@types/chrome": "^0.0.280",
     "@vitejs/plugin-vue": "^5.2.1",
     "typescript": "~5.6.3",
-    "vite": "^5.4.14",
+    "vite": "^6.4.5",
     "vue-tsc": "^2.2.0"
   }
 }

@@ -13,6 +13,11 @@ export function noteEditorExtensions(): Extensions {
           class: 'retro-code-block',
         },
       },
+      // Tiptap 3: StarterKit thêm sẵn link / underline / trailingNode — tắt để schema giữ y như 2.x.
+      // link bật thì <a href> từ dán / đồng bộ / file sao lưu sống sót qua bộ lọc B1 (noteHtmlSanitize dùng chung schema).
+      link: false,
+      underline: false,
+      trailingNode: false,
     }),
   ]
 }

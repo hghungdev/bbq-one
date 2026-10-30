@@ -1,5 +1,5 @@
-import { DOMParser as PMDOMParser } from 'prosemirror-model'
-import type { EditorView } from 'prosemirror-view'
+import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
+import type { EditorView } from '@tiptap/pm/view'
 import { inertElement } from '@/utils/text'
 
 function escapeHtml(text: string): string {

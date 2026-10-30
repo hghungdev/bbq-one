@@ -14,7 +14,7 @@ import { useLangStore } from '@/stores/uiLang'
 import type { NoteBody } from '@/types'
 import { extractCodeBlocksFromDocJSON } from '@/utils/tiptapJson'
 import { copyTextToClipboard } from '@/utils/clipboard'
-import type { EditorView } from 'prosemirror-view'
+import type { EditorView } from '@tiptap/pm/view'
 import { firstLinePreview, plainTextFromHtml } from '@/utils/text'
 import {
   handleNoteEditorPaste,
@@ -121,7 +121,7 @@ function scheduleSave(): void {
 
 function applyBody(ed: Editor, body: NoteBody | null): void {
   if (!body) {
-    ed.commands.setContent('<p></p>', false)
+    ed.commands.setContent('<p></p>', { emitUpdate: false })
     codeBlocks.value = []
     notesStore.setDirty(false)
     return
@@ -129,7 +129,7 @@ function applyBody(ed: Editor, body: NoteBody | null): void {
   const raw = body.content || '<p></p>'
   const needsSanitize = noteHtmlNeedsPlainSanitize(raw)
   const content = needsSanitize ? sanitizeHtmlToNoteContent(raw) : raw
-  ed.commands.setContent(content || '<p></p>', false)
+  ed.commands.setContent(content || '<p></p>', { emitUpdate: false })
   if (needsSanitize) {
     notesStore.setDirty(true)
     scheduleSave()
