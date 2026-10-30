@@ -337,6 +337,15 @@ check('S2.14 migration 019: policy RESTRICTIVE trên mọi bảng public có use
   /as restrictive/i.test(mig) && /information_schema\.columns/i.test(mig) && /column_name\s*=\s*'user_id'/i.test(mig) && /auth\.mfa_factors/i.test(mig) &&
     /status\s*=\s*'verified'/i.test(mig) && /'aal2'/.test(mig) && /auth\.jwt\(\)\s*->>\s*'aal'/i.test(mig) && /drop policy if exists/i.test(mig) && /to authenticated/i.test(mig),
   mig ? 'thiếu thành phần' : 'chưa có file')
+// S2.16 (thêm 2026-10-30 sau sự cố thật): role `authenticated` KHÔNG có quyền SELECT trên auth.mfa_factors → policy đọc
+// thẳng bảng đó làm MỌI truy vấn của người đã đăng nhập lỗi "permission denied for table mfa_factors" (Load notes / Load
+// calendar failed). Kiểm factor phải đi qua hàm SECURITY DEFINER (search_path rỗng, chỉ authenticated được gọi).
+const policySql = (mig.match(/create policy[\s\S]*?\$p\$/i) || [''])[0]
+check('S2.16 policy KHÔNG đọc thẳng auth.mfa_factors; dùng hàm public.bbq_mfa_aal_ok() SECURITY DEFINER, set search_path = \'\', revoke public + grant execute authenticated',
+  policySql !== '' && !/mfa_factors/i.test(policySql) && /bbq_mfa_aal_ok\(\)/.test(policySql) &&
+    /create or replace function public\.bbq_mfa_aal_ok\(\)[\s\S]*?security definer[\s\S]*?set search_path = ''/i.test(mig) &&
+    /revoke all on function public\.bbq_mfa_aal_ok\(\) from public/i.test(mig) && /grant execute on function public\.bbq_mfa_aal_ok\(\) to authenticated/i.test(mig),
+  policySql ? `policy: ${policySql.replace(/\s+/g, ' ').slice(0, 160)}` : 'không thấy create policy')
 const KEYS = ['mfa.title', 'mfa.desc', 'mfa.statusOn', 'mfa.statusOff', 'mfa.enable', 'mfa.disable', 'mfa.scanHint', 'mfa.secretLabel', 'mfa.codeLabel',
   'mfa.verify', 'mfa.cancel', 'mfa.loginPrompt', 'mfa.lostPhone', 'mfa.err.codeRequired', 'mfa.err.invalid', 'mfa.enabledOk', 'mfa.disabledOk']
 const vi = read('src', 'i18n', 'vi.ts')

@@ -79,3 +79,20 @@ PKCE, kho phiên, đăng nhập không 2FA, luồng local-first khi chưa đăng
   → hiện bước nhập mã.
 - Mất điện thoại mà không lưu chuỗi bí mật: admin (Sir) xóa factor ở dashboard › Authentication › Users › người dùng › MFA.
 - Supabase có loại factor `recovery_code` (mã khôi phục) — chưa dùng, để sau.
+
+## Sự cố 2026-10-30 — `permission denied for table mfa_factors` (S2.16)
+
+Sir chạy bản 019 đầu tiên trên Supabase thật → **mọi truy vấn của người đã đăng nhập lỗi** ("Load notes failed", "Load
+calendar failed", "Account encryption status check failed: permission denied for table mfa_factors"). Nguyên nhân: policy
+đọc **thẳng** `auth.mfa_factors`, mà role `authenticated` trên dự án **không có quyền SELECT** bảng đó (mẫu trong tài liệu
+Supabase giả định có). Đã gỡ ngay bằng khối "Gỡ" ở cuối file (dữ liệu không mất).
+
+**Sửa:** hàm `public.bbq_mfa_aal_ok()` — `SECURITY DEFINER`, `set search_path = ''`, `stable`, đọc `auth.mfa_factors` bằng
+quyền chủ hàm (postgres); `revoke all … from public` + `grant execute … to authenticated`. Policy chỉ gọi
+`(select public.bbq_mfa_aal_ok())`. Trả `true` khi JWT `aal2` hoặc user không có factor `verified`. Chạy lại 019 (idempotent:
+`create or replace` + `drop policy if exists`).
+
+**Kiểm sau khi chạy (SQL Editor):** `select public.bbq_mfa_aal_ok();` → `true` (không lỗi quyền); mở popup đã đăng nhập →
+ghi chú / lịch tải bình thường. Lỗi thì chạy khối "Gỡ" ngay.
+
+**Bài học:** SQL chạm schema `auth` phải chạy thử trên dự án thật (hoặc nhánh dev) trước — harness chỉ đọc chữ.
