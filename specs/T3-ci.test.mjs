@@ -56,26 +56,29 @@ check('T3.5 dependabot: version 2; npm (weekly, nhóm @tiptap/*) + github-action
 
 // ── Phát hành 2.1.2 ────────────────────────────────────────────────────────────────────────────────────────────────
 console.log('\nT3 — phát hành 2.1.2')
-const V = '2.1.2'
+// R6 (đổi có chủ đích, 2.2.0): chỗ ghi "phiên bản hiện tại" kiểm theo manifest (≥ 2.1.2); phần lịch sử 2.1.2 (README
+// "What changed in 2.1.2", "Release 2.1.2 (highlights)", dòng Security thư viện trong WHAT'S NEW) vẫn kiểm như cũ.
 const manifest = JSON.parse(read('public', 'manifest.json') || '{}')
+const V = manifest.version ?? ''
+const atLeast212 = /^2\.1\.([2-9]|\d\d+)$|^2\.([2-9]|\d\d+)\.\d+$|^([3-9]|\d\d+)\.\d+\.\d+$/.test(V)
 const pkg = JSON.parse(read('package.json') || '{}')
 const lockRoot = JSON.parse(read('package-lock.json') || '{}')
-check('T3.6 manifest / package.json / lock = 2.1.2; quyền không đổi',
-  manifest.version === V && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
+check('T3.6 manifest / package.json / lock cùng phiên bản ≥ 2.1.2 (R6); quyền không đổi',
+  atLeast212 && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
     JSON.stringify(manifest.permissions) === JSON.stringify(['storage', 'unlimitedStorage', 'contextMenus', 'alarms', 'clipboardWrite', 'offscreen', 'bookmarks', 'downloads']),
   `${manifest.version}/${pkg.version}/${lockRoot.version}`)
 const readme = read('README.md')
 const sec = readme.slice(readme.indexOf('## What changed in 2.1.2'), readme.indexOf('## What changed in 2.1.1'))
-check('T3.7 README: Version 2.1.2 + "What changed in 2.1.2" (mục lục, trước 2.1.1) nói Tiptap 3 / vite 6 / CI',
+check('T3.7 README: Version = phiên bản hiện tại (R6) + "What changed in 2.1.2" (mục lục, trước 2.1.1) nói Tiptap 3 / vite 6 / CI',
   readme.includes(`**Version:** ${V}`) && /\[What changed in 2\.1\.2\]\(#what-changed-in-212\)/.test(readme) &&
     readme.indexOf('## What changed in 2.1.2') > 0 && sec.length > 0 && /Tiptap 3/.test(sec) && /vite 6/i.test(sec) && /CI|GitHub Actions/.test(sec) && /Dependabot/.test(sec),
   'README')
 const txt = read('docs', 'chrome-store-detailed-description.txt')
 const news = txt.slice(txt.indexOf("WHAT'S NEW"), txt.indexOf("WHAT'S NEW") + 1500)
-check("T3.8 Store: WHAT'S NEW IN 2.1.2 (dòng Security về thư viện + kiểm tự động, vẫn giữ sao lưu ra file); Release 2.1.2 (highlights); permissions doc **v2.1.2**; DESIGN 2.1.2",
+check("T3.8 Store: WHAT'S NEW bản hiện tại (R6) còn dòng Security thư viện + kiểm tự động và sao lưu ra file; Release 2.1.2 (highlights); permissions doc / DESIGN = phiên bản hiện tại",
   txt.includes(`WHAT'S NEW IN ${V}`) && /Security:.*(librar|editor).*(automat|check)/i.test(news) && /Backup files for use without an account/.test(news) &&
     /Release 2\.1\.2 \(highlights\)/.test(read('docs', 'CHROME-STORE-LISTING.md')) && read('docs', 'CHROME-STORE-PERMISSIONS.md').includes(`**v${V}**`) &&
-    /\nversion: 2\.1\.2\r?\n/.test(read('DESIGN.md')),
+    read('DESIGN.md').includes(`\nversion: ${V}\n`),
   'docs')
 
 console.log('\n──────────────────────────────────────────────')
