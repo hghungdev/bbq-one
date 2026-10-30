@@ -17,7 +17,7 @@
     "memory:status": "node scripts/sync-claude-memory.mjs status"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1",
+    "@supabase/supabase-js": "^2.118.0",
     "@tiptap/core": "^3.32.1",
     "@tiptap/pm": "^3.32.1",
     "@tiptap/starter-kit": "^3.32.1",
