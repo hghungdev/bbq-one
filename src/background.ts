@@ -16,6 +16,7 @@ import {
 } from '@/services/pendingDeleteCommit.service'
 import {
   BBQ_AUTH_LOGGED_IN_KEY,
+  BBQ_OMNIBOX_MODE_KEY,
   BBQ_PENDING_ROUTE_KEY,
   FOLDERS_CACHE_KEY,
   NOTE_BODIES_CACHE_KEY,
@@ -32,8 +33,10 @@ import {
   omniboxDescription,
   omniboxNoteRoute,
   omniboxSearchRoute,
+  parseOmniboxMode,
   resolveOmniboxNoteId,
   searchNotesForOmnibox,
+  type OmniboxMode,
 } from '@/utils/omniboxNotes'
 import {
   isRecoverableRefreshTokenAuthError,
@@ -237,6 +240,8 @@ interface OmniboxData {
   bodies: NoteBody[]
   folders: Folder[]
   lang: 'en' | 'vi'
+  /** S12: chế độ gợi ý (Cài đặt › Tìm từ thanh địa chỉ). */
+  mode: OmniboxMode
 }
 
 /** Cache trước (có cả khi đăng nhập), thiếu thì kho máy — không gọi mạng. */
@@ -248,6 +253,7 @@ const OMNIBOX_KEYS: string[] = [
   LOCAL_STORAGE_KEYS.noteBodies,
   LOCAL_STORAGE_KEYS.folders,
   UI_LANG_KEY,
+  BBQ_OMNIBOX_MODE_KEY,
 ]
 let omniboxData: Promise<OmniboxData> | null = null
 
@@ -266,6 +272,7 @@ function loadOmniboxData(): Promise<OmniboxData> {
       bodies: pick<NoteBody>(r[NOTE_BODIES_CACHE_KEY], r[LOCAL_STORAGE_KEYS.noteBodies]),
       folders: pick<Folder>(r[FOLDERS_CACHE_KEY], r[LOCAL_STORAGE_KEYS.folders]),
       lang: r[UI_LANG_KEY] === 'vi' ? 'vi' : 'en',
+      mode: parseOmniboxMode(r[BBQ_OMNIBOX_MODE_KEY]),
     }
   })()
   omniboxData = loading
@@ -276,7 +283,10 @@ function loadOmniboxData(): Promise<OmniboxData> {
   return loading
 }
 
-function omniboxText(lang: OmniboxData['lang'], key: 'omnibox.default' | 'omnibox.noResults' | 'notes.untitled'): string {
+function omniboxText(
+  lang: OmniboxData['lang'],
+  key: 'omnibox.default' | 'omnibox.noResults' | 'omnibox.off' | 'notes.untitled',
+): string {
   return (lang === 'vi' ? vi : en)[key]
 }
 
@@ -307,6 +317,12 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
       console.warn('[BBQOne] omnibox: không đọc được ghi chú', e)
       return
     }
+    // S12: Tắt → không tìm, không gợi ý ghi chú nào.
+    if (data.mode === 'off') {
+      chrome.omnibox.setDefaultSuggestion({ description: omniboxText(data.lang, 'omnibox.off') })
+      suggest([])
+      return
+    }
     const hits = searchNotesForOmnibox({ notes: data.notes, bodies: data.bodies, folders: data.folders, query: text })
     const untitled = omniboxText(data.lang, 'notes.untitled')
     const folderNames = new Map(data.folders.map((f) => [f.id, f.name]))
@@ -316,7 +332,13 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
     suggest(
       hits.map((h) => ({
         content: omniboxContent(h.note, untitled),
-        description: omniboxDescription(h, h.note.folder_id ? folderNames.get(h.note.folder_id) ?? null : null, text, untitled),
+        description: omniboxDescription(
+          h,
+          h.note.folder_id ? folderNames.get(h.note.folder_id) ?? null : null,
+          text,
+          untitled,
+          data.mode,
+        ),
       })),
     )
   })()
@@ -330,6 +352,11 @@ chrome.omnibox.onInputEntered.addListener((text, disposition) => {
     } catch (e) {
       console.warn('[BBQOne] omnibox: không đọc được ghi chú', e)
       await openPopupAt(omniboxSearchRoute(text.trim()))
+      return
+    }
+    // S12: Tắt → chỉ mở BBQOne, không mang chữ đã gõ vào, không sao chép.
+    if (data.mode === 'off') {
+      await openPopupAt('/dashboard')
       return
     }
     const noteId = resolveOmniboxNoteId(text, data.notes)

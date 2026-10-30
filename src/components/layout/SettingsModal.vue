@@ -8,6 +8,7 @@ import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
 import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
 import BackupSettingsSection from '@/components/backup/BackupSettingsSection.vue'
+import OmniboxSettingsSection from '@/components/layout/OmniboxSettingsSection.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
 import { useLangStore } from '@/stores/uiLang'
@@ -217,6 +218,9 @@ onUnmounted(() => {
             </button>
           </div>
         </SettingsAccordionSection>
+
+        <!-- S12: gợi ý thanh địa chỉ — Tên + đoạn trích / Chỉ tên / Tắt. -->
+        <OmniboxSettingsSection />
 
         <!-- B1: sao lưu ra file — người không đăng nhập; FEATURES.backupFileSignedIn bật thì người đăng nhập chỉ tải. -->
         <BackupSettingsSection

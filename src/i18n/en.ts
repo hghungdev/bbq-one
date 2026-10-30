@@ -66,6 +66,7 @@ export const en = {
   // ── Search ──
   'search.label': 'Search',
   'omnibox.default': 'Search “<match>%s</match>” in BBQOne · Enter opens · Alt+Enter copies the note',
+  'omnibox.off': 'BBQOne: address-bar search is off — turn it on in Settings · Enter opens BBQOne',
   'omnibox.noResults': 'No notes match “<match>%s</match>” · Enter opens BBQOne',
   'search.ariaNotes': 'Search notes',
   'search.ariaBookmarks': 'Search bookmarks',
@@ -205,6 +206,12 @@ export const en = {
   // ── Settings modal ──
   'settings.title': 'Settings',
   'settings.language': 'Language',
+  'settings.omnibox.title': 'Address-bar search (bbq)',
+  'settings.omnibox.desc': 'Type bbq + Space in the address bar to search your notes. Choose what the suggestions show — "Title only" is safer if you often share your screen.',
+  'settings.omnibox.full': 'Title + snippet',
+  'settings.omnibox.titleOnly': 'Title only',
+  'settings.omnibox.off': 'Off',
+  'settings.omnibox.chromeHistory': 'Chrome may keep what you type in the address bar in its own history — BBQOne cannot clear it.',
   'settings.languageDesc': 'UI display language.',
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',

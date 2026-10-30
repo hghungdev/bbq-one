@@ -68,6 +68,7 @@ export const vi: Record<I18nKey, string> = {
   // ── Search ──
   'search.label': 'Tìm kiếm',
   'omnibox.default': 'Tìm “<match>%s</match>” trong BBQOne · Enter mở · Alt+Enter sao chép ghi chú',
+  'omnibox.off': 'BBQOne: tìm từ thanh địa chỉ đang tắt — bật lại trong Cài đặt · Enter để mở BBQOne',
   'omnibox.noResults': 'Không thấy ghi chú nào khớp “<match>%s</match>” · Enter để mở BBQOne',
   'search.ariaNotes': 'Tìm ghi chú',
   'search.ariaBookmarks': 'Tìm bookmark',
@@ -207,6 +208,12 @@ export const vi: Record<I18nKey, string> = {
   // ── Settings modal ──
   'settings.title': 'Cài đặt',
   'settings.language': 'Ngôn ngữ giao diện',
+  'settings.omnibox.title': 'Tìm từ thanh địa chỉ (bbq)',
+  'settings.omnibox.desc': 'Gõ bbq + dấu cách trên thanh địa chỉ để tìm ghi chú. Chọn những gì hiện trong gợi ý — nên dùng "Chỉ tên" nếu hay chia sẻ màn hình.',
+  'settings.omnibox.full': 'Tên + đoạn trích',
+  'settings.omnibox.titleOnly': 'Chỉ tên',
+  'settings.omnibox.off': 'Tắt',
+  'settings.omnibox.chromeHistory': 'Chrome có thể nhớ chữ bạn gõ trên thanh địa chỉ trong lịch sử của Chrome — BBQOne không xóa được.',
   'settings.languageDesc': 'Ngôn ngữ hiển thị giao diện ứng dụng.',
   'settings.langEN': 'English (EN)',
   'settings.langVI': 'Tiếng Việt (VI)',

@@ -8,6 +8,14 @@ import { isEncryptedEnvelope } from '@/utils/secureCrypto'
 
 export const OMNIBOX_MAX_SUGGESTIONS = 5
 
+/** S12: Tên + đoạn trích (như F1) / Chỉ tên / Tắt — chọn trong Cài đặt (chia sẻ màn hình lúc gõ `bbq` không lộ nội dung). */
+export type OmniboxMode = 'full' | 'title' | 'off'
+export const DEFAULT_OMNIBOX_MODE: OmniboxMode = 'full'
+
+export function parseOmniboxMode(v: unknown): OmniboxMode {
+  return v === 'full' || v === 'title' || v === 'off' ? v : DEFAULT_OMNIBOX_MODE
+}
+
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
 
 /** Giải mã entity một lượt (không giải mã hai lần: `&amp;lt;` → `&lt;`). */
@@ -149,14 +157,19 @@ function markMatches(text: string, query: string): string {
   return out + escapeXml(text.slice(i))
 }
 
-/** Dòng gợi ý của Chrome (XML): `Tên — Thư mục · …đoạn trích…`, chữ khớp trong tên in đậm, phần sau làm mờ. */
+/**
+ * Dòng gợi ý của Chrome (XML): `Tên — Thư mục · …đoạn trích…`, chữ khớp trong tên in đậm, phần sau làm mờ.
+ * S12 `'title'`: chỉ tên — bỏ cả thư mục lẫn đoạn trích (vẫn tìm trong nội dung, chỉ không hiện).
+ */
 export function omniboxDescription(
   hit: OmniboxHit,
   folderName: string | null,
   query: string,
   untitled: string,
+  mode: OmniboxMode = DEFAULT_OMNIBOX_MODE,
 ): string {
   const title = hit.note.title.trim() || untitled
+  if (mode === 'title') return markMatches(title, query)
   const meta = [folderName, hit.snippet].filter((s): s is string => !!s && s.trim().length > 0)
   const dim = meta.length > 0 ? ` <dim>— ${escapeXml(meta.join(' · '))}</dim>` : ''
   return `${markMatches(title, query)}${dim}`

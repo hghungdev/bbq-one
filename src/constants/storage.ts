@@ -16,6 +16,9 @@ export const BBQ_AUTH_LOGGED_IN_KEY = 'bbq_auth_logged_in'
 /** Ngôn ngữ giao diện người dùng đã chọn ('en' | 'vi'). */
 export const UI_LANG_KEY = 'ui_lang'
 
+/** S12: gợi ý thanh địa chỉ (`bbq …`) — 'full' | 'title' | 'off' (utils/omniboxNotes `parseOmniboxMode`). */
+export const BBQ_OMNIBOX_MODE_KEY = 'bbqone_omnibox_mode'
+
 /** Theme popup: 'light' | 'dark' — đồng bộ chrome.storage.local, áp vào html[data-theme]. */
 export const BBQ_UI_THEME_KEY = 'bbqone_ui_theme'
 
