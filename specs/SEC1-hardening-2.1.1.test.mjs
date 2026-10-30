@@ -233,25 +233,28 @@ check(
 
 // ── T6 phát hành 2.1.1 ─────────────────────────────────────────────────────────────────────────────────────────────
 console.log('\nT6 — phát hành 2.1.1')
-const V = '2.1.1'
+// T3 (đổi có chủ đích, 2.1.2): 2.1.2 đã nâng — chỗ ghi "phiên bản hiện tại" kiểm theo manifest (≥ 2.1.1); phần lịch sử
+// 2.1.1 (mục README "What changed in 2.1.1", "Release 2.1.1 (highlights)") vẫn kiểm như cũ.
+const V = manifest.version ?? ''
+const atLeast211 = /^2\.1\.([1-9]\d*)$|^2\.([2-9]|\d\d+)\.\d+$|^([3-9]|\d\d+)\.\d+\.\d+$/.test(V)
 const pkg = JSON.parse(read('package.json') || '{}')
 const lockRoot = JSON.parse(read('package-lock.json') || '{}')
-check('SEC1.14 manifest / package.json / lock = 2.1.1; quyền không đổi',
-  manifest.version === V && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
+check('SEC1.14 manifest / package.json / lock cùng phiên bản ≥ 2.1.1 (T3); quyền không đổi',
+  atLeast211 && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
     JSON.stringify(manifest.permissions) === JSON.stringify(['storage', 'unlimitedStorage', 'contextMenus', 'alarms', 'clipboardWrite', 'offscreen', 'bookmarks', 'downloads']),
   `${manifest.version}/${pkg.version}/${lockRoot.version}`)
 const readme = read('README.md')
 const sec = readme.slice(readme.indexOf('## What changed in 2.1.1'), readme.indexOf('## What changed in 2.1.0'))
-check('SEC1.15 README: Version 2.1.1 + "What changed in 2.1.1" (mục lục, trước 2.1.0) nói vá thư viện / CSP / bookmark / ICS',
+check('SEC1.15 README: Version = phiên bản hiện tại (T3) + "What changed in 2.1.1" (mục lục, trước 2.1.0) nói vá thư viện / CSP / bookmark / ICS',
   readme.includes(`**Version:** ${V}`) && /\[What changed in 2\.1\.1\]\(#what-changed-in-211\)/.test(readme) && sec.length > 0 &&
     /prosemirror/i.test(sec) && /CSP|Content Security Policy/.test(sec) && /javascript:/.test(sec) && /calendar/i.test(sec),
   'README')
 const txt = read('docs', 'chrome-store-detailed-description.txt')
-check("SEC1.16 Store: WHAT'S NEW IN 2.1.1 (gồm sao lưu ra file của 2.1.0 + bảo mật), Release 2.1.1 (highlights); permissions doc **v2.1.1**; DESIGN 2.1.1",
-  /WHAT'S NEW IN 2\.1\.1/.test(txt) && /Backup files|backup/i.test(txt.slice(txt.indexOf("WHAT'S NEW"), txt.indexOf("WHAT'S NEW") + 1200)) &&
-    /Security/i.test(txt.slice(txt.indexOf("WHAT'S NEW"), txt.indexOf("WHAT'S NEW") + 1200)) &&
-    /Release 2\.1\.1 \(highlights\)/.test(read('docs', 'CHROME-STORE-LISTING.md')) && read('docs', 'CHROME-STORE-PERMISSIONS.md').includes('**v2.1.1**') &&
-    /\nversion: 2\.1\.1\n/.test(read('DESIGN.md')),
+check("SEC1.16 Store: WHAT'S NEW bản hiện tại (T3) gồm sao lưu ra file của 2.1.0 + bảo mật, Release 2.1.1 (highlights); permissions doc / DESIGN = phiên bản hiện tại",
+  txt.includes(`WHAT'S NEW IN ${V}`) && /Backup files|backup/i.test(txt.slice(txt.indexOf("WHAT'S NEW"), txt.indexOf("WHAT'S NEW") + 1500)) &&
+    /Security/i.test(txt.slice(txt.indexOf("WHAT'S NEW"), txt.indexOf("WHAT'S NEW") + 1500)) &&
+    /Release 2\.1\.1 \(highlights\)/.test(read('docs', 'CHROME-STORE-LISTING.md')) && read('docs', 'CHROME-STORE-PERMISSIONS.md').includes(`**v${V}**`) &&
+    read('DESIGN.md').includes(`\nversion: ${V}\n`),
   'docs')
 
 console.log('\n──────────────────────────────────────────────')
