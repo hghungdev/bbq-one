@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
+  import { onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import RetroInput from '@/components/ui/RetroInput.vue'
   import RetroButton from '@/components/ui/RetroButton.vue'
@@ -7,6 +7,7 @@
   import { useLangStore } from '@/stores/uiLang'
   import { isSupabaseConfigured, missingEnvHint } from '@/env'
   import { formatAuthErrorMessage } from '@/utils/authErrors'
+  import MfaChallengeForm from '@/components/auth/MfaChallengeForm.vue'
 
   const router = useRouter()
   const auth = useAuthStore()
@@ -22,6 +23,14 @@
     await langStore.loadLang()
   })
 
+  /** Đăng nhập XONG (không 2FA, hoặc vừa nhập đúng mã — form mã bị gỡ trước khi kịp phát sự kiện) → vào dashboard. */
+  watch(
+    () => auth.isAuthenticated,
+    (ok) => {
+      if (ok) void router.replace({ name: 'dashboard' })
+    },
+  )
+
   async function onSubmit(): Promise<void> {
     errorMessage.value = null
     if (!isSupabaseConfigured) {
@@ -30,8 +39,8 @@
     }
     loading.value = true
     try {
+      // S2: bật 2FA → hiện bước nhập mã (auth.mfaPending); đăng nhập xong → watch bên dưới chuyển trang.
       await auth.login(email.value.trim(), password.value)
-      await router.replace({ name: 'dashboard' })
     } catch (e) {
       errorMessage.value = formatAuthErrorMessage(e)
     } finally {
@@ -50,7 +59,8 @@
         <h1 class="login__title">BBQOne</h1>
       </header>
 
-      <form class="login__form" @submit.prevent="onSubmit">
+      <MfaChallengeForm v-if="auth.mfaPending" @cancelled="password = ''" />
+      <form v-else class="login__form" @submit.prevent="onSubmit">
         <label class="login__label" for="bbqone-email">{{ t('login.email') }}</label>
         <RetroInput
           id="bbqone-email"

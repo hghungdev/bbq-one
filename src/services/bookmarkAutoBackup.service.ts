@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 import { bookmarksService } from './bookmarks.service'
+import { mfaService } from './mfa.service'
 import { buildBookmarkBackupLabel } from '@/utils/bookmarkBackupLabel'
 import {
   getPersistedBookmarkTreeHash,
@@ -35,7 +36,8 @@ async function runBookmarkAutoBackup(): Promise<void> {
       await recoverSupabaseAuthFromStaleSession(sessionErr)
       return
     }
-    if (!session) return
+    // S2: phiên aal1 còn chờ mã 2 bước → chưa phải đăng nhập (RLS cũng chặn).
+    if (!session || (await mfaService.isPending())) return
 
     const tree = await bookmarksService.getFromBrowser()
     const fp = await hashBookmarkTree(tree)
@@ -63,7 +65,8 @@ export async function bootstrapBookmarkBaseline(): Promise<void> {
       await recoverSupabaseAuthFromStaleSession(sessionErr)
       return
     }
-    if (!session) return
+    // S2: phiên aal1 còn chờ mã 2 bước → chưa phải đăng nhập (RLS cũng chặn).
+    if (!session || (await mfaService.isPending())) return
 
     const existing = await getPersistedBookmarkTreeHash()
     if (existing !== null) return

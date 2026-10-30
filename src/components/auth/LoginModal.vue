@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import RetroInput from '@/components/ui/RetroInput.vue'
 import RetroButton from '@/components/ui/RetroButton.vue'
 import IconButton from '@/components/ui/IconButton.vue'
@@ -8,6 +8,7 @@ import { useLangStore } from '@/stores/uiLang'
 import { isSupabaseConfigured, missingEnvHint } from '@/env'
 import { formatAuthErrorMessage } from '@/utils/authErrors'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import MfaChallengeForm from '@/components/auth/MfaChallengeForm.vue'
 
 const emit = defineEmits<{
   close: []
@@ -41,6 +42,17 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
 })
 
+/**
+ * Đăng nhập XONG (không 2FA, hoặc vừa nhập đúng mã) → đóng hộp. Theo dõi trạng thái thay vì sự kiện của form mã: form đó
+ * bị gỡ khỏi DOM ngay khi mfaPending tắt, trước khi kịp phát 'verified'.
+ */
+watch(
+  () => auth.isAuthenticated,
+  (ok) => {
+    if (ok) emit('success')
+  },
+)
+
 async function onSubmit(): Promise<void> {
   errorMessage.value = null
   if (!isSupabaseConfigured) {
@@ -49,8 +61,8 @@ async function onSubmit(): Promise<void> {
   }
   loading.value = true
   try {
+    // S2: tài khoản bật 2FA → hộp chuyển sang bước nhập mã (auth.mfaPending); đăng nhập xong → watch bên dưới đóng hộp.
     await auth.login(email.value.trim(), password.value)
-    emit('success')
   } catch (e) {
     errorMessage.value = formatAuthErrorMessage(e)
   } finally {
@@ -80,7 +92,9 @@ async function onSubmit(): Promise<void> {
           {{ missingEnvHint }}
         </p>
 
-        <form class="lm-form" @submit.prevent="onSubmit">
+        <!-- S2: bước 2 — mở lại popup giữa chừng cũng vào thẳng đây (App mở hộp khi auth.mfaPending). -->
+        <MfaChallengeForm v-if="auth.mfaPending" @cancelled="emit('close')" />
+        <form v-else class="lm-form" @submit.prevent="onSubmit">
           <label class="lm-label" for="lm-email">{{ t('login.email') }}</label>
           <RetroInput
             id="lm-email"

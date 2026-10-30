@@ -114,6 +114,14 @@
   const { colW2, onResizeStart } = useColumnResize()
 
   const showLoginModal = ref(false)
+  /** S2: phiên chờ mã 2 bước (mở lại popup giữa chừng / 2FA vừa bật ở máy khác) → hộp đăng nhập ở bước nhập mã. */
+  watch(
+    () => auth.mfaPending,
+    (pending) => {
+      if (pending) showLoginModal.value = true
+    },
+    { immediate: true },
+  )
   const showOverdueReminder = ref(false)
   const conflictBackups = ref<ConflictBackupEntry[]>([])
   const showConflictBackups = ref(false)

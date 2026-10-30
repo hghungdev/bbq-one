@@ -2,6 +2,7 @@ import { supabase } from '@/services/supabase'
 import { recoverSupabaseAuthFromStaleSession } from '@/services/supabaseAuthRecovery.service'
 import { isOnline } from '@/services/networkReachability.service'
 import { BBQ_AUTH_LOGGED_IN_KEY } from '@/constants/storage'
+import { mfaService } from '@/services/mfa.service'
 
 /** Cờ cache trạng thái logged-in để tránh gọi Supabase khi offline (getSession có thể
  *  trigger token refresh sang network và hang). Ghi/xóa qua auth store. */
@@ -31,7 +32,8 @@ export async function isAuthenticated(): Promise<boolean> {
     await recoverSupabaseAuthFromStaleSession(error)
     return false
   }
-  return !!data.session
+  // S2: phiên aal1 còn chờ mã 2 bước = chưa đăng nhập (máy chủ cũng chặn bằng RLS aal2).
+  return !!data.session && !(await mfaService.isPending())
 }
 
 /** Get current user id, throwing if not logged in. Chỉ dùng cho ghi xuống cloud — gọi

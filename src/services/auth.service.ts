@@ -1,4 +1,5 @@
 import { AUTH_SESSION_DEADLINE_KEY, SESSION_LOGIN_TIMEOUT_MS } from '@/constants/auth'
+import { mfaService } from './mfa.service'
 import { supabase } from './supabase'
 
 export async function setLoginDeadline(): Promise<void> {
@@ -49,11 +50,13 @@ export const authService = {
 
   /**
    * Đổi mật khẩu: xác minh mật khẩu hiện tại bằng signInWithPassword, rồi updateUser.
+   * S2: signInWithPassword tạo phiên MỚI aal1 — tài khoản bật 2FA phải nhập mã ngay (về aal2) rồi mới updateUser.
    */
   async changePassword(params: {
     email: string
     currentPassword: string
     newPassword: string
+    mfaCode?: string
   }): Promise<void> {
     const { error: signErr } = await supabase.auth.signInWithPassword({
       email: params.email,
@@ -65,6 +68,9 @@ export const authService = {
         throw new Error('Mật khẩu hiện tại không đúng.')
       }
       throw new Error(signErr.message || 'Không xác minh được mật khẩu hiện tại.')
+    }
+    if (await mfaService.isPending()) {
+      await mfaService.verify(params.mfaCode ?? '')
     }
     const { error: upErr } = await supabase.auth.updateUser({
       password: params.newPassword,

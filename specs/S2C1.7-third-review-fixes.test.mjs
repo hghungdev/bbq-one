@@ -173,6 +173,11 @@ const authStore = loadTs('src/stores/auth.ts', {
   '@/constants/storage': storageConsts,
   '@/services/calendarBannerDismiss.service': { clearUpcomingBannerDismiss: async () => {} },
   '@/services/calendarOverdueReminder.service': { clearOverdueReminderDismiss: async () => {} },
+  // S2 (2.3.0): store import thêm 2FA — chỉ vá mock (không chờ mã, không factor), không đổi assertion.
+  '@/services/mfa.service': {
+    mfaService: { isPending: async () => false, currentLevel: async () => 'aal1', listVerifiedTotp: async () => [] },
+  },
+  '@/stores/uiLang': { useLangStore: () => ({ t: (k) => k }) },
 }).useAuthStore
 
 // ── server giả (service ghi chú tự hỏi getSession → luôn thấy session thật) ──

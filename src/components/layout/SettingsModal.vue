@@ -8,6 +8,7 @@ import RetroInput from '@/components/ui/RetroInput.vue'
 import SettingsAccordionSection from '@/components/layout/SettingsAccordionSection.vue'
 import AccountEncryptionSetupModal from '@/components/account/AccountEncryptionSetupModal.vue'
 import BackupSettingsSection from '@/components/backup/BackupSettingsSection.vue'
+import MfaSettingsSection from '@/components/account/MfaSettingsSection.vue'
 import OmniboxSettingsSection from '@/components/layout/OmniboxSettingsSection.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountCryptoStore } from '@/stores/accountCrypto'
@@ -43,6 +44,8 @@ const LANG_OPTIONS = [
 const acctPwCurrent = ref('')
 const acctPwNew = ref('')
 const acctPwConfirm = ref('')
+/** S2: bật 2FA → đổi mật khẩu cần mã 6 số (kiểm mật khẩu cũ = đăng nhập lại → phiên aal1). */
+const acctPwMfaCode = ref('')
 const acctPwBusy = ref(false)
 const acctPwError = ref<string | null>(null)
 const acctPwOk = ref(false)
@@ -61,6 +64,7 @@ const acctPwCanSubmit = computed(() => {
   if (acctPwBusy.value) return false
   if (!acctPwCurrent.value || !acctPwNew.value || !acctPwConfirm.value) return false
   if (acctPwIssueKeys.value.length > 0) return false
+  if (auth.mfaEnabled && !/^\d{6}$/.test(acctPwMfaCode.value.trim())) return false
   return true
 })
 
@@ -91,10 +95,11 @@ async function onChangeAccountPassword(): Promise<void> {
 
   acctPwBusy.value = true
   try {
-    await auth.changeAccountPassword(cur, next)
+    await auth.changeAccountPassword(cur, next, auth.mfaEnabled ? acctPwMfaCode.value : undefined)
     acctPwCurrent.value = ''
     acctPwNew.value = ''
     acctPwConfirm.value = ''
+    acctPwMfaCode.value = ''
     acctPwOk.value = true
   } catch (e) {
     acctPwError.value = e instanceof Error ? e.message : t('settings.pwErrFailed')
@@ -280,6 +285,19 @@ onUnmounted(() => {
             placeholder="••••••••"
             :disabled="acctPwBusy"
           />
+          <template v-if="auth.mfaEnabled">
+            <label class="settings-field-label" for="set-acct-pw-mfa">{{ t('mfa.codeLabel') }}</label>
+            <RetroInput
+              id="set-acct-pw-mfa"
+              v-model="acctPwMfaCode"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              :maxlength="6"
+              placeholder="123456"
+              :disabled="acctPwBusy"
+            />
+          </template>
           <p v-if="acctPwError" class="settings-pin-err" role="alert">
             {{ acctPwError }}
           </p>
@@ -297,6 +315,9 @@ onUnmounted(() => {
             </RetroButton>
           </div>
         </SettingsAccordionSection>
+
+        <!-- S2: xác thực 2 bước (TOTP, tùy chọn). -->
+        <MfaSettingsSection v-if="auth.isAuthenticated" />
 
         <!-- S3b: tạm ẩn (FEATURES.accountEncryptionSettings) — S3 hoãn, Sir nghiên cứu thêm. -->
         <SettingsAccordionSection
