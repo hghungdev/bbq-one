@@ -1,10 +1,15 @@
 import { defineStore } from 'pinia'
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
+import { FOLDERS_CACHE_KEY } from '@/constants/storage'
 import { foldersService } from '@/services/folders.service'
 import { noteBodiesService } from '@/services/noteBodies.service'
 import { notesService } from '@/services/notes.service'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
+import { useLangStore } from '@/stores/uiLang'
+import type { Folder } from '@/types'
+import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
+import { secureFolderPasswordIssue } from '@/utils/passwordStrength'
 import {
   DEFAULT_PBKDF2_ITERATIONS,
   SECURE_VERIFIER_PLAINTEXT,
@@ -23,18 +28,45 @@ import {
  */
 export const useSecureFolderStore = defineStore('secureFolder', () => {
   const sessionKeys = shallowRef<Map<string, CryptoKey>>(new Map())
+  /**
+   * S9: salt đã dùng để dẫn từng khóa. Khác `secure_salt` hiện tại của thư mục = mật khẩu đã đổi ở máy khác → khóa cũ
+   * mã hóa ra thứ mật khẩu mới không mở được. Luôn đổi cùng `sessionKeys` (reactivity đi theo `sessionKeys`).
+   */
+  const keySalts = new Map<string, string>()
+  /** S9: thư mục bị quên khóa vì đổi mật khẩu ở máy khác — hộp mở khóa báo lý do. */
+  const saltChangedIds = shallowRef<Set<string>>(new Set())
+  /**
+   * S9: thư mục đang đổi khóa NGAY TẠI ngữ cảnh này — chính lần ghi của mình phát onChanged trước setKey, và
+   * folders.loadAll nạp folders_cache (salt cũ) trước → không được coi là "đổi ở máy khác".
+   */
+  const rekeying = new Set<string>()
 
-  function getKey(folderId: string): CryptoKey | null {
-    return sessionKeys.value.get(folderId) ?? null
+  function keyMatchesFolder(folderId: string): boolean {
+    const f = useFoldersStore().folders.find((x) => x.id === folderId)
+    return !!f?.is_secure && !!f.secure_salt && f.secure_salt === keySalts.get(folderId)
   }
 
-  function setKey(folderId: string, key: CryptoKey): void {
+  /** Lệch salt → null NGAY: mọi đường ghi (notes / sync / secureCache) đã từ chối khi không có khóa. */
+  function getKey(folderId: string): CryptoKey | null {
+    const key = sessionKeys.value.get(folderId)
+    if (!key) return null
+    return keyMatchesFolder(folderId) ? key : null
+  }
+
+  function setKey(folderId: string, key: CryptoKey, saltB64: string): void {
+    keySalts.set(folderId, saltB64)
     const next = new Map(sessionKeys.value)
     next.set(folderId, key)
     sessionKeys.value = next
+    if (saltChangedIds.value.has(folderId)) {
+      const ids = new Set(saltChangedIds.value)
+      ids.delete(folderId)
+      saltChangedIds.value = ids
+    }
   }
 
   function deleteKey(folderId: string): void {
+    keySalts.delete(folderId)
     if (!sessionKeys.value.has(folderId)) return
     const next = new Map(sessionKeys.value)
     next.delete(folderId)
@@ -45,7 +77,55 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     const folders = useFoldersStore()
     const f = folders.folders.find((x) => x.id === folderId)
     if (!f?.is_secure) return false
-    return !sessionKeys.value.has(folderId)
+    return getKey(folderId) === null
+  }
+
+  /**
+   * S9: thư mục đồng bộ về mang salt mới (đổi mật khẩu ở máy khác) → quên khóa cũ, nạp lại ghi chú như khóa tay (bản rõ
+   * rời RAM). Đổi trên chính máy này: setKey(…, salt mới) chạy TRƯỚC khi thư mục mới vào store → ở đây thấy khớp.
+   */
+  watch(
+    () => useFoldersStore().folders.map((f) => `${f.id}:${f.is_secure ? (f.secure_salt ?? '') : '-'}`).join('|'),
+    () => {
+      for (const folderId of [...sessionKeys.value.keys()]) {
+        if (rekeying.has(folderId) || keyMatchesFolder(folderId)) continue
+        const f = useFoldersStore().folders.find((x) => x.id === folderId)
+        deleteKey(folderId)
+        if (!f?.is_secure) continue
+        const ids = new Set(saltChangedIds.value)
+        ids.add(folderId)
+        saltChangedIds.value = ids
+        void useNotesStore().loadAll()
+      }
+    },
+  )
+
+  /**
+   * S9: tab khác / popup / SW (đồng bộ về) ghi danh sách thư mục — ngữ cảnh này không tự nạp lại. Salt mới khác khóa đang
+   * giữ → nạp lại thư mục, watcher ở trên quên khóa cũ. Khớp (ghi của chính mình) → không làm gì. Không có chrome → bỏ qua.
+   */
+  if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local' || keySalts.size === 0) return
+      for (const k of [FOLDERS_CACHE_KEY, LOCAL_STORAGE_KEYS.folders]) {
+        const rows = changes[k]?.newValue
+        if (!Array.isArray(rows)) continue
+        const stale = (rows as Folder[]).some(
+          (f) => keySalts.has(f.id) && !rekeying.has(f.id) && f.is_secure && f.secure_salt !== keySalts.get(f.id),
+        )
+        if (stale) {
+          void useFoldersStore().loadAll()
+          return
+        }
+      }
+    })
+  }
+
+  function strengthError(newPassword: string): Error | null {
+    const issue = secureFolderPasswordIssue(newPassword)
+    if (!issue) return null
+    const { t } = useLangStore()
+    return new Error(t(issue === 'tooShort' ? 'secureFolder.err.tooShort' : 'secureFolder.err.common'))
   }
 
   async function verifyPassphrase(
@@ -57,7 +137,8 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     if (!folder?.is_secure || !folder.secure_salt) {
       throw new Error('Folder is not secure')
     }
-    const salt = saltFromBase64(folder.secure_salt)
+    const saltB64 = folder.secure_salt
+    const salt = saltFromBase64(saltB64)
     if (salt.length !== 16) throw new Error('Invalid salt')
     const key = await deriveKeyFromPassword(
       password,
@@ -73,7 +154,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
           throw new Error('Wrong passphrase')
         }
       } else if (list.length === 0) {
-        setKey(folderId, key)
+        setKey(folderId, key, saltB64)
         return
       } else {
         await decryptField(list[0].title, key)
@@ -87,7 +168,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     } catch {
       throw new Error('Wrong passphrase')
     }
-    setKey(folderId, key)
+    setKey(folderId, key, saltB64)
   }
 
   /**
@@ -97,10 +178,9 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
   async function decryptLoadedSecureRows(): Promise<void> {
     if (sessionKeys.value.size === 0) return
     const notes = useNotesStore()
-    const folders = useFoldersStore()
     for (const [folderId, key] of sessionKeys.value) {
-      const folder = folders.folders.find((f) => f.id === folderId)
-      if (!folder?.is_secure) continue
+      // S9: khóa dẫn từ salt cũ không giải mã được bản của mật khẩu mới — bỏ qua (watcher sẽ quên khóa).
+      if (!keyMatchesFolder(folderId)) continue
       for (let i = 0; i < notes.notes.length; i++) {
         const n = notes.notes[i]
         if (n.folder_id !== folderId) continue
@@ -140,6 +220,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
   }
 
   function lockAll(): void {
+    keySalts.clear()
     sessionKeys.value = new Map()
   }
 
@@ -148,9 +229,8 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     password: string,
     confirmPassword: string,
   ): Promise<void> {
-    if (password.length < 8) {
-      throw new Error('Passphrase must be at least 8 characters')
-    }
+    const weak = strengthError(password)
+    if (weak) throw weak
     if (password !== confirmPassword) {
       throw new Error('Passphrases do not match')
     }
@@ -194,13 +274,146 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
       pbkdf2_iterations: iterations,
       secure_verifier_enc: verifier,
     })
+    // S9: khóa + salt mới TRƯỚC khi thư mục mới vào store (không await ở giữa) → chốt salt không báo nhầm.
+    setKey(folderId, key, saltB64)
     const idx = folders.folders.findIndex((f) => f.id === folderId)
     if (idx !== -1) folders.folders[idx] = updated
     folders.reorderFoldersByUpdated()
     await folders.persistCache()
 
-    setKey(folderId, key)
     await notes.loadAll()
+  }
+
+  /** S9: hai khóa AES-GCM có trùng không — mã hóa thử bằng a, giải bằng b (khóa không trích ra được). */
+  async function sameKey(a: CryptoKey, b: CryptoKey): Promise<boolean> {
+    try {
+      return (await decryptField(await encryptField(SECURE_VERIFIER_PLAINTEXT, a), b)) === SECURE_VERIFIER_PLAINTEXT
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Mật khẩu cũ đúng? Có verifier → giải verifier. Không verifier mà đang mở (RAM là bản rõ, S1) → so với khóa phiên.
+   * Đang khóa → giải ghi chú đầu (RAM là bản mã). Thư mục rỗng chưa có verifier → không có gì để so (như trước).
+   */
+  async function oldPasswordMatches(
+    folderId: string,
+    verifierEnc: string | null,
+    oldKey: CryptoKey,
+    firstNoteId: string | null,
+  ): Promise<boolean> {
+    try {
+      if (verifierEnc) return (await decryptField(verifierEnc, oldKey)) === SECURE_VERIFIER_PLAINTEXT
+      const session = getKey(folderId)
+      if (session) return await sameKey(oldKey, session)
+      if (!firstNoteId) return true
+      const notes = useNotesStore()
+      await decryptField(notes.notes.find((n) => n.id === firstNoteId)!.title, oldKey)
+      const fb = notes.bodiesForNote(firstNoteId)[0]
+      if (fb) {
+        await decryptField(fb.label, oldKey)
+        await decryptField(fb.content, oldKey)
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Kiểm mật khẩu cũ → mã hóa lại mọi ghi chú bằng khóa mới (salt mới, DEFAULT vòng) → ghi thư mục.
+   * Dùng chung cho đổi mật khẩu và S9 nâng cấp số vòng (giữ mật khẩu: oldPassword === newPassword).
+   * S9: chạy được cả khi thư mục ĐANG MỞ — RAM khi đó là bản rõ (trước đây giải mã bản rõ → luôn "sai mật khẩu").
+   */
+  async function rekeyFolder(
+    folderId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    rekeying.add(folderId)
+    try {
+      const folders = useFoldersStore()
+      const folder = folders.folders.find((x) => x.id === folderId)
+      if (!folder?.is_secure || !folder.secure_salt) {
+        throw new Error('Folder is not secure')
+      }
+
+      const oldSalt = saltFromBase64(folder.secure_salt)
+      if (oldSalt.length !== 16) throw new Error('Invalid salt')
+      const oldKey = await deriveKeyFromPassword(
+        oldPassword,
+        oldSalt,
+        folder.pbkdf2_iterations,
+      )
+
+      const notes = useNotesStore()
+      const list = notes.notes.filter((n) => n.folder_id === folderId)
+      if (!(await oldPasswordMatches(folderId, folder.secure_verifier_enc, oldKey, list[0]?.id ?? null))) {
+        throw new Error('Current passphrase is wrong')
+      }
+
+      const newSalt = generateSalt16()
+      const newSaltB64 = saltToBase64(newSalt)
+      const newKey = await deriveKeyFromPassword(
+        newPassword,
+        newSalt,
+        DEFAULT_PBKDF2_ITERATIONS,
+      )
+      /** Bản rõ của một trường: RAM là bản mã (đang khóa) → giải bằng khóa cũ; đang mở → RAM đã là bản rõ. */
+      const plainOf = async (v: string): Promise<string> => (isEncryptedEnvelope(v) ? decryptField(v, oldKey) : v)
+
+      for (const n of list) {
+        const titlePlain = await plainOf(n.title)
+        const saved = await notesService.update(n.id, { title: await encryptField(titlePlain, newKey) }, {
+          row: n,
+          retryOnConflictWithServerState: true,
+        })
+        // RAM giữ đúng dạng cũ (đang mở: bản rõ; đang khóa: bản mã mới) + updated_at mới cho khóa lạc quan (C9).
+        const at = notes.notes.findIndex((x) => x.id === n.id)
+        if (at !== -1) {
+          notes.notes[at] = { ...notes.notes[at], ...saved, title: isEncryptedEnvelope(n.title) ? saved.title : titlePlain }
+        }
+        for (const b of notes.bodiesForNote(n.id)) {
+          const labelPlain = await plainOf(b.label)
+          const contentPlain = await plainOf(b.content)
+          const savedBody = await noteBodiesService.update(b.id, {
+            label: await encryptField(labelPlain, newKey),
+            content: await encryptField(contentPlain, newKey),
+          }, {
+            row: b,
+            retryOnConflictWithServerState: true,
+          })
+          const bi = notes.bodies.findIndex((x) => x.id === b.id)
+          if (bi !== -1) {
+            notes.bodies[bi] = {
+              ...notes.bodies[bi],
+              ...savedBody,
+              label: isEncryptedEnvelope(b.label) ? savedBody.label : labelPlain,
+              content: isEncryptedEnvelope(b.content) ? savedBody.content : contentPlain,
+            }
+          }
+        }
+      }
+
+      const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, newKey)
+      const updatedFolder = await foldersService.update(folderId, {
+        secure_salt: newSaltB64,
+        pbkdf2_iterations: DEFAULT_PBKDF2_ITERATIONS,
+        secure_verifier_enc: verifier,
+      })
+      setKey(folderId, newKey, newSaltB64)
+      const fIdx = folders.folders.findIndex((f) => f.id === folderId)
+      if (fIdx !== -1) folders.folders[fIdx] = updatedFolder
+      folders.reorderFoldersByUpdated()
+      await folders.persistCache()
+
+      // Cache trên đĩa niêm phong lại bằng khóa mới (seal memo theo CryptoKey → không dùng lại bản mã của khóa cũ).
+      await notes.persistCache()
+      await notes.loadAll()
+    } finally {
+      rekeying.delete(folderId)
+    }
   }
 
   async function changePassphrase(
@@ -209,110 +422,20 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     newPassword: string,
     confirmNew: string,
   ): Promise<void> {
-    if (newPassword.length < 8) {
-      throw new Error('New passphrase must be at least 8 characters')
-    }
+    const weak = strengthError(newPassword)
+    if (weak) throw weak
     if (newPassword !== confirmNew) {
       throw new Error('New passphrases do not match')
     }
-    const folders = useFoldersStore()
-    const folder = folders.folders.find((x) => x.id === folderId)
-    if (!folder?.is_secure || !folder.secure_salt) {
-      throw new Error('Folder is not secure')
-    }
+    await rekeyFolder(folderId, oldPassword, newPassword)
+  }
 
-    const oldSalt = saltFromBase64(folder.secure_salt)
-    if (oldSalt.length !== 16) throw new Error('Invalid salt')
-    const oldKey = await deriveKeyFromPassword(
-      oldPassword,
-      oldSalt,
-      folder.pbkdf2_iterations,
-    )
-
-    const notes = useNotesStore()
-    const list = notes.notes.filter((n) => n.folder_id === folderId)
-    if (list.length === 0) {
-      if (folder.secure_verifier_enc) {
-        try {
-          await decryptField(folder.secure_verifier_enc, oldKey)
-        } catch {
-          throw new Error('Current passphrase is wrong')
-        }
-      }
-      const newSalt = generateSalt16()
-      const newSaltB64 = saltToBase64(newSalt)
-      const newKey = await deriveKeyFromPassword(
-        newPassword,
-        newSalt,
-        DEFAULT_PBKDF2_ITERATIONS,
-      )
-      const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, newKey)
-      const updated = await foldersService.update(folderId, {
-        secure_salt: newSaltB64,
-        pbkdf2_iterations: DEFAULT_PBKDF2_ITERATIONS,
-        secure_verifier_enc: verifier,
-      })
-      const idx = folders.folders.findIndex((f) => f.id === folderId)
-      if (idx !== -1) folders.folders[idx] = updated
-      folders.reorderFoldersByUpdated()
-      await folders.persistCache()
-      deleteKey(folderId)
-      setKey(folderId, newKey)
-      return
-    }
-
-    const first = list[0]
-    const firstBodies = notes.bodiesForNote(first.id)
-    try {
-      await decryptField(first.title, oldKey)
-      const fb = firstBodies[0]
-      if (fb) {
-        await decryptField(fb.label, oldKey)
-        await decryptField(fb.content, oldKey)
-      }
-    } catch {
-      throw new Error('Current passphrase is wrong')
-    }
-
-    const newSalt = generateSalt16()
-    const newSaltB64 = saltToBase64(newSalt)
-    const newKey = await deriveKeyFromPassword(
-      newPassword,
-      newSalt,
-      DEFAULT_PBKDF2_ITERATIONS,
-    )
-
-    for (const n of list) {
-      const titlePlain = await decryptField(n.title, oldKey)
-      const title = await encryptField(titlePlain, newKey)
-      await notesService.update(n.id, { title }, { row: n, retryOnConflictWithServerState: true })
-      const bs = notes.bodiesForNote(n.id)
-      for (const b of bs) {
-        const labelPlain = await decryptField(b.label, oldKey)
-        const contentPlain = await decryptField(b.content, oldKey)
-        const label = await encryptField(labelPlain, newKey)
-        const content = await encryptField(contentPlain, newKey)
-        await noteBodiesService.update(b.id, { label, content }, {
-          row: b,
-          retryOnConflictWithServerState: true,
-        })
-      }
-    }
-
-    const verifier = await encryptField(SECURE_VERIFIER_PLAINTEXT, newKey)
-    const updatedFolder = await foldersService.update(folderId, {
-      secure_salt: newSaltB64,
-      pbkdf2_iterations: DEFAULT_PBKDF2_ITERATIONS,
-      secure_verifier_enc: verifier,
-    })
-    const fIdx = folders.folders.findIndex((f) => f.id === folderId)
-    if (fIdx !== -1) folders.folders[fIdx] = updatedFolder
-    folders.reorderFoldersByUpdated()
-    await folders.persistCache()
-
-    deleteKey(folderId)
-    setKey(folderId, newKey)
-    await notes.loadAll()
+  /**
+   * S9: nâng thư mục cũ (< DEFAULT vòng) lên DEFAULT — giữ nguyên mật khẩu (không áp độ mạnh mới). Chỉ khi người dùng
+   * bấm: máy chưa có chốt salt (bản < 2.2.0) vẫn ghi bằng khóa cũ nếu đang mở thư mục lúc nâng cấp.
+   */
+  async function upgradeIterations(folderId: string, password: string): Promise<void> {
+    await rekeyFolder(folderId, password, password)
   }
 
   /** Sau khi xóa folder trên server: bỏ key khỏi phiên. */
@@ -322,6 +445,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
 
   return {
     sessionKeys,
+    saltChangedIds,
     getKey,
     forgetFolderKey,
     isFolderLocked,
@@ -330,6 +454,7 @@ export const useSecureFolderStore = defineStore('secureFolder', () => {
     lockAll,
     enableSecureFolder,
     changePassphrase,
+    upgradeIterations,
     decryptLoadedSecureRows,
   }
 })

@@ -167,6 +167,15 @@ export const en = {
   'secureFolder.new': 'New',
   'secureFolder.confirm': 'Confirm',
   'secureFolder.placeholder': '••••••••',
+  'secureFolder.titleUpgrade': 'Upgrade protection',
+  'secureFolder.upgradeHint': 'This folder uses an older protection level.',
+  'secureFolder.upgradeBtn': 'Upgrade',
+  'secureFolder.upgradeDesc': 'Enter the current password — it stays the same; BBQOne re-encrypts the notes with a stronger key (600,000 iterations). Upgrade once all your devices run BBQOne 2.2.0.',
+  'secureFolder.unlocking': 'Working…',
+  'secureFolder.strengthHint': 'At least 10 characters; avoid common passwords (e.g. 123456789, password). If you forget it, the notes cannot be opened again.',
+  'secureFolder.saltChanged': 'This folder’s password was changed on another device — enter the new password.',
+  'secureFolder.err.tooShort': 'Use at least 10 characters.',
+  'secureFolder.err.common': 'This password is too common or easy to guess — choose another one.',
 
   // ── Encrypted account (S2C1) ──
   'account.settingsTitle': 'Encrypted account',

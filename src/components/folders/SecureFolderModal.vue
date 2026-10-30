@@ -9,7 +9,8 @@ import { useLangStore } from '@/stores/uiLang'
 
 const props = defineProps<{
   open: boolean
-  mode: 'enable' | 'unlock' | 'change'
+  /** S9: 'upgrade' = nâng số vòng PBKDF2, giữ mật khẩu hiện tại. */
+  mode: 'enable' | 'unlock' | 'change' | 'upgrade'
   folderId: string
 }>()
 
@@ -56,6 +57,8 @@ async function submit(): Promise<void> {
       )
     } else if (props.mode === 'unlock') {
       await secure.unlockFolder(props.folderId, password.value)
+    } else if (props.mode === 'upgrade') {
+      await secure.upgradeIterations(props.folderId, password.value)
     } else {
       await secure.changePassphrase(
         props.folderId,
@@ -83,6 +86,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
 const titleText = (): string => {
   if (props.mode === 'enable') return t('secureFolder.titleEnable')
   if (props.mode === 'unlock') return t('secureFolder.titleUnlock')
+  if (props.mode === 'upgrade') return t('secureFolder.titleUpgrade')
   return t('secureFolder.titleChange')
 }
 </script>
@@ -115,6 +119,12 @@ const titleText = (): string => {
         <p v-if="error" class="secure-modal__err" role="alert">
           {{ error }}
         </p>
+        <!-- S9: khóa cũ bị quên vì đổi mật khẩu ở máy khác. -->
+        <p v-if="mode === 'unlock' && secure.saltChangedIds.has(folderId)" class="secure-modal__note" role="note">
+          {{ t('secureFolder.saltChanged') }}
+        </p>
+        <p v-if="mode === 'upgrade'" class="secure-modal__note">{{ t('secureFolder.upgradeDesc') }}</p>
+        <p v-if="mode === 'enable' || mode === 'change'" class="secure-modal__hint">{{ t('secureFolder.strengthHint') }}</p>
 
         <template v-if="mode === 'change'">
           <label class="secure-modal__label" for="secure-old">{{ t('secureFolder.current') }}</label>
@@ -178,7 +188,7 @@ const titleText = (): string => {
             :disabled="busy"
             @click="submit"
           >
-            {{ t('common.ok') }}
+            {{ busy ? t('secureFolder.unlocking') : t('common.ok') }}
           </RetroButton>
         </div>
       </div>
@@ -244,6 +254,20 @@ const titleText = (): string => {
   border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
   border-radius: var(--radius-md);
   background: var(--surface-danger-muted);
+}
+
+.secure-modal__note {
+  margin: 0 0 10px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.secure-modal__hint {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 .secure-modal__label {

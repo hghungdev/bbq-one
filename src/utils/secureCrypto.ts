@@ -1,6 +1,7 @@
 /** AES-GCM 256 + PBKDF2; envelope cho title/content lưu Supabase. */
 
-export const DEFAULT_PBKDF2_ITERATIONS = 310_000
+/** S9: OWASP 2023 cho PBKDF2-HMAC-SHA256 (thư mục mới + mỗi lần đổi mật khẩu). Thư mục cũ mở bằng `pbkdf2_iterations` của nó. */
+export const DEFAULT_PBKDF2_ITERATIONS = 600_000
 
 /**
  * Chuỗi cố định mã hóa lưu `folders.secure_verifier_enc` để kiểm tra passphrase.

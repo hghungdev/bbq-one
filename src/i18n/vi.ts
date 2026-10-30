@@ -169,6 +169,15 @@ export const vi: Record<I18nKey, string> = {
   'secureFolder.new': 'Mới',
   'secureFolder.confirm': 'Xác nhận',
   'secureFolder.placeholder': '••••••••',
+  'secureFolder.titleUpgrade': 'Nâng cấp mức bảo vệ',
+  'secureFolder.upgradeHint': 'Thư mục này dùng mức bảo vệ cũ.',
+  'secureFolder.upgradeBtn': 'Nâng cấp',
+  'secureFolder.upgradeDesc': 'Nhập mật khẩu hiện tại — mật khẩu giữ nguyên, BBQOne mã hóa lại các ghi chú bằng khóa mạnh hơn (600.000 vòng). Nên nâng cấp khi mọi máy của bạn đã lên BBQOne 2.2.0.',
+  'secureFolder.unlocking': 'Đang xử lý…',
+  'secureFolder.strengthHint': 'Tối thiểu 10 ký tự, tránh mật khẩu phổ biến (vd 123456789, password). Quên mật khẩu là không mở lại được ghi chú.',
+  'secureFolder.saltChanged': 'Mật khẩu thư mục này đã được đổi trên máy khác — nhập mật khẩu mới.',
+  'secureFolder.err.tooShort': 'Mật khẩu cần ít nhất 10 ký tự.',
+  'secureFolder.err.common': 'Mật khẩu quá phổ biến hoặc dễ đoán — hãy chọn mật khẩu khác.',
 
   // ── Encrypted account (S2C1) ──
   'account.settingsTitle': 'Mã hóa tài khoản',

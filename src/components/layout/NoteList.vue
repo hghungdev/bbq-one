@@ -6,11 +6,13 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import QuickCreateModal from '@/components/ui/QuickCreateModal.vue'
 import RetroConfirm from '@/components/ui/RetroConfirm.vue'
+import SecureFolderModal from '@/components/folders/SecureFolderModal.vue'
 import { useFoldersStore } from '@/stores/folders'
 import { useNotesStore } from '@/stores/notes'
 import { useSecureFolderStore } from '@/stores/secureFolder'
 import { useLangStore } from '@/stores/uiLang'
 import { useProgressiveList } from '@/composables/useProgressiveList'
+import { DEFAULT_PBKDF2_ITERATIONS } from '@/utils/secureCrypto'
 
 defineProps<{
   renamingNoteId: string | null
@@ -70,6 +72,13 @@ function sortNotesByUpdatedDesc<T extends { updated_at: string }>(list: T[]): T[
 
 /** U11: phạm vi hiển thị ở đầu cột. */
 const searching = computed(() => notes.searchQuery.trim().length > 0)
+
+/** S9: thư mục bảo mật tạo trước 2.2.0 (310.000 vòng) đang mở → mời nâng cấp (người dùng bấm, hỏi lại mật khẩu). */
+const upgradeOpen = ref(false)
+const needsUpgrade = computed(() => {
+  const f = folders.folders.find((x) => x.id === folders.activeFolderId)
+  return !!f?.is_secure && !folderLocked.value && !searching.value && f.pbkdf2_iterations < DEFAULT_PBKDF2_ITERATIONS
+})
 const activeFolderName = computed(
   () => folders.folders.find((f) => f.id === folders.activeFolderId)?.name ?? '',
 )
@@ -222,6 +231,13 @@ async function onMovePick(folderId: string): Promise<void> {
         <AppIcon name="plus" :size="17" />
       </button>
     </SectionHeader>
+    <p v-if="needsUpgrade" class="note-list__upgrade" role="note">
+      <AppIcon name="shield" :size="14" />
+      <span>{{ t('secureFolder.upgradeHint') }}</span>
+      <button type="button" class="ds-text-action note-list__upgrade-btn" @click="upgradeOpen = true">
+        {{ t('secureFolder.upgradeBtn') }}
+      </button>
+    </p>
     <div class="note-list__body">
       <NoteItem
         v-for="n in visible"
@@ -289,10 +305,33 @@ async function onMovePick(folderId: string): Promise<void> {
       @close="closeMoveModal"
       @pick="onMovePick"
     />
+
+    <SecureFolderModal
+      v-if="upgradeOpen && folders.activeFolderId"
+      :open="upgradeOpen"
+      mode="upgrade"
+      :folder-id="folders.activeFolderId"
+      @close="upgradeOpen = false"
+    />
   </div>
 </template>
 
 <style scoped>
+.note-list__upgrade {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.note-list__upgrade-btn {
+  margin-left: auto;
+}
+
 .note-list {
   display: flex;
   flex-direction: column;
