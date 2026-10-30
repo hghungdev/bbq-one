@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.2.0
+**Version:** 2.3.0
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.3.0](#what-changed-in-230)
 - [What changed in 2.2.0](#what-changed-in-220)
 - [What changed in 2.1.2](#what-changed-in-212)
 - [What changed in 2.1.1](#what-changed-in-211)
@@ -59,6 +60,15 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.3.0
+
+Optional two-step verification for signed-in accounts (`specs/ROADMAP-SEC.md` S2). No new permission.
+
+- **Two-step verification (optional):** Settings › Two-step verification — scan the QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), confirm a 6-digit code, done. Save the secret shown next to the QR code in a password manager: it is how you add the account to a new phone.
+- **Sign-in:** after the password, accounts with two-step verification are asked for a 6-digit code. Until then BBQOne treats you as signed out — nothing syncs and nothing is written to the cloud. Reopening the popup mid-way returns to the code step.
+- **Enforced on the server:** `supabase/migrations/019_mfa_enforce.sql` adds a restrictive row-level-security policy, so a stolen password alone cannot read or change data through the API. Order: turn on TOTP in the Supabase dashboard → update every device to 2.3.0 → run the migration → turn on two-step verification.
+- Changing the account password and turning two-step verification off both ask for a code.
 
 ## What changed in 2.2.0
 

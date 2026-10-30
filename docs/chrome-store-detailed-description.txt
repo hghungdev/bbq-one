@@ -43,9 +43,10 @@ Encrypted before upload: notes in secure folders. Regular notes, folders, bookma
 Google Calendar link: created only if you ask for it. Anyone with the link can read your calendar, so keep it private — you can replace or turn it off in Settings.
 
 ═══════════════════════════════════════════════════
-WHAT'S NEW IN 2.2.0
+WHAT'S NEW IN 2.3.0
 ═══════════════════════════════════════════════════
 
+New: Optional two-step verification for signed-in accounts — a 6-digit code from your authenticator app after the password (Settings)
 Safer: Delete all bookmarks backs up first and asks you to type DELETE — you can restore from the backup list
 Privacy: Address-bar search can show Title + snippet, Title only, or be turned off (Settings)
 Security: Stronger secure folders (600,000 PBKDF2 iterations, upgrade older folders, weak passwords refused); a password changed on another device is detected

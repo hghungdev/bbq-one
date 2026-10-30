@@ -94,6 +94,18 @@ Nếu **có** dữ liệu khi không đăng nhập, kiểm tra lại policy và 
   mã hóa bằng khóa cũ (sửa ghi chú cũ bị khóa lạc quan C9 chặn). Muốn đóng hẳn cần máy chủ so salt khi ghi.
 - Mật khẩu mới ≥ 10 ký tự, chặn mật khẩu phổ biến (`utils/passwordStrength.ts`).
 
+## Xác thực 2 bước (S2, 2.3.0)
+
+- TOTP, **tùy chọn** (người dùng bật trong Cài đặt). Phiên `aal1` của tài khoản đã có factor xác minh = **chưa đăng
+  nhập**: `authMode.isAuthenticated()` trả false (không đồng bộ / không ghi cloud, kể cả service worker), cờ
+  `bbq_auth_logged_in` chỉ bật sau bước 2.
+- **Chặn ở máy chủ:** `supabase/migrations/019_mfa_enforce.sql` — policy RESTRICTIVE `mfa_aal2_if_enrolled` trên mọi bảng
+  public có `user_id`: có factor verified thì JWT phải `aal2`.
+- **Thứ tự:** dashboard bật TOTP → mọi máy lên 2.3.0 → chạy migration 019 → mới bật 2FA. Bản < 2.3.0 với tài khoản đã bật
+  2FA: RLS trả 0 dòng (dữ liệu không mất, máy cũ thấy trống).
+- Đổi mật khẩu (đăng nhập lại để kiểm) và tắt 2FA đều hỏi mã. Mất điện thoại: thêm lại bằng chuỗi bí mật đã lưu, hoặc admin
+  xóa factor (dashboard › Authentication › Users › MFA). Chưa có mã khôi phục (`recovery_code`) — để sau.
+
 ## Encrypted account (S2C1)
 
 - Bật (opt-in) qua ceremony: passphrase (≥10, PBKDF2-SHA256 600k) + recovery key 160-bit hiện
