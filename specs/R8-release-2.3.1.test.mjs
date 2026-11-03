@@ -26,12 +26,15 @@ const read = (...p) => {
 }
 
 console.log('R8 — phát hành 2.3.1')
-const V = '2.3.1'
+// R9 (đổi có chủ đích, 2.3.2): chỗ ghi "phiên bản hiện tại" kiểm theo manifest (≥ 2.3.1); phần lịch sử 2.3.1 (README
+// "What changed in 2.3.1", "Release 2.3.1 (highlights)", dòng thư mục bảo mật trong WHAT'S NEW) vẫn kiểm như cũ.
 const manifest = JSON.parse(read('public', 'manifest.json') || '{}')
+const V = manifest.version ?? ''
+const atLeast231 = /^2\.3\.([1-9]\d*)$|^2\.([4-9]|\d\d+)\.\d+$|^([3-9]|\d\d+)\.\d+\.\d+$/.test(V)
 const pkg = JSON.parse(read('package.json') || '{}')
 const lockRoot = JSON.parse(read('package-lock.json') || '{}')
-check('R8.1 manifest / package.json / lock = 2.3.1; quyền không đổi',
-  manifest.version === V && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
+check('R8.1 manifest / package.json / lock cùng phiên bản ≥ 2.3.1 (R9); quyền không đổi',
+  atLeast231 && pkg.version === V && lockRoot.version === V && lockRoot.packages?.['']?.version === V &&
     JSON.stringify(manifest.permissions) === JSON.stringify(['storage', 'unlimitedStorage', 'contextMenus', 'alarms', 'clipboardWrite', 'offscreen', 'bookmarks', 'downloads']),
   `${manifest.version}/${pkg.version}/${lockRoot.version}`)
 const readme = read('README.md')

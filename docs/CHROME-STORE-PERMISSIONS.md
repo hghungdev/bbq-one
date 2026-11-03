@@ -1,7 +1,7 @@
 # BBQOne — Chrome Web Store Permissions Justification
 
 This document explains why each permission declared in `public/manifest.json`
-is required for BBQOne **v2.3.1** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 added only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning; v2.1.0 reuses `downloads` for JSON backup files; v2.2.0–v2.3.1 add a safer "Delete all" for bookmarks (backup first), address-bar privacy modes and optional two-step verification (TOTP) through the existing Supabase host — still no new permission). The content below is the **source of
+is required for BBQOne **v2.3.2** (permissions unchanged since v1.3.3 — the Google Calendar link is served by a Supabase Edge Function; the extension itself never contacts Google Calendar. v2.0.1 added only the manifest **`omnibox`** key for address-bar search, which is not a permission and shows no install / update warning; v2.1.0 reuses `downloads` for JSON backup files; v2.2.0–v2.3.1 add a safer "Delete all" for bookmarks (backup first), address-bar privacy modes and optional two-step verification (TOTP) through the existing Supabase host; v2.3.2 shows one address-bar suggestion per note section and makes automatic backup files opt-in — still no new permission). The content below is the **source of
 truth** when filling out the Chrome Web Store submission form's "Permission
 Justification" section.
 

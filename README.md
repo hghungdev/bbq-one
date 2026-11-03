@@ -2,7 +2,7 @@
 
 A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calendar**—with a distinctive retro / terminal-inspired UI. Use it **without an account** (local-first), or **sign in** when you want cloud sync and backup.
 
-**Version:** 2.3.1
+**Version:** 2.3.2
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-BBQOne-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bbqone/ceapgalokgiaajogfjjkcaidnkpmplll)
 
@@ -12,6 +12,7 @@ A **Chrome extension** (Manifest V3) for **notes**, **bookmarks**, and a **calen
 
 - [Overview](#overview)
 - [Features](#features)
+- [What changed in 2.3.2](#what-changed-in-232)
 - [What changed in 2.3.1](#what-changed-in-231)
 - [What changed in 2.3.0](#what-changed-in-230)
 - [What changed in 2.2.0](#what-changed-in-220)
@@ -61,6 +62,13 @@ BBQOne brings together everyday knowledge capture and daily planning inside the 
 | **Theme** | Light + dark UI (`data-theme`); dark uses a deeper charcoal stack and a mid blue accent tuned for dense popup chrome. |
 
 ---
+
+## What changed in 2.3.2
+
+Two changes requested after 2.3.1 reached the Chrome Web Store. No new permission, no database migration.
+
+- **Address bar search — one row per section:** for a note with several sections, `bbq` + a keyword now lists each section as its own suggestion (`Title [2/5] — Folder · snippet of that section`) instead of one row that runs all sections together. **Enter** opens the note at that section; **Alt+Enter** copies only that section. Notes with one section work as before; *Title only* mode shows `Title [2/5]` without the snippet (`specs/F4-omnibox-sections.spec.md`).
+- **Backup files — no more surprise downloads:** opening BBQOne no longer saves a backup file to Downloads by itself (people could mistake an unexpected download for malware). Save a backup with **Back up now** in Settings › Backup. The automatic daily backup is still available but **off by default** — including on installs where it was on before (`specs/B2-backup-manual-default.spec.md`).
 
 ## What changed in 2.3.1
 
