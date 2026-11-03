@@ -34,6 +34,7 @@ import {
   omniboxNoteRoute,
   omniboxSearchRoute,
   parseOmniboxMode,
+  resolveOmniboxBodyId,
   resolveOmniboxNoteId,
   searchNotesForOmnibox,
   type OmniboxMode,
@@ -331,7 +332,7 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
     })
     suggest(
       hits.map((h) => ({
-        content: omniboxContent(h.note, untitled),
+        content: omniboxContent(h.note, untitled, h.section),
         description: omniboxDescription(
           h,
           h.note.folder_id ? folderNames.get(h.note.folder_id) ?? null : null,
@@ -360,12 +361,14 @@ chrome.omnibox.onInputEntered.addListener((text, disposition) => {
       return
     }
     const noteId = resolveOmniboxNoteId(text, data.notes)
-    // Sir: Enter = mở; Alt+Enter (Chrome báo "mở tab mới") = sao chép cả ghi chú, không mở gì.
+    // F4: dòng của một section → mở / sao chép đúng section đó (section đã bị xóa → cả ghi chú).
+    const bodyId = noteId ? resolveOmniboxBodyId(text, noteId, data.bodies) : null
+    // Sir: Enter = mở; Alt+Enter (Chrome báo "mở tab mới") = sao chép, không mở gì.
     if (noteId && disposition !== 'currentTab') {
-      const { ok } = await copyViaOffscreen(noteCopyText(data.bodies.filter((b) => b.note_id === noteId)))
+      const { ok } = await copyViaOffscreen(noteCopyText(data.bodies.filter((b) => (bodyId ? b.id === bodyId : b.note_id === noteId))))
       await flashBadge(ok)
       return
     }
-    await openPopupAt(noteId ? omniboxNoteRoute(noteId) : omniboxSearchRoute(text.trim()))
+    await openPopupAt(noteId ? omniboxNoteRoute(noteId, bodyId) : omniboxSearchRoute(text.trim()))
   })()
 })

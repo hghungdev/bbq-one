@@ -180,7 +180,7 @@ BBQOne follows a **privacy-first, local-first** philosophy:
   permission, no install warning. Text typed after `bbq` goes only to the
   extension, which searches notes stored on the device (no network request);
   users choose in Settings whether suggestions show title + snippet or title
-  only, or turn it off; copying a note reuses `clipboardWrite` + `offscreen`.
+  only, or turn it off; copying a note section reuses `clipboardWrite` + `offscreen`.
 - Optional two-step verification (TOTP) uses the same Supabase Auth host; once
   turned on, the server returns the account's data only after a valid code.
 - No tracking, no analytics, no advertising.

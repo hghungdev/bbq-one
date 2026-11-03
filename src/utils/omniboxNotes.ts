@@ -65,9 +65,18 @@ export function noteCopyText(bodies: readonly NoteBody[]): string {
     .join('\n\n')
 }
 
+/** F4: section của một dòng gợi ý — `index` 1-based theo thứ tự tab trong trình soạn, `count` = số section của ghi chú. */
+export interface OmniboxSection {
+  body: NoteBody
+  index: number
+  count: number
+}
+
 export interface OmniboxHit {
   note: Note
-  /** Đoạn chữ quanh chỗ khớp (hoặc đầu nội dung khi khớp tên). */
+  /** F4: ghi chú nhiều section → mỗi section một dòng; null / thiếu = ghi chú chưa có section. */
+  section?: OmniboxSection | null
+  /** Đoạn chữ quanh chỗ khớp (hoặc đầu nội dung khi khớp tên) — chỉ chữ của section đó. */
   snippet: string
   titleMatch: boolean
 }
@@ -95,6 +104,7 @@ function snippetAround(text: string, q: string | null, max = 80): string {
 /**
  * Lọc + xếp: khớp tên / thẻ / nhãn / chữ trong body (như P4 — không khớp thẻ HTML); bỏ ghi chú thư mục bảo mật và
  * ghi chú còn khóa (envelope mã hóa). Khớp tên trước, rồi mới sửa trước.
+ * F4: mỗi section một dòng — khớp tên / thẻ → mọi section có chữ; còn lại → chỉ section khớp. `limit` tính trên dòng.
  */
 export function searchNotesForOmnibox(input: {
   notes: readonly Note[]
@@ -112,26 +122,27 @@ export function searchNotesForOmnibox(input: {
     if (list) list.push(b)
     else byNote.set(b.note_id, [b])
   }
-  const hits: OmniboxHit[] = []
+  const groups: { titleMatch: boolean; updatedAt: number; rows: OmniboxHit[] }[] = []
   for (const n of input.notes) {
     if (n.folder_id && secure.has(n.folder_id)) continue
     const bs = (byNote.get(n.id) ?? []).slice().sort((a, b) => a.position - b.position)
     if (isEncryptedEnvelope(n.title) || bs.some((b) => isEncryptedEnvelope(b.content) || isEncryptedEnvelope(b.label))) continue
-    const text = bs.map(bodyLineText).filter(Boolean).join(' ')
+    const sections = bs.map((body, i) => ({ section: { body, index: i + 1, count: bs.length }, text: bodyLineText(body) }))
     const titleMatch = n.title.toLowerCase().includes(q)
-    const otherMatch =
-      n.tags.some((t) => t.toLowerCase().includes(q)) ||
-      bs.some((b) => b.label.toLowerCase().includes(q)) ||
-      text.toLowerCase().includes(q)
-    if (!titleMatch && !otherMatch) continue
-    hits.push({ note: n, snippet: snippetAround(text, titleMatch ? null : q), titleMatch })
+    const noteMatch = titleMatch || n.tags.some((t) => t.toLowerCase().includes(q))
+    const matched = sections.filter((s) => s.section.body.label.toLowerCase().includes(q) || s.text.toLowerCase().includes(q))
+    if (!noteMatch && matched.length === 0) continue
+    const shown = noteMatch ? sections.filter((s) => s.text.length > 0) : matched
+    // Khớp tên nhưng mọi section rỗng → vẫn một dòng cho ghi chú (như F1).
+    const rows = shown.length > 0 ? shown : [{ section: sections[0]?.section ?? null, text: '' }]
+    groups.push({
+      titleMatch,
+      updatedAt: Date.parse(n.updated_at),
+      rows: rows.map((s) => ({ note: n, section: s.section, snippet: snippetAround(s.text, titleMatch ? null : q), titleMatch })),
+    })
   }
-  hits.sort(
-    (a, b) =>
-      Number(b.titleMatch) - Number(a.titleMatch) ||
-      Date.parse(b.note.updated_at) - Date.parse(a.note.updated_at),
-  )
-  return hits.slice(0, input.limit ?? OMNIBOX_MAX_SUGGESTIONS)
+  groups.sort((a, b) => Number(b.titleMatch) - Number(a.titleMatch) || b.updatedAt - a.updatedAt)
+  return groups.flatMap((g) => g.rows).slice(0, input.limit ?? OMNIBOX_MAX_SUGGESTIONS)
 }
 
 function escapeXml(text: string): string {
@@ -157,9 +168,14 @@ function markMatches(text: string, query: string): string {
   return out + escapeXml(text.slice(i))
 }
 
+/** F4: ` [i/n]` sau tên khi ghi chú có ≥ 2 section (ghi chú 0–1 section: rỗng, như F1). */
+function sectionTag(section: OmniboxSection | null | undefined): string {
+  return section && section.count > 1 ? ` [${section.index}/${section.count}]` : ''
+}
+
 /**
- * Dòng gợi ý của Chrome (XML): `Tên — Thư mục · …đoạn trích…`, chữ khớp trong tên in đậm, phần sau làm mờ.
- * S12 `'title'`: chỉ tên — bỏ cả thư mục lẫn đoạn trích (vẫn tìm trong nội dung, chỉ không hiện).
+ * Dòng gợi ý của Chrome (XML): `Tên [i/n] — Thư mục · …đoạn trích…`, chữ khớp trong tên in đậm, phần sau làm mờ.
+ * S12 `'title'`: chỉ tên (+ số section) — bỏ cả thư mục lẫn đoạn trích (vẫn tìm trong nội dung, chỉ không hiện).
  */
 export function omniboxDescription(
   hit: OmniboxHit,
@@ -168,30 +184,45 @@ export function omniboxDescription(
   untitled: string,
   mode: OmniboxMode = DEFAULT_OMNIBOX_MODE,
 ): string {
-  const title = hit.note.title.trim() || untitled
-  if (mode === 'title') return markMatches(title, query)
+  const title = `${markMatches(hit.note.title.trim() || untitled, query)}${sectionTag(hit.section)}`
+  if (mode === 'title') return title
   const meta = [folderName, hit.snippet].filter((s): s is string => !!s && s.trim().length > 0)
   const dim = meta.length > 0 ? ` <dim>— ${escapeXml(meta.join(' · '))}</dim>` : ''
-  return `${markMatches(title, query)}${dim}`
+  return `${title}${dim}`
 }
 
-/** `content` của gợi ý — chữ hiện trên thanh địa chỉ khi chọn, kèm mã nhận lại ghi chú: `Tên #<8 ký tự đầu id>`. */
-export function omniboxContent(note: Note, untitled: string): string {
-  return `${note.title.trim() || untitled} #${note.id.slice(0, 8)}`
+/**
+ * `content` của gợi ý — chữ hiện trên thanh địa chỉ khi chọn, kèm mã nhận lại ghi chú: `Tên #<8 ký tự đầu id>`.
+ * F4: dòng của một section (ghi chú ≥ 2 section) → `Tên [i/n] #<8 ký tự id ghi chú>/<8 ký tự id section>`.
+ */
+export function omniboxContent(note: Note, untitled: string, section?: OmniboxSection | null): string {
+  const base = `${note.title.trim() || untitled}${sectionTag(section)} #${note.id.slice(0, 8)}`
+  return section && section.count > 1 ? `${base}/${section.body.id.slice(0, 8)}` : base
 }
+
+const CONTENT_ID_RE = /#([0-9a-f]{8})(?:\/([0-9a-f]{8}))?\s*$/i
 
 /** Nhận lại ghi chú từ `content`; chữ người dùng tự gõ (không có mã khớp đúng một ghi chú) → null. */
 export function resolveOmniboxNoteId(text: string, notes: readonly Note[]): string | null {
-  const m = /#([0-9a-f]{8})\s*$/i.exec(text)
+  const m = CONTENT_ID_RE.exec(text)
   if (!m) return null
   const prefix = m[1].toLowerCase()
   const found = notes.filter((n) => n.id.toLowerCase().startsWith(prefix))
   return found.length === 1 ? found[0].id : null
 }
 
-/** Route mở popup đúng ghi chú / với ô tìm điền sẵn (`pages/App.vue` đọc rồi xóa query). */
-export function omniboxNoteRoute(noteId: string): string {
-  return `/dashboard?note=${encodeURIComponent(noteId)}`
+/** F4: nhận lại section từ đuôi `/<8 ký tự>` — phải khớp đúng một section của ghi chú đó; không có / không khớp → null. */
+export function resolveOmniboxBodyId(text: string, noteId: string, bodies: readonly NoteBody[]): string | null {
+  const prefix = CONTENT_ID_RE.exec(text)?.[2]?.toLowerCase()
+  if (!prefix) return null
+  const found = bodies.filter((b) => b.note_id === noteId && b.id.toLowerCase().startsWith(prefix))
+  return found.length === 1 ? found[0].id : null
+}
+
+/** Route mở popup đúng ghi chú (F4: + đúng section) / với ô tìm điền sẵn (`pages/App.vue` đọc rồi xóa query). */
+export function omniboxNoteRoute(noteId: string, bodyId?: string | null): string {
+  const section = bodyId ? `&section=${encodeURIComponent(bodyId)}` : ''
+  return `/dashboard?note=${encodeURIComponent(noteId)}${section}`
 }
 
 export function omniboxSearchRoute(query: string): string {

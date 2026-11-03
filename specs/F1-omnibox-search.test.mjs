@@ -137,7 +137,8 @@ check(
 const app = read('src', 'pages', 'App.vue')
 check(
   'F1.13 pages/App.vue: ?note= → tab Ghi chú + selectNote; ?q= → tab Ghi chú + runSearch; rồi router.replace',
-  /route\.query\.note/.test(app) && /route\.query\.q/.test(app) && /notes\.selectNote\(noteId\)/.test(app) && /notes\.runSearch\(/.test(app) &&
+  // F4 (đổi có chủ đích): ?section= → selectNote(noteId, sectionId).
+  /route\.query\.note/.test(app) && /route\.query\.q/.test(app) && /notes\.selectNote\(noteId(, sectionId)?\)/.test(app) && /notes\.runSearch\(/.test(app) &&
     /router\.replace\(\{ path: '\/dashboard' \}\)/.test(app),
   'popup chưa nhận route của thanh địa chỉ',
 )

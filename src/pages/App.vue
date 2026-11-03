@@ -255,11 +255,13 @@
       return
     }
     const noteId = typeof route.query.note === 'string' ? route.query.note : ''
+    // F4: gợi ý của một section → mở đúng tab section đó (không còn → section đầu, như F1).
+    const sectionId = typeof route.query.section === 'string' ? route.query.section : null
     const q = typeof route.query.q === 'string' ? route.query.q.trim() : ''
     if (!noteId && !q) return
     if (noteId && notes.notes.some((n) => n.id === noteId)) {
       activeTab.value = 'notes'
-      notes.selectNote(noteId)
+      notes.selectNote(noteId, sectionId)
     } else if (q) {
       activeTab.value = 'notes'
       void notes.runSearch(q)

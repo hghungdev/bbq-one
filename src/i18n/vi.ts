@@ -67,7 +67,7 @@ export const vi: Record<I18nKey, string> = {
 
   // ── Search ──
   'search.label': 'Tìm kiếm',
-  'omnibox.default': 'Tìm “<match>%s</match>” trong BBQOne · Enter mở · Alt+Enter sao chép ghi chú',
+  'omnibox.default': 'Tìm “<match>%s</match>” trong BBQOne · Enter mở · Alt+Enter sao chép phần nội dung',
   'omnibox.off': 'BBQOne: tìm từ thanh địa chỉ đang tắt — bật lại trong Cài đặt · Enter để mở BBQOne',
   'omnibox.noResults': 'Không thấy ghi chú nào khớp “<match>%s</match>” · Enter để mở BBQOne',
   'search.ariaNotes': 'Tìm ghi chú',

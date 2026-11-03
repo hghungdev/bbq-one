@@ -65,7 +65,7 @@ export const en = {
 
   // ── Search ──
   'search.label': 'Search',
-  'omnibox.default': 'Search “<match>%s</match>” in BBQOne · Enter opens · Alt+Enter copies the note',
+  'omnibox.default': 'Search “<match>%s</match>” in BBQOne · Enter opens · Alt+Enter copies the section',
   'omnibox.off': 'BBQOne: address-bar search is off — turn it on in Settings · Enter opens BBQOne',
   'omnibox.noResults': 'No notes match “<match>%s</match>” · Enter opens BBQOne',
   'search.ariaNotes': 'Search notes',

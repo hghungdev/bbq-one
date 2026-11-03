@@ -53,7 +53,7 @@ _(118 characters — fits the 132 limit.)_
 - Rich text editing with sensible formatting for everyday writing and technical notes  
 - Code-friendly highlighting for many languages (bundled with the in-app editor)  
 - Folders + full-text search  
-- **Address bar search:** type `bbq` + Space, then a keyword — Enter opens the note, Alt+Enter copies the whole note  
+- **Address bar search:** type `bbq` + Space, then a keyword — one suggestion per note section; Enter opens it, Alt+Enter copies that section  
 - Rename, move between regular folders, and delete from a compact settings menu on each row  
 - Optional **encrypted secure folders** (passphrase-gated content; AES‑GCM client-side where applicable)  
 
