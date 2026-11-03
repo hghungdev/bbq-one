@@ -258,7 +258,7 @@ export const en = {
   'mfa.err.invalid': 'Wrong or expired code — try a new one.',
   'backup.title': 'Backup',
   'backup.auto': 'Automatic backup',
-  'backup.autoDesc': 'Each day, the first time you open BBQOne after your data changed, a copy is saved to Downloads/BBQOne (the last 7 days are kept).',
+  'backup.autoDesc': 'Off by default. When on, each day the first time you open BBQOne after your data changed, a copy is saved to Downloads/BBQOne without asking (the last 7 days are kept).',
   'backup.last': 'Last backup: {date}',
   'backup.never': 'No backup yet',
   'backup.now': 'Back up now',

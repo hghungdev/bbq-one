@@ -273,6 +273,8 @@ if (S && B) {
   const cacheSnap = await S.readBackupData?.('account-cache')
   check('B1.16 readBackupData("account-cache") (cờ người đăng nhập) đọc cache', cacheSnap?.notes?.length === 1 && cacheSnap.folders.length === 0, JSON.stringify(cacheSnap?.notes))
 
+  // B2 (đổi có chủ đích): tự sao lưu mặc định TẮT → bật công tắc trước khi thử B1.17–B1.19.
+  await S.writeBackupState?.({ autoEnabled: true })
   const r1 = await S.maybeAutoBackup?.({ signedIn: false, now: new Date(2026, 9, 29, 9, 0) })
   const r2 = await S.maybeAutoBackup?.({ signedIn: false, now: new Date(2026, 9, 29, 18, 0) })
   const st = store.get(STORAGE.BBQ_BACKUP_STATE_KEY)
@@ -290,7 +292,8 @@ if (S && B) {
   const r5 = await S.maybeAutoBackup?.({ signedIn: true, now: new Date(2026, 10, 1, 9, 0) })
   check('B1.19 công tắc tắt / đã đăng nhập → không tải', r4 === 'skipped' && r5 === 'skipped' && downloads.length === 1, `${r4} ${r5}`)
   const st0 = await S.readBackupState?.()
-  check('B1.20 mặc định công tắc BẬT (chưa từng chỉnh)', (await (async () => { store.delete(STORAGE.BBQ_BACKUP_STATE_KEY); return (await S.readBackupState?.())?.autoEnabled })()) === true && st0?.autoEnabled === false, JSON.stringify(st0))
+  // B2 (đổi có chủ đích): mặc định TẮT (trước: BẬT).
+  check('B1.20 mặc định công tắc TẮT (chưa từng chỉnh — B2)', (await (async () => { store.delete(STORAGE.BBQ_BACKUP_STATE_KEY); return (await S.readBackupState?.())?.autoEnabled })()) === false && st0?.autoEnabled === false, JSON.stringify(st0))
 
   const manual = await S.backupNow?.({ source: 'local', now: new Date(2026, 9, 29, 10, 15) })
   check('B1.21 backupNow → bbqone-backup-2026-10-29-1015.json, cập nhật lần sao lưu gần nhất', downloads.at(-1)?.filename === 'bbqone-backup-2026-10-29-1015.json' && typeof manual?.counts === 'object' && !!store.get(STORAGE.BBQ_BACKUP_STATE_KEY)?.lastBackupAt, JSON.stringify(downloads.at(-1)))

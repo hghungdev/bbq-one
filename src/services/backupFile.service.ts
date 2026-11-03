@@ -32,7 +32,10 @@ import { LOCAL_STORAGE_KEYS } from '@/types/localFirst'
  */
 
 export interface BackupState {
-  /** Công tắc "Tự động sao lưu" — mặc định BẬT (chưa từng chỉnh). */
+  /**
+   * Công tắc "Tự động sao lưu" — B2: mặc định TẮT, chỉ bật khi người dùng tự bật trong Cài đặt (tự tải file khi mở
+   * extension làm người dùng tưởng virus — Sir 2026-11-03).
+   */
   autoEnabled: boolean
   lastBackupAt: string | null
   /** SHA-256 phần dữ liệu của lần sao lưu gần nhất (tự động hoặc tay). */
@@ -42,11 +45,17 @@ export interface BackupState {
   lastRestore: { at: string; counts: BackupCounts } | null
 }
 
+/**
+ * Dạng lưu trong kho. B2: công tắc ở `autoOptIn`; `autoEnabled` cũ (2.1.0–2.3.1 tự ghi `true` mặc định ở lần ghi trạng
+ * thái đầu tiên) bị bỏ qua → mọi máy về TẮT.
+ */
+type StoredBackupState = Omit<Partial<BackupState>, 'autoEnabled'> & { autoOptIn?: boolean }
+
 export async function readBackupState(): Promise<BackupState> {
   const r = await chrome.storage.local.get(BBQ_BACKUP_STATE_KEY)
-  const s = (r[BBQ_BACKUP_STATE_KEY] ?? {}) as Partial<BackupState>
+  const s = (r[BBQ_BACKUP_STATE_KEY] ?? {}) as StoredBackupState
   return {
-    autoEnabled: s.autoEnabled !== false,
+    autoEnabled: s.autoOptIn === true,
     lastBackupAt: s.lastBackupAt ?? null,
     lastBackupDigest: s.lastBackupDigest ?? null,
     lastCheckDay: s.lastCheckDay ?? null,
@@ -55,8 +64,9 @@ export async function readBackupState(): Promise<BackupState> {
 }
 
 export async function writeBackupState(patch: Partial<BackupState>): Promise<void> {
-  const cur = await readBackupState()
-  await chrome.storage.local.set({ [BBQ_BACKUP_STATE_KEY]: { ...cur, ...patch } })
+  const { autoEnabled, ...rest } = { ...(await readBackupState()), ...patch }
+  const next: StoredBackupState = { ...rest, autoOptIn: autoEnabled }
+  await chrome.storage.local.set({ [BBQ_BACKUP_STATE_KEY]: next })
 }
 
 const SOURCES = {

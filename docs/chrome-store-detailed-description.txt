@@ -22,7 +22,7 @@ GOOGLE CALENDAR LINK (OPTIONAL)
 Signed in? Create a private, one-way link in Settings › Google Calendar and add it in Google Calendar ("From URL"). Your BBQOne events then appear in Google Calendar. Google decides when to refresh the link — usually within several hours. Turn the link off or replace it at any time.
 
 BACKUP FILES (NO ACCOUNT NEEDED)
-Without an account, everything lives in this browser — so BBQOne can save a backup file to your Downloads folder automatically (once a day, the last 7 days kept) or with "Back up now", and restore it on any computer. Notes in secure folders stay encrypted inside the file.
+Without an account, everything lives in this browser — click "Back up now" in Settings to save a backup file to your Downloads folder, and restore it on any computer. Optional daily automatic backup (off by default). Notes in secure folders stay encrypted inside the file.
 
 CLOUD SYNC (OPTIONAL)
 Sign in with email and password to sync notes, bookmark backups, and events across devices. Changes made offline sync automatically when you're back online. Each account's data is isolated by server-side Row Level Security. Optional two-step verification: a 6-digit code from your authenticator app, enforced on the server.
@@ -52,7 +52,7 @@ Safer: Delete all bookmarks backs up first and asks you to type DELETE — you c
 Privacy: Address-bar search can show Title + snippet, Title only, or be turned off (Settings)
 Security: Stronger secure folders (600,000 PBKDF2 iterations, upgrade older folders, weak passwords refused); a password changed on another device is detected
 Security: Editor and build libraries updated (no known vulnerabilities, fixes a paste issue); automated security checks on every change
-New: Backup files for use without an account — automatic backup to Downloads/BBQOne (once a day when you open BBQOne and your data changed; the last 7 days are kept) and "Back up now" in Settings
+New: Backup files for use without an account — "Back up now" in Settings saves a file to Downloads; optional daily automatic backup (off by default)
 New: Restore from a backup file — preview first, confirm twice; your current data is saved to a safety file before it is replaced
 Security: Restored files are checked and cleaned — scripts, images, links and unsafe bookmark links (javascript:, data:) are removed
 Security: A stricter content security policy, unsafe bookmark links are never restored, and the Google Calendar link is hardened

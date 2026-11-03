@@ -73,7 +73,7 @@ Reads the user's Chrome bookmark tree to show, search and back it up in the Book
 ```text
 Saves files the user keeps on their own computer, built in memory and written with chrome.downloads.download (no prompt, no network):
 1. "Export as HTML" in the Bookmarks tab — a standard Netscape bookmark HTML file to keep or import into another browser (only when the user clicks Export).
-2. Backup files (not signed in, since v2.1.0) — a JSON backup file of the user's own notes, calendar events and bookmark backups: "Back up now" in Settings, plus an optional automatic backup (Settings › Backup, can be turned off) at most once a day when BBQOne is opened and the data changed, into Downloads/BBQOne (one file per weekday, overwritten the next week). Before "Restore from file" replaces data, a safety backup file of the current data is saved the same way. Nothing is uploaded.
+2. Backup files (not signed in, since v2.1.0) — a JSON backup file of the user's own notes, calendar events and bookmark backups: "Back up now" in Settings (only when the user clicks), plus an optional automatic backup that is off by default and runs only if the user turns it on in Settings › Backup — at most once a day when BBQOne is opened and the data changed, into Downloads/BBQOne (one file per weekday, overwritten the next week). Before "Restore from file" replaces data, a safety backup file of the current data is saved the same way. Nothing is uploaded.
 ```
 
 ---

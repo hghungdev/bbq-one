@@ -260,7 +260,7 @@ export const vi: Record<I18nKey, string> = {
   'mfa.err.invalid': 'Mã không đúng hoặc đã hết hạn — thử mã mới.',
   'backup.title': 'Sao lưu',
   'backup.auto': 'Tự động sao lưu',
-  'backup.autoDesc': 'Mỗi ngày, lần đầu mở BBQOne sau khi dữ liệu thay đổi, một bản được lưu vào Tải xuống/BBQOne (giữ 7 ngày gần nhất).',
+  'backup.autoDesc': 'Mặc định tắt. Khi bật, mỗi ngày lần đầu mở BBQOne sau khi dữ liệu thay đổi, một bản được tự lưu vào Tải xuống/BBQOne mà không hỏi (giữ 7 ngày gần nhất).',
   'backup.last': 'Lần sao lưu gần nhất: {date}',
   'backup.never': 'Chưa sao lưu lần nào',
   'backup.now': 'Sao lưu ngay',
